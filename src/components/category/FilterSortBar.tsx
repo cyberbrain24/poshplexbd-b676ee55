@@ -19,10 +19,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 
+import { useProducts } from "@/hooks/useProducts";
+import { useParams } from "react-router-dom";
+
 interface FilterSortBarProps {
   filtersOpen: boolean;
   setFiltersOpen: (open: boolean) => void;
-  itemCount: number;
+  itemCount?: number;
 }
 
 const FilterSortBar = ({ filtersOpen, setFiltersOpen, itemCount }: FilterSortBarProps) => {

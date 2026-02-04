@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Plus, Pencil, Trash2, Search, ChevronRight } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import MasterDataModal from "@/components/admin/MasterDataModal";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from "@/hooks/useMasterData";
 import { Category } from "@/types/product";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,9 +31,35 @@ const AdminCategories = () => {
   const updateMutation = useUpdateCategory();
   const deleteMutation = useDeleteCategory();
 
-  const filteredItems = items.filter(item =>
+  // Organize categories into hierarchy
+  const organizedCategories = useMemo(() => {
+    const parentCategories = items.filter(item => !item.parent_id);
+    const result: (Category & { isChild?: boolean; parentName?: string })[] = [];
+    
+    parentCategories.forEach(parent => {
+      result.push(parent);
+      const children = items.filter(item => item.parent_id === parent.id);
+      children.forEach(child => {
+        result.push({ ...child, isChild: true, parentName: parent.name });
+      });
+    });
+    
+    // Add any orphaned subcategories (parent was deleted)
+    const orphans = items.filter(item => item.parent_id && !items.find(p => p.id === item.parent_id));
+    orphans.forEach(orphan => {
+      result.push({ ...orphan, isChild: true, parentName: 'Unknown' });
+    });
+    
+    return result;
+  }, [items]);
+
+  const filteredItems = organizedCategories.filter(item =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const getSubcategoryCount = (parentId: string) => {
+    return items.filter(item => item.parent_id === parentId).length;
+  };
 
   const handleSave = async (data: { name: string; parent_id?: string }) => {
     try {
@@ -88,6 +115,8 @@ const AdminCategories = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Subcategories</TableHead>
                 <TableHead>Created</TableHead>
                 <TableHead className="w-24">Actions</TableHead>
               </TableRow>
@@ -95,18 +124,39 @@ const AdminCategories = () => {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center py-8">Loading...</TableCell>
+                  <TableCell colSpan={5} className="text-center py-8">Loading...</TableCell>
                 </TableRow>
               ) : filteredItems.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                     No categories found
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredItems.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="font-medium">{item.name}</TableCell>
+                  <TableRow key={item.id} className={item.isChild ? "bg-muted/30" : ""}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        {item.isChild && (
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        )}
+                        {item.name}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {item.isChild ? (
+                        <Badge variant="outline" className="text-xs">
+                          Sub of {item.parentName}
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-xs">
+                          Main Category
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {!item.isChild ? getSubcategoryCount(item.id) : '-'}
+                    </TableCell>
                     <TableCell className="text-muted-foreground">
                       {new Date(item.created_at).toLocaleDateString()}
                     </TableCell>
@@ -150,7 +200,12 @@ const AdminCategories = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Category</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{deleteItem?.name}"? This may affect products in this category.
+              Are you sure you want to delete "{deleteItem?.name}"? 
+              {!deleteItem?.parent_id && getSubcategoryCount(deleteItem?.id || '') > 0 && (
+                <span className="block mt-2 text-destructive">
+                  Warning: This category has {getSubcategoryCount(deleteItem?.id || '')} subcategories that will become orphaned.
+                </span>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -28,7 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, TrendingUp, TrendingDown, Wallet, Edit, Trash2 } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, Wallet, Edit, Trash2, ArrowLeftRight } from "lucide-react";
 import {
   useAccounts,
   useTransactions,
@@ -40,11 +40,13 @@ import {
   TransactionFilters,
 } from "@/hooks/useAccounts";
 import TransactionModal from "@/components/admin/TransactionModal";
+import TransferModal from "@/components/admin/TransferModal";
 import { format } from "date-fns";
 
 const AdminAccounts = () => {
   const [filters, setFilters] = useState<TransactionFilters>({});
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"income" | "expense">("income");
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -78,8 +80,12 @@ const AdminAccounts = () => {
 
   const handleEdit = (transaction: Transaction) => {
     setEditingTransaction(transaction);
-    setModalType(transaction.type);
-    setIsModalOpen(true);
+    if (transaction.type === "transfer") {
+      setIsTransferModalOpen(true);
+    } else {
+      setModalType(transaction.type);
+      setIsModalOpen(true);
+    }
   };
 
   const handleSubmit = (data: any) => {
@@ -89,6 +95,8 @@ const AdminAccounts = () => {
       createTransaction.mutate(data);
     }
     setIsModalOpen(false);
+    setIsTransferModalOpen(false);
+    setEditingTransaction(null);
   };
 
   const handleDelete = () => {
@@ -114,13 +122,24 @@ const AdminAccounts = () => {
             <p className="text-muted-foreground">Manage income, expenses, and track balances</p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={handleAddIncome} className="bg-green-600 hover:bg-green-700">
+            <Button onClick={handleAddIncome} className="bg-emerald-600 hover:bg-emerald-700 text-white">
               <Plus className="h-4 w-4 mr-2" />
               Add Income
             </Button>
             <Button onClick={handleAddExpense} variant="destructive">
               <Plus className="h-4 w-4 mr-2" />
               Add Expense
+            </Button>
+            <Button 
+              onClick={() => {
+                setEditingTransaction(null);
+                setIsTransferModalOpen(true);
+              }} 
+              variant="outline"
+              className="border-primary text-primary hover:bg-primary/10"
+            >
+              <ArrowLeftRight className="h-4 w-4 mr-2" />
+              Transfer
             </Button>
           </div>
         </div>
@@ -141,10 +160,10 @@ const AdminAccounts = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Total Income</CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-600" />
+              <TrendingUp className="h-4 w-4 text-emerald-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{formatCurrency(totalIncome)}</div>
+              <div className="text-2xl font-bold text-emerald-600">{formatCurrency(totalIncome)}</div>
               <p className="text-xs text-muted-foreground">Filtered period</p>
             </CardContent>
           </Card>
@@ -166,7 +185,7 @@ const AdminAccounts = () => {
               <Wallet className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${totalIncome - totalExpense >= 0 ? "text-green-600" : "text-red-600"}`}>
+              <div className={`text-2xl font-bold ${totalIncome - totalExpense >= 0 ? "text-emerald-600" : "text-destructive"}`}>
                 {formatCurrency(totalIncome - totalExpense)}
               </div>
               <p className="text-xs text-muted-foreground">Income - Expenses</p>
@@ -184,7 +203,7 @@ const AdminAccounts = () => {
               {accounts.map((account) => (
                 <div key={account.id} className="p-4 border rounded-lg">
                   <p className="text-sm font-medium">{account.name}</p>
-                  <p className={`text-xl font-bold ${Number(account.current_balance) >= 0 ? "text-green-600" : "text-red-600"}`}>
+                  <p className={`text-xl font-bold ${Number(account.current_balance) >= 0 ? "text-emerald-600" : "text-destructive"}`}>
                     {formatCurrency(Number(account.current_balance))}
                   </p>
                 </div>
@@ -222,7 +241,7 @@ const AdminAccounts = () => {
 
               <Select
                 value={filters.type || "all"}
-                onValueChange={(v) => setFilters({ ...filters, type: v === "all" ? undefined : (v as "income" | "expense") })}
+                onValueChange={(v) => setFilters({ ...filters, type: v === "all" ? undefined : (v as "income" | "expense" | "transfer") })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All Types" />
@@ -231,6 +250,7 @@ const AdminAccounts = () => {
                   <SelectItem value="all">All Types</SelectItem>
                   <SelectItem value="income">Income</SelectItem>
                   <SelectItem value="expense">Expense</SelectItem>
+                  <SelectItem value="transfer">Transfer</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -285,7 +305,7 @@ const AdminAccounts = () => {
                     <TableHead>Date</TableHead>
                     <TableHead>Account</TableHead>
                     <TableHead>Type</TableHead>
-                    <TableHead>Category</TableHead>
+                    <TableHead>Category / Details</TableHead>
                     <TableHead>Notes</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -295,26 +315,42 @@ const AdminAccounts = () => {
                   {transactions.map((transaction) => (
                     <TableRow key={transaction.id}>
                       <TableCell>{format(new Date(transaction.date), "MMM dd, yyyy")}</TableCell>
-                      <TableCell>{transaction.account?.name || "-"}</TableCell>
+                      <TableCell>
+                        {transaction.type === "transfer" 
+                          ? `${transaction.account?.name || "-"} → ${transaction.to_account?.name || "-"}`
+                          : transaction.account?.name || "-"
+                        }
+                      </TableCell>
                       <TableCell>
                         <span
                           className={`px-2 py-1 rounded text-xs font-medium ${
                             transaction.type === "income"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
+                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200"
+                              : transaction.type === "expense"
+                              ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                              : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
                           }`}
                         >
                           {transaction.type}
                         </span>
                       </TableCell>
-                      <TableCell>{transaction.category?.name || "-"}</TableCell>
+                      <TableCell>
+                        {transaction.type === "transfer" 
+                          ? "Balance Transfer" 
+                          : transaction.category?.name || "-"
+                        }
+                      </TableCell>
                       <TableCell className="max-w-[200px] truncate">{transaction.notes || "-"}</TableCell>
                       <TableCell
                         className={`text-right font-medium ${
-                          transaction.type === "income" ? "text-green-600" : "text-red-600"
+                          transaction.type === "income" 
+                            ? "text-emerald-600" 
+                            : transaction.type === "expense" 
+                            ? "text-destructive" 
+                            : "text-primary"
                         }`}
                       >
-                        {transaction.type === "income" ? "+" : "-"}
+                        {transaction.type === "income" ? "+" : transaction.type === "expense" ? "-" : ""}
                         {formatCurrency(Number(transaction.amount))}
                       </TableCell>
                       <TableCell className="text-right">
@@ -342,6 +378,16 @@ const AdminAccounts = () => {
         onSubmit={handleSubmit}
         initialData={editingTransaction}
         defaultType={modalType}
+      />
+
+      <TransferModal
+        isOpen={isTransferModalOpen}
+        onClose={() => {
+          setIsTransferModalOpen(false);
+          setEditingTransaction(null);
+        }}
+        onSubmit={handleSubmit}
+        initialData={editingTransaction}
       />
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>

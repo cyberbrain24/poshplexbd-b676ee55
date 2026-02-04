@@ -26,14 +26,16 @@ export interface TransactionCategory {
 export interface Transaction {
   id: string;
   account_id: string;
+  to_account_id: string | null;
   category_id: string | null;
-  type: "income" | "expense";
+  type: "income" | "expense" | "transfer";
   amount: number;
   date: string;
   notes: string | null;
   created_at: string;
   updated_at: string;
   account?: Account;
+  to_account?: Account;
   category?: TransactionCategory;
 }
 
@@ -195,7 +197,7 @@ export const useDeleteTransactionCategory = () => {
 // Transactions hooks
 export interface TransactionFilters {
   accountId?: string;
-  type?: "income" | "expense";
+  type?: "income" | "expense" | "transfer";
   categoryId?: string;
   startDate?: string;
   endDate?: string;
@@ -209,7 +211,8 @@ export const useTransactions = (filters?: TransactionFilters) => {
         .from("transactions")
         .select(`
           *,
-          account:accounts(*),
+          account:accounts!transactions_account_id_fkey(*),
+          to_account:accounts!transactions_to_account_id_fkey(*),
           category:transaction_categories(*)
         `)
         .order("date", { ascending: false });

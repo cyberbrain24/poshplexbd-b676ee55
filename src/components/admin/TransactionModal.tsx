@@ -23,7 +23,7 @@ interface TransactionModalProps {
   onClose: () => void;
   onSubmit: (data: any) => void;
   initialData?: Transaction | null;
-  defaultType?: "income" | "expense";
+  defaultType?: "income" | "expense" | "transfer";
 }
 
 const TransactionModal = ({
@@ -34,7 +34,9 @@ const TransactionModal = ({
   defaultType = "income",
 }: TransactionModalProps) => {
   const { data: accounts = [] } = useAccounts();
-  const [type, setType] = useState<"income" | "expense">(defaultType);
+  const [type, setType] = useState<"income" | "expense">(
+    defaultType === "transfer" ? "income" : defaultType
+  );
   const { data: categories = [] } = useTransactionCategories(type);
 
   const [formData, setFormData] = useState({
@@ -48,25 +50,27 @@ const TransactionModal = ({
 
   useEffect(() => {
     if (initialData) {
+      const txType = initialData.type === "transfer" ? "income" : initialData.type;
       setFormData({
         account_id: initialData.account_id,
         category_id: initialData.category_id || "",
-        type: initialData.type,
+        type: txType,
         amount: initialData.amount.toString(),
         date: initialData.date,
         notes: initialData.notes || "",
       });
-      setType(initialData.type);
+      setType(txType);
     } else {
+      const txType = defaultType === "transfer" ? "income" : defaultType;
       setFormData({
         account_id: "",
         category_id: "",
-        type: defaultType,
+        type: txType,
         amount: "",
         date: new Date().toISOString().split("T")[0],
         notes: "",
       });
-      setType(defaultType);
+      setType(txType);
     }
   }, [initialData, defaultType, isOpen]);
 

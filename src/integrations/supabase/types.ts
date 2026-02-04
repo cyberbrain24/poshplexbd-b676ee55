@@ -148,6 +148,127 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_types: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      customers: {
+        Row: {
+          address: string | null
+          created_at: string
+          customer_type_id: string | null
+          division_id: string | null
+          email: string | null
+          gender: string
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          phone: string
+          thana_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          customer_type_id?: string | null
+          division_id?: string | null
+          email?: string | null
+          gender: string
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          phone: string
+          thana_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          customer_type_id?: string | null
+          division_id?: string | null
+          email?: string | null
+          gender?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          phone?: string
+          thana_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customers_customer_type_id_fkey"
+            columns: ["customer_type_id"]
+            isOneToOne: false
+            referencedRelation: "customer_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customers_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customers_thana_id_fkey"
+            columns: ["thana_id"]
+            isOneToOne: false
+            referencedRelation: "thanas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      divisions: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       materials: {
         Row: {
           created_at: string
@@ -386,6 +507,47 @@ export type Database = {
           },
         ]
       }
+      promo_usages: {
+        Row: {
+          benefit_amount: number | null
+          benefit_type: string | null
+          created_at: string
+          customer_id: string
+          id: string
+          notes: string | null
+          promo_code: string
+          used_at: string
+        }
+        Insert: {
+          benefit_amount?: number | null
+          benefit_type?: string | null
+          created_at?: string
+          customer_id: string
+          id?: string
+          notes?: string | null
+          promo_code: string
+          used_at?: string
+        }
+        Update: {
+          benefit_amount?: number | null
+          benefit_type?: string | null
+          created_at?: string
+          customer_id?: string
+          id?: string
+          notes?: string | null
+          promo_code?: string
+          used_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promo_usages_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       size_guides: {
         Row: {
           content: string
@@ -436,6 +598,41 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      thanas: {
+        Row: {
+          created_at: string
+          division_id: string
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          division_id: string
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          division_id?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "thanas_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transaction_categories: {
         Row: {

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
-import Header from "../components/header/Header";
-import Footer from "../components/footer/Footer";
+import PoshplexHeader from "../components/header/PoshplexHeader";
+import PoshplexFooter from "../components/footer/PoshplexFooter";
 import CategoryHeader from "../components/category/CategoryHeader";
 import FilterSortBar from "../components/category/FilterSortBar";
 import ProductGrid from "../components/category/ProductGrid";
@@ -13,7 +13,7 @@ const Category = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <PoshplexHeader />
       
       <main className="pt-6">
         <CategoryHeader 
@@ -29,7 +29,7 @@ const Category = () => {
         <ProductGrid />
       </main>
       
-      <Footer />
+      <PoshplexFooter />
     </div>
   );
 };

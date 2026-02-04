@@ -1,5 +1,5 @@
-import Header from "../../components/header/Header";
-import Footer from "../../components/footer/Footer";
+import PoshplexHeader from "../../components/header/PoshplexHeader";
+import PoshplexFooter from "../../components/footer/PoshplexFooter";
 import PageHeader from "../../components/about/PageHeader";
 import ContentSection from "../../components/about/ContentSection";
 import StoreMap from "../../components/about/StoreMap";
@@ -33,7 +33,7 @@ const StoreLocator = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <PoshplexHeader />
       
       <div className="flex">
         <div className="hidden lg:block">
@@ -140,7 +140,7 @@ const StoreLocator = () => {
         </main>
       </div>
       
-      <Footer />
+      <PoshplexFooter />
     </div>
   );
 };

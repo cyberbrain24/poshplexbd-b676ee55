@@ -1,5 +1,5 @@
-import Header from "../../components/header/Header";
-import Footer from "../../components/footer/Footer";
+import PoshplexHeader from "../../components/header/PoshplexHeader";
+import PoshplexFooter from "../../components/footer/PoshplexFooter";
 import PageHeader from "../../components/about/PageHeader";
 import ContentSection from "../../components/about/ContentSection";
 import { Button } from "../../components/ui/button";
@@ -11,7 +11,7 @@ import AboutSidebar from "../../components/about/AboutSidebar";
 const CustomerCare = () => {
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <PoshplexHeader />
       
       <div className="flex">
         <div className="hidden lg:block">
@@ -145,7 +145,7 @@ const CustomerCare = () => {
         </main>
       </div>
       
-      <Footer />
+      <PoshplexFooter />
     </div>
   );
 };

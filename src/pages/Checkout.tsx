@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Minus, Plus, CreditCard, Check } from "lucide-react";
 import CheckoutHeader from "../components/header/CheckoutHeader";
-import Footer from "../components/footer/Footer";
+import PoshplexFooter from "../components/footer/PoshplexFooter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -667,7 +667,7 @@ const Checkout = () => {
         </div>
       </main>
 
-      <Footer />
+      <PoshplexFooter />
     </div>
   );
 };

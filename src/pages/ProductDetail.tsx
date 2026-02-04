@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
-import Header from "../components/header/Header";
-import Footer from "../components/footer/Footer";
+import PoshplexHeader from "../components/header/PoshplexHeader";
+import PoshplexFooter from "../components/footer/PoshplexFooter";
 import ProductImageGallery from "../components/product/ProductImageGallery";
 import ProductInfo from "../components/product/ProductInfo";
 import ProductDescription from "../components/product/ProductDescription";
@@ -20,7 +20,7 @@ const ProductDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <PoshplexHeader />
       
       <main className="pt-6">
         <section className="w-full px-6">
@@ -72,7 +72,7 @@ const ProductDetail = () => {
         </section>
       </main>
       
-      <Footer />
+      <PoshplexFooter />
     </div>
   );
 };

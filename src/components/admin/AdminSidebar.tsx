@@ -16,7 +16,11 @@ import {
   Wallet,
   CreditCard,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  Users,
+  MapPin,
+  Map,
+  Crown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -29,6 +33,7 @@ const mainMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
   { icon: Package, label: "Products", path: "/admin/products" },
   { icon: Wallet, label: "Accounts", path: "/admin/accounts" },
+  { icon: Users, label: "Customers", path: "/admin/customers" },
 ];
 
 const productEditsItems = [
@@ -47,10 +52,17 @@ const accountEditsItems = [
   { icon: TrendingDown, label: "Expense Categories", path: "/admin/expense-categories" },
 ];
 
+const customerEditsItems = [
+  { icon: MapPin, label: "Divisions", path: "/admin/divisions" },
+  { icon: Map, label: "Thanas", path: "/admin/thanas" },
+  { icon: Crown, label: "Customer Types", path: "/admin/customer-types" },
+];
+
 const AdminSidebar = () => {
   const location = useLocation();
   const isProductEditsActive = productEditsItems.some(item => location.pathname === item.path);
   const isAccountEditsActive = accountEditsItems.some(item => location.pathname === item.path);
+  const isCustomerEditsActive = customerEditsItems.some(item => location.pathname === item.path);
   const [isProductEditsOpen, setIsProductEditsOpen] = useState(isProductEditsActive);
 
   return (
@@ -134,6 +146,33 @@ const AdminSidebar = () => {
           </p>
           <div className="space-y-1">
             {accountEditsItems.map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
+                    isActive
+                      ? "bg-foreground text-background"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Customer Edits Section - Always visible */}
+        <div className="mt-4 pt-4 border-t border-border">
+          <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Customer Edits
+          </p>
+          <div className="space-y-1">
+            {customerEditsItems.map((item) => {
               const isActive = location.pathname === item.path;
               return (
                 <Link

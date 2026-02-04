@@ -31,6 +31,10 @@ import AdminAccounts from "./pages/admin/AdminAccounts";
 import AdminAccountsList from "./pages/admin/AdminAccountsList";
 import AdminIncomeCategories from "./pages/admin/AdminIncomeCategories";
 import AdminExpenseCategories from "./pages/admin/AdminExpenseCategories";
+import AdminCustomers from "./pages/admin/AdminCustomers";
+import AdminDivisions from "./pages/admin/AdminDivisions";
+import AdminThanas from "./pages/admin/AdminThanas";
+import AdminCustomerTypes from "./pages/admin/AdminCustomerTypes";
 
 const queryClient = new QueryClient();
 
@@ -69,6 +73,10 @@ const App = () => (
           <Route path="/admin/accounts-list" element={<ProtectedRoute><AdminAccountsList /></ProtectedRoute>} />
           <Route path="/admin/income-categories" element={<ProtectedRoute><AdminIncomeCategories /></ProtectedRoute>} />
           <Route path="/admin/expense-categories" element={<ProtectedRoute><AdminExpenseCategories /></ProtectedRoute>} />
+          <Route path="/admin/customers" element={<ProtectedRoute><AdminCustomers /></ProtectedRoute>} />
+          <Route path="/admin/divisions" element={<ProtectedRoute><AdminDivisions /></ProtectedRoute>} />
+          <Route path="/admin/thanas" element={<ProtectedRoute><AdminThanas /></ProtectedRoute>} />
+          <Route path="/admin/customer-types" element={<ProtectedRoute><AdminCustomerTypes /></ProtectedRoute>} />
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

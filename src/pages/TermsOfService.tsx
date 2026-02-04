@@ -1,15 +1,15 @@
 import { useEffect } from "react";
-import Header from "../components/header/Header";
-import Footer from "../components/footer/Footer";
+import PoshplexHeader from "../components/header/PoshplexHeader";
+import PoshplexFooter from "../components/footer/PoshplexFooter";
 
 const TermsOfService = () => {
   useEffect(() => {
-    document.title = "Terms of Service - Linea Jewelry";
+    document.title = "Terms of Service - Poshplex";
   }, []);
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <PoshplexHeader />
       
       <main className="pt-6">
         <div className="max-w-4xl mx-auto px-6 py-12">
@@ -145,7 +145,7 @@ const TermsOfService = () => {
         </div>
       </main>
       
-      <Footer />
+      <PoshplexFooter />
     </div>
   );
 };

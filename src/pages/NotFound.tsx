@@ -1,5 +1,7 @@
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
+import PoshplexHeader from "../components/header/PoshplexHeader";
+import PoshplexFooter from "../components/footer/PoshplexFooter";
 
 const NotFound = () => {
   const location = useLocation();
@@ -9,14 +11,30 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">404</h1>
-        <p className="mb-4 text-xl text-gray-600">Oops! Page not found</p>
-        <a href="/" className="text-blue-500 underline hover:text-blue-700">
-          Return to Home
-        </a>
-      </div>
+    <div className="min-h-screen bg-background flex flex-col">
+      <PoshplexHeader />
+      
+      <main className="flex-1 flex items-center justify-center px-6">
+        <div className="text-center">
+          <span className="text-8xl md:text-[12rem] font-black text-muted-foreground/20 block">
+            404
+          </span>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground mb-4 -mt-8">
+            PAGE NOT FOUND
+          </h1>
+          <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+            The page you're looking for doesn't exist or has been moved.
+          </p>
+          <Link 
+            to="/" 
+            className="inline-flex items-center gap-2 bg-foreground text-background px-8 py-4 text-sm font-medium tracking-wider hover:bg-primary-hover transition-colors"
+          >
+            RETURN HOME
+          </Link>
+        </div>
+      </main>
+      
+      <PoshplexFooter />
     </div>
   );
 };

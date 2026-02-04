@@ -12,7 +12,11 @@ import {
   LayoutDashboard,
   ArrowLeft,
   ChevronDown,
-  Settings2
+  Settings2,
+  Wallet,
+  CreditCard,
+  TrendingUp,
+  TrendingDown
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -24,6 +28,7 @@ import {
 const mainMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
   { icon: Package, label: "Products", path: "/admin/products" },
+  { icon: Wallet, label: "Accounts", path: "/admin/accounts" },
 ];
 
 const productEditsItems = [
@@ -36,9 +41,16 @@ const productEditsItems = [
   { icon: Building2, label: "Brands", path: "/admin/brands" },
 ];
 
+const accountEditsItems = [
+  { icon: CreditCard, label: "Accounts List", path: "/admin/accounts-list" },
+  { icon: TrendingUp, label: "Income Categories", path: "/admin/income-categories" },
+  { icon: TrendingDown, label: "Expense Categories", path: "/admin/expense-categories" },
+];
+
 const AdminSidebar = () => {
   const location = useLocation();
   const isProductEditsActive = productEditsItems.some(item => location.pathname === item.path);
+  const isAccountEditsActive = accountEditsItems.some(item => location.pathname === item.path);
   const [isProductEditsOpen, setIsProductEditsOpen] = useState(isProductEditsActive);
 
   return (
@@ -114,6 +126,33 @@ const AdminSidebar = () => {
             </div>
           </CollapsibleContent>
         </Collapsible>
+
+        {/* Accounts Edits Section - Always visible */}
+        <div className="mt-4 pt-4 border-t border-border">
+          <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Accounts Edits
+          </p>
+          <div className="space-y-1">
+            {accountEditsItems.map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
+                    isActive
+                      ? "bg-foreground text-background"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
       </nav>
 
       <div className="p-4 border-t border-border">

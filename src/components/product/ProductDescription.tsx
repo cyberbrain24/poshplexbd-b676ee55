@@ -20,7 +20,7 @@ const CustomStar = ({ filled, className }: { filled: boolean; className?: string
 
 const ProductDescription = () => {
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
   const [isCareOpen, setIsCareOpen] = useState(false);
   const [isReviewsOpen, setIsReviewsOpen] = useState(false);
 
@@ -56,38 +56,39 @@ const ProductDescription = () => {
         )}
       </div>
 
-      {/* Product Details */}
+      {/* Size Guide */}
       <div className="border-b border-border">
         <Button
           variant="ghost"
-          onClick={() => setIsDetailsOpen(!isDetailsOpen)}
+          onClick={() => setIsSizeGuideOpen(!isSizeGuideOpen)}
           className="w-full h-14 px-0 justify-between hover:bg-transparent font-light rounded-none"
         >
-          <span>Product Details</span>
-          {isDetailsOpen ? (
+          <span>Size Guide</span>
+          {isSizeGuideOpen ? (
             <ChevronUp className="h-4 w-4" />
           ) : (
             <ChevronDown className="h-4 w-4" />
           )}
         </Button>
-        {isDetailsOpen && (
-          <div className="pb-6 space-y-3">
-            <div className="flex justify-between">
-              <span className="text-sm font-light text-muted-foreground">SKU</span>
-              <span className="text-sm font-light text-foreground">LE-PTH-001</span>
+        {isSizeGuideOpen && (
+          <div className="pb-6 space-y-4">
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span className="text-sm font-light text-muted-foreground">Small (S)</span>
+                <span className="text-sm font-light text-foreground">1.8cm x 0.9cm</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm font-light text-muted-foreground">Medium (M)</span>
+                <span className="text-sm font-light text-foreground">2.5cm x 1.2cm</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm font-light text-muted-foreground">Large (L)</span>
+                <span className="text-sm font-light text-foreground">3.2cm x 1.5cm</span>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-sm font-light text-muted-foreground">Collection</span>
-              <span className="text-sm font-light text-foreground">Architectural Series</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm font-light text-muted-foreground">Closure</span>
-              <span className="text-sm font-light text-foreground">Post and butterfly back</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm font-light text-muted-foreground">Hypoallergenic</span>
-              <span className="text-sm font-light text-foreground">Yes</span>
-            </div>
+            <p className="text-sm font-light text-muted-foreground">
+              All measurements are approximate. For detailed sizing information, please visit our <a href="/about/size-guide" className="underline hover:opacity-70">Size Guide</a> page.
+            </p>
           </div>
         )}
       </div>

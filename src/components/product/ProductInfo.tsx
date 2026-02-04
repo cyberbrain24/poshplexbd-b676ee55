@@ -63,18 +63,7 @@ const ProductInfo = () => {
         </div>
         
         <div className="space-y-2">
-          <h3 className="text-sm font-light text-foreground">Dimensions</h3>
-          <p className="text-sm font-light text-muted-foreground">2.5cm x 1.2cm</p>
-        </div>
-        
-        <div className="space-y-2">
-          <h3 className="text-sm font-light text-foreground">Weight</h3>
-          <p className="text-sm font-light text-muted-foreground">4.2g per earring</p>
-        </div>
-        
-        <div className="space-y-2">
-          <h3 className="text-sm font-light text-foreground">Editor's notes</h3>
-          <p className="text-sm font-light text-muted-foreground italic">"A modern interpretation of classical architecture, these earrings bridge timeless elegance with contemporary minimalism."</p>
+          <p className="text-sm font-light text-muted-foreground">A modern interpretation of classical architecture, these earrings bridge timeless elegance with contemporary minimalism.</p>
         </div>
       </div>
 

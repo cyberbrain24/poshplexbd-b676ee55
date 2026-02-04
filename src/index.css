@@ -2,107 +2,104 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Linea E-commerce Design System - Minimalist & Modern */
+/* Poshplex Design System - Industrial Minimalist Streetwear */
 
 @layer base {
   :root {
-    /* Core neutral palette */
+    /* Core palette: Black, White, Slate Grey */
     --background: 0 0% 100%;
-    --foreground: 0 0% 9%;
+    --foreground: 0 0% 0%;
     
-    /* Status bar */
-    --status-bar: 0 0% 0%;
-    --status-bar-foreground: 0 0% 100%;
+    /* Slate grey variants */
+    --slate: 215 16% 47%;
+    --slate-light: 215 16% 65%;
+    --slate-dark: 215 20% 25%;
+    --slate-muted: 215 10% 92%;
     
     /* Navigation */
     --nav-background: 0 0% 100%;
-    --nav-foreground: 0 0% 20%;
-    --nav-hover: 0 0% 5%;
+    --nav-foreground: 0 0% 0%;
+    --nav-hover: 0 0% 30%;
     
     /* Interactive elements */
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 0 0% 0%;
+    --primary-foreground: 0 0% 100%;
     --primary-hover: 0 0% 15%;
     
-    /* Subtle elements */
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 20%;
+    /* Secondary - outline style */
+    --secondary: 0 0% 100%;
+    --secondary-foreground: 0 0% 0%;
     
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
+    --muted: 215 10% 92%;
+    --muted-foreground: 215 16% 47%;
     
-    --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 9%;
+    --accent: 215 10% 96%;
+    --accent-foreground: 0 0% 0%;
     
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
-    --ring: 0 0% 9%;
+    --border: 0 0% 85%;
+    --input: 0 0% 85%;
+    --ring: 0 0% 0%;
     
     /* Cards and surfaces */
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 9%;
+    --card-foreground: 0 0% 0%;
     
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 9%;
+    --popover-foreground: 0 0% 0%;
     
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
     
-    --radius: 0.375rem;
+    /* CRITICAL: 0px border-radius for industrial look */
+    --radius: 0px;
     
     /* Transitions */
     --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
     --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-foreground: 0 0% 0%;
+    --sidebar-primary: 0 0% 0%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 215 10% 96%;
+    --sidebar-accent-foreground: 0 0% 0%;
+    --sidebar-border: 0 0% 85%;
+    --sidebar-ring: 0 0% 0%;
   }
 
   .dark {
-    --background: 0 0% 9%;
+    --background: 0 0% 5%;
     --foreground: 0 0% 98%;
     
-    --status-bar: 0 0% 0%;
-    --status-bar-foreground: 0 0% 100%;
+    --slate: 215 16% 55%;
+    --slate-light: 215 16% 70%;
+    --slate-dark: 215 20% 35%;
+    --slate-muted: 215 10% 15%;
     
-    --nav-background: 0 0% 9%;
-    --nav-foreground: 0 0% 80%;
-    --nav-hover: 0 0% 95%;
+    --nav-background: 0 0% 5%;
+    --nav-foreground: 0 0% 98%;
+    --nav-hover: 0 0% 70%;
     
     --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --primary-hover: 0 0% 90%;
+    --primary-foreground: 0 0% 0%;
+    --primary-hover: 0 0% 85%;
     
-    --secondary: 0 0% 15%;
-    --secondary-foreground: 0 0% 80%;
+    --secondary: 0 0% 5%;
+    --secondary-foreground: 0 0% 98%;
     
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 60%;
+    --muted: 215 10% 15%;
+    --muted-foreground: 215 16% 55%;
     
-    --accent: 0 0% 15%;
+    --accent: 215 10% 15%;
     --accent-foreground: 0 0% 98%;
     
     --border: 0 0% 20%;
     --input: 0 0% 20%;
     --ring: 0 0% 98%;
     
-    --card: 0 0% 9%;
+    --card: 0 0% 5%;
     --card-foreground: 0 0% 98%;
     
-    --popover: 0 0% 9%;
+    --popover: 0 0% 5%;
     --popover-foreground: 0 0% 98%;
     
     --destructive: 0 62% 50%;
@@ -116,6 +113,22 @@
   }
 
   body {
-    @apply bg-background text-foreground font-light;
+    @apply bg-background text-foreground font-normal;
+  }
+  
+  /* Industrial typography - heavy sans-serif */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold tracking-tight uppercase;
+  }
+}
+
+/* Custom utility for industrial look */
+@layer utilities {
+  .industrial-shadow {
+    box-shadow: 4px 4px 0px 0px hsl(var(--foreground));
+  }
+  
+  .grayscale-filter {
+    filter: grayscale(100%) contrast(1.1);
   }
 }

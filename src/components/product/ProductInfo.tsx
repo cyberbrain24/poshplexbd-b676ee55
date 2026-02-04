@@ -55,16 +55,9 @@ const ProductInfo = () => {
         </div>
       </div>
 
-      {/* Product details */}
-      <div className="space-y-4 py-4 border-b border-border">
-        <div className="space-y-2">
-          <h3 className="text-sm font-light text-foreground">Material</h3>
-          <p className="text-sm font-light text-muted-foreground">18k Gold Plated Sterling Silver</p>
-        </div>
-        
-        <div className="space-y-2">
-          <p className="text-sm font-light text-muted-foreground">A modern interpretation of classical architecture, these earrings bridge timeless elegance with contemporary minimalism.</p>
-        </div>
+      {/* Short description */}
+      <div className="py-4 border-b border-border">
+        <p className="text-sm font-light text-muted-foreground">A modern interpretation of classical architecture, these earrings bridge timeless elegance with contemporary minimalism.</p>
       </div>
 
       {/* Quantity and Add to Cart */}

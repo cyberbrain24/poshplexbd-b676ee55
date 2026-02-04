@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useCategories } from "@/hooks/useMasterData";
+import { Category } from "@/types/product";
 
 interface MasterDataModalProps {
   isOpen: boolean;
@@ -16,7 +19,10 @@ interface MasterDataModalProps {
 
 const MasterDataModal = ({ isOpen, onClose, onSave, title, type, initialData }: MasterDataModalProps) => {
   const [formData, setFormData] = useState<any>({});
-
+  const { data: categories = [] } = useCategories();
+  
+  // Get only parent categories (categories with no parent_id)
+  const parentCategories = categories.filter((c: Category) => !c.parent_id);
   useEffect(() => {
     if (initialData) {
       setFormData(initialData);
@@ -181,15 +187,41 @@ const MasterDataModal = ({ isOpen, onClose, onSave, title, type, initialData }: 
 
       case "category":
         return (
-          <div className="space-y-2">
-            <Label htmlFor="name">Category Name *</Label>
-            <Input
-              id="name"
-              value={formData.name || ""}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="e.g., Earrings, Necklaces"
-            />
-          </div>
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="name">Category Name *</Label>
+              <Input
+                id="name"
+                value={formData.name || ""}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="e.g., Earrings, Necklaces"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="parent_id">Parent Category (optional)</Label>
+              <Select
+                value={formData.parent_id || "none"}
+                onValueChange={(value) => setFormData({ ...formData, parent_id: value === "none" ? null : value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select parent category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None (Main Category)</SelectItem>
+                  {parentCategories
+                    .filter((c: Category) => c.id !== initialData?.id) // Prevent self-parenting
+                    .map((category: Category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Main categories appear in the header navigation. Subcategories appear in dropdowns.
+              </p>
+            </div>
+          </>
         );
 
       case "brand":

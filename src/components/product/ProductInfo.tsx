@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
@@ -11,7 +11,8 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Minus, Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Product } from "@/types/product";
+import { Product, ProductVariant } from "@/types/product";
+import VariantSelector from "./VariantSelector";
 
 interface ProductInfoProps {
   product?: Product | null;
@@ -20,16 +21,25 @@ interface ProductInfoProps {
 
 const ProductInfo = ({ product, isLoading }: ProductInfoProps) => {
   const [quantity, setQuantity] = useState(1);
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
 
   const incrementQuantity = () => setQuantity(prev => prev + 1);
   const decrementQuantity = () => setQuantity(prev => Math.max(1, prev - 1));
+  
+  const handleVariantChange = useCallback((variant: ProductVariant | null) => {
+    setSelectedVariant(variant);
+  }, []);
 
   // Fallback data for static display
   const productName = product?.name || "Pantheon";
   const categoryName = product?.category?.name || "Earrings";
-  const categorySlug = categoryName.toLowerCase();
-  const price = product?.base_price || 2850;
+  const categorySlug = categoryName.toLowerCase().replace(/\s+/g, '-');
+  const basePrice = product?.base_price || 2850;
+  const displayPrice = selectedVariant?.selling_price || basePrice;
   const shortDescription = product?.short_description || "A modern interpretation of classical architecture, these earrings bridge timeless elegance with contemporary minimalism.";
+  const hasVariants = product?.variants && product.variants.length > 0;
+  const isVariableProduct = product?.product_type === 'variable';
+  const canAddToCart = !isVariableProduct || selectedVariant !== null;
 
   if (isLoading) {
     return (
@@ -79,7 +89,12 @@ const ProductInfo = ({ product, isLoading }: ProductInfoProps) => {
             <h1 className="text-2xl md:text-3xl font-light text-foreground">{productName}</h1>
           </div>
           <div className="text-right">
-            <p className="text-xl font-light text-foreground">€{price.toLocaleString()}</p>
+            <p className="text-xl font-light text-foreground">€{displayPrice.toLocaleString()}</p>
+            {selectedVariant && selectedVariant.selling_price !== basePrice && (
+              <p className="text-sm font-light text-muted-foreground line-through">
+                €{basePrice.toLocaleString()}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -88,6 +103,16 @@ const ProductInfo = ({ product, isLoading }: ProductInfoProps) => {
       <div className="py-4 border-b border-border">
         <p className="text-sm font-light text-muted-foreground">{shortDescription}</p>
       </div>
+
+      {/* Variant Selection */}
+      {hasVariants && (
+        <div className="py-4 border-b border-border">
+          <VariantSelector 
+            variants={product!.variants!} 
+            onVariantChange={handleVariantChange}
+          />
+        </div>
+      )}
 
       {/* Quantity and Add to Cart */}
       <div className="space-y-4">
@@ -117,10 +142,16 @@ const ProductInfo = ({ product, isLoading }: ProductInfoProps) => {
         </div>
 
         <Button 
-          className="w-full h-12 bg-foreground text-background hover:bg-foreground/90 font-light rounded-none"
+          className="w-full h-12 bg-foreground text-background hover:bg-foreground/90 font-light rounded-none disabled:opacity-50"
+          disabled={!canAddToCart}
         >
-          Add to Bag
+          {isVariableProduct && !selectedVariant ? "Select Options" : "Add to Bag"}
         </Button>
+        {isVariableProduct && !selectedVariant && (
+          <p className="text-xs text-muted-foreground text-center">
+            Please select color and size to add to bag
+          </p>
+        )}
       </div>
     </div>
   );

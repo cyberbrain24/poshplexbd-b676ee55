@@ -1,68 +1,48 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Search, User, ShoppingBag, X, ArrowRight } from "lucide-react";
 import MegaMenu from "./MegaMenu";
 import MobileMenu from "./MobileMenu";
+import { useCategories } from "@/hooks/useMasterData";
+
+interface NavItem {
+  name: string;
+  href: string;
+  submenu: {
+    categories: string[];
+    featured: { name: string; href: string }[];
+  };
+}
 
 const PoshplexHeader = () => {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [cartCount] = useState(3);
+  
+  const { data: allCategories = [] } = useCategories();
 
-  const navItems = [
-    { 
-      name: "NEW DROPS", 
-      href: "/category/new-drops",
-      submenu: {
-        categories: ["This Week", "Last Week", "Coming Soon"],
-        featured: [
-          { name: "SS25 Collection", href: "/category/ss25" },
-          { name: "Limited Edition", href: "/category/limited" }
-        ]
-      }
-    },
-    { 
-      name: "MEN", 
-      href: "/category/men",
-      submenu: {
-        categories: ["Hoodies", "T-Shirts", "Cargo Pants", "Jackets", "Accessories"],
-        featured: [
-          { name: "Bestsellers", href: "/category/men-bestsellers" },
-          { name: "Sale Items", href: "/category/men-sale" }
-        ]
-      }
-    },
-    { 
-      name: "WOMEN", 
-      href: "/category/women",
-      submenu: {
-        categories: ["Hoodies", "Crop Tops", "Joggers", "Jackets", "Accessories"],
-        featured: [
-          { name: "Bestsellers", href: "/category/women-bestsellers" },
-          { name: "Sale Items", href: "/category/women-sale" }
-        ]
-      }
-    },
-    { 
-      name: "ACCESSORIES", 
-      href: "/category/accessories",
-      submenu: {
-        categories: ["Caps", "Bags", "Belts", "Jewelry", "Socks"],
-        featured: [
-          { name: "New Arrivals", href: "/category/accessories-new" }
-        ]
-      }
-    },
-    { 
-      name: "SALE", 
-      href: "/category/sale",
-      submenu: {
-        categories: ["Up to 30% Off", "Up to 50% Off", "Final Sale"],
-        featured: []
-      }
-    }
-  ];
+  // Build navigation items from database categories
+  const navItems: NavItem[] = useMemo(() => {
+    // Get parent categories (main navigation items)
+    const parentCategories = allCategories.filter(c => !c.parent_id);
+    
+    return parentCategories.map(parent => {
+      // Get subcategories for this parent
+      const subcategories = allCategories
+        .filter(c => c.parent_id === parent.id)
+        .map(c => c.name);
+      
+      return {
+        name: parent.name.toUpperCase(),
+        href: `/category/${parent.name.toLowerCase().replace(/\s+/g, '-')}`,
+        submenu: {
+          categories: subcategories,
+          featured: [] // Can be extended with featured links
+        }
+      };
+    });
+  }, [allCategories]);
 
   return (
     <header className="w-full sticky top-0 z-50 bg-background border-b border-border">

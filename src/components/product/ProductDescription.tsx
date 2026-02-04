@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ReviewProduct from "./ReviewProduct";
+import { Product } from "@/types/product";
 
 const CustomStar = ({ filled, className }: { filled: boolean; className?: string }) => (
   <svg 
@@ -18,11 +19,33 @@ const CustomStar = ({ filled, className }: { filled: boolean; className?: string
   </svg>
 );
 
-const ProductDescription = () => {
+interface ProductDescriptionProps {
+  product?: Product | null;
+}
+
+const ProductDescription = ({ product }: ProductDescriptionProps) => {
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
   const [isCareOpen, setIsCareOpen] = useState(false);
   const [isReviewsOpen, setIsReviewsOpen] = useState(false);
+
+  // Get dynamic content from product or use fallbacks
+  const fullDescription = product?.full_description || `The Pantheon earrings embody architectural elegance with their clean, geometric design. 
+Inspired by classical Roman architecture, these statement pieces feature a sophisticated 
+interplay of curves and angles that catch and reflect light beautifully.
+
+Each earring is meticulously crafted from premium sterling silver with an 18k gold 
+plating, ensuring both durability and luxury. The minimalist aesthetic makes them 
+perfect for both everyday wear and special occasions.`;
+
+  const sizeGuideContent = product?.size_guide?.content || `Small (S): 1.8cm x 0.9cm
+Medium (M): 2.5cm x 1.2cm
+Large (L): 3.2cm x 1.5cm`;
+
+  const careContent = product?.care_instruction?.content || `• Clean with a soft, dry cloth after each wear
+• Avoid contact with perfumes, lotions, and cleaning products
+• Store in the provided jewelry pouch when not wearing
+• Remove before swimming, exercising, or showering`;
 
   return (
     <div className="space-y-0 mt-8 border-t border-border">
@@ -42,16 +65,11 @@ const ProductDescription = () => {
         </Button>
         {isDescriptionOpen && (
           <div className="pb-6 space-y-4">
-            <p className="text-sm font-light text-muted-foreground leading-relaxed">
-              The Pantheon earrings embody architectural elegance with their clean, geometric design. 
-              Inspired by classical Roman architecture, these statement pieces feature a sophisticated 
-              interplay of curves and angles that catch and reflect light beautifully.
-            </p>
-            <p className="text-sm font-light text-muted-foreground leading-relaxed">
-              Each earring is meticulously crafted from premium sterling silver with an 18k gold 
-              plating, ensuring both durability and luxury. The minimalist aesthetic makes them 
-              perfect for both everyday wear and special occasions.
-            </p>
+            {fullDescription.split('\n\n').map((paragraph, index) => (
+              <p key={index} className="text-sm font-light text-muted-foreground leading-relaxed">
+                {paragraph}
+              </p>
+            ))}
           </div>
         )}
       </div>
@@ -73,18 +91,20 @@ const ProductDescription = () => {
         {isSizeGuideOpen && (
           <div className="pb-6 space-y-4">
             <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-sm font-light text-muted-foreground">Small (S)</span>
-                <span className="text-sm font-light text-foreground">1.8cm x 0.9cm</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm font-light text-muted-foreground">Medium (M)</span>
-                <span className="text-sm font-light text-foreground">2.5cm x 1.2cm</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm font-light text-muted-foreground">Large (L)</span>
-                <span className="text-sm font-light text-foreground">3.2cm x 1.5cm</span>
-              </div>
+              {sizeGuideContent.split('\n').map((line, index) => {
+                const parts = line.split(':');
+                if (parts.length === 2) {
+                  return (
+                    <div key={index} className="flex justify-between">
+                      <span className="text-sm font-light text-muted-foreground">{parts[0].trim()}</span>
+                      <span className="text-sm font-light text-foreground">{parts[1].trim()}</span>
+                    </div>
+                  );
+                }
+                return (
+                  <p key={index} className="text-sm font-light text-muted-foreground">{line}</p>
+                );
+              })}
             </div>
             <p className="text-sm font-light text-muted-foreground">
               All measurements are approximate. For detailed sizing information, please visit our <a href="/about/size-guide" className="underline hover:opacity-70">Size Guide</a> page.
@@ -110,10 +130,9 @@ const ProductDescription = () => {
         {isCareOpen && (
           <div className="pb-6 space-y-4">
             <ul className="space-y-2">
-              <li className="text-sm font-light text-muted-foreground">• Clean with a soft, dry cloth after each wear</li>
-              <li className="text-sm font-light text-muted-foreground">• Avoid contact with perfumes, lotions, and cleaning products</li>
-              <li className="text-sm font-light text-muted-foreground">• Store in the provided jewelry pouch when not wearing</li>
-              <li className="text-sm font-light text-muted-foreground">• Remove before swimming, exercising, or showering</li>
+              {careContent.split('\n').map((line, index) => (
+                <li key={index} className="text-sm font-light text-muted-foreground">{line}</li>
+              ))}
             </ul>
             <p className="text-sm font-light text-muted-foreground">
               For professional cleaning, visit your local jeweler or contact our customer service team.

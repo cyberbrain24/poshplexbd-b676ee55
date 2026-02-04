@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ScrollToTop from "./components/ScrollToTop";
+import ProtectedRoute from "./components/ProtectedRoute";
 import Index from "./pages/Index";
 import Category from "./pages/Category";
 import ProductDetail from "./pages/ProductDetail";
@@ -16,6 +17,16 @@ import CustomerCare from "./pages/about/CustomerCare";
 import StoreLocator from "./pages/about/StoreLocator";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
+import Auth from "./pages/Auth";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminProducts from "./pages/admin/AdminProducts";
+import AdminColors from "./pages/admin/AdminColors";
+import AdminSizes from "./pages/admin/AdminSizes";
+import AdminMaterials from "./pages/admin/AdminMaterials";
+import AdminSizeGuides from "./pages/admin/AdminSizeGuides";
+import AdminCareInstructions from "./pages/admin/AdminCareInstructions";
+import AdminCategories from "./pages/admin/AdminCategories";
+import AdminBrands from "./pages/admin/AdminBrands";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +49,19 @@ const App = () => (
           <Route path="/about/store-locator" element={<StoreLocator />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="/auth" element={<Auth />} />
+          
+          {/* Admin Routes - Protected */}
+          <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/products" element={<ProtectedRoute><AdminProducts /></ProtectedRoute>} />
+          <Route path="/admin/colors" element={<ProtectedRoute><AdminColors /></ProtectedRoute>} />
+          <Route path="/admin/sizes" element={<ProtectedRoute><AdminSizes /></ProtectedRoute>} />
+          <Route path="/admin/materials" element={<ProtectedRoute><AdminMaterials /></ProtectedRoute>} />
+          <Route path="/admin/size-guides" element={<ProtectedRoute><AdminSizeGuides /></ProtectedRoute>} />
+          <Route path="/admin/care-instructions" element={<ProtectedRoute><AdminCareInstructions /></ProtectedRoute>} />
+          <Route path="/admin/categories" element={<ProtectedRoute><AdminCategories /></ProtectedRoute>} />
+          <Route path="/admin/brands" element={<ProtectedRoute><AdminBrands /></ProtectedRoute>} />
+          
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

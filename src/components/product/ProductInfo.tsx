@@ -10,12 +10,41 @@ import {
   BreadcrumbSeparator 
 } from "@/components/ui/breadcrumb";
 import { Minus, Plus } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Product } from "@/types/product";
 
-const ProductInfo = () => {
+interface ProductInfoProps {
+  product?: Product | null;
+  isLoading?: boolean;
+}
+
+const ProductInfo = ({ product, isLoading }: ProductInfoProps) => {
   const [quantity, setQuantity] = useState(1);
 
   const incrementQuantity = () => setQuantity(prev => prev + 1);
   const decrementQuantity = () => setQuantity(prev => Math.max(1, prev - 1));
+
+  // Fallback data for static display
+  const productName = product?.name || "Pantheon";
+  const categoryName = product?.category?.name || "Earrings";
+  const categorySlug = categoryName.toLowerCase();
+  const price = product?.base_price || 2850;
+  const shortDescription = product?.short_description || "A modern interpretation of classical architecture, these earrings bridge timeless elegance with contemporary minimalism.";
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-4 w-48" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-6 w-20" />
+        </div>
+        <Skeleton className="h-16 w-full" />
+        <Skeleton className="h-12 w-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -31,12 +60,12 @@ const ProductInfo = () => {
             <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link to="/category/earrings">Earrings</Link>
+                <Link to={`/category/${categorySlug}`}>{categoryName}</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbPage>Pantheon</BreadcrumbPage>
+              <BreadcrumbPage>{productName}</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
@@ -46,18 +75,18 @@ const ProductInfo = () => {
       <div className="space-y-2">
         <div className="flex justify-between items-start">
           <div>
-            <p className="text-sm font-light text-muted-foreground mb-1">Earrings</p>
-            <h1 className="text-2xl md:text-3xl font-light text-foreground">Pantheon</h1>
+            <p className="text-sm font-light text-muted-foreground mb-1">{categoryName}</p>
+            <h1 className="text-2xl md:text-3xl font-light text-foreground">{productName}</h1>
           </div>
           <div className="text-right">
-            <p className="text-xl font-light text-foreground">€2,850</p>
+            <p className="text-xl font-light text-foreground">€{price.toLocaleString()}</p>
           </div>
         </div>
       </div>
 
       {/* Short description */}
       <div className="py-4 border-b border-border">
-        <p className="text-sm font-light text-muted-foreground">A modern interpretation of classical architecture, these earrings bridge timeless elegance with contemporary minimalism.</p>
+        <p className="text-sm font-light text-muted-foreground">{shortDescription}</p>
       </div>
 
       {/* Quantity and Add to Cart */}

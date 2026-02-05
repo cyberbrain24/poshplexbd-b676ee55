@@ -9,7 +9,6 @@ import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -40,28 +39,14 @@ const Auth = () => {
     setIsLoading(true);
 
     try {
-      if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
-        toast.success("Logged in successfully");
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/admin`,
-          },
-        });
-        if (error) throw error;
-        toast.success("Check your email to confirm your account");
-      }
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) throw error;
+      toast.success("Logged in successfully");
     } catch (error: any) {
-      if (error.message === "User already registered") {
-        toast.error("This email is already registered. Please log in instead.");
-      } else if (error.message === "Invalid login credentials") {
+      if (error.message === "Invalid login credentials") {
         toast.error("Invalid email or password");
       } else {
         toast.error(error.message || "An error occurred");
@@ -87,12 +72,10 @@ const Auth = () => {
         <div className="w-full max-w-sm space-y-8">
           <div className="text-center">
             <h1 className="text-2xl font-medium tracking-tight">
-              {isLogin ? "Admin Login" : "Create Account"}
+              Admin Login
             </h1>
             <p className="text-sm text-muted-foreground mt-2">
-              {isLogin
-                ? "Sign in to access the admin panel"
-                : "Create an account to manage products"}
+              Sign in to access the admin panel
             </p>
           </div>
 
@@ -138,21 +121,9 @@ const Auth = () => {
             </div>
 
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Loading..." : isLogin ? "Sign In" : "Create Account"}
+              {isLoading ? "Loading..." : "Sign In"}
             </Button>
           </form>
-
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {isLogin
-                ? "Don't have an account? Sign up"
-                : "Already have an account? Sign in"}
-            </button>
-          </div>
         </div>
       </div>
     </div>

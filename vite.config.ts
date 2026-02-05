@@ -18,4 +18,19 @@ export default defineConfig(({ mode }) => ({
   esbuild: {
     drop: mode === "production" ? ["console", "debugger"] : [],
   },
+  build: {
+    target: "esnext",
+    minify: "esbuild",
+    cssMinify: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ["react", "react-dom", "react-router-dom"],
+          ui: ["@radix-ui/react-dialog", "@radix-ui/react-dropdown-menu", "@radix-ui/react-tabs"],
+          query: ["@tanstack/react-query"],
+          supabase: ["@supabase/supabase-js"],
+        },
+      },
+    },
+  },
 }));

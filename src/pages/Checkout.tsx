@@ -97,8 +97,7 @@ const Checkout = () => {
   const total = subtotal + shipping;
 
   const handleDiscountSubmit = () => {
-    // Handle discount code submission
-    console.log("Discount code submitted:", discountCode);
+    // TODO: Implement discount code validation
     setShowDiscountInput(false);
   };
 

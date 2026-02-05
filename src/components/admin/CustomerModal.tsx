@@ -27,8 +27,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { ExternalLink } from "lucide-react";
+ import { ExternalLink, CalendarIcon } from "lucide-react";
 import { Link } from "react-router-dom";
+ import { Calendar } from "@/components/ui/calendar";
+ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+ import { format } from "date-fns";
+ import { cn } from "@/lib/utils";
 import {
   Customer,
   useCreateCustomer,
@@ -49,6 +53,7 @@ const customerSchema = z.object({
   customer_type_id: z.string().optional(),
   notes: z.string().optional(),
   is_active: z.boolean(),
+   birthdate: z.date().optional(),
 });
 
 type CustomerFormValues = z.infer<typeof customerSchema>;
@@ -80,6 +85,7 @@ const CustomerModal = ({ open, onOpenChange, customer }: CustomerModalProps) => 
       customer_type_id: "",
       notes: "",
       is_active: true,
+       birthdate: undefined,
     },
   });
 
@@ -96,6 +102,7 @@ const CustomerModal = ({ open, onOpenChange, customer }: CustomerModalProps) => 
         customer_type_id: customer.customer_type_id || "",
         notes: customer.notes || "",
         is_active: customer.is_active,
+       birthdate: customer.birthdate ? new Date(customer.birthdate) : undefined,
       });
       setSelectedDivisionId(customer.division_id || undefined);
     } else {
@@ -110,6 +117,7 @@ const CustomerModal = ({ open, onOpenChange, customer }: CustomerModalProps) => 
         customer_type_id: "",
         notes: "",
         is_active: true,
+       birthdate: undefined,
       });
       setSelectedDivisionId(undefined);
     }
@@ -127,6 +135,7 @@ const CustomerModal = ({ open, onOpenChange, customer }: CustomerModalProps) => 
       customer_type_id: values.customer_type_id || null,
       notes: values.notes || null,
       is_active: values.is_active,
+       birthdate: values.birthdate ? format(values.birthdate, "yyyy-MM-dd") : null,
     };
 
     if (customer) {
@@ -317,6 +326,49 @@ const CustomerModal = ({ open, onOpenChange, customer }: CustomerModalProps) => 
                 </FormItem>
               )}
             />
+
+             <FormField
+               control={form.control}
+               name="birthdate"
+               render={({ field }) => (
+                 <FormItem className="flex flex-col">
+                   <FormLabel>Birthdate</FormLabel>
+                   <Popover>
+                     <PopoverTrigger asChild>
+                       <FormControl>
+                         <Button
+                           variant="outline"
+                           className={cn(
+                             "w-full pl-3 text-left font-normal",
+                             !field.value && "text-muted-foreground"
+                           )}
+                         >
+                           {field.value ? (
+                             format(field.value, "PPP")
+                           ) : (
+                             <span>Pick a date</span>
+                           )}
+                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                         </Button>
+                       </FormControl>
+                     </PopoverTrigger>
+                     <PopoverContent className="w-auto p-0" align="start">
+                       <Calendar
+                         mode="single"
+                         selected={field.value}
+                         onSelect={field.onChange}
+                         disabled={(date) =>
+                           date > new Date() || date < new Date("1900-01-01")
+                         }
+                         initialFocus
+                         className="pointer-events-auto"
+                       />
+                     </PopoverContent>
+                   </Popover>
+                   <FormMessage />
+                 </FormItem>
+               )}
+             />
 
             <FormField
               control={form.control}

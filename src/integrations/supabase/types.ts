@@ -178,6 +178,7 @@ export type Database = {
       customers: {
         Row: {
           address: string | null
+          birthdate: string | null
           created_at: string
           customer_type_id: string | null
           division_id: string | null
@@ -193,6 +194,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          birthdate?: string | null
           created_at?: string
           customer_type_id?: string | null
           division_id?: string | null
@@ -208,6 +210,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          birthdate?: string | null
           created_at?: string
           customer_type_id?: string | null
           division_id?: string | null
@@ -595,6 +598,195 @@ export type Database = {
           id?: string
           label?: string
           sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sms_apis: {
+        Row: {
+          api_base_url: string
+          api_key: string
+          content_type: string
+          created_at: string
+          header_params: Json | null
+          http_method: string
+          id: string
+          is_active: boolean
+          message_param_name: string
+          phone_param_name: string
+          provider_name: string
+          sender_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          api_base_url: string
+          api_key: string
+          content_type?: string
+          created_at?: string
+          header_params?: Json | null
+          http_method?: string
+          id?: string
+          is_active?: boolean
+          message_param_name?: string
+          phone_param_name?: string
+          provider_name: string
+          sender_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          api_base_url?: string
+          api_key?: string
+          content_type?: string
+          created_at?: string
+          header_params?: Json | null
+          http_method?: string
+          id?: string
+          is_active?: boolean
+          message_param_name?: string
+          phone_param_name?: string
+          provider_name?: string
+          sender_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sms_birthday_logs: {
+        Row: {
+          campaign_id: string | null
+          customer_id: string
+          id: string
+          sent_at: string
+          year: number
+        }
+        Insert: {
+          campaign_id?: string | null
+          customer_id: string
+          id?: string
+          sent_at?: string
+          year: number
+        }
+        Update: {
+          campaign_id?: string | null
+          customer_id?: string
+          id?: string
+          sent_at?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_birthday_logs_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "sms_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_birthday_logs_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sms_campaign_logs: {
+        Row: {
+          campaign_id: string | null
+          created_at: string
+          customer_id: string | null
+          id: string
+          message: string
+          phone: string
+          response: Json | null
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          campaign_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          message: string
+          phone: string
+          response?: Json | null
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          campaign_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          message?: string
+          phone?: string
+          response?: Json | null
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_campaign_logs_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "sms_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_campaign_logs_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sms_campaigns: {
+        Row: {
+          birthday_send_time: string | null
+          campaign_type: string
+          created_at: string
+          filters: Json | null
+          id: string
+          is_birthday_campaign: boolean
+          last_run_at: string | null
+          message: string
+          name: string
+          next_run_at: string | null
+          recipient_count: number | null
+          schedule_config: Json | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          birthday_send_time?: string | null
+          campaign_type?: string
+          created_at?: string
+          filters?: Json | null
+          id?: string
+          is_birthday_campaign?: boolean
+          last_run_at?: string | null
+          message: string
+          name: string
+          next_run_at?: string | null
+          recipient_count?: number | null
+          schedule_config?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          birthday_send_time?: string | null
+          campaign_type?: string
+          created_at?: string
+          filters?: Json | null
+          id?: string
+          is_birthday_campaign?: boolean
+          last_run_at?: string | null
+          message?: string
+          name?: string
+          next_run_at?: string | null
+          recipient_count?: number | null
+          schedule_config?: Json | null
+          status?: string
           updated_at?: string
         }
         Relationships: []

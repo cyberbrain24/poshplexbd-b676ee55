@@ -125,9 +125,29 @@ const BlogPostModal = ({ isOpen, onClose, post }: BlogPostModalProps) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Invalid file type. Only images are allowed.');
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error('File size exceeds 5MB limit.');
+      return;
+    }
+
+    const fileExt = file.name.split('.').pop()?.toLowerCase();
+    const allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    if (!fileExt || !allowedExts.includes(fileExt)) {
+      toast.error('Invalid file extension.');
+      return;
+    }
+
     setIsUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `blog/${fileName}`;
 
@@ -144,9 +164,8 @@ const BlogPostModal = ({ isOpen, onClose, post }: BlogPostModalProps) => {
       setValue("cover_image", publicUrl);
       setCoverPreview(publicUrl);
       toast.success("Image uploaded");
-    } catch (error) {
-      console.error("Upload error:", error);
-      toast.error("Failed to upload image");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to upload image");
     } finally {
       setIsUploading(false);
     }

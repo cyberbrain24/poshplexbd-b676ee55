@@ -29,7 +29,7 @@ const Navigation = () => {
     {
       id: 1,
       name: "Pantheon",
-      price: "€2,850",
+      price: "৳2,850",
       image: pantheonImage,
       quantity: 1,
       category: "Earrings"
@@ -37,7 +37,7 @@ const Navigation = () => {
     {
       id: 2,
       name: "Eclipse",
-      price: "€3,200", 
+      price: "৳3,200", 
       image: eclipseImage,
       quantity: 1,
       category: "Bracelets"
@@ -45,7 +45,7 @@ const Navigation = () => {
     {
       id: 3,
       name: "Halo",
-      price: "€1,950",
+      price: "৳1,950",
       image: haloImage, 
       quantity: 1,
       category: "Earrings"

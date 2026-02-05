@@ -89,10 +89,10 @@ const ProductInfo = ({ product, isLoading }: ProductInfoProps) => {
             <h1 className="text-2xl md:text-3xl font-light text-foreground">{productName}</h1>
           </div>
           <div className="text-right">
-            <p className="text-xl font-light text-foreground">€{displayPrice.toLocaleString()}</p>
+            <p className="text-xl font-light text-foreground">৳{displayPrice.toLocaleString()}</p>
             {selectedVariant && selectedVariant.selling_price !== basePrice && (
               <p className="text-sm font-light text-muted-foreground line-through">
-                €{basePrice.toLocaleString()}
+                ৳{basePrice.toLocaleString()}
               </p>
             )}
           </div>

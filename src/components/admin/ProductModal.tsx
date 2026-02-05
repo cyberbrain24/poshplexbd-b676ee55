@@ -78,6 +78,22 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
         is_active: product.is_active,
       });
       setImages(product.images || []);
+      // Load existing variants when editing a product
+      if (product.variants && product.variants.length > 0) {
+        setVariants(product.variants.map(v => ({
+          id: v.id,
+          color_id: v.color_id,
+          size_id: v.size_id,
+          material_id: v.material_id,
+          sku: v.sku,
+          purchase_price: v.purchase_price,
+          selling_price: v.selling_price,
+          stock: v.stock,
+          is_active: v.is_active,
+        })));
+      } else {
+        setVariants([]);
+      }
     } else {
       setFormData(defaultFormData);
       setImages([]);

@@ -39,6 +39,9 @@ import AdminSmsApi from "./pages/admin/AdminSmsApi";
 import AdminSmsMarketing from "./pages/admin/AdminSmsMarketing";
 import AdminEmailApi from "./pages/admin/AdminEmailApi";
 import AdminEmailMarketing from "./pages/admin/AdminEmailMarketing";
+import AdminWhatsappApi from "./pages/admin/AdminWhatsappApi";
+import AdminWhatsappMarketing from "./pages/admin/AdminWhatsappMarketing";
+import AdminWhatsappInbox from "./pages/admin/AdminWhatsappInbox";
 
 const queryClient = new QueryClient();
 
@@ -85,6 +88,9 @@ const App = () => (
           <Route path="/admin/sms-marketing" element={<ProtectedRoute><AdminSmsMarketing /></ProtectedRoute>} />
           <Route path="/admin/email-api" element={<ProtectedRoute><AdminEmailApi /></ProtectedRoute>} />
           <Route path="/admin/email-marketing" element={<ProtectedRoute><AdminEmailMarketing /></ProtectedRoute>} />
+          <Route path="/admin/whatsapp-api" element={<ProtectedRoute><AdminWhatsappApi /></ProtectedRoute>} />
+          <Route path="/admin/whatsapp-marketing" element={<ProtectedRoute><AdminWhatsappMarketing /></ProtectedRoute>} />
+          <Route path="/admin/whatsapp-inbox" element={<ProtectedRoute><AdminWhatsappInbox /></ProtectedRoute>} />
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

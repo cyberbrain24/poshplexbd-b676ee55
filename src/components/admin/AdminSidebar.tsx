@@ -24,6 +24,8 @@ import {
   MessageSquare,
   Send,
   Mail,
+  MessageCircle,
+  Inbox,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -63,6 +65,12 @@ const emailItems = [
   { icon: Settings2, label: "Email API", path: "/admin/email-api" },
   { icon: Send, label: "Email Marketing", path: "/admin/email-marketing" },
 ];
+
+const whatsappItems = [
+  { icon: Settings2, label: "WhatsApp API", path: "/admin/whatsapp-api" },
+  { icon: Send, label: "WhatsApp Marketing", path: "/admin/whatsapp-marketing" },
+  { icon: Inbox, label: "Inbox", path: "/admin/whatsapp-inbox" },
+];
  
 const AdminSidebar = () => {
   const location = useLocation();
@@ -71,11 +79,13 @@ const AdminSidebar = () => {
   const isCustomerEditsActive = customerEditsItems.some(item => location.pathname === item.path);
   const isSmsActive = smsItems.some(item => location.pathname === item.path);
   const isEmailActive = emailItems.some(item => location.pathname === item.path);
+  const isWhatsappActive = whatsappItems.some(item => location.pathname === item.path);
   const [isProductEditsOpen, setIsProductEditsOpen] = useState(isProductEditsActive);
   const [isAccountEditsOpen, setIsAccountEditsOpen] = useState(isAccountEditsActive);
   const [isCustomerEditsOpen, setIsCustomerEditsOpen] = useState(isCustomerEditsActive);
   const [isSmsOpen, setIsSmsOpen] = useState(isSmsActive);
   const [isEmailOpen, setIsEmailOpen] = useState(isEmailActive);
+  const [isWhatsappOpen, setIsWhatsappOpen] = useState(isWhatsappActive);
 
   return (
     <aside className="w-64 min-h-screen bg-background border-r border-border flex flex-col">
@@ -355,6 +365,53 @@ const AdminSidebar = () => {
            <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
              <div className="ml-4 mt-1 space-y-1 border-l border-border pl-2">
                {emailItems.map((item) => {
+                 const isActive = location.pathname === item.path;
+                 return (
+                   <Link
+                     key={item.path}
+                     to={item.path}
+                     className={cn(
+                       "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
+                       isActive
+                         ? "bg-foreground text-background"
+                         : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                     )}
+                   >
+                     <item.icon className="h-4 w-4" />
+                     {item.label}
+                   </Link>
+                 );
+               })}
+             </div>
+           </CollapsibleContent>
+          </Collapsible>
+
+         {/* WhatsApp Collapsible */}
+         <Collapsible open={isWhatsappOpen} onOpenChange={setIsWhatsappOpen}>
+           <CollapsibleTrigger className="w-full">
+             <div
+               className={cn(
+                 "flex items-center justify-between gap-3 px-3 py-2 text-sm transition-colors w-full",
+                 isWhatsappActive
+                   ? "text-foreground"
+                   : "text-muted-foreground hover:text-foreground hover:bg-muted"
+               )}
+             >
+               <div className="flex items-center gap-3">
+                 <MessageCircle className="h-4 w-4" />
+                 WhatsApp
+               </div>
+               <ChevronDown 
+                 className={cn(
+                   "h-4 w-4 transition-transform duration-200",
+                   isWhatsappOpen && "rotate-180"
+                 )} 
+               />
+             </div>
+           </CollapsibleTrigger>
+           <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+             <div className="ml-4 mt-1 space-y-1 border-l border-border pl-2">
+               {whatsappItems.map((item) => {
                  const isActive = location.pathname === item.path;
                  return (
                    <Link

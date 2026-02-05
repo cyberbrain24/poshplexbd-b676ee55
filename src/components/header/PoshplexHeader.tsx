@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Search, User, ShoppingBag, X, ArrowRight } from "lucide-react";
+import { Search, User, ShoppingBag as ShoppingBagIcon, X } from "lucide-react";
 import MegaMenu from "./MegaMenu";
 import MobileMenu from "./MobileMenu";
+import ShoppingBag from "./ShoppingBag";
 import { useCategories } from "@/hooks/useMasterData";
 
 interface NavItem {
@@ -14,13 +15,33 @@ interface NavItem {
   };
 }
 
+interface CartItem {
+  id: number;
+  name: string;
+  price: string;
+  image: string;
+  quantity: number;
+  category: string;
+}
+
 const PoshplexHeader = () => {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [cartCount] = useState(3);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   
   const { data: allCategories = [] } = useCategories();
+
+  const updateQuantity = useCallback((id: number, newQuantity: number) => {
+    if (newQuantity <= 0) {
+      setCartItems(prev => prev.filter(item => item.id !== id));
+    } else {
+      setCartItems(prev => prev.map(item => 
+        item.id === id ? { ...item, quantity: newQuantity } : item
+      ));
+    }
+  }, []);
 
   // Build navigation items from database categories
   const navItems: NavItem[] = useMemo(() => {
@@ -102,24 +123,24 @@ const PoshplexHeader = () => {
             <Search size={20} strokeWidth={1.5} />
           </button>
           <Link 
-            to="/account"
+            to="/auth"
             className="hidden lg:block p-2 text-foreground hover:text-nav-hover transition-colors"
             aria-label="Account"
           >
             <User size={20} strokeWidth={1.5} />
           </Link>
-          <Link 
-            to="/cart"
+          <button
+            onClick={() => setIsCartOpen(true)}
             className="p-2 text-foreground hover:text-nav-hover transition-colors relative"
             aria-label="Shopping cart"
           >
-            <ShoppingBag size={20} strokeWidth={1.5} />
-            {cartCount > 0 && (
+            <ShoppingBagIcon size={20} strokeWidth={1.5} />
+            {cartItems.length > 0 && (
               <span className="absolute top-0 right-0 w-4 h-4 bg-foreground text-background text-[10px] font-bold flex items-center justify-center">
-                {cartCount}
+                {cartItems.reduce((sum, item) => sum + item.quantity, 0)}
               </span>
             )}
-          </Link>
+          </button>
         </div>
       </nav>
 
@@ -172,6 +193,14 @@ const PoshplexHeader = () => {
           onClose={() => setIsMobileMenuOpen(false)} 
         />
       )}
+
+      {/* Shopping bag slide-out */}
+      <ShoppingBag
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        cartItems={cartItems}
+        updateQuantity={updateQuantity}
+      />
     </header>
   );
 };

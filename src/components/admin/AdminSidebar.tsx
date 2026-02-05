@@ -21,8 +21,9 @@ import {
   MapPin,
   Map,
   Crown,
-   MessageSquare,
-   Send,
+  MessageSquare,
+  Send,
+  Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -53,21 +54,28 @@ const customerEditsItems = [
   { icon: Crown, label: "Customer Types", path: "/admin/customer-types" },
 ];
 
- const smsItems = [
-   { icon: Settings2, label: "SMS API", path: "/admin/sms-api" },
-   { icon: Send, label: "SMS Marketing", path: "/admin/sms-marketing" },
- ];
+const smsItems = [
+  { icon: Settings2, label: "SMS API", path: "/admin/sms-api" },
+  { icon: Send, label: "SMS Marketing", path: "/admin/sms-marketing" },
+];
+
+const emailItems = [
+  { icon: Settings2, label: "Email API", path: "/admin/email-api" },
+  { icon: Send, label: "Email Marketing", path: "/admin/email-marketing" },
+];
  
 const AdminSidebar = () => {
   const location = useLocation();
   const isProductEditsActive = productEditsItems.some(item => location.pathname === item.path);
   const isAccountEditsActive = accountEditsItems.some(item => location.pathname === item.path);
   const isCustomerEditsActive = customerEditsItems.some(item => location.pathname === item.path);
-   const isSmsActive = smsItems.some(item => location.pathname === item.path);
+  const isSmsActive = smsItems.some(item => location.pathname === item.path);
+  const isEmailActive = emailItems.some(item => location.pathname === item.path);
   const [isProductEditsOpen, setIsProductEditsOpen] = useState(isProductEditsActive);
   const [isAccountEditsOpen, setIsAccountEditsOpen] = useState(isAccountEditsActive);
   const [isCustomerEditsOpen, setIsCustomerEditsOpen] = useState(isCustomerEditsActive);
-   const [isSmsOpen, setIsSmsOpen] = useState(isSmsActive);
+  const [isSmsOpen, setIsSmsOpen] = useState(isSmsActive);
+  const [isEmailOpen, setIsEmailOpen] = useState(isEmailActive);
 
   return (
     <aside className="w-64 min-h-screen bg-background border-r border-border flex flex-col">
@@ -300,6 +308,53 @@ const AdminSidebar = () => {
            <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
              <div className="ml-4 mt-1 space-y-1 border-l border-border pl-2">
                {smsItems.map((item) => {
+                 const isActive = location.pathname === item.path;
+                 return (
+                   <Link
+                     key={item.path}
+                     to={item.path}
+                     className={cn(
+                       "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
+                       isActive
+                         ? "bg-foreground text-background"
+                         : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                     )}
+                   >
+                     <item.icon className="h-4 w-4" />
+                     {item.label}
+                   </Link>
+                 );
+               })}
+             </div>
+           </CollapsibleContent>
+         </Collapsible>
+
+         {/* Email Collapsible */}
+         <Collapsible open={isEmailOpen} onOpenChange={setIsEmailOpen}>
+           <CollapsibleTrigger className="w-full">
+             <div
+               className={cn(
+                 "flex items-center justify-between gap-3 px-3 py-2 text-sm transition-colors w-full",
+                 isEmailActive
+                   ? "text-foreground"
+                   : "text-muted-foreground hover:text-foreground hover:bg-muted"
+               )}
+             >
+               <div className="flex items-center gap-3">
+                 <Mail className="h-4 w-4" />
+                 Email
+               </div>
+               <ChevronDown 
+                 className={cn(
+                   "h-4 w-4 transition-transform duration-200",
+                   isEmailOpen && "rotate-180"
+                 )} 
+               />
+             </div>
+           </CollapsibleTrigger>
+           <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+             <div className="ml-4 mt-1 space-y-1 border-l border-border pl-2">
+               {emailItems.map((item) => {
                  const isActive = location.pathname === item.path;
                  return (
                    <Link

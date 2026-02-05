@@ -272,6 +272,280 @@ export type Database = {
         }
         Relationships: []
       }
+      email_apis: {
+        Row: {
+          api_base_url: string | null
+          api_key: string
+          connection_type: string
+          created_at: string
+          header_params: Json | null
+          id: string
+          is_active: boolean
+          password: string | null
+          provider_name: string
+          sender_email: string
+          sender_name: string
+          smtp_host: string | null
+          smtp_port: number | null
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          api_base_url?: string | null
+          api_key: string
+          connection_type?: string
+          created_at?: string
+          header_params?: Json | null
+          id?: string
+          is_active?: boolean
+          password?: string | null
+          provider_name: string
+          sender_email: string
+          sender_name: string
+          smtp_host?: string | null
+          smtp_port?: number | null
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          api_base_url?: string | null
+          api_key?: string
+          connection_type?: string
+          created_at?: string
+          header_params?: Json | null
+          id?: string
+          is_active?: boolean
+          password?: string | null
+          provider_name?: string
+          sender_email?: string
+          sender_name?: string
+          smtp_host?: string | null
+          smtp_port?: number | null
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      email_birthday_logs: {
+        Row: {
+          campaign_id: string | null
+          customer_id: string
+          id: string
+          sent_at: string
+          year: number
+        }
+        Insert: {
+          campaign_id?: string | null
+          customer_id: string
+          id?: string
+          sent_at?: string
+          year: number
+        }
+        Update: {
+          campaign_id?: string | null
+          customer_id?: string
+          id?: string
+          sent_at?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_birthday_logs_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_birthday_logs_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_campaign_logs: {
+        Row: {
+          campaign_id: string | null
+          created_at: string
+          customer_id: string | null
+          email: string
+          id: string
+          response: Json | null
+          sent_at: string | null
+          status: string
+          subject: string
+        }
+        Insert: {
+          campaign_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          email: string
+          id?: string
+          response?: Json | null
+          sent_at?: string | null
+          status?: string
+          subject: string
+        }
+        Update: {
+          campaign_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          email?: string
+          id?: string
+          response?: Json | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_campaign_logs_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_campaign_logs_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_campaigns: {
+        Row: {
+          birthday_send_time: string | null
+          body_html: string
+          body_plain: string | null
+          campaign_type: string
+          created_at: string
+          filters: Json | null
+          id: string
+          is_birthday_campaign: boolean
+          last_run_at: string | null
+          name: string
+          next_run_at: string | null
+          recipient_count: number | null
+          schedule_config: Json | null
+          status: string
+          subject: string
+          template_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          birthday_send_time?: string | null
+          body_html: string
+          body_plain?: string | null
+          campaign_type?: string
+          created_at?: string
+          filters?: Json | null
+          id?: string
+          is_birthday_campaign?: boolean
+          last_run_at?: string | null
+          name: string
+          next_run_at?: string | null
+          recipient_count?: number | null
+          schedule_config?: Json | null
+          status?: string
+          subject: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          birthday_send_time?: string | null
+          body_html?: string
+          body_plain?: string | null
+          campaign_type?: string
+          created_at?: string
+          filters?: Json | null
+          id?: string
+          is_birthday_campaign?: boolean
+          last_run_at?: string | null
+          name?: string
+          next_run_at?: string | null
+          recipient_count?: number | null
+          schedule_config?: Json | null
+          status?: string
+          subject?: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_campaigns_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "email_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_templates: {
+        Row: {
+          body_html: string
+          body_plain: string | null
+          created_at: string
+          id: string
+          name: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          body_html: string
+          body_plain?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          body_html?: string
+          body_plain?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      email_tracking: {
+        Row: {
+          event_at: string
+          event_data: Json | null
+          event_type: string
+          id: string
+          log_id: string
+        }
+        Insert: {
+          event_at?: string
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          log_id: string
+        }
+        Update: {
+          event_at?: string
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          log_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_tracking_log_id_fkey"
+            columns: ["log_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaign_logs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       materials: {
         Row: {
           created_at: string

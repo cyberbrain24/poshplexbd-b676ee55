@@ -1,6 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { ArrowLeft } from "lucide-react";
+import DOMPurify from "dompurify";
 import Header from "@/components/header/Header";
 import Footer from "@/components/footer/Footer";
 import { useBlogPost, useBlogPostProducts } from "@/hooks/useBlog";
@@ -10,6 +11,15 @@ const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
   const { data: post, isLoading, error } = useBlogPost(slug || "");
   const { data: linkedProducts = [] } = useBlogPostProducts(post?.id || "");
+
+  // Sanitize HTML content to prevent XSS attacks
+  const sanitizedContent = post?.content
+    ? DOMPurify.sanitize(post.content, {
+        ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'a', 'strong', 'em', 'b', 'i', 'u', 'ul', 'ol', 'li', 'br', 'blockquote', 'img', 'span', 'div'],
+        ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'class', 'style'],
+        ALLOW_DATA_ATTR: false,
+      })
+    : "";
 
   if (isLoading) {
     return (
@@ -100,10 +110,10 @@ const BlogPost = () => {
             </div>
           )}
 
-          {/* Content */}
+          {/* Content - Sanitized to prevent XSS */}
           <div
             className="prose prose-lg max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-p:text-muted-foreground prose-a:text-primary"
-            dangerouslySetInnerHTML={{ __html: post.content || "" }}
+            dangerouslySetInnerHTML={{ __html: sanitizedContent }}
           />
         </article>
 

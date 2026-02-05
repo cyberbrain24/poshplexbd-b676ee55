@@ -27,6 +27,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { ExternalLink } from "lucide-react";
+import { Link } from "react-router-dom";
 import {
   Customer,
   useCreateCustomer,
@@ -222,7 +224,17 @@ const CustomerModal = ({ open, onOpenChange, customer }: CustomerModalProps) => 
                 name="division_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Division</FormLabel>
+                  <FormLabel className="flex items-center justify-between">
+                    Division
+                    <Link
+                      to="/admin/divisions"
+                      target="_blank"
+                      className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      Manage
+                    </Link>
+                  </FormLabel>
                     <Select onValueChange={handleDivisionChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
@@ -246,7 +258,17 @@ const CustomerModal = ({ open, onOpenChange, customer }: CustomerModalProps) => 
                 name="thana_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Thana</FormLabel>
+                  <FormLabel className="flex items-center justify-between">
+                    Thana
+                    <Link
+                      to="/admin/thanas"
+                      target="_blank"
+                      className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      Manage
+                    </Link>
+                  </FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
                       value={field.value}

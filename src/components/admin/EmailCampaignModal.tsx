@@ -1,4 +1,5 @@
- import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import DOMPurify from "dompurify";
  import { useForm } from "react-hook-form";
  import { zodResolver } from "@hookform/resolvers/zod";
  import { z } from "zod";
@@ -619,10 +620,16 @@
                      <p className="text-sm text-muted-foreground">Subject:</p>
                      <p className="font-medium">{form.watch("subject") || "(No subject)"}</p>
                    </div>
-                   <div
-                     className="prose prose-sm max-w-none"
-                     dangerouslySetInnerHTML={{ __html: bodyHtml || "<p>No content yet...</p>" }}
-                   />
+                  <div
+                    className="prose prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{ 
+                      __html: DOMPurify.sanitize(bodyHtml || "<p>No content yet...</p>", {
+                        ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'a', 'strong', 'em', 'ul', 'ol', 'li', 'br', 'blockquote', 'img', 'span', 'div', 'table', 'tr', 'td', 'th', 'tbody', 'thead'],
+                        ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'class', 'style', 'width', 'height'],
+                        ALLOW_DATA_ATTR: false,
+                      })
+                    }}
+                  />
                  </div>
                </TabsContent>
              </Tabs>

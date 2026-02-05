@@ -122,8 +122,9 @@ const InstagramApiModal = ({ open, onOpenChange, editingApi }: InstagramApiModal
       toast.success(editingApi ? "Instagram API updated" : "Instagram API added");
       onOpenChange(false);
     },
-    onError: () => {
-      toast.error("Failed to save Instagram API");
+    onError: (error: Error) => {
+      console.error("Instagram API save error:", error);
+      toast.error(`Failed to save Instagram API: ${error.message}`);
     },
   });
 

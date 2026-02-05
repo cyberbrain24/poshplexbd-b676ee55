@@ -26,6 +26,7 @@ import {
   Mail,
   MessageCircle,
   Inbox,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -129,6 +130,20 @@ const AdminSidebar = () => {
         >
           <Package className="h-4 w-4" />
           Products
+        </Link>
+
+        {/* Blog */}
+        <Link
+          to="/admin/blog"
+          className={cn(
+            "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
+            location.pathname === "/admin/blog"
+              ? "bg-foreground text-background"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted"
+          )}
+        >
+          <FileText className="h-4 w-4" />
+          Blog
         </Link>
 
         {/* Product Edits Collapsible - directly under Products */}

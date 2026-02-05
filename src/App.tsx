@@ -42,6 +42,9 @@ import AdminEmailMarketing from "./pages/admin/AdminEmailMarketing";
 import AdminWhatsappApi from "./pages/admin/AdminWhatsappApi";
 import AdminWhatsappMarketing from "./pages/admin/AdminWhatsappMarketing";
 import AdminWhatsappInbox from "./pages/admin/AdminWhatsappInbox";
+import AdminInstagramApi from "./pages/admin/AdminInstagramApi";
+import AdminInstagramMarketing from "./pages/admin/AdminInstagramMarketing";
+import AdminInstagramInbox from "./pages/admin/AdminInstagramInbox";
 
 const queryClient = new QueryClient();
 
@@ -91,6 +94,9 @@ const App = () => (
           <Route path="/admin/whatsapp-api" element={<ProtectedRoute><AdminWhatsappApi /></ProtectedRoute>} />
           <Route path="/admin/whatsapp-marketing" element={<ProtectedRoute><AdminWhatsappMarketing /></ProtectedRoute>} />
           <Route path="/admin/whatsapp-inbox" element={<ProtectedRoute><AdminWhatsappInbox /></ProtectedRoute>} />
+          <Route path="/admin/instagram-api" element={<ProtectedRoute><AdminInstagramApi /></ProtectedRoute>} />
+          <Route path="/admin/instagram-marketing" element={<ProtectedRoute><AdminInstagramMarketing /></ProtectedRoute>} />
+          <Route path="/admin/instagram-inbox" element={<ProtectedRoute><AdminInstagramInbox /></ProtectedRoute>} />
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

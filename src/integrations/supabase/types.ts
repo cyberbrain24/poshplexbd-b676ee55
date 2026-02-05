@@ -546,6 +546,409 @@ export type Database = {
           },
         ]
       }
+      instagram_analytics: {
+        Row: {
+          event_at: string
+          event_data: Json | null
+          event_type: string
+          id: string
+          log_id: string | null
+        }
+        Insert: {
+          event_at?: string
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          log_id?: string | null
+        }
+        Update: {
+          event_at?: string
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          log_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_analytics_log_id_fkey"
+            columns: ["log_id"]
+            isOneToOne: false
+            referencedRelation: "instagram_campaign_logs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instagram_apis: {
+        Row: {
+          access_token: string
+          created_at: string
+          facebook_app_id: string
+          facebook_app_secret: string
+          id: string
+          instagram_account_id: string | null
+          instagram_username: string | null
+          is_active: boolean
+          page_id: string | null
+          page_name: string | null
+          permissions_status: Json | null
+          provider_name: string
+          status: string
+          token_expires_at: string | null
+          updated_at: string
+          webhook_url: string | null
+          webhook_verify_token: string | null
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          facebook_app_id: string
+          facebook_app_secret: string
+          id?: string
+          instagram_account_id?: string | null
+          instagram_username?: string | null
+          is_active?: boolean
+          page_id?: string | null
+          page_name?: string | null
+          permissions_status?: Json | null
+          provider_name: string
+          status?: string
+          token_expires_at?: string | null
+          updated_at?: string
+          webhook_url?: string | null
+          webhook_verify_token?: string | null
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          facebook_app_id?: string
+          facebook_app_secret?: string
+          id?: string
+          instagram_account_id?: string | null
+          instagram_username?: string | null
+          is_active?: boolean
+          page_id?: string | null
+          page_name?: string | null
+          permissions_status?: Json | null
+          provider_name?: string
+          status?: string
+          token_expires_at?: string | null
+          updated_at?: string
+          webhook_url?: string | null
+          webhook_verify_token?: string | null
+        }
+        Relationships: []
+      }
+      instagram_automations: {
+        Row: {
+          automation_type: string
+          cooldown_hours: number | null
+          created_at: string
+          delay_minutes: number | null
+          dm_button_text: string | null
+          dm_button_url: string | null
+          dm_message: string | null
+          id: string
+          is_active: boolean
+          name: string
+          post_filter: string | null
+          post_urls: string[] | null
+          public_reply_variations: string[] | null
+          trigger_keywords: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          automation_type?: string
+          cooldown_hours?: number | null
+          created_at?: string
+          delay_minutes?: number | null
+          dm_button_text?: string | null
+          dm_button_url?: string | null
+          dm_message?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          post_filter?: string | null
+          post_urls?: string[] | null
+          public_reply_variations?: string[] | null
+          trigger_keywords?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          automation_type?: string
+          cooldown_hours?: number | null
+          created_at?: string
+          delay_minutes?: number | null
+          dm_button_text?: string | null
+          dm_button_url?: string | null
+          dm_message?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          post_filter?: string | null
+          post_urls?: string[] | null
+          public_reply_variations?: string[] | null
+          trigger_keywords?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      instagram_campaign_logs: {
+        Row: {
+          automation_id: string | null
+          campaign_id: string | null
+          created_at: string
+          customer_id: string | null
+          error_message: string | null
+          id: string
+          instagram_user_id: string | null
+          instagram_username: string | null
+          link_clicked: boolean | null
+          message_content: string | null
+          sent_at: string | null
+          status: string
+          trigger_type: string | null
+        }
+        Insert: {
+          automation_id?: string | null
+          campaign_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          error_message?: string | null
+          id?: string
+          instagram_user_id?: string | null
+          instagram_username?: string | null
+          link_clicked?: boolean | null
+          message_content?: string | null
+          sent_at?: string | null
+          status?: string
+          trigger_type?: string | null
+        }
+        Update: {
+          automation_id?: string | null
+          campaign_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          error_message?: string | null
+          id?: string
+          instagram_user_id?: string | null
+          instagram_username?: string | null
+          link_clicked?: boolean | null
+          message_content?: string | null
+          sent_at?: string | null
+          status?: string
+          trigger_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_campaign_logs_automation_id_fkey"
+            columns: ["automation_id"]
+            isOneToOne: false
+            referencedRelation: "instagram_automations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instagram_campaign_logs_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "instagram_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instagram_campaign_logs_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instagram_campaigns: {
+        Row: {
+          active_window_only: boolean | null
+          created_at: string
+          filters: Json | null
+          id: string
+          image_url: string | null
+          last_run_at: string | null
+          message_body: string
+          name: string
+          quick_replies: Json | null
+          recipient_count: number | null
+          scheduled_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          active_window_only?: boolean | null
+          created_at?: string
+          filters?: Json | null
+          id?: string
+          image_url?: string | null
+          last_run_at?: string | null
+          message_body: string
+          name: string
+          quick_replies?: Json | null
+          recipient_count?: number | null
+          scheduled_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          active_window_only?: boolean | null
+          created_at?: string
+          filters?: Json | null
+          id?: string
+          image_url?: string | null
+          last_run_at?: string | null
+          message_body?: string
+          name?: string
+          quick_replies?: Json | null
+          recipient_count?: number | null
+          scheduled_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      instagram_conversations: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          id: string
+          instagram_profile_pic: string | null
+          instagram_user_id: string
+          instagram_username: string | null
+          last_interaction_at: string | null
+          last_message: string | null
+          last_message_at: string | null
+          status: string | null
+          unread_count: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          instagram_profile_pic?: string | null
+          instagram_user_id: string
+          instagram_username?: string | null
+          last_interaction_at?: string | null
+          last_message?: string | null
+          last_message_at?: string | null
+          status?: string | null
+          unread_count?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          instagram_profile_pic?: string | null
+          instagram_user_id?: string
+          instagram_username?: string | null
+          last_interaction_at?: string | null
+          last_message?: string | null
+          last_message_at?: string | null
+          status?: string | null
+          unread_count?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_conversations_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instagram_ice_breakers: {
+        Row: {
+          auto_reply_image_url: string | null
+          auto_reply_link_url: string | null
+          auto_reply_text: string | null
+          button_text: string
+          created_at: string
+          id: string
+          is_active: boolean
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          auto_reply_image_url?: string | null
+          auto_reply_link_url?: string | null
+          auto_reply_text?: string | null
+          button_text: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          auto_reply_image_url?: string | null
+          auto_reply_link_url?: string | null
+          auto_reply_text?: string | null
+          button_text?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      instagram_messages: {
+        Row: {
+          content: string | null
+          conversation_id: string
+          created_at: string
+          direction: string
+          id: string
+          media_url: string | null
+          message_id: string | null
+          message_type: string
+          quick_reply_payload: string | null
+          read_at: string | null
+          status: string | null
+        }
+        Insert: {
+          content?: string | null
+          conversation_id: string
+          created_at?: string
+          direction: string
+          id?: string
+          media_url?: string | null
+          message_id?: string | null
+          message_type?: string
+          quick_reply_payload?: string | null
+          read_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          content?: string | null
+          conversation_id?: string
+          created_at?: string
+          direction?: string
+          id?: string
+          media_url?: string | null
+          message_id?: string | null
+          message_type?: string
+          quick_reply_payload?: string | null
+          read_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "instagram_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       materials: {
         Row: {
           created_at: string

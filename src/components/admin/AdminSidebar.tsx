@@ -29,13 +29,6 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
-const mainMenuItems = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
-  { icon: Package, label: "Products", path: "/admin/products" },
-  { icon: Wallet, label: "Accounts", path: "/admin/accounts" },
-  { icon: Users, label: "Customers", path: "/admin/customers" },
-];
-
 const productEditsItems = [
   { icon: Palette, label: "Colors", path: "/admin/colors" },
   { icon: Ruler, label: "Sizes", path: "/admin/sizes" },
@@ -64,6 +57,8 @@ const AdminSidebar = () => {
   const isAccountEditsActive = accountEditsItems.some(item => location.pathname === item.path);
   const isCustomerEditsActive = customerEditsItems.some(item => location.pathname === item.path);
   const [isProductEditsOpen, setIsProductEditsOpen] = useState(isProductEditsActive);
+  const [isAccountEditsOpen, setIsAccountEditsOpen] = useState(isAccountEditsActive);
+  const [isCustomerEditsOpen, setIsCustomerEditsOpen] = useState(isCustomerEditsActive);
 
   return (
     <aside className="w-64 min-h-screen bg-background border-r border-border flex flex-col">
@@ -73,26 +68,35 @@ const AdminSidebar = () => {
       </div>
       
       <nav className="flex-1 p-4 space-y-1">
-        {mainMenuItems.map((item) => {
-          const isActive = location.pathname === item.path;
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
-                isActive
-                  ? "bg-foreground text-background"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              )}
-            >
-              <item.icon className="h-4 w-4" />
-              {item.label}
-            </Link>
-          );
-        })}
+        {/* Dashboard */}
+        <Link
+          to="/admin"
+          className={cn(
+            "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
+            location.pathname === "/admin"
+              ? "bg-foreground text-background"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted"
+          )}
+        >
+          <LayoutDashboard className="h-4 w-4" />
+          Dashboard
+        </Link>
 
-        {/* Product Edits Collapsible */}
+        {/* Products */}
+        <Link
+          to="/admin/products"
+          className={cn(
+            "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
+            location.pathname === "/admin/products"
+              ? "bg-foreground text-background"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted"
+          )}
+        >
+          <Package className="h-4 w-4" />
+          Products
+        </Link>
+
+        {/* Product Edits Collapsible - directly under Products */}
         <Collapsible open={isProductEditsOpen} onOpenChange={setIsProductEditsOpen}>
           <CollapsibleTrigger className="w-full">
             <div
@@ -139,59 +143,127 @@ const AdminSidebar = () => {
           </CollapsibleContent>
         </Collapsible>
 
-        {/* Accounts Edits Section - Always visible */}
-        <div className="mt-4 pt-4 border-t border-border">
-          <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Accounts Edits
-          </p>
-          <div className="space-y-1">
-            {accountEditsItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
-                    isActive
-                      ? "bg-foreground text-background"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  <item.icon className="h-4 w-4" />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
+        {/* Accounts */}
+        <Link
+          to="/admin/accounts"
+          className={cn(
+            "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
+            location.pathname === "/admin/accounts"
+              ? "bg-foreground text-background"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted"
+          )}
+        >
+          <Wallet className="h-4 w-4" />
+          Accounts
+        </Link>
 
-        {/* Customer Edits Section - Always visible */}
-        <div className="mt-4 pt-4 border-t border-border">
-          <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Customer Edits
-          </p>
-          <div className="space-y-1">
-            {customerEditsItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
-                    isActive
-                      ? "bg-foreground text-background"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  <item.icon className="h-4 w-4" />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
+        {/* Accounts Edits Collapsible - directly under Accounts */}
+        <Collapsible open={isAccountEditsOpen} onOpenChange={setIsAccountEditsOpen}>
+          <CollapsibleTrigger className="w-full">
+            <div
+              className={cn(
+                "flex items-center justify-between gap-3 px-3 py-2 text-sm transition-colors w-full",
+                isAccountEditsActive
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              )}
+            >
+              <div className="flex items-center gap-3">
+                <Settings2 className="h-4 w-4" />
+                Accounts Edits
+              </div>
+              <ChevronDown 
+                className={cn(
+                  "h-4 w-4 transition-transform duration-200",
+                  isAccountEditsOpen && "rotate-180"
+                )} 
+              />
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+            <div className="ml-4 mt-1 space-y-1 border-l border-border pl-2">
+              {accountEditsItems.map((item) => {
+                const isActive = location.pathname === item.path;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
+                      isActive
+                        ? "bg-foreground text-background"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    )}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+
+        {/* Customers */}
+        <Link
+          to="/admin/customers"
+          className={cn(
+            "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
+            location.pathname === "/admin/customers"
+              ? "bg-foreground text-background"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted"
+          )}
+        >
+          <Users className="h-4 w-4" />
+          Customers
+        </Link>
+
+        {/* Customer Edits Collapsible - directly under Customers */}
+        <Collapsible open={isCustomerEditsOpen} onOpenChange={setIsCustomerEditsOpen}>
+          <CollapsibleTrigger className="w-full">
+            <div
+              className={cn(
+                "flex items-center justify-between gap-3 px-3 py-2 text-sm transition-colors w-full",
+                isCustomerEditsActive
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              )}
+            >
+              <div className="flex items-center gap-3">
+                <Settings2 className="h-4 w-4" />
+                Customer Edits
+              </div>
+              <ChevronDown 
+                className={cn(
+                  "h-4 w-4 transition-transform duration-200",
+                  isCustomerEditsOpen && "rotate-180"
+                )} 
+              />
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+            <div className="ml-4 mt-1 space-y-1 border-l border-border pl-2">
+              {customerEditsItems.map((item) => {
+                const isActive = location.pathname === item.path;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
+                      isActive
+                        ? "bg-foreground text-background"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    )}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       </nav>
 
       <div className="p-4 border-t border-border">

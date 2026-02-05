@@ -35,6 +35,8 @@ import AdminCustomers from "./pages/admin/AdminCustomers";
 import AdminDivisions from "./pages/admin/AdminDivisions";
 import AdminThanas from "./pages/admin/AdminThanas";
 import AdminCustomerTypes from "./pages/admin/AdminCustomerTypes";
+ import AdminSmsApi from "./pages/admin/AdminSmsApi";
+ import AdminSmsMarketing from "./pages/admin/AdminSmsMarketing";
 
 const queryClient = new QueryClient();
 
@@ -77,6 +79,8 @@ const App = () => (
           <Route path="/admin/divisions" element={<ProtectedRoute><AdminDivisions /></ProtectedRoute>} />
           <Route path="/admin/thanas" element={<ProtectedRoute><AdminThanas /></ProtectedRoute>} />
           <Route path="/admin/customer-types" element={<ProtectedRoute><AdminCustomerTypes /></ProtectedRoute>} />
+           <Route path="/admin/sms-api" element={<ProtectedRoute><AdminSmsApi /></ProtectedRoute>} />
+           <Route path="/admin/sms-marketing" element={<ProtectedRoute><AdminSmsMarketing /></ProtectedRoute>} />
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

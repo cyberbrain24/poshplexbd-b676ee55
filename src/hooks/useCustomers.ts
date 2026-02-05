@@ -55,6 +55,7 @@ export interface Customer {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+   birthdate: string | null;
   division?: Division;
   thana?: Thana;
   customer_type?: CustomerType;

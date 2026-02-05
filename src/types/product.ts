@@ -131,6 +131,7 @@ export interface ProductFormData {
 }
 
 export interface VariantFormData {
+  id?: string; // Optional ID for existing variants
   color_id: string | null;
   size_id: string | null;
   material_id: string | null;

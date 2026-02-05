@@ -290,7 +290,30 @@ export const useDeleteProductVariant = () => {
 
 // Upload product image to storage
 export const uploadProductImage = async (file: File, productId: string): Promise<string> => {
-  const fileExt = file.name.split(".").pop();
+  // Validate file type
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+  if (!allowedTypes.includes(file.type)) {
+    throw new Error('Invalid file type. Only images (JPEG, PNG, GIF, WebP) are allowed.');
+  }
+
+  // Validate file size (5MB limit)
+  const maxSize = 5 * 1024 * 1024;
+  if (file.size > maxSize) {
+    throw new Error('File size exceeds 5MB limit.');
+  }
+
+  // Validate productId format (UUID)
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(productId)) {
+    throw new Error('Invalid product ID format.');
+  }
+
+  const fileExt = file.name.split(".").pop()?.toLowerCase();
+  const allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+  if (!fileExt || !allowedExts.includes(fileExt)) {
+    throw new Error('Invalid file extension.');
+  }
+
   const fileName = `${productId}/${Date.now()}.${fileExt}`;
 
   const { error: uploadError } = await supabase.storage

@@ -27,6 +27,10 @@ import {
   MessageCircle,
   Inbox,
   FileText,
+  ShoppingCart,
+  Clock,
+  RotateCcw,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -43,6 +47,13 @@ const productEditsItems = [
   { icon: Sparkles, label: "Care & Cleaning", path: "/admin/care-instructions" },
   { icon: FolderTree, label: "Categories", path: "/admin/categories" },
   { icon: Building2, label: "Brands", path: "/admin/brands" },
+];
+
+const orderItems = [
+  { icon: ShoppingCart, label: "All Orders", path: "/admin/orders" },
+  { icon: Clock, label: "Verification Queue", path: "/admin/verification-queue" },
+  { icon: RotateCcw, label: "Returns", path: "/admin/returns" },
+  { icon: Shield, label: "Risk Management", path: "/admin/risk-management" },
 ];
 
 const accountEditsItems = [
@@ -82,6 +93,7 @@ const instagramItems = [
 const AdminSidebar = () => {
   const location = useLocation();
   const isProductEditsActive = productEditsItems.some(item => location.pathname === item.path);
+  const isOrdersActive = orderItems.some(item => location.pathname === item.path);
   const isAccountEditsActive = accountEditsItems.some(item => location.pathname === item.path);
   const isCustomerEditsActive = customerEditsItems.some(item => location.pathname === item.path);
   const isSmsActive = smsItems.some(item => location.pathname === item.path);
@@ -89,6 +101,7 @@ const AdminSidebar = () => {
   const isWhatsappActive = whatsappItems.some(item => location.pathname === item.path);
   const isInstagramActive = instagramItems.some(item => location.pathname === item.path);
   const [isProductEditsOpen, setIsProductEditsOpen] = useState(isProductEditsActive);
+  const [isOrdersOpen, setIsOrdersOpen] = useState(isOrdersActive);
   const [isAccountEditsOpen, setIsAccountEditsOpen] = useState(isAccountEditsActive);
   const [isCustomerEditsOpen, setIsCustomerEditsOpen] = useState(isCustomerEditsActive);
   const [isSmsOpen, setIsSmsOpen] = useState(isSmsActive);
@@ -145,6 +158,53 @@ const AdminSidebar = () => {
           <FileText className="h-4 w-4" />
           Blog
         </Link>
+
+        {/* Orders Collapsible */}
+        <Collapsible open={isOrdersOpen} onOpenChange={setIsOrdersOpen}>
+          <CollapsibleTrigger className="w-full">
+            <div
+              className={cn(
+                "flex items-center justify-between gap-3 px-3 py-2 text-sm transition-colors w-full",
+                isOrdersActive
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              )}
+            >
+              <div className="flex items-center gap-3">
+                <ShoppingCart className="h-4 w-4" />
+                Orders
+              </div>
+              <ChevronDown 
+                className={cn(
+                  "h-4 w-4 transition-transform duration-200",
+                  isOrdersOpen && "rotate-180"
+                )} 
+              />
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+            <div className="ml-4 mt-1 space-y-1 border-l border-border pl-2">
+              {orderItems.map((item) => {
+                const isActive = location.pathname === item.path;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
+                      isActive
+                        ? "bg-foreground text-background"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    )}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
 
         {/* Product Edits Collapsible - directly under Products */}
         <Collapsible open={isProductEditsOpen} onOpenChange={setIsProductEditsOpen}>

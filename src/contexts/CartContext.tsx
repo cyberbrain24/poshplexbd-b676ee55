@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useCallback, ReactNode } from "rea
 
 export interface CartItem {
   id: string;
+  productId?: string;
   variantId?: string;
   name: string;
   price: number;
@@ -10,6 +11,7 @@ export interface CartItem {
   category: string;
   color?: string;
   size?: string;
+  sku?: string;
 }
 
 interface CartContextType {

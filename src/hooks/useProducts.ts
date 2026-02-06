@@ -2,6 +2,36 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Product, ProductFormData, ProductImage, ProductVariant, VariantFormData } from "@/types/product";
 
+// Lightweight product list query - for admin list and category pages
+export const useProductsList = () => {
+  return useQuery({
+    queryKey: ["products-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select(`
+          id,
+          name,
+          sku,
+          product_type,
+          base_price,
+          is_active,
+          created_at,
+          category:categories(id, name),
+          brand:brands(id, name),
+          images:product_images(id, image_url, is_main, sort_order)
+        `)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data as Product[];
+    },
+    staleTime: 1000 * 60 * 2, // 2 minutes
+    gcTime: 1000 * 60 * 5, // 5 minutes (formerly cacheTime)
+  });
+};
+
+// Full product query with all relations - for product detail page and modal
 export const useProducts = () => {
   return useQuery({
     queryKey: ["products"],
@@ -27,6 +57,8 @@ export const useProducts = () => {
       if (error) throw error;
       return data as Product[];
     },
+    staleTime: 1000 * 60 * 2, // 2 minutes - don't refetch if data is fresh
+    gcTime: 1000 * 60 * 5, // 5 minutes cache
   });
 };
 
@@ -58,6 +90,8 @@ export const useProduct = (id: string | undefined) => {
       return data as Product;
     },
     enabled: !!id,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+    gcTime: 1000 * 60 * 5, // 5 minutes cache
   });
 };
 
@@ -92,6 +126,7 @@ export const useCreateProduct = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["products-list"] });
     },
   });
 };
@@ -128,6 +163,7 @@ export const useUpdateProduct = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["products-list"] });
     },
   });
 };
@@ -142,6 +178,7 @@ export const useDeleteProduct = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["products-list"] });
     },
   });
 };
@@ -184,6 +221,7 @@ export const useAddProductImage = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["products-list"] });
       queryClient.invalidateQueries({ queryKey: ["product"] });
     },
   });
@@ -199,6 +237,7 @@ export const useDeleteProductImage = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["products-list"] });
       queryClient.invalidateQueries({ queryKey: ["product"] });
     },
   });
@@ -237,6 +276,7 @@ export const useAddProductVariant = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["products-list"] });
       queryClient.invalidateQueries({ queryKey: ["product"] });
     },
   });
@@ -268,6 +308,7 @@ export const useUpdateProductVariant = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["products-list"] });
       queryClient.invalidateQueries({ queryKey: ["product"] });
     },
   });
@@ -283,6 +324,7 @@ export const useDeleteProductVariant = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["products-list"] });
       queryClient.invalidateQueries({ queryKey: ["product"] });
     },
   });

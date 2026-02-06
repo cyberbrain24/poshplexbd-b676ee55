@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { useProducts, useDeleteProduct } from "@/hooks/useProducts";
+import { useProductsList, useDeleteProduct } from "@/hooks/useProducts";
 import { Product } from "@/types/product";
 import { toast } from "sonner";
 import {
@@ -26,7 +26,7 @@ const AdminProducts = () => {
   const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data: products = [], isLoading } = useProducts();
+  const { data: products = [], isLoading } = useProductsList();
   const deleteProductMutation = useDeleteProduct();
 
   const filteredProducts = products.filter(product =>

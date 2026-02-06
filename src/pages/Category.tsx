@@ -5,12 +5,12 @@ import PoshplexFooter from "../components/footer/PoshplexFooter";
 import CategoryHeader from "../components/category/CategoryHeader";
 import FilterSortBar from "../components/category/FilterSortBar";
 import ProductGrid from "../components/category/ProductGrid";
-import { useProducts } from "@/hooks/useProducts";
+import { useProductsList } from "@/hooks/useProducts";
 
 const Category = () => {
   const { category } = useParams();
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const { data: products } = useProducts();
+  const { data: products } = useProductsList();
 
   // Calculate filtered count
   const filteredCount = products?.filter(p => {

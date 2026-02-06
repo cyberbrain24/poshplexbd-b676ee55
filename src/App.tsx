@@ -54,6 +54,10 @@ import AdminWhatsappInbox from "./pages/admin/AdminWhatsappInbox";
 import AdminInstagramApi from "./pages/admin/AdminInstagramApi";
 import AdminInstagramMarketing from "./pages/admin/AdminInstagramMarketing";
 import AdminInstagramInbox from "./pages/admin/AdminInstagramInbox";
+import AdminOrders from "./pages/admin/AdminOrders";
+import AdminVerificationQueue from "./pages/admin/AdminVerificationQueue";
+import AdminReturns from "./pages/admin/AdminReturns";
+import AdminRiskManagement from "./pages/admin/AdminRiskManagement";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -125,6 +129,10 @@ const App = () => (
               <Route path="/admin/instagram-api" element={<ProtectedRoute><AdminInstagramApi /></ProtectedRoute>} />
               <Route path="/admin/instagram-marketing" element={<ProtectedRoute><AdminInstagramMarketing /></ProtectedRoute>} />
               <Route path="/admin/instagram-inbox" element={<ProtectedRoute><AdminInstagramInbox /></ProtectedRoute>} />
+              <Route path="/admin/orders" element={<ProtectedRoute><AdminOrders /></ProtectedRoute>} />
+              <Route path="/admin/verification-queue" element={<ProtectedRoute><AdminVerificationQueue /></ProtectedRoute>} />
+              <Route path="/admin/returns" element={<ProtectedRoute><AdminReturns /></ProtectedRoute>} />
+              <Route path="/admin/risk-management" element={<ProtectedRoute><AdminRiskManagement /></ProtectedRoute>} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

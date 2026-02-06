@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Eye, EyeOff, ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
+import PoshplexHeader from "@/components/header/PoshplexHeader";
+import PoshplexFooter from "@/components/footer/PoshplexFooter";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -58,17 +59,9 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <div className="p-6">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Store
-        </Link>
-      </div>
+      <PoshplexHeader />
 
-      <div className="flex-1 flex items-center justify-center px-6">
+      <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm space-y-8">
           <div className="text-center">
             <h1 className="text-2xl font-medium tracking-tight">
@@ -126,6 +119,8 @@ const Auth = () => {
           </form>
         </div>
       </div>
+
+      <PoshplexFooter />
     </div>
   );
 };

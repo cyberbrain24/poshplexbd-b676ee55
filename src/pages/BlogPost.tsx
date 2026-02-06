@@ -2,8 +2,8 @@ import { useParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { ArrowLeft } from "lucide-react";
 import DOMPurify from "dompurify";
-import Header from "@/components/header/Header";
-import Footer from "@/components/footer/Footer";
+import PoshplexHeader from "@/components/header/PoshplexHeader";
+import PoshplexFooter from "@/components/footer/PoshplexFooter";
 import { useBlogPost, useBlogPostProducts } from "@/hooks/useBlog";
 import { format } from "date-fns";
 
@@ -24,7 +24,7 @@ const BlogPost = () => {
   if (isLoading) {
     return (
       <>
-        <Header />
+        <PoshplexHeader />
         <main className="min-h-screen bg-background py-20">
           <div className="container mx-auto px-4 max-w-3xl animate-pulse">
             <div className="h-8 bg-muted rounded w-3/4 mb-4" />
@@ -37,7 +37,7 @@ const BlogPost = () => {
             </div>
           </div>
         </main>
-        <Footer />
+        <PoshplexFooter />
       </>
     );
   }
@@ -45,14 +45,14 @@ const BlogPost = () => {
   if (error || !post) {
     return (
       <>
-        <Header />
+        <PoshplexHeader />
         <main className="min-h-screen bg-background py-20 text-center">
           <h1 className="text-2xl font-bold">Post not found</h1>
           <Link to="/blog" className="text-primary underline mt-4 inline-block">
             Back to Blog
           </Link>
         </main>
-        <Footer />
+        <PoshplexFooter />
       </>
     );
   }
@@ -67,7 +67,7 @@ const BlogPost = () => {
         )}
       </Helmet>
 
-      <Header />
+      <PoshplexHeader />
 
       <main className="min-h-screen bg-background">
         {/* Back Link */}
@@ -158,7 +158,7 @@ const BlogPost = () => {
         )}
       </main>
 
-      <Footer />
+      <PoshplexFooter />
     </>
   );
 };

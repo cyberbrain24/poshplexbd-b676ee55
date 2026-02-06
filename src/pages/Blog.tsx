@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import Header from "@/components/header/Header";
-import Footer from "@/components/footer/Footer";
+import PoshplexHeader from "@/components/header/PoshplexHeader";
+import PoshplexFooter from "@/components/footer/PoshplexFooter";
 import { useBlogPosts, useBlogCategories } from "@/hooks/useBlog";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -26,7 +26,7 @@ const Blog = () => {
         <meta name="description" content="Explore the latest streetwear trends, style guides, and Poshplex drops. Stay ahead of the culture." />
       </Helmet>
 
-      <Header />
+      <PoshplexHeader />
 
       <main className="min-h-screen bg-background">
         {/* Hero */}
@@ -143,7 +143,7 @@ const Blog = () => {
         </section>
       </main>
 
-      <Footer />
+      <PoshplexFooter />
     </>
   );
 };

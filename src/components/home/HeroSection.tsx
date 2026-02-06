@@ -38,12 +38,11 @@ const HeroSection = () => {
 
         {/* Right Image */}
         <div className="relative h-[50vh] lg:h-auto">
-          <img 
+        <img 
             src={heroImage}
             alt="Urban architecture"
             loading="eager"
             decoding="async"
-            fetchPriority="high"
             className="w-full h-full object-cover grayscale-filter"
           />
         </div>

@@ -54,6 +54,7 @@ const orderItems = [
   { icon: Clock, label: "Verification Queue", path: "/admin/verification-queue" },
   { icon: RotateCcw, label: "Returns", path: "/admin/returns" },
   { icon: Shield, label: "Risk Management", path: "/admin/risk-management" },
+  { icon: CreditCard, label: "Payment Methods", path: "/admin/payment-methods" },
 ];
 
 const accountEditsItems = [

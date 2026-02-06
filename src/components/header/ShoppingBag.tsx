@@ -1,31 +1,20 @@
 import { X, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-
-interface CartItem {
-  id: number;
-  name: string;
-  price: string;
-  image: string;
-  quantity: number;
-  category: string;
-}
+import { CartItem } from "@/contexts/CartContext";
 
 interface ShoppingBagProps {
   isOpen: boolean;
   onClose: () => void;
   cartItems: CartItem[];
-  updateQuantity: (id: number, newQuantity: number) => void;
+  updateQuantity: (id: string, variantId: string | undefined, newQuantity: number) => void;
   onViewFavorites?: () => void;
 }
 
 const ShoppingBag = ({ isOpen, onClose, cartItems, updateQuantity, onViewFavorites }: ShoppingBagProps) => {
   if (!isOpen) return null;
 
-  const subtotal = cartItems.reduce((sum, item) => {
-    const price = parseFloat(item.price.replace('৳', '').replace(',', ''));
-    return sum + (price * item.quantity);
-  }, 0);
+  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   return (
     <div className="fixed inset-0 z-50 h-screen">
@@ -78,7 +67,7 @@ const ShoppingBag = ({ isOpen, onClose, cartItems, updateQuantity, onViewFavorit
               {/* Cart items */}
               <div className="flex-1 overflow-y-auto space-y-6 mb-6">
                 {cartItems.map((item) => (
-                  <div key={item.id} className="flex gap-4">
+                  <div key={`${item.id}-${item.variantId || 'default'}`} className="flex gap-4">
                     <div className="w-20 h-20 bg-muted/10 rounded-lg overflow-hidden">
                       <img 
                         src={item.image} 
@@ -87,17 +76,22 @@ const ShoppingBag = ({ isOpen, onClose, cartItems, updateQuantity, onViewFavorit
                       />
                     </div>
                     <div className="flex-1">
-                      <div className="flex justify-between items-start mb-2">
+                      <div className="flex justify-between items-start mb-1">
                         <div>
                           <p className="text-sm font-light text-muted-foreground">{item.category}</p>
                           <h3 className="text-sm font-medium text-foreground">{item.name}</h3>
+                          {(item.color || item.size) && (
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {[item.color, item.size].filter(Boolean).join(" / ")}
+                            </p>
+                          )}
                         </div>
-                        <p className="text-sm font-light text-foreground">{item.price}</p>
+                        <p className="text-sm font-light text-foreground">৳{item.price.toLocaleString()}</p>
                       </div>
                       <div className="flex items-center gap-2 mt-3">
                         <div className="flex items-center border border-border">
                           <button 
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            onClick={() => updateQuantity(item.id, item.variantId, item.quantity - 1)}
                             className="p-2 hover:bg-muted/50 transition-colors"
                             aria-label="Decrease quantity"
                           >
@@ -107,7 +101,7 @@ const ShoppingBag = ({ isOpen, onClose, cartItems, updateQuantity, onViewFavorit
                             {item.quantity}
                           </span>
                           <button 
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            onClick={() => updateQuantity(item.id, item.variantId, item.quantity + 1)}
                             className="p-2 hover:bg-muted/50 transition-colors"
                             aria-label="Increase quantity"
                           >

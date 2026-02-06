@@ -1,10 +1,11 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Search, User, ShoppingBag as ShoppingBagIcon, X } from "lucide-react";
 import MegaMenu from "./MegaMenu";
 import MobileMenu from "./MobileMenu";
 import ShoppingBag from "./ShoppingBag";
 import { useCategories } from "@/hooks/useMasterData";
+import { useCart } from "@/contexts/CartContext";
 
 interface NavItem {
   name: string;
@@ -15,33 +16,14 @@ interface NavItem {
   };
 }
 
-interface CartItem {
-  id: number;
-  name: string;
-  price: string;
-  image: string;
-  quantity: number;
-  category: string;
-}
-
 const PoshplexHeader = () => {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   
   const { data: allCategories = [] } = useCategories();
-
-  const updateQuantity = useCallback((id: number, newQuantity: number) => {
-    if (newQuantity <= 0) {
-      setCartItems(prev => prev.filter(item => item.id !== id));
-    } else {
-      setCartItems(prev => prev.map(item => 
-        item.id === id ? { ...item, quantity: newQuantity } : item
-      ));
-    }
-  }, []);
+  const { cartItems, updateQuantity, cartCount } = useCart();
 
   // Build navigation items from database categories
   const navItems: NavItem[] = useMemo(() => {
@@ -64,6 +46,10 @@ const PoshplexHeader = () => {
       };
     });
   }, [allCategories]);
+
+  const handleUpdateQuantity = (id: string, variantId: string | undefined, newQuantity: number) => {
+    updateQuantity(id, variantId, newQuantity);
+  };
 
   return (
     <header className="w-full sticky top-0 z-50 bg-background border-b border-border">
@@ -135,9 +121,9 @@ const PoshplexHeader = () => {
             aria-label="Shopping cart"
           >
             <ShoppingBagIcon size={20} strokeWidth={1.5} />
-            {cartItems.length > 0 && (
+            {cartCount > 0 && (
               <span className="absolute top-0 right-0 w-4 h-4 bg-foreground text-background text-[10px] font-bold flex items-center justify-center">
-                {cartItems.reduce((sum, item) => sum + item.quantity, 0)}
+                {cartCount}
               </span>
             )}
           </button>
@@ -199,7 +185,7 @@ const PoshplexHeader = () => {
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
         cartItems={cartItems}
-        updateQuantity={updateQuantity}
+        updateQuantity={handleUpdateQuantity}
       />
     </header>
   );

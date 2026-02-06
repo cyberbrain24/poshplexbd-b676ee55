@@ -13,6 +13,8 @@ import { Minus, Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Product, ProductVariant } from "@/types/product";
 import VariantSelector from "./VariantSelector";
+import { useCart } from "@/contexts/CartContext";
+import { toast } from "sonner";
 
 interface ProductInfoProps {
   product?: Product | null;
@@ -22,6 +24,7 @@ interface ProductInfoProps {
 const ProductInfo = ({ product, isLoading }: ProductInfoProps) => {
   const [quantity, setQuantity] = useState(1);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const { addToCart } = useCart();
 
   const incrementQuantity = () => setQuantity(prev => prev + 1);
   const decrementQuantity = () => setQuantity(prev => Math.max(1, prev - 1));
@@ -40,6 +43,35 @@ const ProductInfo = ({ product, isLoading }: ProductInfoProps) => {
   const hasVariants = product?.variants && product.variants.length > 0;
   const isVariableProduct = product?.product_type === 'variable';
   const canAddToCart = !isVariableProduct || selectedVariant !== null;
+
+  const handleAddToCart = () => {
+    if (!canAddToCart) return;
+
+    // Get the main image
+    const mainImage = product?.images?.find(img => img.is_main)?.image_url 
+      || product?.images?.[0]?.image_url 
+      || '/placeholder.svg';
+
+    addToCart({
+      id: product?.id || 'fallback-id',
+      variantId: selectedVariant?.id,
+      name: productName,
+      price: displayPrice,
+      image: mainImage,
+      category: categoryName,
+      color: selectedVariant?.color?.name,
+      size: selectedVariant?.size?.label,
+    }, quantity);
+
+    toast.success(`${productName} added to bag`, {
+      description: selectedVariant 
+        ? `${selectedVariant.color?.name || ''} ${selectedVariant.size?.label || ''} × ${quantity}`
+        : `× ${quantity}`
+    });
+
+    // Reset quantity after adding
+    setQuantity(1);
+  };
 
   if (isLoading) {
     return (
@@ -144,6 +176,7 @@ const ProductInfo = ({ product, isLoading }: ProductInfoProps) => {
         <Button 
           className="w-full h-12 bg-foreground text-background hover:bg-foreground/90 font-light rounded-none disabled:opacity-50"
           disabled={!canAddToCart}
+          onClick={handleAddToCart}
         >
           {isVariableProduct && !selectedVariant ? "Select Options" : "Add to Bag"}
         </Button>

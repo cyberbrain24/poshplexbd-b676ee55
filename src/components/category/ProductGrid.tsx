@@ -1,12 +1,12 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Link, useParams } from "react-router-dom";
-import { useProducts } from "@/hooks/useProducts";
+import { useProductsList } from "@/hooks/useProducts";
 import { Skeleton } from "@/components/ui/skeleton";
 import Pagination from "./Pagination";
 
 const ProductGrid = () => {
   const { category } = useParams();
-  const { data: products, isLoading } = useProducts();
+  const { data: products, isLoading } = useProductsList();
 
   // Filter products based on category
   const filteredProducts = products?.filter(p => {

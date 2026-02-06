@@ -2,6 +2,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Color, Size, Material, SizeGuide, CareInstruction, Category, Brand } from "@/types/product";
 
+// Cache configuration for master data - these rarely change
+const MASTER_DATA_STALE_TIME = 1000 * 60 * 5; // 5 minutes
+const MASTER_DATA_GC_TIME = 1000 * 60 * 10; // 10 minutes
+
 // Colors
 export const useColors = () => {
   return useQuery({
@@ -14,6 +18,8 @@ export const useColors = () => {
       if (error) throw error;
       return data as Color[];
     },
+    staleTime: MASTER_DATA_STALE_TIME,
+    gcTime: MASTER_DATA_GC_TIME,
   });
 };
 
@@ -73,6 +79,8 @@ export const useSizes = () => {
       if (error) throw error;
       return data as Size[];
     },
+    staleTime: MASTER_DATA_STALE_TIME,
+    gcTime: MASTER_DATA_GC_TIME,
   });
 };
 
@@ -132,6 +140,8 @@ export const useMaterials = () => {
       if (error) throw error;
       return data as Material[];
     },
+    staleTime: MASTER_DATA_STALE_TIME,
+    gcTime: MASTER_DATA_GC_TIME,
   });
 };
 
@@ -191,6 +201,8 @@ export const useSizeGuides = () => {
       if (error) throw error;
       return data as SizeGuide[];
     },
+    staleTime: MASTER_DATA_STALE_TIME,
+    gcTime: MASTER_DATA_GC_TIME,
   });
 };
 
@@ -250,6 +262,8 @@ export const useCareInstructions = () => {
       if (error) throw error;
       return data as CareInstruction[];
     },
+    staleTime: MASTER_DATA_STALE_TIME,
+    gcTime: MASTER_DATA_GC_TIME,
   });
 };
 
@@ -309,6 +323,8 @@ export const useCategories = () => {
       if (error) throw error;
       return data as Category[];
     },
+    staleTime: MASTER_DATA_STALE_TIME,
+    gcTime: MASTER_DATA_GC_TIME,
   });
 };
 
@@ -368,6 +384,8 @@ export const useBrands = () => {
       if (error) throw error;
       return data as Brand[];
     },
+    staleTime: MASTER_DATA_STALE_TIME,
+    gcTime: MASTER_DATA_GC_TIME,
   });
 };
 

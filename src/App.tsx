@@ -24,6 +24,7 @@ import TermsOfService from "./pages/TermsOfService";
 import Auth from "./pages/Auth";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
+import OrderTracking from "./pages/OrderTracking";
 
 // Admin pages - direct imports
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -89,6 +90,7 @@ const App = () => (
               <Route path="/category/:category" element={<Category />} />
               <Route path="/product/:productId" element={<ProductDetail />} />
               <Route path="/checkout" element={<Checkout />} />
+              <Route path="/order-tracking" element={<OrderTracking />} />
               <Route path="/about/our-story" element={<OurStory />} />
               <Route path="/about/sustainability" element={<Sustainability />} />
               <Route path="/about/size-guide" element={<SizeGuide />} />

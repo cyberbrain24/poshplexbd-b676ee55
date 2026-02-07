@@ -292,7 +292,6 @@ export const useAddProductVariant = () => {
           sku: variantData.sku || undefined,
           purchase_price: variantData.purchase_price,
           selling_price: variantData.selling_price,
-          stock: variantData.stock,
           is_active: variantData.is_active,
         })
         .select()
@@ -323,7 +322,6 @@ export const useUpdateProductVariant = () => {
           sku: variantData.sku || undefined,
           purchase_price: variantData.purchase_price,
           selling_price: variantData.selling_price,
-          stock: variantData.stock,
           is_active: variantData.is_active,
         })
         .eq("id", id)

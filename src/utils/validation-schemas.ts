@@ -105,30 +105,7 @@ export const productVariantSchema = z.object({
   sku: z.string().max(100).optional(),
   purchase_price: priceSchema,
   selling_price: priceSchema,
-  stock: quantitySchema,
   is_active: z.boolean().optional().default(true),
-});
-
-// ============================================================
-// INVENTORY SCHEMAS
-// ============================================================
-export const stockAdjustmentSchema = z.object({
-  variantId: uuidSchema,
-  newStock: quantitySchema,
-  reason: z.string().min(3, "Reason is required").max(500),
-});
-
-export const bulkStockAdjustmentSchema = z.object({
-  adjustments: z.array(stockAdjustmentSchema).min(1).max(100),
-});
-
-export const processReturnSchema = z.object({
-  variantId: uuidSchema,
-  quantity: quantitySchema.min(1),
-  orderId: uuidSchema,
-  orderItemId: uuidSchema,
-  returnType: z.enum(["restock", "damaged"]),
-  orderNumber: z.string().max(50),
 });
 
 // ============================================================
@@ -211,6 +188,5 @@ export type CreateOrderInput = z.infer<typeof createOrderSchema>;
 export type ProductInput = z.infer<typeof productSchema>;
 export type ProductVariantInput = z.infer<typeof productVariantSchema>;
 export type CustomerInput = z.infer<typeof customerSchema>;
-export type StockAdjustmentInput = z.infer<typeof stockAdjustmentSchema>;
 export type PaymentMethodInput = z.infer<typeof paymentMethodSchema>;
 export type OrderFilterInput = z.infer<typeof orderFilterSchema>;

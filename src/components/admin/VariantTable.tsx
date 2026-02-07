@@ -108,14 +108,6 @@ const VariantRow = memo(({
       />
     </TableCell>
     <TableCell>
-      <Input
-        type="number"
-        value={variant.stock}
-        onChange={(e) => onUpdateField("stock", Number(e.target.value))}
-        className="w-16"
-      />
-    </TableCell>
-    <TableCell>
       <Switch
         checked={variant.is_active}
         onCheckedChange={(v) => onUpdateField("is_active", v)}
@@ -174,7 +166,6 @@ const VariantTable = memo(({
             <TableHead>SKU</TableHead>
             <TableHead>Cost</TableHead>
             <TableHead>Price</TableHead>
-            <TableHead>Stock</TableHead>
             <TableHead>Active</TableHead>
             <TableHead></TableHead>
           </TableRow>

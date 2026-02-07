@@ -28,8 +28,8 @@ const ProductSEO = ({ product }: ProductSEOProps) => {
   const categoryName = product.category?.name || "Products";
   const categorySlug = categoryName.toLowerCase().replace(/\s+/g, "-");
 
-  // Check if any variant has stock
-  const inStock = product.variants?.some((v) => v.stock > 0) ?? true;
+  // All products are always in stock
+  const inStock = true;
 
   // Get the lowest variant price or base price
   const price = product.variants?.length

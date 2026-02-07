@@ -103,7 +103,6 @@ export interface ProductVariant {
   sku: string;
   purchase_price: number;
   selling_price: number;
-  stock: number;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -138,6 +137,5 @@ export interface VariantFormData {
   sku: string;
   purchase_price: number;
   selling_price: number;
-  stock: number;
   is_active: boolean;
 }

@@ -32,20 +32,20 @@ const VariantSelector = ({ variants, onVariantChange }: VariantSelectorProps) =>
     return Array.from(sizeMap.values()).sort((a, b) => a.sort_order - b.sort_order);
   }, [variants]);
 
-  // Get available sizes for selected color
+  // Get available sizes for selected color - all active variants are in stock
   const availableSizes = useMemo(() => {
     if (!selectedColor) return uniqueSizes;
     return variants
-      .filter((v) => v.color?.id === selectedColor && v.is_active && v.stock > 0)
+      .filter((v) => v.color?.id === selectedColor && v.is_active)
       .map((v) => v.size)
       .filter((s): s is Size => s !== null);
   }, [selectedColor, variants, uniqueSizes]);
 
-  // Get available colors for selected size
+  // Get available colors for selected size - all active variants are in stock
   const availableColors = useMemo(() => {
     if (!selectedSize) return uniqueColors;
     return variants
-      .filter((v) => v.size?.id === selectedSize && v.is_active && v.stock > 0)
+      .filter((v) => v.size?.id === selectedSize && v.is_active)
       .map((v) => v.color)
       .filter((c): c is Color => c !== null);
   }, [selectedSize, variants, uniqueColors]);
@@ -92,16 +92,6 @@ const VariantSelector = ({ variants, onVariantChange }: VariantSelectorProps) =>
 
   const isSizeAvailable = (sizeId: string) => {
     return availableSizes.some((s) => s.id === sizeId);
-  };
-
-  const getStockForVariant = (colorId: string | null, sizeId: string | null) => {
-    const variant = variants.find(
-      (v) =>
-        v.color?.id === colorId &&
-        v.size?.id === sizeId &&
-        v.is_active
-    );
-    return variant?.stock || 0;
   };
 
   return (
@@ -164,7 +154,6 @@ const VariantSelector = ({ variants, onVariantChange }: VariantSelectorProps) =>
             {uniqueSizes.map((size) => {
               const isAvailable = isSizeAvailable(size.id);
               const isSelected = selectedSize === size.id;
-              const stock = selectedColor ? getStockForVariant(selectedColor, size.id) : null;
               
               return (
                 <button
@@ -180,26 +169,10 @@ const VariantSelector = ({ variants, onVariantChange }: VariantSelectorProps) =>
                   )}
                 >
                   {size.label}
-                  {stock !== null && stock <= 3 && stock > 0 && isAvailable && (
-                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-destructive rounded-full" />
-                  )}
                 </button>
               );
             })}
           </div>
-          {selectedColor && selectedSize && (
-            <div className="text-xs text-muted-foreground">
-              {getStockForVariant(selectedColor, selectedSize) <= 3 && 
-               getStockForVariant(selectedColor, selectedSize) > 0 && (
-                <span className="text-destructive">
-                  Only {getStockForVariant(selectedColor, selectedSize)} left in stock
-                </span>
-              )}
-              {getStockForVariant(selectedColor, selectedSize) === 0 && (
-                <span className="text-destructive">Out of stock</span>
-              )}
-            </div>
-          )}
         </div>
       )}
     </div>

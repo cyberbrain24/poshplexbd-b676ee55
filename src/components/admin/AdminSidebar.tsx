@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useState, useCallback, useRef, MouseEvent } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
   Package, 
   Palette, 
@@ -40,6 +40,9 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+
+// Navigation debounce delay (ms)
+const NAV_DEBOUNCE_MS = 150;
 
 const productEditsItems = [
   { icon: Palette, label: "Colors", path: "/admin/colors" },
@@ -96,6 +99,36 @@ const instagramItems = [
  
 const AdminSidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Debounce navigation to prevent rapid clicks
+  const lastNavTimeRef = useRef<number>(0);
+  const isNavigatingRef = useRef(false);
+
+  const handleNavClick = useCallback((e: MouseEvent<HTMLAnchorElement>, to: string) => {
+    e.preventDefault();
+    
+    // Skip if already on this path
+    if (location.pathname === to) return;
+    
+    const now = Date.now();
+    const timeSinceLastNav = now - lastNavTimeRef.current;
+    
+    // Block rapid navigation
+    if (timeSinceLastNav < NAV_DEBOUNCE_MS || isNavigatingRef.current) {
+      return;
+    }
+    
+    lastNavTimeRef.current = now;
+    isNavigatingRef.current = true;
+    navigate(to);
+    
+    // Reset after debounce period
+    setTimeout(() => {
+      isNavigatingRef.current = false;
+    }, NAV_DEBOUNCE_MS);
+  }, [location.pathname, navigate]);
+
   const isProductEditsActive = productEditsItems.some(item => location.pathname === item.path);
   const isOrdersActive = orderItems.some(item => location.pathname === item.path);
   const isAccountEditsActive = accountEditsItems.some(item => location.pathname === item.path);
@@ -124,6 +157,7 @@ const AdminSidebar = () => {
         {/* Dashboard */}
         <Link
           to="/admin"
+          onClick={(e) => handleNavClick(e, "/admin")}
           className={cn(
             "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
             location.pathname === "/admin"
@@ -138,6 +172,7 @@ const AdminSidebar = () => {
         {/* Products */}
         <Link
           to="/admin/products"
+          onClick={(e) => handleNavClick(e, "/admin/products")}
           className={cn(
             "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
             location.pathname === "/admin/products"
@@ -152,6 +187,7 @@ const AdminSidebar = () => {
         {/* Pages */}
         <Link
           to="/admin/pages"
+          onClick={(e) => handleNavClick(e, "/admin/pages")}
           className={cn(
             "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
             location.pathname === "/admin/pages"
@@ -166,6 +202,7 @@ const AdminSidebar = () => {
         {/* Blog */}
         <Link
           to="/admin/blog"
+          onClick={(e) => handleNavClick(e, "/admin/blog")}
           className={cn(
             "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
             location.pathname === "/admin/blog"
@@ -179,6 +216,7 @@ const AdminSidebar = () => {
         {/* SEO Manager */}
         <Link
           to="/admin/seo"
+          onClick={(e) => handleNavClick(e, "/admin/seo")}
           className={cn(
             "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
             location.pathname === "/admin/seo"
@@ -193,6 +231,7 @@ const AdminSidebar = () => {
         {/* Site Settings */}
         <Link
           to="/admin/site-settings"
+          onClick={(e) => handleNavClick(e, "/admin/site-settings")}
           className={cn(
             "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
             location.pathname === "/admin/site-settings"
@@ -235,6 +274,7 @@ const AdminSidebar = () => {
                   <Link
                     key={item.path}
                     to={item.path}
+                    onClick={(e) => handleNavClick(e, item.path)}
                     className={cn(
                       "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
                       isActive
@@ -282,6 +322,7 @@ const AdminSidebar = () => {
                   <Link
                     key={item.path}
                     to={item.path}
+                    onClick={(e) => handleNavClick(e, item.path)}
                     className={cn(
                       "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
                       isActive
@@ -301,6 +342,7 @@ const AdminSidebar = () => {
         {/* Accounts */}
         <Link
           to="/admin/accounts"
+          onClick={(e) => handleNavClick(e, "/admin/accounts")}
           className={cn(
             "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
             location.pathname === "/admin/accounts"
@@ -343,6 +385,7 @@ const AdminSidebar = () => {
                   <Link
                     key={item.path}
                     to={item.path}
+                    onClick={(e) => handleNavClick(e, item.path)}
                     className={cn(
                       "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
                       isActive
@@ -362,6 +405,7 @@ const AdminSidebar = () => {
         {/* Customers */}
         <Link
           to="/admin/customers"
+          onClick={(e) => handleNavClick(e, "/admin/customers")}
           className={cn(
             "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
             location.pathname === "/admin/customers"
@@ -404,6 +448,7 @@ const AdminSidebar = () => {
                   <Link
                     key={item.path}
                     to={item.path}
+                    onClick={(e) => handleNavClick(e, item.path)}
                     className={cn(
                       "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
                       isActive
@@ -451,6 +496,7 @@ const AdminSidebar = () => {
                    <Link
                      key={item.path}
                      to={item.path}
+                     onClick={(e) => handleNavClick(e, item.path)}
                      className={cn(
                        "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
                        isActive
@@ -498,6 +544,7 @@ const AdminSidebar = () => {
                    <Link
                      key={item.path}
                      to={item.path}
+                     onClick={(e) => handleNavClick(e, item.path)}
                      className={cn(
                        "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
                        isActive
@@ -545,6 +592,7 @@ const AdminSidebar = () => {
                    <Link
                      key={item.path}
                      to={item.path}
+                     onClick={(e) => handleNavClick(e, item.path)}
                      className={cn(
                        "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
                        isActive
@@ -592,6 +640,7 @@ const AdminSidebar = () => {
                    <Link
                      key={item.path}
                      to={item.path}
+                     onClick={(e) => handleNavClick(e, item.path)}
                      className={cn(
                        "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
                        isActive

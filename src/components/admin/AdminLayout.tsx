@@ -3,6 +3,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import AdminSidebar from "./AdminSidebar";
 import { AdminErrorBoundary } from "./AdminErrorBoundary";
 import { AdminLoadingSpinner } from "./AdminLoadingState";
+import { useERPDataPrefetch } from "@/hooks/useERPPrefetch";
 
 interface AdminLayoutProps {
   children?: ReactNode;
@@ -12,6 +13,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const location = useLocation();
   const [isPending, startTransition] = useTransition();
   const previousPathRef = useRef(location.pathname);
+
+  // Prefetch ERP reference data on mount for faster module loads
+  useERPDataPrefetch();
 
   // Track navigation changes for transition handling
   useEffect(() => {

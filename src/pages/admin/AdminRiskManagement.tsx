@@ -1,4 +1,4 @@
-import AdminLayout from "@/components/admin/AdminLayout";
+
 import { useHighRiskCustomers, useToggleCOD, useBlacklistCustomer } from "@/hooks/useRiskManagement";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -61,7 +61,7 @@ const AdminRiskManagement = () => {
   };
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6">
         {/* Header */}
         <div>
@@ -263,7 +263,7 @@ const AdminRiskManagement = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </AdminLayout>
+    </>
   );
 };
 

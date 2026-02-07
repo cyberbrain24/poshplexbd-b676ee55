@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -147,7 +146,7 @@ const AdminInstagramInbox = () => {
   );
 
   return (
-    <AdminLayout>
+    <>
       <div className="h-[calc(100vh-8rem)] flex border rounded-lg overflow-hidden">
         {/* Left - Conversation List */}
         <div className="w-80 border-r flex flex-col">
@@ -396,7 +395,7 @@ const AdminInstagramInbox = () => {
           </div>
         )}
       </div>
-    </AdminLayout>
+    </>
   );
 };
 

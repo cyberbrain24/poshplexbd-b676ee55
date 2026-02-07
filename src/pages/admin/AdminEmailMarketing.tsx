@@ -1,5 +1,4 @@
- import { useState } from "react";
- import AdminLayout from "@/components/admin/AdminLayout";
+import { useState } from "react";
  import { Button } from "@/components/ui/button";
  import { Plus, Pencil, Trash2, Play, Pause, History, FileText } from "lucide-react";
  import {
@@ -147,7 +146,7 @@
    };
  
    return (
-     <AdminLayout>
+     <>
        <div className="space-y-6">
          <div className="flex items-center justify-between">
            <div>
@@ -287,7 +286,7 @@
            </AlertDialogFooter>
          </AlertDialogContent>
        </AlertDialog>
-     </AdminLayout>
+     </>
    );
  };
  

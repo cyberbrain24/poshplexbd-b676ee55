@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
-import AdminLayout from "@/components/admin/AdminLayout";
 import {
   Table,
   TableBody,
@@ -46,7 +45,7 @@ const AdminCustomerTypes = () => {
   };
 
   return (
-    <AdminLayout>
+    <>
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -138,7 +137,7 @@ const AdminCustomerTypes = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </AdminLayout>
+    </>
   );
 };
 

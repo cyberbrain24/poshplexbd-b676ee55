@@ -1948,6 +1948,51 @@ export type Database = {
           },
         ]
       }
+      seed_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          current_batch: number
+          error_message: string | null
+          id: string
+          images_created: number
+          products_created: number
+          started_at: string | null
+          status: string
+          total_batches: number
+          total_products: number
+          variants_created: number
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          current_batch?: number
+          error_message?: string | null
+          id?: string
+          images_created?: number
+          products_created?: number
+          started_at?: string | null
+          status?: string
+          total_batches?: number
+          total_products?: number
+          variants_created?: number
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          current_batch?: number
+          error_message?: string | null
+          id?: string
+          images_created?: number
+          products_created?: number
+          started_at?: string | null
+          status?: string
+          total_batches?: number
+          total_products?: number
+          variants_created?: number
+        }
+        Relationships: []
+      }
       seo_metadata: {
         Row: {
           canonical_url: string | null

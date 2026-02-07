@@ -123,109 +123,66 @@ function generateDescription(productName: string, category: string): { short: st
   }
 }
 
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
-
+// Background seeding task
+async function runSeedingTask(supabase: ReturnType<typeof createClient>, jobId: string, productCount: number) {
+  console.log(`[Job ${jobId}] Starting background seeding for ${productCount} products...`)
+  
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
-
-    const { productCount = 1000 } = await req.json().catch(() => ({}))
-    
-    console.log(`Starting seed process for ${productCount} products...`)
+    // Update job to running
+    await supabase.from('seed_jobs').update({ 
+      status: 'running',
+      started_at: new Date().toISOString()
+    }).eq('id', jobId)
 
     // Step 1: Seed Colors
-    console.log('Seeding colors...')
+    console.log(`[Job ${jobId}] Seeding colors...`)
     const colorInserts = colors.map(c => ({ name: c.name, hex_code: c.hex }))
-    const { data: insertedColors, error: colorError } = await supabase
-      .from('colors')
-      .upsert(colorInserts, { onConflict: 'name', ignoreDuplicates: true })
-      .select()
-    
-    if (colorError) {
-      console.error('Color insert error:', colorError)
-    }
-    
-    // Fetch all colors
+    await supabase.from('colors').upsert(colorInserts, { onConflict: 'name', ignoreDuplicates: true })
     const { data: allColors } = await supabase.from('colors').select('id, name')
     const colorMap = new Map(allColors?.map(c => [c.name, c.id]) || [])
 
     // Step 2: Seed Sizes
-    console.log('Seeding sizes...')
+    console.log(`[Job ${jobId}] Seeding sizes...`)
     const sizeInserts = sizes.map(s => ({ label: s.label, sort_order: s.sortOrder }))
-    const { error: sizeError } = await supabase
-      .from('sizes')
-      .upsert(sizeInserts, { onConflict: 'label', ignoreDuplicates: true })
-      .select()
-    
-    if (sizeError) {
-      console.error('Size insert error:', sizeError)
-    }
-
-    // Fetch all sizes
+    await supabase.from('sizes').upsert(sizeInserts, { onConflict: 'label', ignoreDuplicates: true })
     const { data: allSizes } = await supabase.from('sizes').select('id, label')
     const sizeMap = new Map(allSizes?.map(s => [s.label, s.id]) || [])
 
     // Step 3: Seed Materials
-    console.log('Seeding materials...')
+    console.log(`[Job ${jobId}] Seeding materials...`)
     const materialInserts = materials.map(m => ({ name: m.name, gsm: m.gsm, season: m.season }))
-    const { error: materialError } = await supabase
-      .from('materials')
-      .upsert(materialInserts, { onConflict: 'name', ignoreDuplicates: true })
-      .select()
-    
-    if (materialError) {
-      console.error('Material insert error:', materialError)
-    }
-
-    // Fetch all materials
+    await supabase.from('materials').upsert(materialInserts, { onConflict: 'name', ignoreDuplicates: true })
     const { data: allMaterials } = await supabase.from('materials').select('id, name')
     const materialMap = new Map(allMaterials?.map(m => [m.name, m.id]) || [])
 
     // Step 4: Seed Brands
-    console.log('Seeding brands...')
+    console.log(`[Job ${jobId}] Seeding brands...`)
     const brandInserts = brands.map(b => ({ name: b }))
-    const { error: brandError } = await supabase
-      .from('brands')
-      .upsert(brandInserts, { onConflict: 'name', ignoreDuplicates: true })
-      .select()
-    
-    if (brandError) {
-      console.error('Brand insert error:', brandError)
-    }
-
-    // Fetch all brands
+    await supabase.from('brands').upsert(brandInserts, { onConflict: 'name', ignoreDuplicates: true })
     const { data: allBrands } = await supabase.from('brands').select('id, name')
     const brandMap = new Map(allBrands?.map(b => [b.name, b.id]) || [])
 
     // Step 5: Seed Categories
-    console.log('Seeding categories...')
+    console.log(`[Job ${jobId}] Seeding categories...`)
     const categoryInserts = productCategories.map(c => ({ name: c.name }))
-    const { error: categoryError } = await supabase
-      .from('categories')
-      .upsert(categoryInserts, { onConflict: 'name', ignoreDuplicates: true })
-      .select()
-    
-    if (categoryError) {
-      console.error('Category insert error:', categoryError)
-    }
-
-    // Fetch all categories
+    await supabase.from('categories').upsert(categoryInserts, { onConflict: 'name', ignoreDuplicates: true })
     const { data: allCategories } = await supabase.from('categories').select('id, name')
     const categoryMap = new Map(allCategories?.map(c => [c.name, c.id]) || [])
 
     // Step 6: Generate and insert products in batches
-    console.log('Generating products...')
-    const batchSize = 50
+    const batchSize = 25 // Smaller batches for stability
+    const totalBatches = Math.ceil(productCount / batchSize)
     let productsCreated = 0
     let variantsCreated = 0
     let imagesCreated = 0
 
-    for (let batch = 0; batch < Math.ceil(productCount / batchSize); batch++) {
+    // Update total batches
+    await supabase.from('seed_jobs').update({ 
+      total_batches: totalBatches,
+      total_products: productCount
+    }).eq('id', jobId)
+
+    for (let batch = 0; batch < totalBatches; batch++) {
       const products = []
       const startIdx = batch * batchSize
       const endIdx = Math.min(startIdx + batchSize, productCount)
@@ -262,7 +219,7 @@ Deno.serve(async (req) => {
         .select('id, base_price')
 
       if (productError) {
-        console.error('Product insert error:', productError)
+        console.error(`[Job ${jobId}] Product insert error:`, productError)
         continue
       }
 
@@ -273,17 +230,16 @@ Deno.serve(async (req) => {
       const allImages = []
 
       for (const product of insertedProducts || []) {
-        // Random selection of colors (2-5), sizes (3-6), materials (1-3)
-        const selectedColors = [...colors].sort(() => 0.5 - Math.random()).slice(0, 2 + Math.floor(Math.random() * 4))
-        const selectedSizes = [...sizes].sort(() => 0.5 - Math.random()).slice(0, 3 + Math.floor(Math.random() * 4))
-        const selectedMaterials = [...materials].sort(() => 0.5 - Math.random()).slice(0, 1 + Math.floor(Math.random() * 3))
+        // Smaller selections for faster generation: 2-3 colors, 3-4 sizes, 1-2 materials
+        const selectedColors = [...colors].sort(() => 0.5 - Math.random()).slice(0, 2 + Math.floor(Math.random() * 2))
+        const selectedSizes = [...sizes].sort(() => 0.5 - Math.random()).slice(0, 3 + Math.floor(Math.random() * 2))
+        const selectedMaterials = [...materials].sort(() => 0.5 - Math.random()).slice(0, 1 + Math.floor(Math.random() * 2))
 
         let variantIndex = 0
         for (const color of selectedColors) {
           for (const size of selectedSizes) {
             const material = randomElement(selectedMaterials)
             
-            // Price variation based on size and material
             const sizeMultiplier = sizes.findIndex(s => s.label === size.label) * 2
             const materialMultiplier = materials.findIndex(m => m.name === material.name) * 3
             const sellingPrice = product.base_price + sizeMultiplier + materialMultiplier
@@ -305,8 +261,8 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Add 2-4 images per product
-        const numImages = 2 + Math.floor(Math.random() * 3)
+        // Add 2-3 images per product
+        const numImages = 2 + Math.floor(Math.random() * 2)
         for (let imgIdx = 0; imgIdx < numImages; imgIdx++) {
           allImages.push({
             product_id: product.id,
@@ -319,49 +275,95 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Insert variants in batches
-      const variantBatchSize = 500
+      // Insert variants in smaller batches
+      const variantBatchSize = 200
       for (let v = 0; v < allVariants.length; v += variantBatchSize) {
         const variantBatch = allVariants.slice(v, v + variantBatchSize)
-        const { error: variantError } = await supabase
-          .from('product_variants')
-          .insert(variantBatch)
-        
-        if (variantError) {
-          console.error('Variant insert error:', variantError)
-        } else {
+        const { error: variantError } = await supabase.from('product_variants').insert(variantBatch)
+        if (!variantError) {
           variantsCreated += variantBatch.length
         }
       }
 
       // Insert images
-      const { error: imageError } = await supabase
-        .from('product_images')
-        .insert(allImages)
-      
-      if (imageError) {
-        console.error('Image insert error:', imageError)
-      } else {
+      const { error: imageError } = await supabase.from('product_images').insert(allImages)
+      if (!imageError) {
         imagesCreated += allImages.length
       }
 
-      console.log(`Batch ${batch + 1}/${Math.ceil(productCount / batchSize)} completed. Products: ${productsCreated}, Variants: ${variantsCreated}`)
+      // Update progress
+      await supabase.from('seed_jobs').update({
+        current_batch: batch + 1,
+        products_created: productsCreated,
+        variants_created: variantsCreated,
+        images_created: imagesCreated,
+      }).eq('id', jobId)
+
+      console.log(`[Job ${jobId}] Batch ${batch + 1}/${totalBatches} completed. Products: ${productsCreated}, Variants: ${variantsCreated}`)
     }
 
+    // Mark job as completed
+    await supabase.from('seed_jobs').update({
+      status: 'completed',
+      completed_at: new Date().toISOString(),
+      products_created: productsCreated,
+      variants_created: variantsCreated,
+      images_created: imagesCreated,
+    }).eq('id', jobId)
+
+    console.log(`[Job ${jobId}] Seeding completed! Products: ${productsCreated}, Variants: ${variantsCreated}, Images: ${imagesCreated}`)
+
+  } catch (error) {
+    console.error(`[Job ${jobId}] Seeding error:`, error)
+    await supabase.from('seed_jobs').update({
+      status: 'failed',
+      error_message: error.message,
+      completed_at: new Date().toISOString(),
+    }).eq('id', jobId)
+  }
+}
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+    const { productCount = 1000 } = await req.json().catch(() => ({}))
+    
+    console.log(`Received seeding request for ${productCount} products...`)
+
+    // Create a job record
+    const { data: job, error: jobError } = await supabase
+      .from('seed_jobs')
+      .insert({
+        status: 'pending',
+        total_products: productCount,
+        total_batches: Math.ceil(productCount / 25),
+      })
+      .select()
+      .single()
+
+    if (jobError) {
+      throw new Error(`Failed to create job: ${jobError.message}`)
+    }
+
+    console.log(`Created job ${job.id}, starting background task...`)
+
+    // Start the seeding in the background using waitUntil
+    EdgeRuntime.waitUntil(runSeedingTask(supabase, job.id, productCount))
+
+    // Return immediately with job ID
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Successfully seeded ${productsCreated} products with ${variantsCreated} variants and ${imagesCreated} images`,
-        stats: {
-          products: productsCreated,
-          variants: variantsCreated,
-          images: imagesCreated,
-          colors: colorMap.size,
-          sizes: sizeMap.size,
-          materials: materialMap.size,
-          brands: brandMap.size,
-          categories: categoryMap.size,
-        }
+        message: 'Seeding job started',
+        jobId: job.id,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )

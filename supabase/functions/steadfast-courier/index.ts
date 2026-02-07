@@ -386,6 +386,104 @@ Deno.serve(async (req) => {
         );
       }
 
+      case "sync_locations": {
+        // Fetch police stations from Steadfast API
+        const result = await steadfastRequest("/police_stations");
+        
+        if (result.status !== 200 || !result.data) {
+          return new Response(
+            JSON.stringify({ error: "Failed to fetch police stations from Steadfast" }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const policeStations = result.data;
+        
+        // Extract unique districts
+        const districtsMap = new Map<string, string>();
+        const thanasList: { name: string; district: string }[] = [];
+
+        if (Array.isArray(policeStations)) {
+          for (const station of policeStations) {
+            const district = station.district || station.city || "";
+            const thana = station.thana || station.name || station.police_station || "";
+            
+            if (district && !districtsMap.has(district.toLowerCase())) {
+              districtsMap.set(district.toLowerCase(), district);
+            }
+            
+            if (thana && district) {
+              thanasList.push({ name: thana, district: district });
+            }
+          }
+        }
+
+        // Use service role client for admin operations
+        const serviceClient = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+        );
+
+        // Insert districts
+        const districtsToInsert = Array.from(districtsMap.values()).map(name => ({
+          name,
+          is_active: true
+        }));
+
+        let insertedDistricts = 0;
+        let insertedThanas = 0;
+
+        for (const district of districtsToInsert) {
+          const { error } = await serviceClient
+            .from("divisions")
+            .upsert({ name: district.name, is_active: true }, { onConflict: "name", ignoreDuplicates: true });
+          
+          if (!error) insertedDistricts++;
+        }
+
+        // Fetch all districts to get their IDs
+        const { data: allDistricts } = await serviceClient
+          .from("divisions")
+          .select("id, name");
+
+        const districtIdMap = new Map<string, string>();
+        if (allDistricts) {
+          for (const d of allDistricts) {
+            districtIdMap.set(d.name.toLowerCase(), d.id);
+          }
+        }
+
+        // Insert thanas
+        for (const thana of thanasList) {
+          const divisionId = districtIdMap.get(thana.district.toLowerCase());
+          if (divisionId) {
+            const { error } = await serviceClient
+              .from("thanas")
+              .upsert(
+                { name: thana.name, division_id: divisionId, is_active: true },
+                { onConflict: "name,division_id", ignoreDuplicates: true }
+              );
+            
+            if (!error) insertedThanas++;
+          }
+        }
+
+        console.log(`[Steadfast] Synced ${insertedDistricts} districts and ${insertedThanas} thanas`);
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: `Synced locations from Steadfast API`,
+            stats: {
+              total_police_stations: Array.isArray(policeStations) ? policeStations.length : 0,
+              districts_processed: districtsToInsert.length,
+              thanas_processed: thanasList.length
+            }
+          }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       default:
         return new Response(
           JSON.stringify({ 

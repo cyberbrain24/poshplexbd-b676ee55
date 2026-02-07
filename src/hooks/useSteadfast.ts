@@ -1,13 +1,20 @@
 /**
  * Steadfast Courier Integration Hook
  * Provides methods for shipping orders via Steadfast Courier API
+ * 
+ * All hooks use manual fetching (enabled: false) to prevent
+ * continuous polling. Use refetch() to manually trigger requests.
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-interface SteadfastConsignment {
+// ============================================================
+// TYPE DEFINITIONS
+// ============================================================
+
+export interface SteadfastConsignment {
   consignment_id: number;
   invoice: string;
   tracking_code: string;
@@ -21,40 +28,11 @@ interface SteadfastConsignment {
   updated_at: string;
 }
 
-interface SteadfastResponse {
-  status: number;
+export interface SteadfastTrackingResult {
+  delivery_status?: string;
+  deleted?: boolean;
   message?: string;
   consignment?: SteadfastConsignment;
-  delivery_status?: string;
-  current_balance?: number;
-}
-
-async function callSteadfast(
-  action: string,
-  params?: Record<string, string>,
-  body?: Record<string, unknown>
-): Promise<SteadfastResponse> {
-  const queryParams = new URLSearchParams({ action, ...params });
-  
-  const { data, error } = await supabase.functions.invoke("steadfast-courier", {
-    method: body ? "POST" : "GET",
-    body: body || undefined,
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-
-  // For GET requests, we need to pass query params differently
-  if (!body) {
-    const response = await supabase.functions.invoke(
-      `steadfast-courier?${queryParams.toString()}`
-    );
-    if (response.error) throw new Error(response.error.message);
-    return response.data;
-  }
-
-  if (error) throw new Error(error.message);
-  return data;
 }
 
 // Create shipment for a single order

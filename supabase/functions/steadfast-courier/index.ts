@@ -392,31 +392,87 @@ Deno.serve(async (req) => {
         
         if (result.status !== 200 || !result.data) {
           return new Response(
-            JSON.stringify({ error: "Failed to fetch police stations from Steadfast" }),
+            JSON.stringify({ error: "Failed to fetch police stations from Steadfast", status: result.status }),
             { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
 
-        const policeStations = result.data;
+        // Log the raw response to understand the structure
+        const rawData = result.data;
+        console.log("[Steadfast] Raw response type:", typeof rawData);
+        console.log("[Steadfast] Is array:", Array.isArray(rawData));
         
-        // Extract unique districts
-        const districtsMap = new Map<string, string>();
-        const thanasList: { name: string; district: string }[] = [];
-
-        if (Array.isArray(policeStations)) {
-          for (const station of policeStations) {
-            const district = station.district || station.city || "";
-            const thana = station.thana || station.name || station.police_station || "";
-            
-            if (district && !districtsMap.has(district.toLowerCase())) {
-              districtsMap.set(district.toLowerCase(), district);
+        if (rawData && typeof rawData === 'object' && !Array.isArray(rawData)) {
+          console.log("[Steadfast] Response keys:", Object.keys(rawData));
+          // Log first few characters of stringified to understand structure
+          const preview = JSON.stringify(rawData).substring(0, 500);
+          console.log("[Steadfast] Response preview:", preview);
+        }
+        
+        // The API might return data in different nested structures
+        let policeStations: unknown[] = [];
+        
+        if (Array.isArray(rawData)) {
+          policeStations = rawData;
+        } else if (rawData && typeof rawData === 'object') {
+          // Try various possible keys where data might be nested
+          const possibleKeys = ['data', 'police_stations', 'areas', 'list', 'items', 'result', 'response'];
+          for (const key of possibleKeys) {
+            if (Array.isArray((rawData as Record<string, unknown>)[key])) {
+              policeStations = (rawData as Record<string, unknown>)[key] as unknown[];
+              console.log(`[Steadfast] Found data under key: ${key}`);
+              break;
             }
-            
-            if (thana && district) {
-              thanasList.push({ name: thana, district: district });
+          }
+          
+          // If still empty, check if keys themselves are districts/areas (object format)
+          if (policeStations.length === 0) {
+            // Some APIs return { "District1": [...thanas], "District2": [...thanas] }
+            const objKeys = Object.keys(rawData as object);
+            if (objKeys.length > 0 && !['status', 'message', 'success', 'error'].includes(objKeys[0])) {
+              console.log("[Steadfast] Trying object-as-districts format");
+              for (const districtName of objKeys) {
+                const thanas = (rawData as Record<string, unknown>)[districtName];
+                if (Array.isArray(thanas)) {
+                  for (const thana of thanas) {
+                    policeStations.push({
+                      district: districtName,
+                      thana: typeof thana === 'string' ? thana : (thana as Record<string, unknown>).name || (thana as Record<string, unknown>).thana
+                    });
+                  }
+                }
+              }
             }
           }
         }
+        
+        console.log("[Steadfast] Extracted police stations count:", policeStations.length);
+        if (policeStations.length > 0) {
+          console.log("[Steadfast] Sample item:", JSON.stringify(policeStations[0]));
+        }
+        
+        // Extract unique districts and thanas
+        const districtsMap = new Map<string, string>();
+        const thanasList: { name: string; district: string }[] = [];
+
+        for (const station of policeStations) {
+          const s = station as Record<string, unknown>;
+          // Try multiple possible field names for district
+          const district = String(s.district_name || s.district || s.city || s.area || s.district_eng || "").trim();
+          // Try multiple possible field names for thana
+          const thana = String(s.thana_name || s.thana || s.name || s.police_station || s.upazila || s.thana_eng || "").trim();
+          
+          if (district && !districtsMap.has(district.toLowerCase())) {
+            districtsMap.set(district.toLowerCase(), district);
+          }
+          
+          if (thana && district) {
+            thanasList.push({ name: thana, district: district });
+          }
+        }
+        
+        console.log("[Steadfast] Extracted districts:", districtsMap.size);
+        console.log("[Steadfast] Extracted thanas:", thanasList.length);
 
         // Use service role client for admin operations
         const serviceClient = createClient(

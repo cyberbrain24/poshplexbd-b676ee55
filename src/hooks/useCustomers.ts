@@ -41,6 +41,14 @@ export interface PromoUsage {
   created_at: string;
 }
 
+export interface CustomerAccount {
+  id: string;
+  auth_user_id: string;
+  customer_id: string | null;
+  phone: string | null;
+  email: string | null;
+}
+
 export interface Customer {
   id: string;
   name: string;
@@ -61,6 +69,8 @@ export interface Customer {
   customer_type?: CustomerType;
   promo_usages?: PromoUsage[];
   promo_usage_count?: number;
+  customer_account?: CustomerAccount | null;
+  has_account?: boolean;
 }
 
 export interface CustomerFilters {
@@ -379,16 +389,33 @@ export const useCustomers = (filters?: CustomerFilters) => {
 
       if (promoError) throw promoError;
 
+      // Fetch customer accounts to check which customers have login accounts
+      const { data: accountsData, error: accountsError } = await supabase
+        .from("customer_accounts")
+        .select("customer_id, auth_user_id")
+        .in("customer_id", customerIds);
+
+      if (accountsError) throw accountsError;
+
+      // Create a map of customer_id to account status
+      const accountMap: Record<string, boolean> = {};
+      accountsData?.forEach(a => {
+        if (a.customer_id && a.auth_user_id) {
+          accountMap[a.customer_id] = true;
+        }
+      });
+
       // Count promo usages per customer
       const promoCountMap: Record<string, number> = {};
       promoData.forEach(p => {
         promoCountMap[p.customer_id] = (promoCountMap[p.customer_id] || 0) + 1;
       });
 
-      // Add promo_usage_count to each customer
+      // Add promo_usage_count and has_account to each customer
       const customersWithPromo = data.map(customer => ({
         ...customer,
         promo_usage_count: promoCountMap[customer.id] || 0,
+        has_account: accountMap[customer.id] || false,
       }));
 
       // Filter by promo usage if specified

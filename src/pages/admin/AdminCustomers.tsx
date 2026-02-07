@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { format } from "date-fns";
-import { Plus, Pencil, Trash2, Search, Filter, Users, UserCheck, Gift, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Filter, Users, UserCheck, Gift, X, LogIn } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -30,6 +30,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import {
   useCustomers,
   useDeleteCustomer,
@@ -46,6 +48,7 @@ const AdminCustomers = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [promoHistoryCustomer, setPromoHistoryCustomer] = useState<Customer | null>(null);
+  const [impersonating, setImpersonating] = useState<string | null>(null);
 
   // Filters state
   const [filters, setFilters] = useState<CustomerFilters>({});
@@ -55,6 +58,28 @@ const AdminCustomers = () => {
   const { data: divisions } = useDivisions();
   const { data: customerTypes } = useCustomerTypes();
   const deleteCustomer = useDeleteCustomer();
+
+  const handleLoginAsCustomer = async (customer: Customer) => {
+    setImpersonating(customer.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("impersonate-customer", {
+        body: { customerId: customer.id },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      if (data?.loginUrl) {
+        window.open(data.loginUrl, "_blank");
+        toast.success(`Opened login session for ${customer.name}`);
+      }
+    } catch (error: any) {
+      console.error("Impersonation error:", error);
+      toast.error(error.message || "Failed to login as customer");
+    } finally {
+      setImpersonating(null);
+    }
+  };
 
   // Apply search with debounce
   const handleSearchChange = (value: string) => {
@@ -290,7 +315,16 @@ const AdminCustomers = () => {
                       </Button>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => handleLoginAsCustomer(customer)}
+                          disabled={impersonating === customer.id}
+                          title="Login as customer"
+                        >
+                          <LogIn className="h-4 w-4" />
+                        </Button>
                         <Button size="icon" variant="ghost" onClick={() => handleEdit(customer)}>
                           <Pencil className="h-4 w-4" />
                         </Button>

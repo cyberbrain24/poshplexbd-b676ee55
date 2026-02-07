@@ -27,6 +27,7 @@ import {
   PaymentStatus,
   ItemFulfillmentStatus 
 } from "@/hooks/useOrders";
+import { useOrderPayments } from "@/hooks/useOrderPayments";
 import { useCreateShipment, useTrackShipment, STEADFAST_STATUS_MAP } from "@/hooks/useSteadfast";
 import { useApproveCODAmount } from "@/hooks/useCODApproval";
 import { useAccounts } from "@/hooks/useAccounts";
@@ -49,9 +50,12 @@ import {
   Send,
   Map,
   Pencil,
-  BadgeCheck
+  BadgeCheck,
+  Plus,
+  Banknote
 } from "lucide-react";
 import OrderItemEditModal from "./OrderItemEditModal";
+import PaymentRecordModal from "./PaymentRecordModal";
 
 interface OrderDetailModalProps {
   orderId: string;
@@ -77,6 +81,7 @@ const itemStatusOptions: ItemFulfillmentStatus[] = [
 const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => {
   const { data: order, isLoading } = useOrder(orderId);
   const { data: history } = useOrderHistory(orderId);
+  const { data: orderPayments } = useOrderPayments(orderId);
   const { data: accounts } = useAccounts();
   const updateOrderStatus = useUpdateOrderStatus();
   const updatePaymentStatus = useUpdatePaymentStatus();
@@ -99,6 +104,11 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
     line_total: number;
   } | null>(null);
   const [selectedAccountId, setSelectedAccountId] = useState<string>("");
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+
+  // Calculate paid amount from order or default to 0
+  const paidAmount = (order as any)?.paid_amount ?? 0;
+  const remainingBalance = (order?.total_amount ?? 0) - paidAmount;
 
   const handleUpdateOrderStatus = () => {
     if (!selectedStatus || !order) return;
@@ -286,13 +296,62 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
               </div>
             </div>
 
+            {/* Payment Summary - Manual Payment Recording */}
+            <div className="border border-border p-4 space-y-3">
+              <h3 className="font-medium flex items-center gap-2">
+                <Banknote className="h-4 w-4" /> Payment Summary
+              </h3>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Total Amount:</span>
+                  <span className="font-medium">৳{order.total_amount.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Paid Amount:</span>
+                  <span className="font-medium text-green-600">৳{paidAmount.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-sm font-bold border-t pt-2">
+                  <span>Remaining:</span>
+                  <span className={remainingBalance > 0 ? "text-destructive" : "text-green-600"}>
+                    ৳{remainingBalance.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+              {remainingBalance > 0 && order.order_status !== 'cancelled' && order.order_status !== 'returned' && (
+                <Button
+                  size="sm"
+                  className="w-full"
+                  onClick={() => setShowPaymentModal(true)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Record Payment
+                </Button>
+              )}
+              {orderPayments && orderPayments.length > 0 && (
+                <div className="pt-2 border-t space-y-2">
+                  <span className="text-xs font-medium text-muted-foreground">Payment History:</span>
+                  {orderPayments.map((payment) => (
+                    <div key={payment.id} className="text-xs flex justify-between items-center bg-muted/50 p-2 rounded">
+                      <div>
+                        <span className="font-medium">৳{payment.amount.toLocaleString()}</span>
+                        <span className="text-muted-foreground ml-2">→ {payment.account?.name}</span>
+                      </div>
+                      <span className="text-muted-foreground">
+                        {format(new Date(payment.recorded_at), 'MMM d, h:mm a')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Risk Flags */}
             {order.risk_flags && order.risk_flags.length > 0 && (
-              <div className="border border-red-200 bg-red-50 p-4 space-y-2">
-                <h3 className="font-medium flex items-center gap-2 text-red-800">
+              <div className="border border-destructive/30 bg-destructive/5 p-4 space-y-2">
+                <h3 className="font-medium flex items-center gap-2 text-destructive">
                   <AlertTriangle className="h-4 w-4" /> Risk Flags
                 </h3>
-                <ul className="text-sm text-red-700 space-y-1">
+                <ul className="text-sm text-destructive/80 space-y-1">
                   {order.risk_flags.map((flag, i) => (
                     <li key={i}>• {flag}</li>
                   ))}
@@ -572,6 +631,15 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
           orderId={orderId}
           open={!!editingItem}
           onClose={() => setEditingItem(null)}
+        />
+
+        {/* Payment Record Modal */}
+        <PaymentRecordModal
+          open={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          orderId={orderId}
+          totalAmount={order.total_amount}
+          paidAmount={paidAmount}
         />
       </DialogContent>
     </Dialog>

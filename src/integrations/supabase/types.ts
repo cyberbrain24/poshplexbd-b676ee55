@@ -635,6 +635,64 @@ export type Database = {
           },
         ]
       }
+      order_payments: {
+        Row: {
+          account_id: string
+          amount: number
+          created_at: string
+          id: string
+          order_id: string
+          payment_reference: string | null
+          recorded_at: string
+          recorded_by: string | null
+          transaction_id: string | null
+        }
+        Insert: {
+          account_id: string
+          amount: number
+          created_at?: string
+          id?: string
+          order_id: string
+          payment_reference?: string | null
+          recorded_at?: string
+          recorded_by?: string | null
+          transaction_id?: string | null
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          created_at?: string
+          id?: string
+          order_id?: string
+          payment_reference?: string | null
+          recorded_at?: string
+          recorded_by?: string | null
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_payments_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_payments_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_status_history: {
         Row: {
           changed_by: string | null
@@ -708,6 +766,7 @@ export type Database = {
           ip_address: string | null
           order_number: string
           order_status: Database["public"]["Enums"]["order_status"]
+          paid_amount: number
           payment_method_id: string | null
           payment_method_type:
             | Database["public"]["Enums"]["payment_method_type"]
@@ -754,6 +813,7 @@ export type Database = {
           ip_address?: string | null
           order_number: string
           order_status?: Database["public"]["Enums"]["order_status"]
+          paid_amount?: number
           payment_method_id?: string | null
           payment_method_type?:
             | Database["public"]["Enums"]["payment_method_type"]
@@ -800,6 +860,7 @@ export type Database = {
           ip_address?: string | null
           order_number?: string
           order_status?: Database["public"]["Enums"]["order_status"]
+          paid_amount?: number
           payment_method_id?: string | null
           payment_method_type?:
             | Database["public"]["Enums"]["payment_method_type"]

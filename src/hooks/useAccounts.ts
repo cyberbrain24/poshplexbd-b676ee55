@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { formatCurrency } from "@/lib/currency";
 
 export interface Account {
   id: string;
@@ -37,6 +38,16 @@ export interface Transaction {
   account?: Account;
   to_account?: Account;
   category?: TransactionCategory;
+  order_payments?: Array<{
+    id: string;
+    order_id: string;
+    amount: number;
+    order?: {
+      id: string;
+      order_number: string;
+      total_amount: number;
+    };
+  }>;
 }
 
 // Accounts hooks
@@ -213,7 +224,8 @@ export const useTransactions = (filters?: TransactionFilters) => {
           *,
           account:accounts!transactions_account_id_fkey(*),
           to_account:accounts!transactions_to_account_id_fkey(*),
-          category:transaction_categories(*)
+          category:transaction_categories(*),
+          order_payments(id, order_id, amount, order:orders(id, order_number, total_amount))
         `)
         .order("date", { ascending: false });
 
@@ -267,7 +279,6 @@ export const useUpdateTransaction = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...transaction }: Partial<Transaction> & { id: string }) => {
-      // Update the transaction
       const { data, error } = await supabase
         .from("transactions")
         .update(transaction)
@@ -278,7 +289,6 @@ export const useUpdateTransaction = () => {
 
       // If amount changed, update related order_payments and recalculate order paid_amount
       if (transaction.amount !== undefined) {
-        // Find related order_payment
         const { data: orderPayment } = await supabase
           .from("order_payments")
           .select("id, order_id, amount")
@@ -286,44 +296,51 @@ export const useUpdateTransaction = () => {
           .single();
 
         if (orderPayment) {
-          const amountDiff = transaction.amount - orderPayment.amount;
-          
+          const oldAmount = orderPayment.amount;
+
           // Update the order_payment amount
           await supabase
             .from("order_payments")
             .update({ amount: transaction.amount })
             .eq("id", orderPayment.id);
 
-          // Recalculate order's total paid_amount
+          // Recalculate order's total paid_amount from all payments
           const { data: allPayments } = await supabase
             .from("order_payments")
-            .select("amount")
+            .select("id, amount")
             .eq("order_id", orderPayment.order_id);
 
+          // The allPayments still has the old amount for this payment, so adjust
           const newPaidAmount = (allPayments || []).reduce(
-            (sum, p) => sum + (p.amount || 0), 0
-          ) + amountDiff;
+            (sum, p) => sum + (p.id === orderPayment.id ? transaction.amount! : (p.amount || 0)), 0
+          );
 
-          // Get order total to determine payment status
           const { data: order } = await supabase
             .from("orders")
-            .select("total_amount")
+            .select("total_amount, order_number, payment_status")
             .eq("id", orderPayment.order_id)
             .single();
 
-          const newPaymentStatus = order && newPaidAmount >= order.total_amount 
-            ? "paid" 
-            : newPaidAmount > 0 
-              ? "partially_paid" 
+          const newPaymentStatus = order && newPaidAmount >= order.total_amount
+            ? "paid"
+            : newPaidAmount > 0
+              ? "partially_paid"
               : "unpaid";
 
           await supabase
             .from("orders")
-            .update({ 
-              paid_amount: newPaidAmount,
-              payment_status: newPaymentStatus 
-            })
+            .update({ paid_amount: newPaidAmount, payment_status: newPaymentStatus })
             .eq("id", orderPayment.order_id);
+
+          // Add timeline history entry
+          await supabase.from("order_status_history").insert({
+            order_id: orderPayment.order_id,
+            previous_status: order?.payment_status || "unknown",
+            new_status: newPaymentStatus,
+            status_type: "payment",
+            notes: `Payment updated from ${formatCurrency(oldAmount)} to ${formatCurrency(transaction.amount)}. New paid: ${formatCurrency(newPaidAmount)}`,
+            metadata: { updated_transaction_id: id },
+          });
         }
       }
 
@@ -334,6 +351,7 @@ export const useUpdateTransaction = () => {
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
       queryClient.invalidateQueries({ queryKey: ["order-payments"] });
       queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["order-history"] });
       toast.success("Transaction updated successfully");
     },
     onError: (error) => {
@@ -346,23 +364,76 @@ export const useDeleteTransaction = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      // First, delete any order_payments that reference this transaction
+      // Find linked order_payments before deleting
+      const { data: linkedPayments } = await supabase
+        .from("order_payments")
+        .select("id, order_id, amount")
+        .eq("transaction_id", id);
+
+      // Delete order_payments referencing this transaction
       const { error: paymentError } = await supabase
         .from("order_payments")
         .delete()
         .eq("transaction_id", id);
-      
       if (paymentError) throw paymentError;
 
-      // Then delete the transaction itself
+      // Delete the transaction
       const { error } = await supabase.from("transactions").delete().eq("id", id);
       if (error) throw error;
+
+      // Recalculate each affected order's paid_amount and add timeline entry
+      if (linkedPayments && linkedPayments.length > 0) {
+        const orderIds = [...new Set(linkedPayments.map((p) => p.order_id))];
+        for (const orderId of orderIds) {
+          const removedAmount = linkedPayments
+            .filter((p) => p.order_id === orderId)
+            .reduce((sum, p) => sum + (p.amount || 0), 0);
+
+          // Get remaining payments for this order
+          const { data: remainingPayments } = await supabase
+            .from("order_payments")
+            .select("amount")
+            .eq("order_id", orderId);
+
+          const newPaidAmount = (remainingPayments || []).reduce(
+            (sum, p) => sum + (p.amount || 0), 0
+          );
+
+          const { data: order } = await supabase
+            .from("orders")
+            .select("total_amount, order_number, payment_status")
+            .eq("id", orderId)
+            .single();
+
+          const newPaymentStatus = newPaidAmount >= (order?.total_amount || 0)
+            ? "paid"
+            : newPaidAmount > 0
+              ? "partially_paid"
+              : "unpaid";
+
+          await supabase
+            .from("orders")
+            .update({ paid_amount: newPaidAmount, payment_status: newPaymentStatus })
+            .eq("id", orderId);
+
+          // Add timeline history entry
+          await supabase.from("order_status_history").insert({
+            order_id: orderId,
+            previous_status: order?.payment_status || "unknown",
+            new_status: newPaymentStatus,
+            status_type: "payment",
+            notes: `Payment of ${formatCurrency(removedAmount)} deleted from accounts. New paid: ${formatCurrency(newPaidAmount)}`,
+            metadata: { deleted_transaction_id: id },
+          });
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
       queryClient.invalidateQueries({ queryKey: ["order-payments"] });
       queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["order-history"] });
       toast.success("Transaction deleted successfully");
     },
     onError: (error) => {

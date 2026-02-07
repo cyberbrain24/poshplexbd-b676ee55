@@ -334,7 +334,16 @@ const AdminAccounts = () => {
                         : transaction.category?.name || "-"
                       }
                     </TableCell>
-                    <TableCell className="max-w-[200px] truncate">{transaction.notes || "-"}</TableCell>
+                    <TableCell className="max-w-[200px] truncate">
+                      {transaction.order_payments && transaction.order_payments.length > 0 ? (
+                        <span className="text-xs text-primary font-medium">
+                          Order: {transaction.order_payments.map(op => op.order?.order_number).filter(Boolean).join(", ")}
+                          {transaction.notes ? ` — ${transaction.notes}` : ""}
+                        </span>
+                      ) : (
+                        transaction.notes || "-"
+                      )}
+                    </TableCell>
                     <TableCell
                       className={`text-right font-medium ${
                         transaction.type === "income" 

@@ -3,11 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Product, ProductFormData, ProductImage, ProductVariant, VariantFormData } from "@/types/product";
 
 // Lightweight product list query - for admin list and category pages
-export const useProductsList = () => {
+// NOTE: Supabase has a 1000 row default limit. For >1000 products, use useOptimizedProducts
+export const useProductsList = (limit?: number) => {
   return useQuery({
-    queryKey: ["products-list"],
+    queryKey: ["products-list", limit],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("products")
         .select(`
           id,
@@ -22,12 +23,33 @@ export const useProductsList = () => {
           images:product_images(id, image_url, is_main, sort_order)
         `)
         .order("created_at", { ascending: false });
+      
+      // Apply limit if specified, otherwise use 1000 (Supabase max default)
+      if (limit) {
+        query = query.limit(limit);
+      }
 
+      const { data, error } = await query;
       if (error) throw error;
       return data as Product[];
     },
     staleTime: 1000 * 60 * 2, // 2 minutes
     gcTime: 1000 * 60 * 5, // 5 minutes (formerly cacheTime)
+  });
+};
+
+// Get total product count (for display purposes)
+export const useProductCount = () => {
+  return useQuery({
+    queryKey: ["products-count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("products")
+        .select("id", { count: "exact", head: true });
+      if (error) throw error;
+      return count || 0;
+    },
+    staleTime: 1000 * 60 * 2,
   });
 };
 
@@ -127,6 +149,8 @@ export const useCreateProduct = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["products-list"] });
+      queryClient.invalidateQueries({ queryKey: ["products-count"] });
+      queryClient.invalidateQueries({ queryKey: ["category-products-optimized"] });
     },
   });
 };
@@ -164,6 +188,7 @@ export const useUpdateProduct = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["products-list"] });
+      queryClient.invalidateQueries({ queryKey: ["category-products-optimized"] });
     },
   });
 };
@@ -179,6 +204,8 @@ export const useDeleteProduct = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["products-list"] });
+      queryClient.invalidateQueries({ queryKey: ["products-count"] });
+      queryClient.invalidateQueries({ queryKey: ["category-products-optimized"] });
     },
   });
 };

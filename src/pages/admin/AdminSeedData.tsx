@@ -83,6 +83,10 @@ const AdminSeedData = () => {
             refetchStats();
             queryClient.invalidateQueries({ queryKey: ['products'] });
             queryClient.invalidateQueries({ queryKey: ['products-list'] });
+            queryClient.invalidateQueries({ queryKey: ['products-count'] });
+            queryClient.invalidateQueries({ queryKey: ['products-optimized'] });
+            queryClient.invalidateQueries({ queryKey: ['category-products-optimized'] });
+            queryClient.invalidateQueries({ queryKey: ['product-stats'] });
           } else if (updatedJob.status === 'failed') {
             toast.error(`Seeding failed: ${updatedJob.error_message}`);
             setIsSeeding(false);
@@ -115,6 +119,10 @@ const AdminSeedData = () => {
           if (data.status === 'completed') {
             queryClient.invalidateQueries({ queryKey: ['products'] });
             queryClient.invalidateQueries({ queryKey: ['products-list'] });
+            queryClient.invalidateQueries({ queryKey: ['products-count'] });
+            queryClient.invalidateQueries({ queryKey: ['products-optimized'] });
+            queryClient.invalidateQueries({ queryKey: ['category-products-optimized'] });
+            queryClient.invalidateQueries({ queryKey: ['product-stats'] });
           }
         }
       }
@@ -175,6 +183,10 @@ const AdminSeedData = () => {
       refetchStats();
       queryClient.invalidateQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['products-list'] });
+      queryClient.invalidateQueries({ queryKey: ['products-count'] });
+      queryClient.invalidateQueries({ queryKey: ['products-optimized'] });
+      queryClient.invalidateQueries({ queryKey: ['category-products-optimized'] });
+      queryClient.invalidateQueries({ queryKey: ['product-stats'] });
     } catch (error: any) {
       console.error('Clear error:', error);
       toast.error(`Failed to clear: ${error.message}`);

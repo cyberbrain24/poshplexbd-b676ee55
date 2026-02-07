@@ -267,6 +267,7 @@ export const useUpdateTransaction = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...transaction }: Partial<Transaction> & { id: string }) => {
+      // Update the transaction
       const { data, error } = await supabase
         .from("transactions")
         .update(transaction)
@@ -274,11 +275,65 @@ export const useUpdateTransaction = () => {
         .select()
         .single();
       if (error) throw error;
+
+      // If amount changed, update related order_payments and recalculate order paid_amount
+      if (transaction.amount !== undefined) {
+        // Find related order_payment
+        const { data: orderPayment } = await supabase
+          .from("order_payments")
+          .select("id, order_id, amount")
+          .eq("transaction_id", id)
+          .single();
+
+        if (orderPayment) {
+          const amountDiff = transaction.amount - orderPayment.amount;
+          
+          // Update the order_payment amount
+          await supabase
+            .from("order_payments")
+            .update({ amount: transaction.amount })
+            .eq("id", orderPayment.id);
+
+          // Recalculate order's total paid_amount
+          const { data: allPayments } = await supabase
+            .from("order_payments")
+            .select("amount")
+            .eq("order_id", orderPayment.order_id);
+
+          const newPaidAmount = (allPayments || []).reduce(
+            (sum, p) => sum + (p.amount || 0), 0
+          ) + amountDiff;
+
+          // Get order total to determine payment status
+          const { data: order } = await supabase
+            .from("orders")
+            .select("total_amount")
+            .eq("id", orderPayment.order_id)
+            .single();
+
+          const newPaymentStatus = order && newPaidAmount >= order.total_amount 
+            ? "paid" 
+            : newPaidAmount > 0 
+              ? "partially_paid" 
+              : "unpaid";
+
+          await supabase
+            .from("orders")
+            .update({ 
+              paid_amount: newPaidAmount,
+              payment_status: newPaymentStatus 
+            })
+            .eq("id", orderPayment.order_id);
+        }
+      }
+
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["order-payments"] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
       toast.success("Transaction updated successfully");
     },
     onError: (error) => {

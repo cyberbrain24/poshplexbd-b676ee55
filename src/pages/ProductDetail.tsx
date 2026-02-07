@@ -7,6 +7,7 @@ import ProductInfo from "../components/product/ProductInfo";
 import ProductDescription from "../components/product/ProductDescription";
 import ProductCarousel from "../components/content/ProductCarousel";
 import { useProduct } from "@/hooks/useProducts";
+import { ProductSEO } from "@/components/seo";
 import { 
   Breadcrumb, 
   BreadcrumbItem, 
@@ -27,6 +28,7 @@ const ProductDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <ProductSEO product={product} />
       <PoshplexHeader />
       
       <main className="pt-6">

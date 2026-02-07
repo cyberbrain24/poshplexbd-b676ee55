@@ -426,41 +426,60 @@ export const useUpdateOrder = () => {
   });
 };
 
-// Delete order
+// Delete order with full cascade (including linked transactions)
 export const useDeleteOrder = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
     mutationFn: async (orderId: string) => {
-      // First delete order items
+      // 1. Get linked transaction IDs from order_payments before deleting them
+      const { data: orderPayments } = await supabase
+        .from("order_payments")
+        .select("transaction_id")
+        .eq("order_id", orderId);
+      
+      const transactionIds = orderPayments
+        ?.map(p => p.transaction_id)
+        .filter((id): id is string => id !== null) || [];
+
+      // 2. Delete order items
       const { error: itemsError } = await supabase
         .from("order_items")
         .delete()
         .eq("order_id", orderId);
       if (itemsError) throw itemsError;
 
-      // Delete order status history
+      // 3. Delete order status history
       const { error: historyError } = await supabase
         .from("order_status_history")
         .delete()
         .eq("order_id", orderId);
       if (historyError) throw historyError;
 
-      // Delete order payments
+      // 4. Delete order payments (must be before transactions due to FK)
       const { error: paymentsError } = await supabase
         .from("order_payments")
         .delete()
         .eq("order_id", orderId);
       if (paymentsError) throw paymentsError;
 
-      // Delete return requests
+      // 5. Delete linked transactions (triggers will update account balances)
+      if (transactionIds.length > 0) {
+        const { error: transactionsError } = await supabase
+          .from("transactions")
+          .delete()
+          .in("id", transactionIds);
+        if (transactionsError) throw transactionsError;
+      }
+
+      // 6. Delete return requests
       const { error: returnsError } = await supabase
         .from("return_requests")
         .delete()
         .eq("order_id", orderId);
       if (returnsError) throw returnsError;
 
-      // Finally delete the order
+      // 7. Finally delete the order
       const { error } = await supabase
         .from("orders")
         .delete()
@@ -470,7 +489,9 @@ export const useDeleteOrder = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       queryClient.invalidateQueries({ queryKey: ["order-stats"] });
-      toast.success("Order deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      toast.success("Order and linked transactions deleted");
     },
     onError: (error) => {
       toast.error("Failed to delete order");

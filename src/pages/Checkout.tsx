@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCart } from "@/contexts/CartContext";
 import { usePaymentMethods, PaymentMethodType } from "@/hooks/useOrders";
@@ -30,13 +31,17 @@ const Checkout = () => {
     name: "",
     email: "",
     phone: "",
+    gender: "",
     address: "",
-    city: "",
     divisionId: "",
     thanaId: "",
     postalCode: "",
     notes: "",
   });
+
+  // Partial payment state
+  const [partialPaymentAmount, setPartialPaymentAmount] = useState<string>("");
+  const [usePartialPayment, setUsePartialPayment] = useState(false);
 
   const { data: thanas } = useThanas(customerDetails.divisionId);
 
@@ -142,7 +147,6 @@ const Checkout = () => {
           shippingPhone: customerDetails.phone,
           shippingEmail: customerDetails.email || undefined,
           shippingAddress: customerDetails.address,
-          shippingCity: customerDetails.city || undefined,
           shippingDivisionId: customerDetails.divisionId || undefined,
           shippingThanaId: customerDetails.thanaId || undefined,
           shippingPostalCode: customerDetails.postalCode || undefined,
@@ -371,15 +375,33 @@ const Checkout = () => {
                     </div>
                   </div>
 
-                  <div>
-                    <Label className="text-sm font-light">Email (Optional)</Label>
-                    <Input
-                      type="email"
-                      value={customerDetails.email}
-                      onChange={(e) => handleCustomerChange("email", e.target.value)}
-                      className="mt-1.5 rounded-none"
-                      placeholder="your@email.com"
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-light">Email (Optional)</Label>
+                      <Input
+                        type="email"
+                        value={customerDetails.email}
+                        onChange={(e) => handleCustomerChange("email", e.target.value)}
+                        className="mt-1.5 rounded-none"
+                        placeholder="your@email.com"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-light">Gender</Label>
+                      <Select
+                        value={customerDetails.gender}
+                        onValueChange={(value) => handleCustomerChange("gender", value)}
+                      >
+                        <SelectTrigger className="mt-1.5 rounded-none">
+                          <SelectValue placeholder="Select gender" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="male">Male</SelectItem>
+                          <SelectItem value="female">Female</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
                   <div>
@@ -394,13 +416,13 @@ const Checkout = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label className="text-sm font-light">Division</Label>
+                      <Label className="text-sm font-light">District</Label>
                       <Select
                         value={customerDetails.divisionId}
                         onValueChange={(value) => handleCustomerChange("divisionId", value)}
                       >
                         <SelectTrigger className="mt-1.5 rounded-none">
-                          <SelectValue placeholder="Select division" />
+                          <SelectValue placeholder="Select district" />
                         </SelectTrigger>
                         <SelectContent>
                           {divisions?.map((division) => (
@@ -432,25 +454,14 @@ const Checkout = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm font-light">City</Label>
-                      <Input
-                        value={customerDetails.city}
-                        onChange={(e) => handleCustomerChange("city", e.target.value)}
-                        className="mt-1.5 rounded-none"
-                        placeholder="City name"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-sm font-light">Postal Code</Label>
-                      <Input
-                        value={customerDetails.postalCode}
-                        onChange={(e) => handleCustomerChange("postalCode", e.target.value)}
-                        className="mt-1.5 rounded-none"
-                        placeholder="1234"
-                      />
-                    </div>
+                  <div>
+                    <Label className="text-sm font-light">Postal Code</Label>
+                    <Input
+                      value={customerDetails.postalCode}
+                      onChange={(e) => handleCustomerChange("postalCode", e.target.value)}
+                      className="mt-1.5 rounded-none"
+                      placeholder="1234"
+                    />
                   </div>
 
                   <div>
@@ -540,8 +551,8 @@ const Checkout = () => {
                 {selectedPaymentMethod && selectedPaymentMethod.type !== 'cod' && (
                   <div className="mt-6 space-y-4">
                     {selectedPaymentMethod.instructions && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-none p-4">
-                        <p className="text-sm text-blue-800 whitespace-pre-line">
+                      <div className="bg-accent/50 border border-accent rounded-none p-4">
+                        <p className="text-sm text-foreground whitespace-pre-line">
                           {selectedPaymentMethod.instructions}
                         </p>
                       </div>
@@ -566,6 +577,44 @@ const Checkout = () => {
                           placeholder="Number you sent from"
                         />
                       </div>
+                    </div>
+
+                    {/* Partial Payment Option */}
+                    <div className="space-y-3 pt-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="partialPayment"
+                          checked={usePartialPayment}
+                          onCheckedChange={(checked) => {
+                            setUsePartialPayment(checked as boolean);
+                            if (!checked) setPartialPaymentAmount("");
+                          }}
+                        />
+                        <Label htmlFor="partialPayment" className="text-sm font-light cursor-pointer">
+                          I want to make a partial payment now
+                        </Label>
+                      </div>
+                      
+                      {usePartialPayment && (
+                        <div className="pl-6">
+                          <Label className="text-sm font-light">Payment Amount</Label>
+                          <div className="flex items-center gap-2 mt-1.5">
+                            <span className="text-muted-foreground">৳</span>
+                            <Input
+                              type="number"
+                              value={partialPaymentAmount}
+                              onChange={(e) => setPartialPaymentAmount(e.target.value)}
+                              className="rounded-none max-w-[200px]"
+                              placeholder={`Max: ${total}`}
+                              min={1}
+                              max={total}
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Remaining balance (৳{(total - (Number(partialPaymentAmount) || 0)).toLocaleString()}) can be paid later
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

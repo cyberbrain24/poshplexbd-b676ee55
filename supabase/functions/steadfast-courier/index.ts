@@ -133,12 +133,16 @@ Deno.serve(async (req) => {
         ].filter(Boolean);
         const fullAddress = addressParts.join(", ");
 
+        // Calculate due amount (total - already paid)
+        const paidAmount = Number(order.paid_amount) || 0;
+        const dueAmount = Math.max(0, Number(order.total_amount) - paidAmount);
+
         const payload: SteadfastOrderPayload = {
           invoice: order.order_number,
           recipient_name: order.shipping_name,
           recipient_phone: order.shipping_phone,
           recipient_address: fullAddress,
-          cod_amount: order.payment_method_type === "cod" ? Number(order.total_amount) : 0,
+          cod_amount: dueAmount, // Send only the remaining due amount
           note: order.customer_notes || undefined,
           item_description: itemDescription,
           recipient_email: order.shipping_email || undefined,
@@ -215,12 +219,16 @@ Deno.serve(async (req) => {
           ].filter(Boolean);
           const fullAddress = addressParts.join(", ");
 
+          // Calculate due amount (total - already paid)
+          const paidAmount = Number(order.paid_amount) || 0;
+          const dueAmount = Math.max(0, Number(order.total_amount) - paidAmount);
+
           return {
             invoice: order.order_number,
             recipient_name: order.shipping_name,
             recipient_phone: order.shipping_phone,
             recipient_address: fullAddress,
-            cod_amount: order.payment_method_type === "cod" ? Number(order.total_amount) : 0,
+            cod_amount: dueAmount, // Send only the remaining due amount
             note: order.customer_notes || "",
             item_description: itemDescription,
           };

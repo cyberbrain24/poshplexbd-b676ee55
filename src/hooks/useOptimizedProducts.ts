@@ -6,14 +6,25 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { usePagination, useDebounce, QUERY_CONFIG } from "@/utils/performance";
+import { useDebounce, QUERY_CONFIG } from "@/utils/performance";
 import type { Product } from "@/types/product";
+
+interface PaginationResult {
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  totalCount: number;
+  offset: number;
+  nextPage: () => void;
+  prevPage: () => void;
+  setPage: (page: number) => void;
+}
 
 interface UseOptimizedProductsResult {
   products: Product[];
   isLoading: boolean;
   error: Error | null;
-  pagination: ReturnType<typeof usePagination>;
+  pagination: PaginationResult;
   totalCount: number;
 }
 
@@ -22,16 +33,24 @@ export const useOptimizedProducts = (
   categoryId?: string,
   activeOnly = false
 ): UseOptimizedProductsResult => {
-  const pagination = usePagination(50);
+  const [page, setPage] = useState(1);
+  const pageSize = 50;
   const debouncedSearch = useDebounce(search, 300);
+  
+  // Reset page when search changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, categoryId, activeOnly]);
+
+  const offset = (page - 1) * pageSize;
 
   const queryKey = [
     "products-optimized",
     debouncedSearch,
     categoryId,
     activeOnly,
-    pagination.page,
-    pagination.pageSize,
+    page,
+    pageSize,
   ];
 
   const { data, isLoading, error } = useQuery({
@@ -53,7 +72,7 @@ export const useOptimizedProducts = (
           images:product_images(id, image_url, is_main, sort_order)
         `)
         .order("created_at", { ascending: false })
-        .range(pagination.offset, pagination.offset + pagination.pageSize - 1);
+        .range(offset, offset + pageSize - 1);
 
       let countQuery = supabase
         .from("products")
@@ -87,16 +106,38 @@ export const useOptimizedProducts = (
     ...QUERY_CONFIG.listView,
   });
 
-  if (data?.totalCount !== undefined && data.totalCount !== pagination.totalCount) {
-    pagination.setTotalCount(data.totalCount);
-  }
+  const totalCount = data?.totalCount || 0;
+  const totalPages = Math.ceil(totalCount / pageSize);
+
+  const nextPage = useCallback(() => {
+    if (page < totalPages) setPage(p => p + 1);
+  }, [page, totalPages]);
+
+  const prevPage = useCallback(() => {
+    if (page > 1) setPage(p => p - 1);
+  }, [page]);
+
+  const setPageNum = useCallback((newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) setPage(newPage);
+  }, [totalPages]);
+
+  const pagination: PaginationResult = {
+    page,
+    pageSize,
+    totalPages,
+    totalCount,
+    offset,
+    nextPage,
+    prevPage,
+    setPage: setPageNum,
+  };
 
   return {
     products: data?.products || [],
     isLoading,
     error: error as Error | null,
     pagination,
-    totalCount: data?.totalCount || 0,
+    totalCount,
   };
 };
 

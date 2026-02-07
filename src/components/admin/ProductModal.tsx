@@ -88,7 +88,6 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
           sku: v.sku,
           purchase_price: v.purchase_price,
           selling_price: v.selling_price,
-          stock: v.stock,
           is_active: v.is_active,
         })));
       } else {
@@ -211,7 +210,6 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
       sku: "",
       purchase_price: 0,
       selling_price: formData.base_price,
-      stock: 0,
       is_active: true,
     }]);
   };
@@ -241,7 +239,6 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
             sku: "",
             purchase_price: 0,
             selling_price: formData.base_price,
-            stock: 0,
             is_active: true,
           });
         }
@@ -596,7 +593,6 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                           <TableHead>Material</TableHead>
                           <TableHead>Purchase Price</TableHead>
                           <TableHead>Selling Price</TableHead>
-                          <TableHead>Stock</TableHead>
                           <TableHead>SKU</TableHead>
                           <TableHead className="w-16"></TableHead>
                         </TableRow>
@@ -668,14 +664,6 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                                 value={variant.selling_price}
                                 onChange={(e) => updateVariantField(index, "selling_price", parseFloat(e.target.value) || 0)}
                                 className="w-24"
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                type="number"
-                                value={variant.stock}
-                                onChange={(e) => updateVariantField(index, "stock", parseInt(e.target.value) || 0)}
-                                className="w-20"
                               />
                             </TableCell>
                             <TableCell>

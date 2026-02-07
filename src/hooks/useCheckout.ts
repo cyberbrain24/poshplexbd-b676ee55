@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useCart, CartItem } from "@/contexts/CartContext";
 import { PaymentMethodType } from "./useOrders";
-import { checkStockAvailability, InventoryTransactionType } from "./useInventory";
 
 interface CheckoutData {
   // Customer info
@@ -119,28 +118,14 @@ export const useCreateOrder = () => {
       checkoutData: CheckoutData; 
       cartItems: CartItem[];
     }): Promise<CheckoutResult> => {
-      // Step 1: Check stock availability (Pre-purchase validation)
-      const stockCheck = await checkStockAvailability(
-        cartItems.map(item => ({
-          variantId: item.variantId || item.id,
-          quantity: item.quantity,
-        }))
-      );
-
-      const outOfStock = stockCheck.filter(s => !s.available);
-      if (outOfStock.length > 0) {
-        const skus = outOfStock.map(s => s.sku || 'Unknown').join(', ');
-        throw new Error(`Out of stock: ${skus}. Please update your cart.`);
-      }
-
-      // Step 2: Calculate risk score
+      // Calculate risk score
       const { riskLevel, flags } = await calculateRiskScore(
         checkoutData.customerId,
         checkoutData.paymentMethodType,
         checkoutData.subtotal + (checkoutData.shippingCost || 0)
       );
 
-      // Step 3: Determine initial payment status based on paid amount and method
+      // Determine initial payment status based on paid amount and method
       const paidAmount = checkoutData.paidAmount || 0;
       const totalAmount = checkoutData.subtotal 
         - (checkoutData.discountAmount || 0) 
@@ -166,7 +151,7 @@ export const useCreateOrder = () => {
         }
       }
 
-      // Step 4: Create order with paid_amount
+      // Create order
       const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert({
@@ -204,7 +189,7 @@ export const useCreateOrder = () => {
 
       if (orderError) throw orderError;
 
-      // Step 5: Create order items
+      // Create order items
       const orderItems = cartItems.map(item => ({
         order_id: order.id,
         product_id: item.productId || null,
@@ -222,71 +207,20 @@ export const useCreateOrder = () => {
         fulfillment_status: 'pending' as const,
       }));
 
-      const { data: items, error: itemsError } = await supabase
+      const { error: itemsError } = await supabase
         .from("order_items")
-        .insert(orderItems)
-        .select();
+        .insert(orderItems);
 
       if (itemsError) throw itemsError;
 
-      // Step 6: DIRECT-SYNC - Immediately deduct stock for each item
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        const cartItem = cartItems[i];
-        const variantId = cartItem.variantId || cartItem.id;
-
-        // Get current stock
-        const { data: variant } = await supabase
-          .from("product_variants")
-          .select("stock")
-          .eq("id", variantId)
-          .single();
-
-        if (variant) {
-          const previousStock = variant.stock;
-          const newStock = Math.max(0, variant.stock - cartItem.quantity);
-
-          // Immediate deduction with race condition prevention
-          const { error: updateError } = await supabase
-            .from("product_variants")
-            .update({
-              stock: newStock,
-              available_stock: newStock,
-              reserved_stock: 0,
-            })
-            .eq("id", variantId)
-            .gte("stock", cartItem.quantity);
-
-          if (updateError) {
-            // If update fails due to insufficient stock, rollback order
-            await supabase.from("orders").delete().eq("id", order.id);
-            throw new Error(`Stock update failed for ${cartItem.name}. Please try again.`);
-          }
-
-          // Log transaction for audit trail
-          await supabase
-            .from("inventory_transactions")
-            .insert({
-              variant_id: variantId,
-              order_id: order.id,
-              order_item_id: item.id,
-              transaction_type: 'sale' as InventoryTransactionType,
-              quantity: -cartItem.quantity,
-              available_stock_after: newStock,
-              reserved_stock_after: 0,
-              notes: `Sold ${cartItem.quantity} units - Order ${order.order_number}`,
-            });
-        }
-      }
-
-      // Step 7: Add initial status history
+      // Add initial status history
       await supabase
         .from("order_status_history")
         .insert({
           order_id: order.id,
           new_status: 'pending',
           status_type: 'order',
-          notes: 'Order placed - Stock deducted',
+          notes: 'Order placed',
         });
 
       return {
@@ -299,8 +233,6 @@ export const useCreateOrder = () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["products-list"] });
-      queryClient.invalidateQueries({ queryKey: ["inventory-transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["low-stock-items"] });
       toast.success(`Order ${result.orderNumber} placed successfully!`);
     },
     onError: (error: Error) => {

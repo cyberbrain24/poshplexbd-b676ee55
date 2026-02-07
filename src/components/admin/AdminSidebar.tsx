@@ -24,7 +24,6 @@ import {
   Crown,
   ShoppingCart,
   ExternalLink,
-  Boxes,
   Globe,
   Puzzle,
   Database,
@@ -61,7 +60,6 @@ const productEditsItems: NavItem[] = [
 
 const orderItems: NavItem[] = [
   { icon: ShoppingCart, label: "All Orders", path: "/admin/orders" },
-  { icon: Boxes, label: "Inventory", path: "/admin/inventory" },
   { icon: CreditCard, label: "Payment Methods", path: "/admin/payment-methods" },
 ];
 

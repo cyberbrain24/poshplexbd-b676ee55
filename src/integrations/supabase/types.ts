@@ -506,70 +506,6 @@ export type Database = {
         }
         Relationships: []
       }
-      inventory_transactions: {
-        Row: {
-          available_stock_after: number
-          created_at: string
-          id: string
-          notes: string | null
-          order_id: string | null
-          order_item_id: string | null
-          performed_by: string | null
-          quantity: number
-          reserved_stock_after: number
-          transaction_type: Database["public"]["Enums"]["inventory_transaction_type"]
-          variant_id: string
-        }
-        Insert: {
-          available_stock_after: number
-          created_at?: string
-          id?: string
-          notes?: string | null
-          order_id?: string | null
-          order_item_id?: string | null
-          performed_by?: string | null
-          quantity: number
-          reserved_stock_after: number
-          transaction_type: Database["public"]["Enums"]["inventory_transaction_type"]
-          variant_id: string
-        }
-        Update: {
-          available_stock_after?: number
-          created_at?: string
-          id?: string
-          notes?: string | null
-          order_id?: string | null
-          order_item_id?: string | null
-          performed_by?: string | null
-          quantity?: number
-          reserved_stock_after?: number
-          transaction_type?: Database["public"]["Enums"]["inventory_transaction_type"]
-          variant_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "inventory_transactions_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inventory_transactions_order_item_id_fkey"
-            columns: ["order_item_id"]
-            isOneToOne: false
-            referencedRelation: "order_items"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inventory_transactions_variant_id_fkey"
-            columns: ["variant_id"]
-            isOneToOne: false
-            referencedRelation: "product_variants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       materials: {
         Row: {
           created_at: string
@@ -1092,7 +1028,6 @@ export type Database = {
       }
       product_variants: {
         Row: {
-          available_stock: number
           color_id: string | null
           created_at: string
           id: string
@@ -1100,15 +1035,12 @@ export type Database = {
           material_id: string | null
           product_id: string
           purchase_price: number
-          reserved_stock: number
           selling_price: number
           size_id: string | null
           sku: string
-          stock: number
           updated_at: string
         }
         Insert: {
-          available_stock?: number
           color_id?: string | null
           created_at?: string
           id?: string
@@ -1116,15 +1048,12 @@ export type Database = {
           material_id?: string | null
           product_id: string
           purchase_price?: number
-          reserved_stock?: number
           selling_price?: number
           size_id?: string | null
           sku: string
-          stock?: number
           updated_at?: string
         }
         Update: {
-          available_stock?: number
           color_id?: string | null
           created_at?: string
           id?: string
@@ -1132,11 +1061,9 @@ export type Database = {
           material_id?: string | null
           product_id?: string
           purchase_price?: number
-          reserved_stock?: number
           selling_price?: number
           size_id?: string | null
           sku?: string
-          stock?: number
           updated_at?: string
         }
         Relationships: [
@@ -1900,18 +1827,6 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
-      inventory_transaction_type:
-        | "reserve"
-        | "deduct"
-        | "restock"
-        | "return_good"
-        | "return_damaged"
-        | "adjustment"
-        | "initial"
-        | "sale"
-        | "cancellation"
-        | "write_off"
-        | "return"
       item_fulfillment_status:
         | "pending"
         | "reserved"
@@ -2077,19 +1992,6 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
-      inventory_transaction_type: [
-        "reserve",
-        "deduct",
-        "restock",
-        "return_good",
-        "return_damaged",
-        "adjustment",
-        "initial",
-        "sale",
-        "cancellation",
-        "write_off",
-        "return",
-      ],
       item_fulfillment_status: [
         "pending",
         "reserved",

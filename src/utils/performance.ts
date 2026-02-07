@@ -252,18 +252,6 @@ export const SLIM_COLUMNS = {
     category:categories(id, name),
     images:product_images(id, image_url, is_main)
   `,
-  // Inventory list view
-  inventoryList: `
-    id,
-    sku,
-    stock,
-    available_stock,
-    selling_price,
-    is_active,
-    product:products(id, name),
-    color:colors(id, name),
-    size:sizes(id, label)
-  `,
   // Customers list view
   customersList: `
     id,

@@ -27,6 +27,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import Auth from "./pages/Auth";
 import OrderTracking from "./pages/OrderTracking";
+import MyOrders from "./pages/MyOrders";
 
 // Admin pages - direct imports
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -99,6 +100,7 @@ const App = () => (
                   <Route path="/product/:productId" element={<ProductDetail />} />
                   <Route path="/checkout" element={<Checkout />} />
                   <Route path="/order-tracking" element={<OrderTracking />} />
+                  <Route path="/my-orders" element={<MyOrders />} />
                   <Route path="/about/our-story" element={<OurStory />} />
                   <Route path="/about/sustainability" element={<Sustainability />} />
                   <Route path="/about/size-guide" element={<SizeGuide />} />

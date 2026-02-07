@@ -50,7 +50,6 @@ import AdminDivisions from "./pages/admin/AdminDivisions";
 import AdminThanas from "./pages/admin/AdminThanas";
 import AdminCustomerTypes from "./pages/admin/AdminCustomerTypes";
 import AdminOrders from "./pages/admin/AdminOrders";
-import AdminVerificationQueue from "./pages/admin/AdminVerificationQueue";
 import AdminPaymentMethods from "./pages/admin/AdminPaymentMethods";
 import AdminInventory from "./pages/admin/AdminInventory";
 import AdminSEO from "./pages/admin/AdminSEO";
@@ -144,7 +143,6 @@ const App = () => (
                     
                     {/* Orders */}
                     <Route path="orders" element={<GuardedRoute><AdminOrders /></GuardedRoute>} />
-                    <Route path="verification-queue" element={<GuardedRoute><AdminVerificationQueue /></GuardedRoute>} />
                     <Route path="payment-methods" element={<GuardedRoute><AdminPaymentMethods /></GuardedRoute>} />
                     <Route path="inventory" element={<GuardedRoute><AdminInventory /></GuardedRoute>} />
                     <Route path="seed-data" element={<AdminSeedData />} />

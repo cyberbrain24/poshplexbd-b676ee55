@@ -122,60 +122,6 @@ export const useOptimizedOrders = (
   };
 };
 
-// Optimized verification queue with live updates
-export const useOptimizedVerificationQueue = () => {
-  const pagination = usePagination(25);
-
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["verification-queue-optimized", pagination.page],
-    queryFn: async () => {
-      const [dataResult, countResult] = await Promise.all([
-        supabase
-          .from("orders")
-          .select(`
-            id,
-            order_number,
-            payment_method_type,
-            transaction_id,
-            sender_number,
-            payment_proof_url,
-            total_amount,
-            shipping_name,
-            shipping_phone,
-            created_at,
-            payment_method:payment_methods(id, name, type)
-          `)
-          .eq("payment_status", "pending_verification")
-          .order("created_at", { ascending: true })
-          .range(pagination.offset, pagination.offset + pagination.pageSize - 1),
-        supabase
-          .from("orders")
-          .select("id", { count: "exact", head: true })
-          .eq("payment_status", "pending_verification"),
-      ]);
-
-      if (dataResult.error) throw dataResult.error;
-      
-      return {
-        orders: dataResult.data as Order[],
-        totalCount: countResult.count || 0,
-      };
-    },
-    ...QUERY_CONFIG.liveData,
-  });
-
-  if (data?.totalCount !== undefined && data.totalCount !== pagination.totalCount) {
-    pagination.setTotalCount(data.totalCount);
-  }
-
-  return {
-    orders: data?.orders || [],
-    isLoading,
-    error: error as Error | null,
-    pagination,
-    totalCount: data?.totalCount || 0,
-  };
-};
 
 // Optimized order stats with caching
 export const useOptimizedOrderStats = () => {

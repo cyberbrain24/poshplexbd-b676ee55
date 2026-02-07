@@ -426,27 +426,6 @@ export const useUpdateOrder = () => {
   });
 };
 
-// Verification queue - orders pending payment verification
-export const useVerificationQueue = () => {
-  return useQuery({
-    queryKey: ["verification-queue"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("orders")
-        .select(`
-          *,
-          customer:customers(id, name, phone, email),
-          payment_method:payment_methods(id, name, type),
-          items:order_items(*)
-        `)
-        .eq("payment_status", "pending_verification")
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      return data as Order[];
-    },
-    staleTime: 1000 * 30, // 30 seconds for live queue
-  });
-};
 
 // Dashboard stats
 export const useOrderStats = () => {

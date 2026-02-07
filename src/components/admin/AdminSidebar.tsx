@@ -23,7 +23,6 @@ import {
   Map,
   Crown,
   ShoppingCart,
-  Clock,
   ExternalLink,
   Boxes,
   Globe,
@@ -62,7 +61,6 @@ const productEditsItems: NavItem[] = [
 
 const orderItems: NavItem[] = [
   { icon: ShoppingCart, label: "All Orders", path: "/admin/orders" },
-  { icon: Clock, label: "Verification Queue", path: "/admin/verification-queue" },
   { icon: Boxes, label: "Inventory", path: "/admin/inventory" },
   { icon: CreditCard, label: "Payment Methods", path: "/admin/payment-methods" },
 ];

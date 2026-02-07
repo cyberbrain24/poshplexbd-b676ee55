@@ -34,6 +34,9 @@ interface CheckoutData {
   shippingCost?: number;
   taxAmount?: number;
   
+  // Partial Payment - amount customer is paying upfront
+  paidAmount?: number;
+  
   // Notes
   customerNotes?: string;
 }
@@ -137,17 +140,33 @@ export const useCreateOrder = () => {
         checkoutData.subtotal + (checkoutData.shippingCost || 0)
       );
 
-      // Step 3: Determine initial payment status
-      const paymentStatus = checkoutData.paymentMethodType === 'cod' 
-        ? 'unpaid' 
-        : 'pending_verification';
-
-      // Step 4: Create order
+      // Step 3: Determine initial payment status based on paid amount and method
+      const paidAmount = checkoutData.paidAmount || 0;
       const totalAmount = checkoutData.subtotal 
         - (checkoutData.discountAmount || 0) 
         + (checkoutData.shippingCost || 0) 
         + (checkoutData.taxAmount || 0);
 
+      // Determine payment status:
+      // - If paid in full -> 'paid' (for non-COD) or 'pending_verification' 
+      // - If partially paid -> 'partially_paid' (needs verification for non-COD)
+      // - If COD with no upfront -> 'unpaid'
+      // - If other methods with submission -> 'pending_verification'
+      let paymentStatus: 'unpaid' | 'pending_verification' | 'paid' | 'partially_paid';
+      
+      if (checkoutData.paymentMethodType === 'cod') {
+        // COD: unpaid unless partial amount specified
+        paymentStatus = paidAmount > 0 ? 'partially_paid' : 'unpaid';
+      } else {
+        // Non-COD: pending verification, or partially_paid if partial
+        if (paidAmount > 0 && paidAmount < totalAmount) {
+          paymentStatus = 'partially_paid';
+        } else {
+          paymentStatus = 'pending_verification';
+        }
+      }
+
+      // Step 4: Create order with paid_amount
       const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert({
@@ -167,6 +186,7 @@ export const useCreateOrder = () => {
           shipping_cost: checkoutData.shippingCost || 0,
           tax_amount: checkoutData.taxAmount || 0,
           total_amount: totalAmount,
+          paid_amount: paidAmount,
           shipping_name: checkoutData.shippingName,
           shipping_phone: checkoutData.shippingPhone,
           shipping_email: checkoutData.shippingEmail || null,

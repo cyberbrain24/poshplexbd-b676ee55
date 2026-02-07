@@ -25,7 +25,6 @@ import {
   ShoppingCart,
   ExternalLink,
   Globe,
-  Puzzle,
   Database,
   RefreshCw,
   LucideIcon,
@@ -37,7 +36,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useModulesContext } from "@/contexts/ModulesContext";
 
 // Navigation debounce delay (ms)
 const NAV_DEBOUNCE_MS = 150;
@@ -79,7 +77,6 @@ const AdminSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { isModuleActive } = useModulesContext();
   const [isResetting, setIsResetting] = useState(false);
   
   // Debounce navigation to prevent rapid clicks
@@ -228,86 +225,65 @@ const AdminSidebar = () => {
       </div>
       
       <nav className="flex-1 p-4 space-y-1">
-        {/* Dashboard - Always visible (core) */}
+        {/* Dashboard */}
         {renderNavLink("/admin", LayoutDashboard, "Dashboard")}
 
-        {/* Module Manager - Always visible (core) */}
-        {renderNavLink("/admin/modules", Puzzle, "Modules")}
-
-        {/* Products Module */}
-        {isModuleActive("products") && (
-          renderNavLink("/admin/products", Package, "Products")
-        )}
+        {/* Products */}
+        {renderNavLink("/admin/products", Package, "Products")}
 
         {/* SEO Manager */}
-        {isModuleActive("seo") && (
-          renderNavLink("/admin/seo", Globe, "SEO Manager")
-        )}
+        {renderNavLink("/admin/seo", Globe, "SEO Manager")}
 
         {/* Site Settings */}
-        {isModuleActive("site_settings") && (
-          renderNavLink("/admin/site-settings", Settings2, "Site Settings")
+        {renderNavLink("/admin/site-settings", Settings2, "Site Settings")}
+
+        {/* Orders */}
+        {renderCollapsible(
+          ShoppingCart,
+          "Orders",
+          orderItems,
+          isOrdersOpen,
+          setIsOrdersOpen,
+          isOrdersActive
         )}
 
-        {/* Orders Module */}
-        {isModuleActive("orders") && (
-          renderCollapsible(
-            ShoppingCart,
-            "Orders",
-            orderItems,
-            isOrdersOpen,
-            setIsOrdersOpen,
-            isOrdersActive
-          )
+        {/* Product Edits */}
+        {renderCollapsible(
+          Settings2,
+          "Product Edits",
+          productEditsItems,
+          isProductEditsOpen,
+          setIsProductEditsOpen,
+          isProductEditsActive
         )}
 
-        {/* Product Edits Module */}
-        {isModuleActive("product_edits") && (
-          renderCollapsible(
-            Settings2,
-            "Product Edits",
-            productEditsItems,
-            isProductEditsOpen,
-            setIsProductEditsOpen,
-            isProductEditsActive
-          )
+        {/* Accounts */}
+        {renderNavLink("/admin/accounts", Wallet, "Accounts")}
+
+        {/* Account Edits */}
+        {renderCollapsible(
+          Settings2,
+          "Accounts Edits",
+          accountEditsItems,
+          isAccountEditsOpen,
+          setIsAccountEditsOpen,
+          isAccountEditsActive
         )}
 
-        {/* Accounts Module */}
-        {isModuleActive("accounts") && (
-          renderNavLink("/admin/accounts", Wallet, "Accounts")
+        {/* Customers */}
+        {renderNavLink("/admin/customers", Users, "Customers")}
+
+        {/* Customer Edits */}
+        {renderCollapsible(
+          Settings2,
+          "Customer Edits",
+          customerEditsItems,
+          isCustomerEditsOpen,
+          setIsCustomerEditsOpen,
+          isCustomerEditsActive
         )}
 
-        {/* Account Edits Module */}
-        {isModuleActive("account_edits") && (
-          renderCollapsible(
-            Settings2,
-            "Accounts Edits",
-            accountEditsItems,
-            isAccountEditsOpen,
-            setIsAccountEditsOpen,
-            isAccountEditsActive
-          )
-        )}
-
-        {/* Customers Module */}
-        {isModuleActive("customers") && (
-          renderNavLink("/admin/customers", Users, "Customers")
-        )}
-
-        {/* Customer Edits Module */}
-        {isModuleActive("customer_edits") && (
-          renderCollapsible(
-            Settings2,
-            "Customer Edits",
-            customerEditsItems,
-            isCustomerEditsOpen,
-            setIsCustomerEditsOpen,
-            isCustomerEditsActive
-          )
-        )}
-
-        {/* Seed Data - Always visible for development */}
+        {/* Seed Data */}
         {renderNavLink("/admin/seed-data", Database, "Seed Data")}
       </nav>
 

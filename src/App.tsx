@@ -8,9 +8,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { CartProvider } from "./contexts/CartContext";
 import { SiteSettingsProvider } from "./contexts/SiteSettingsContext";
-import { ModulesProvider } from "./contexts/ModulesContext";
 import AdminLayout from "./components/admin/AdminLayout";
-import ModuleGuard from "./components/admin/ModuleGuard";
 
 // All pages - direct imports (no lazy loading)
 import Index from "./pages/Index";
@@ -34,8 +32,6 @@ import MyOrders from "./pages/MyOrders";
 // Admin pages - direct imports
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProducts from "./pages/admin/AdminProducts";
-import AdminModules from "./pages/admin/AdminModules";
-
 import AdminColors from "./pages/admin/AdminColors";
 import AdminSizes from "./pages/admin/AdminSizes";
 import AdminMaterials from "./pages/admin/AdminMaterials";
@@ -72,91 +68,80 @@ const queryClient = new QueryClient({
   },
 });
 
-// Wrapper component for module-guarded routes
-const GuardedRoute = ({ children }: { children: React.ReactNode }) => (
-  <ModuleGuard>{children}</ModuleGuard>
-);
-
 const App = () => (
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>
       <SiteSettingsProvider>
-        <ModulesProvider>
-          <CartProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter
-                future={{
-                  v7_startTransition: true,
-                  v7_relativeSplatPath: true,
-                }}
-              >
-                <ScrollToTop />
-                <Routes>
-                  {/* Public Routes */}
-                  <Route path="/" element={<Index />} />
-                  <Route path="/category/:category" element={<Category />} />
-                  <Route path="/product/:productId" element={<ProductDetail />} />
-                  <Route path="/checkout" element={<Checkout />} />
-                  <Route path="/order-tracking" element={<OrderTracking />} />
-                  <Route path="/my-orders" element={<MyOrders />} />
-                  <Route path="/account" element={<CustomerAccount />} />
-                  <Route path="/about/our-story" element={<OurStory />} />
-                  <Route path="/about/sustainability" element={<Sustainability />} />
-                  <Route path="/about/size-guide" element={<SizeGuide />} />
-                  <Route path="/about/customer-care" element={<CustomerCare />} />
-                  <Route path="/about/store-locator" element={<StoreLocator />} />
-                  <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                  <Route path="/terms-of-service" element={<TermsOfService />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/login" element={<CustomerAuth />} />
+        <CartProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter
+              future={{
+                v7_startTransition: true,
+                v7_relativeSplatPath: true,
+              }}
+            >
+              <ScrollToTop />
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<Index />} />
+                <Route path="/category/:category" element={<Category />} />
+                <Route path="/product/:productId" element={<ProductDetail />} />
+                <Route path="/checkout" element={<Checkout />} />
+                <Route path="/order-tracking" element={<OrderTracking />} />
+                <Route path="/my-orders" element={<MyOrders />} />
+                <Route path="/account" element={<CustomerAccount />} />
+                <Route path="/about/our-story" element={<OurStory />} />
+                <Route path="/about/sustainability" element={<Sustainability />} />
+                <Route path="/about/size-guide" element={<SizeGuide />} />
+                <Route path="/about/customer-care" element={<CustomerCare />} />
+                <Route path="/about/store-locator" element={<StoreLocator />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/terms-of-service" element={<TermsOfService />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/login" element={<CustomerAuth />} />
+                
+                {/* Admin Routes - Nested under protected layout */}
+                <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+                  <Route index element={<AdminDashboard />} />
+                  <Route path="products" element={<AdminProducts />} />
+                  <Route path="seo" element={<AdminSEO />} />
+                  <Route path="site-settings" element={<AdminSiteSettings />} />
                   
-                  {/* Admin Routes - Nested under protected layout */}
-                  <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
-                    {/* Core modules (always accessible) */}
-                    <Route index element={<AdminDashboard />} />
-                    <Route path="modules" element={<AdminModules />} />
-                    
-                    {/* Module-guarded routes */}
-                    <Route path="products" element={<GuardedRoute><AdminProducts /></GuardedRoute>} />
-                    <Route path="seo" element={<GuardedRoute><AdminSEO /></GuardedRoute>} />
-                    <Route path="site-settings" element={<GuardedRoute><AdminSiteSettings /></GuardedRoute>} />
-                    
-                    {/* Product Edits */}
-                    <Route path="colors" element={<GuardedRoute><AdminColors /></GuardedRoute>} />
-                    <Route path="sizes" element={<GuardedRoute><AdminSizes /></GuardedRoute>} />
-                    <Route path="materials" element={<GuardedRoute><AdminMaterials /></GuardedRoute>} />
-                    <Route path="size-guides" element={<GuardedRoute><AdminSizeGuides /></GuardedRoute>} />
-                    <Route path="care-instructions" element={<GuardedRoute><AdminCareInstructions /></GuardedRoute>} />
-                    <Route path="categories" element={<GuardedRoute><AdminCategories /></GuardedRoute>} />
-                    <Route path="brands" element={<GuardedRoute><AdminBrands /></GuardedRoute>} />
-                    
-                    {/* Accounts */}
-                    <Route path="accounts" element={<GuardedRoute><AdminAccounts /></GuardedRoute>} />
-                    <Route path="accounts-list" element={<GuardedRoute><AdminAccountsList /></GuardedRoute>} />
-                    <Route path="income-categories" element={<GuardedRoute><AdminIncomeCategories /></GuardedRoute>} />
-                    <Route path="expense-categories" element={<GuardedRoute><AdminExpenseCategories /></GuardedRoute>} />
-                    
-                    {/* Customers */}
-                    <Route path="customers" element={<GuardedRoute><AdminCustomers /></GuardedRoute>} />
-                    <Route path="divisions" element={<GuardedRoute><AdminDivisions /></GuardedRoute>} />
-                    <Route path="thanas" element={<GuardedRoute><AdminThanas /></GuardedRoute>} />
-                    <Route path="customer-types" element={<GuardedRoute><AdminCustomerTypes /></GuardedRoute>} />
-                    
-                    {/* Orders */}
-                    <Route path="orders" element={<GuardedRoute><AdminOrders /></GuardedRoute>} />
-                    <Route path="payment-methods" element={<GuardedRoute><AdminPaymentMethods /></GuardedRoute>} />
-                    <Route path="seed-data" element={<AdminSeedData />} />
-                  </Route>
+                  {/* Product Edits */}
+                  <Route path="colors" element={<AdminColors />} />
+                  <Route path="sizes" element={<AdminSizes />} />
+                  <Route path="materials" element={<AdminMaterials />} />
+                  <Route path="size-guides" element={<AdminSizeGuides />} />
+                  <Route path="care-instructions" element={<AdminCareInstructions />} />
+                  <Route path="categories" element={<AdminCategories />} />
+                  <Route path="brands" element={<AdminBrands />} />
                   
-                  {/* 404 Catch-all - MUST be last */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </BrowserRouter>
-            </TooltipProvider>
-          </CartProvider>
-        </ModulesProvider>
+                  {/* Accounts */}
+                  <Route path="accounts" element={<AdminAccounts />} />
+                  <Route path="accounts-list" element={<AdminAccountsList />} />
+                  <Route path="income-categories" element={<AdminIncomeCategories />} />
+                  <Route path="expense-categories" element={<AdminExpenseCategories />} />
+                  
+                  {/* Customers */}
+                  <Route path="customers" element={<AdminCustomers />} />
+                  <Route path="divisions" element={<AdminDivisions />} />
+                  <Route path="thanas" element={<AdminThanas />} />
+                  <Route path="customer-types" element={<AdminCustomerTypes />} />
+                  
+                  {/* Orders */}
+                  <Route path="orders" element={<AdminOrders />} />
+                  <Route path="payment-methods" element={<AdminPaymentMethods />} />
+                  <Route path="seed-data" element={<AdminSeedData />} />
+                </Route>
+                
+                {/* 404 Catch-all - MUST be last */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </CartProvider>
       </SiteSettingsProvider>
     </QueryClientProvider>
   </HelmetProvider>

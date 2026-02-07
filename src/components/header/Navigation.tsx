@@ -11,13 +11,18 @@ interface Category {
   parent_id: string | null;
 }
 
+interface CategoryWithChildren extends Category {
+  children: Category[];
+}
+
 const Navigation = () => {
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [offCanvasType, setOffCanvasType] = useState<'favorites' | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isShoppingBagOpen, setIsShoppingBagOpen] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [parentCategories, setParentCategories] = useState<CategoryWithChildren[]>([]);
+  const [expandedMobileCategory, setExpandedMobileCategory] = useState<string | null>(null);
   
   const { cartItems, updateQuantity, cartCount } = useCart();
 
@@ -28,14 +33,24 @@ const Navigation = () => {
   // Fetch categories from database
   useEffect(() => {
     const fetchCategories = async () => {
-      const { data } = await supabase
+      // Fetch all categories
+      const { data: allCategories } = await supabase
         .from('categories')
         .select('id, name, parent_id')
-        .is('parent_id', null)
         .order('name');
       
-      if (data) {
-        setCategories(data);
+      if (allCategories) {
+        // Separate parent and child categories
+        const parents = allCategories.filter(c => c.parent_id === null);
+        const children = allCategories.filter(c => c.parent_id !== null);
+        
+        // Map children to their parents
+        const categoriesWithChildren: CategoryWithChildren[] = parents.map(parent => ({
+          ...parent,
+          children: children.filter(child => child.parent_id === parent.id)
+        }));
+        
+        setParentCategories(categoriesWithChildren);
       }
     };
     
@@ -51,11 +66,15 @@ const Navigation = () => {
     "Sweaters"
   ];
 
+  const getActiveCategory = () => {
+    return parentCategories.find(c => c.id === activeCategory);
+  };
+
   return (
     <nav 
       className="relative" 
       style={{
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
         backdropFilter: 'blur(10px)'
       }}
     >
@@ -79,17 +98,23 @@ const Navigation = () => {
           </div>
         </button>
 
-        {/* Left navigation - Categories dropdown */}
-        <div className="hidden lg:flex">
-          <div
-            className="relative"
-            onMouseEnter={() => setIsDropdownOpen(true)}
-            onMouseLeave={() => setIsDropdownOpen(false)}
-          >
-            <button className="text-nav-foreground hover:text-nav-hover transition-colors duration-200 text-sm font-light py-6 block">
-              Shop
-            </button>
-          </div>
+        {/* Left navigation - Parent Categories */}
+        <div className="hidden lg:flex space-x-8">
+          {parentCategories.map((category) => (
+            <div
+              key={category.id}
+              className="relative"
+              onMouseEnter={() => setActiveCategory(category.id)}
+              onMouseLeave={() => setActiveCategory(null)}
+            >
+              <Link
+                to={`/category/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
+                className="text-nav-foreground hover:text-nav-hover transition-colors duration-200 text-sm font-light py-6 block"
+              >
+                {category.name}
+              </Link>
+            </div>
+          ))}
         </div>
 
         {/* Center logo */}
@@ -149,41 +174,47 @@ const Navigation = () => {
         </div>
       </div>
 
-      {/* Full width dropdown - Categories */}
-      {isDropdownOpen && (
+      {/* Mega Menu - Subcategories */}
+      {activeCategory && getActiveCategory() && (
         <div 
-          className="absolute top-full left-0 right-0 bg-nav border-b border-border z-50"
-          onMouseEnter={() => setIsDropdownOpen(true)}
-          onMouseLeave={() => setIsDropdownOpen(false)}
+          className="absolute top-full left-0 right-0 bg-white border-b border-border z-50 shadow-lg"
+          onMouseEnter={() => setActiveCategory(activeCategory)}
+          onMouseLeave={() => setActiveCategory(null)}
         >
           <div className="px-6 py-8">
             <div className="flex justify-between w-full">
-              {/* Categories list */}
+              {/* Subcategories list */}
               <div className="flex-1">
                 <p className="text-xs font-medium tracking-wider text-muted-foreground mb-4">
-                  CATEGORIES
+                  {getActiveCategory()?.name.toUpperCase()}
                 </p>
-                <ul className="space-y-2">
-                  {categories.map((category) => (
-                    <li key={category.id}>
-                      <Link 
-                        to={`/category/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
-                        className="text-nav-foreground hover:text-nav-hover transition-colors duration-200 text-sm font-light block py-2"
-                      >
-                        {category.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+                {getActiveCategory()?.children && getActiveCategory()!.children.length > 0 ? (
+                  <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-2">
+                    {getActiveCategory()?.children.map((subcategory) => (
+                      <li key={subcategory.id}>
+                        <Link 
+                          to={`/category/${subcategory.name.toLowerCase().replace(/\s+/g, '-')}`}
+                          className="text-nav-foreground hover:text-nav-hover transition-colors duration-200 text-sm font-light block py-2"
+                          onClick={() => setActiveCategory(null)}
+                        >
+                          {subcategory.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No subcategories available</p>
+                )}
               </div>
 
               {/* View All CTA */}
-              <div className="flex items-end">
+              <div className="flex items-start ml-8">
                 <Link 
-                  to="/category/all"
+                  to={`/category/${getActiveCategory()?.name.toLowerCase().replace(/\s+/g, '-')}`}
                   className="inline-flex items-center gap-2 bg-foreground text-background px-6 py-3 text-sm font-medium tracking-wider hover:opacity-90 transition-opacity"
+                  onClick={() => setActiveCategory(null)}
                 >
-                  VIEW ALL PRODUCTS
+                  VIEW ALL {getActiveCategory()?.name.toUpperCase()}
                   <ArrowRight size={16} strokeWidth={1.5} />
                 </Link>
               </div>
@@ -195,7 +226,7 @@ const Navigation = () => {
       {/* Search overlay */}
       {isSearchOpen && (
         <div 
-          className="absolute top-full left-0 right-0 bg-nav border-b border-border z-50"
+          className="absolute top-full left-0 right-0 bg-white border-b border-border z-50 shadow-lg"
         >
           <div className="px-6 py-8">
             <div className="max-w-2xl mx-auto">
@@ -236,34 +267,53 @@ const Navigation = () => {
 
       {/* Mobile navigation menu */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden absolute top-full left-0 right-0 bg-nav border-b border-border z-50">
+        <div className="lg:hidden absolute top-full left-0 right-0 bg-white border-b border-border z-50 shadow-lg">
           <div className="px-6 py-8">
-            <div className="space-y-6">
-              <div>
-                <p className="text-xs font-medium tracking-wider text-muted-foreground mb-4">
-                  CATEGORIES
-                </p>
-                <div className="space-y-2">
-                  {categories.map((category) => (
-                    <Link
-                      key={category.id}
-                      to={`/category/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
-                      className="text-nav-foreground hover:text-nav-hover transition-colors duration-200 text-sm font-light block py-2"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      {category.name}
-                    </Link>
-                  ))}
+            <div className="space-y-4">
+              {parentCategories.map((category) => (
+                <div key={category.id}>
+                  <button
+                    className="flex items-center justify-between w-full text-nav-foreground hover:text-nav-hover transition-colors duration-200 text-base font-light py-2"
+                    onClick={() => setExpandedMobileCategory(
+                      expandedMobileCategory === category.id ? null : category.id
+                    )}
+                  >
+                    <span>{category.name}</span>
+                    {category.children.length > 0 && (
+                      <ArrowRight 
+                        size={16} 
+                        className={`transform transition-transform duration-200 ${
+                          expandedMobileCategory === category.id ? 'rotate-90' : ''
+                        }`}
+                      />
+                    )}
+                  </button>
+                  
+                  {/* Subcategories */}
+                  {expandedMobileCategory === category.id && category.children.length > 0 && (
+                    <div className="pl-4 mt-2 space-y-2 border-l border-border ml-2">
+                      {category.children.map((subcategory) => (
+                        <Link
+                          key={subcategory.id}
+                          to={`/category/${subcategory.name.toLowerCase().replace(/\s+/g, '-')}`}
+                          className="text-nav-foreground/70 hover:text-nav-hover text-sm font-light block py-1.5"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          {subcategory.name}
+                        </Link>
+                      ))}
+                      <Link
+                        to={`/category/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
+                        className="text-nav-foreground hover:text-nav-hover text-sm font-medium flex items-center gap-1 py-1.5"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        View All {category.name}
+                        <ArrowRight size={12} />
+                      </Link>
+                    </div>
+                  )}
                 </div>
-              </div>
-              <Link 
-                to="/category/all"
-                className="inline-flex items-center gap-2 text-nav-foreground hover:text-nav-hover text-sm font-light"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                View All Products
-                <ArrowRight size={14} />
-              </Link>
+              ))}
             </div>
           </div>
         </div>

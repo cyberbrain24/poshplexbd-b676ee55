@@ -26,13 +26,14 @@ import {
   Mail,
   MessageCircle,
   Inbox,
-  FileText,
   ShoppingCart,
   Clock,
   RotateCcw,
   Shield,
   Boxes,
   Globe,
+  Puzzle,
+  LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -40,11 +41,18 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { useModulesContext } from "@/contexts/ModulesContext";
 
 // Navigation debounce delay (ms)
 const NAV_DEBOUNCE_MS = 150;
 
-const productEditsItems = [
+interface NavItem {
+  icon: LucideIcon;
+  label: string;
+  path: string;
+}
+
+const productEditsItems: NavItem[] = [
   { icon: Palette, label: "Colors", path: "/admin/colors" },
   { icon: Ruler, label: "Sizes", path: "/admin/sizes" },
   { icon: Shirt, label: "Materials", path: "/admin/materials" },
@@ -54,7 +62,7 @@ const productEditsItems = [
   { icon: Building2, label: "Brands", path: "/admin/brands" },
 ];
 
-const orderItems = [
+const orderItems: NavItem[] = [
   { icon: ShoppingCart, label: "All Orders", path: "/admin/orders" },
   { icon: Clock, label: "Verification Queue", path: "/admin/verification-queue" },
   { icon: Boxes, label: "Inventory", path: "/admin/inventory" },
@@ -63,43 +71,44 @@ const orderItems = [
   { icon: CreditCard, label: "Payment Methods", path: "/admin/payment-methods" },
 ];
 
-const accountEditsItems = [
+const accountEditsItems: NavItem[] = [
   { icon: CreditCard, label: "Accounts List", path: "/admin/accounts-list" },
   { icon: TrendingUp, label: "Income Categories", path: "/admin/income-categories" },
   { icon: TrendingDown, label: "Expense Categories", path: "/admin/expense-categories" },
 ];
 
-const customerEditsItems = [
+const customerEditsItems: NavItem[] = [
   { icon: MapPin, label: "Divisions", path: "/admin/divisions" },
   { icon: Map, label: "Thanas", path: "/admin/thanas" },
   { icon: Crown, label: "Customer Types", path: "/admin/customer-types" },
 ];
 
-const smsItems = [
+const smsItems: NavItem[] = [
   { icon: Settings2, label: "SMS API", path: "/admin/sms-api" },
   { icon: Send, label: "SMS Marketing", path: "/admin/sms-marketing" },
 ];
 
-const emailItems = [
+const emailItems: NavItem[] = [
   { icon: Settings2, label: "Email API", path: "/admin/email-api" },
   { icon: Send, label: "Email Marketing", path: "/admin/email-marketing" },
 ];
 
-const whatsappItems = [
+const whatsappItems: NavItem[] = [
   { icon: Settings2, label: "WhatsApp API", path: "/admin/whatsapp-api" },
   { icon: Send, label: "WhatsApp Marketing", path: "/admin/whatsapp-marketing" },
   { icon: Inbox, label: "Inbox", path: "/admin/whatsapp-inbox" },
 ];
 
-const instagramItems = [
+const instagramItems: NavItem[] = [
   { icon: Settings2, label: "Instagram API", path: "/admin/instagram-api" },
   { icon: Send, label: "Instagram Marketing", path: "/admin/instagram-marketing" },
   { icon: Inbox, label: "Inbox", path: "/admin/instagram-inbox" },
 ];
- 
+
 const AdminSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { isModuleActive, isLoading } = useModulesContext();
   
   // Debounce navigation to prevent rapid clicks
   const lastNavTimeRef = useRef<number>(0);
@@ -137,6 +146,7 @@ const AdminSidebar = () => {
   const isEmailActive = emailItems.some(item => location.pathname === item.path);
   const isWhatsappActive = whatsappItems.some(item => location.pathname === item.path);
   const isInstagramActive = instagramItems.some(item => location.pathname === item.path);
+  
   const [isProductEditsOpen, setIsProductEditsOpen] = useState(isProductEditsActive);
   const [isOrdersOpen, setIsOrdersOpen] = useState(isOrdersActive);
   const [isAccountEditsOpen, setIsAccountEditsOpen] = useState(isAccountEditsActive);
@@ -146,6 +156,87 @@ const AdminSidebar = () => {
   const [isWhatsappOpen, setIsWhatsappOpen] = useState(isWhatsappActive);
   const [isInstagramOpen, setIsInstagramOpen] = useState(isInstagramActive);
 
+  // Render a simple nav link
+  const renderNavLink = (path: string, icon: LucideIcon, label: string) => {
+    const Icon = icon;
+    const isActive = location.pathname === path;
+    return (
+      <Link
+        to={path}
+        onClick={(e) => handleNavClick(e, path)}
+        className={cn(
+          "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
+          isActive
+            ? "bg-foreground text-background"
+            : "text-muted-foreground hover:text-foreground hover:bg-muted"
+        )}
+      >
+        <Icon className="h-4 w-4" />
+        {label}
+      </Link>
+    );
+  };
+
+  // Render a collapsible nav group
+  const renderCollapsible = (
+    icon: LucideIcon,
+    label: string,
+    items: NavItem[],
+    isOpen: boolean,
+    setIsOpen: (open: boolean) => void,
+    isGroupActive: boolean
+  ) => {
+    const Icon = icon;
+    return (
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CollapsibleTrigger className="w-full">
+          <div
+            className={cn(
+              "flex items-center justify-between gap-3 px-3 py-2 text-sm transition-colors w-full",
+              isGroupActive
+                ? "text-foreground"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <Icon className="h-4 w-4" />
+              {label}
+            </div>
+            <ChevronDown 
+              className={cn(
+                "h-4 w-4 transition-transform duration-200",
+                isOpen && "rotate-180"
+              )} 
+            />
+          </div>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+          <div className="ml-4 mt-1 space-y-1 border-l border-border pl-2">
+            {items.map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={(e) => handleNavClick(e, item.path)}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
+                    isActive
+                      ? "bg-foreground text-background"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    );
+  };
+
   return (
     <aside className="w-64 min-h-screen bg-background border-r border-border flex flex-col">
       <div className="p-6 border-b border-border">
@@ -154,479 +245,132 @@ const AdminSidebar = () => {
       </div>
       
       <nav className="flex-1 p-4 space-y-1">
-        {/* Dashboard */}
-        <Link
-          to="/admin"
-          onClick={(e) => handleNavClick(e, "/admin")}
-          className={cn(
-            "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
-            location.pathname === "/admin"
-              ? "bg-foreground text-background"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted"
-          )}
-        >
-          <LayoutDashboard className="h-4 w-4" />
-          Dashboard
-        </Link>
+        {/* Dashboard - Always visible (core) */}
+        {renderNavLink("/admin", LayoutDashboard, "Dashboard")}
 
-        {/* Products */}
-        <Link
-          to="/admin/products"
-          onClick={(e) => handleNavClick(e, "/admin/products")}
-          className={cn(
-            "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
-            location.pathname === "/admin/products"
-              ? "bg-foreground text-background"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted"
-          )}
-        >
-          <Package className="h-4 w-4" />
-          Products
-        </Link>
+        {/* Module Manager - Always visible (core) */}
+        {renderNavLink("/admin/modules", Puzzle, "Modules")}
+
+        {/* Products Module */}
+        {isModuleActive("products") && (
+          renderNavLink("/admin/products", Package, "Products")
+        )}
 
         {/* SEO Manager */}
-        <Link
-          to="/admin/seo"
-          onClick={(e) => handleNavClick(e, "/admin/seo")}
-          className={cn(
-            "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
-            location.pathname === "/admin/seo"
-              ? "bg-foreground text-background"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted"
-          )}
-        >
-          <Globe className="h-4 w-4" />
-          SEO Manager
-        </Link>
+        {isModuleActive("seo") && (
+          renderNavLink("/admin/seo", Globe, "SEO Manager")
+        )}
 
         {/* Site Settings */}
-        <Link
-          to="/admin/site-settings"
-          onClick={(e) => handleNavClick(e, "/admin/site-settings")}
-          className={cn(
-            "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
-            location.pathname === "/admin/site-settings"
-              ? "bg-foreground text-background"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted"
-          )}
-        >
-          <Settings2 className="h-4 w-4" />
-          Site Settings
-        </Link>
+        {isModuleActive("site_settings") && (
+          renderNavLink("/admin/site-settings", Settings2, "Site Settings")
+        )}
 
-        {/* Orders Collapsible */}
-        <Collapsible open={isOrdersOpen} onOpenChange={setIsOrdersOpen}>
-          <CollapsibleTrigger className="w-full">
-            <div
-              className={cn(
-                "flex items-center justify-between gap-3 px-3 py-2 text-sm transition-colors w-full",
-                isOrdersActive
-                  ? "text-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <ShoppingCart className="h-4 w-4" />
-                Orders
-              </div>
-              <ChevronDown 
-                className={cn(
-                  "h-4 w-4 transition-transform duration-200",
-                  isOrdersOpen && "rotate-180"
-                )} 
-              />
-            </div>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-            <div className="ml-4 mt-1 space-y-1 border-l border-border pl-2">
-              {orderItems.map((item) => {
-                const isActive = location.pathname === item.path;
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    onClick={(e) => handleNavClick(e, item.path)}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
-                      isActive
-                        ? "bg-foreground text-background"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                    )}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
+        {/* Orders Module */}
+        {isModuleActive("orders") && (
+          renderCollapsible(
+            ShoppingCart,
+            "Orders",
+            orderItems,
+            isOrdersOpen,
+            setIsOrdersOpen,
+            isOrdersActive
+          )
+        )}
 
-        {/* Product Edits Collapsible - directly under Products */}
-        <Collapsible open={isProductEditsOpen} onOpenChange={setIsProductEditsOpen}>
-          <CollapsibleTrigger className="w-full">
-            <div
-              className={cn(
-                "flex items-center justify-between gap-3 px-3 py-2 text-sm transition-colors w-full",
-                isProductEditsActive
-                  ? "text-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <Settings2 className="h-4 w-4" />
-                Product Edits
-              </div>
-              <ChevronDown 
-                className={cn(
-                  "h-4 w-4 transition-transform duration-200",
-                  isProductEditsOpen && "rotate-180"
-                )} 
-              />
-            </div>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-            <div className="ml-4 mt-1 space-y-1 border-l border-border pl-2">
-              {productEditsItems.map((item) => {
-                const isActive = location.pathname === item.path;
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    onClick={(e) => handleNavClick(e, item.path)}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
-                      isActive
-                        ? "bg-foreground text-background"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                    )}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
+        {/* Product Edits Module */}
+        {isModuleActive("product_edits") && (
+          renderCollapsible(
+            Settings2,
+            "Product Edits",
+            productEditsItems,
+            isProductEditsOpen,
+            setIsProductEditsOpen,
+            isProductEditsActive
+          )
+        )}
 
-        {/* Accounts */}
-        <Link
-          to="/admin/accounts"
-          onClick={(e) => handleNavClick(e, "/admin/accounts")}
-          className={cn(
-            "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
-            location.pathname === "/admin/accounts"
-              ? "bg-foreground text-background"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted"
-          )}
-        >
-          <Wallet className="h-4 w-4" />
-          Accounts
-        </Link>
+        {/* Accounts Module */}
+        {isModuleActive("accounts") && (
+          renderNavLink("/admin/accounts", Wallet, "Accounts")
+        )}
 
-        {/* Accounts Edits Collapsible - directly under Accounts */}
-        <Collapsible open={isAccountEditsOpen} onOpenChange={setIsAccountEditsOpen}>
-          <CollapsibleTrigger className="w-full">
-            <div
-              className={cn(
-                "flex items-center justify-between gap-3 px-3 py-2 text-sm transition-colors w-full",
-                isAccountEditsActive
-                  ? "text-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <Settings2 className="h-4 w-4" />
-                Accounts Edits
-              </div>
-              <ChevronDown 
-                className={cn(
-                  "h-4 w-4 transition-transform duration-200",
-                  isAccountEditsOpen && "rotate-180"
-                )} 
-              />
-            </div>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-            <div className="ml-4 mt-1 space-y-1 border-l border-border pl-2">
-              {accountEditsItems.map((item) => {
-                const isActive = location.pathname === item.path;
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    onClick={(e) => handleNavClick(e, item.path)}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
-                      isActive
-                        ? "bg-foreground text-background"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                    )}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
+        {/* Account Edits Module */}
+        {isModuleActive("account_edits") && (
+          renderCollapsible(
+            Settings2,
+            "Accounts Edits",
+            accountEditsItems,
+            isAccountEditsOpen,
+            setIsAccountEditsOpen,
+            isAccountEditsActive
+          )
+        )}
 
-        {/* Customers */}
-        <Link
-          to="/admin/customers"
-          onClick={(e) => handleNavClick(e, "/admin/customers")}
-          className={cn(
-            "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
-            location.pathname === "/admin/customers"
-              ? "bg-foreground text-background"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted"
-          )}
-        >
-          <Users className="h-4 w-4" />
-          Customers
-        </Link>
+        {/* Customers Module */}
+        {isModuleActive("customers") && (
+          renderNavLink("/admin/customers", Users, "Customers")
+        )}
 
-        {/* Customer Edits Collapsible - directly under Customers */}
-        <Collapsible open={isCustomerEditsOpen} onOpenChange={setIsCustomerEditsOpen}>
-          <CollapsibleTrigger className="w-full">
-            <div
-              className={cn(
-                "flex items-center justify-between gap-3 px-3 py-2 text-sm transition-colors w-full",
-                isCustomerEditsActive
-                  ? "text-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <Settings2 className="h-4 w-4" />
-                Customer Edits
-              </div>
-              <ChevronDown 
-                className={cn(
-                  "h-4 w-4 transition-transform duration-200",
-                  isCustomerEditsOpen && "rotate-180"
-                )} 
-              />
-            </div>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-            <div className="ml-4 mt-1 space-y-1 border-l border-border pl-2">
-              {customerEditsItems.map((item) => {
-                const isActive = location.pathname === item.path;
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    onClick={(e) => handleNavClick(e, item.path)}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
-                      isActive
-                        ? "bg-foreground text-background"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                    )}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
+        {/* Customer Edits Module */}
+        {isModuleActive("customer_edits") && (
+          renderCollapsible(
+            Settings2,
+            "Customer Edits",
+            customerEditsItems,
+            isCustomerEditsOpen,
+            setIsCustomerEditsOpen,
+            isCustomerEditsActive
+          )
+        )}
 
-         {/* SMS Collapsible */}
-         <Collapsible open={isSmsOpen} onOpenChange={setIsSmsOpen}>
-           <CollapsibleTrigger className="w-full">
-             <div
-               className={cn(
-                 "flex items-center justify-between gap-3 px-3 py-2 text-sm transition-colors w-full",
-                 isSmsActive
-                   ? "text-foreground"
-                   : "text-muted-foreground hover:text-foreground hover:bg-muted"
-               )}
-             >
-               <div className="flex items-center gap-3">
-                 <MessageSquare className="h-4 w-4" />
-                 SMS
-               </div>
-               <ChevronDown 
-                 className={cn(
-                   "h-4 w-4 transition-transform duration-200",
-                   isSmsOpen && "rotate-180"
-                 )} 
-               />
-             </div>
-           </CollapsibleTrigger>
-           <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-             <div className="ml-4 mt-1 space-y-1 border-l border-border pl-2">
-               {smsItems.map((item) => {
-                 const isActive = location.pathname === item.path;
-                 return (
-                   <Link
-                     key={item.path}
-                     to={item.path}
-                     onClick={(e) => handleNavClick(e, item.path)}
-                     className={cn(
-                       "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
-                       isActive
-                         ? "bg-foreground text-background"
-                         : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                     )}
-                   >
-                     <item.icon className="h-4 w-4" />
-                     {item.label}
-                   </Link>
-                 );
-               })}
-             </div>
-           </CollapsibleContent>
-         </Collapsible>
+        {/* SMS Marketing Module */}
+        {isModuleActive("sms_marketing") && (
+          renderCollapsible(
+            MessageSquare,
+            "SMS",
+            smsItems,
+            isSmsOpen,
+            setIsSmsOpen,
+            isSmsActive
+          )
+        )}
 
-         {/* Email Collapsible */}
-         <Collapsible open={isEmailOpen} onOpenChange={setIsEmailOpen}>
-           <CollapsibleTrigger className="w-full">
-             <div
-               className={cn(
-                 "flex items-center justify-between gap-3 px-3 py-2 text-sm transition-colors w-full",
-                 isEmailActive
-                   ? "text-foreground"
-                   : "text-muted-foreground hover:text-foreground hover:bg-muted"
-               )}
-             >
-               <div className="flex items-center gap-3">
-                 <Mail className="h-4 w-4" />
-                 Email
-               </div>
-               <ChevronDown 
-                 className={cn(
-                   "h-4 w-4 transition-transform duration-200",
-                   isEmailOpen && "rotate-180"
-                 )} 
-               />
-             </div>
-           </CollapsibleTrigger>
-           <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-             <div className="ml-4 mt-1 space-y-1 border-l border-border pl-2">
-               {emailItems.map((item) => {
-                 const isActive = location.pathname === item.path;
-                 return (
-                   <Link
-                     key={item.path}
-                     to={item.path}
-                     onClick={(e) => handleNavClick(e, item.path)}
-                     className={cn(
-                       "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
-                       isActive
-                         ? "bg-foreground text-background"
-                         : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                     )}
-                   >
-                     <item.icon className="h-4 w-4" />
-                     {item.label}
-                   </Link>
-                 );
-               })}
-             </div>
-           </CollapsibleContent>
-          </Collapsible>
+        {/* Email Marketing Module */}
+        {isModuleActive("email_marketing") && (
+          renderCollapsible(
+            Mail,
+            "Email",
+            emailItems,
+            isEmailOpen,
+            setIsEmailOpen,
+            isEmailActive
+          )
+        )}
 
-         {/* WhatsApp Collapsible */}
-         <Collapsible open={isWhatsappOpen} onOpenChange={setIsWhatsappOpen}>
-           <CollapsibleTrigger className="w-full">
-             <div
-               className={cn(
-                 "flex items-center justify-between gap-3 px-3 py-2 text-sm transition-colors w-full",
-                 isWhatsappActive
-                   ? "text-foreground"
-                   : "text-muted-foreground hover:text-foreground hover:bg-muted"
-               )}
-             >
-               <div className="flex items-center gap-3">
-                 <MessageCircle className="h-4 w-4" />
-                 WhatsApp
-               </div>
-               <ChevronDown 
-                 className={cn(
-                   "h-4 w-4 transition-transform duration-200",
-                   isWhatsappOpen && "rotate-180"
-                 )} 
-               />
-             </div>
-           </CollapsibleTrigger>
-           <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-             <div className="ml-4 mt-1 space-y-1 border-l border-border pl-2">
-               {whatsappItems.map((item) => {
-                 const isActive = location.pathname === item.path;
-                 return (
-                   <Link
-                     key={item.path}
-                     to={item.path}
-                     onClick={(e) => handleNavClick(e, item.path)}
-                     className={cn(
-                       "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
-                       isActive
-                         ? "bg-foreground text-background"
-                         : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                     )}
-                   >
-                     <item.icon className="h-4 w-4" />
-                     {item.label}
-                   </Link>
-                 );
-               })}
-             </div>
-           </CollapsibleContent>
-          </Collapsible>
+        {/* WhatsApp Marketing Module */}
+        {isModuleActive("whatsapp_marketing") && (
+          renderCollapsible(
+            MessageCircle,
+            "WhatsApp",
+            whatsappItems,
+            isWhatsappOpen,
+            setIsWhatsappOpen,
+            isWhatsappActive
+          )
+        )}
 
-         {/* Instagram Collapsible */}
-         <Collapsible open={isInstagramOpen} onOpenChange={setIsInstagramOpen}>
-           <CollapsibleTrigger className="w-full">
-             <div
-               className={cn(
-                 "flex items-center justify-between gap-3 px-3 py-2 text-sm transition-colors w-full",
-                 isInstagramActive
-                   ? "text-foreground"
-                   : "text-muted-foreground hover:text-foreground hover:bg-muted"
-               )}
-             >
-               <div className="flex items-center gap-3">
-                 <MessageCircle className="h-4 w-4" />
-                 Instagram
-               </div>
-               <ChevronDown 
-                 className={cn(
-                   "h-4 w-4 transition-transform duration-200",
-                   isInstagramOpen && "rotate-180"
-                 )} 
-               />
-             </div>
-           </CollapsibleTrigger>
-           <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-             <div className="ml-4 mt-1 space-y-1 border-l border-border pl-2">
-               {instagramItems.map((item) => {
-                 const isActive = location.pathname === item.path;
-                 return (
-                   <Link
-                     key={item.path}
-                     to={item.path}
-                     onClick={(e) => handleNavClick(e, item.path)}
-                     className={cn(
-                       "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
-                       isActive
-                         ? "bg-foreground text-background"
-                         : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                     )}
-                   >
-                     <item.icon className="h-4 w-4" />
-                     {item.label}
-                   </Link>
-                 );
-               })}
-             </div>
-           </CollapsibleContent>
-         </Collapsible>
+        {/* Instagram Marketing Module */}
+        {isModuleActive("instagram_marketing") && (
+          renderCollapsible(
+            MessageCircle,
+            "Instagram",
+            instagramItems,
+            isInstagramOpen,
+            setIsInstagramOpen,
+            isInstagramActive
+          )
+        )}
       </nav>
 
       <div className="p-4 border-t border-border">

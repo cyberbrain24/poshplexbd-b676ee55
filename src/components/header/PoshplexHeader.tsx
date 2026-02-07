@@ -6,6 +6,8 @@ import MobileMenu from "./MobileMenu";
 import ShoppingBag from "./ShoppingBag";
 import { useCategories } from "@/hooks/useMasterData";
 import { useCart } from "@/contexts/CartContext";
+import { useSiteSettingsContext } from "@/contexts/SiteSettingsContext";
+import { isExternalLink } from "@/hooks/useSiteSettings";
 
 interface NavItem {
   name: string;
@@ -24,14 +26,26 @@ const PoshplexHeader = () => {
   
   const { data: allCategories = [] } = useCategories();
   const { cartItems, updateQuantity, cartCount } = useCart();
+  const { settings } = useSiteSettingsContext();
 
-  // Build navigation items from database categories
+  // Build navigation items from site settings (if available) or fall back to categories
   const navItems: NavItem[] = useMemo(() => {
-    // Get parent categories (main navigation items)
+    // If we have header menu from settings, use that
+    if (settings.header_menu && settings.header_menu.length > 0) {
+      return settings.header_menu.map(item => ({
+        name: item.label.toUpperCase(),
+        href: item.path,
+        submenu: {
+          categories: [],
+          featured: []
+        }
+      }));
+    }
+    
+    // Fallback to database categories
     const parentCategories = allCategories.filter(c => !c.parent_id);
     
     return parentCategories.map(parent => {
-      // Get subcategories for this parent
       const subcategories = allCategories
         .filter(c => c.parent_id === parent.id)
         .map(c => c.name);
@@ -41,14 +55,37 @@ const PoshplexHeader = () => {
         href: `/category/${parent.name.toLowerCase().replace(/\s+/g, '-')}`,
         submenu: {
           categories: subcategories,
-          featured: [] // Can be extended with featured links
+          featured: []
         }
       };
     });
-  }, [allCategories]);
+  }, [allCategories, settings.header_menu]);
 
   const handleUpdateQuantity = (id: string, variantId: string | undefined, newQuantity: number) => {
     updateQuantity(id, variantId, newQuantity);
+  };
+
+  const renderNavLink = (item: NavItem) => {
+    if (isExternalLink(item.href)) {
+      return (
+        <a
+          href={item.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-foreground hover:text-nav-hover transition-colors text-sm font-medium tracking-wider py-6 block"
+        >
+          {item.name}
+        </a>
+      );
+    }
+    return (
+      <Link
+        to={item.href}
+        className="text-foreground hover:text-nav-hover transition-colors text-sm font-medium tracking-wider py-6 block"
+      >
+        {item.name}
+      </Link>
+    );
   };
 
   return (
@@ -75,9 +112,17 @@ const PoshplexHeader = () => {
 
         {/* Logo */}
         <Link to="/" className="absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0">
-          <span className="text-2xl font-black tracking-tighter text-foreground">
-            POSHPLEX
-          </span>
+          {settings.logo_url ? (
+            <img 
+              src={settings.logo_url} 
+              alt={settings.site_name}
+              className="h-8 object-contain"
+            />
+          ) : (
+            <span className="text-2xl font-black tracking-tighter text-foreground">
+              {settings.site_name.toUpperCase()}
+            </span>
+          )}
         </Link>
 
         {/* Desktop navigation */}
@@ -89,12 +134,7 @@ const PoshplexHeader = () => {
               onMouseEnter={() => setActiveDropdown(item.name)}
               onMouseLeave={() => setActiveDropdown(null)}
             >
-              <Link
-                to={item.href}
-                className="text-foreground hover:text-nav-hover transition-colors text-sm font-medium tracking-wider py-6 block"
-              >
-                {item.name}
-              </Link>
+              {renderNavLink(item)}
             </div>
           ))}
         </div>

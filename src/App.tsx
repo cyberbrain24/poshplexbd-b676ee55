@@ -7,6 +7,7 @@ import { HelmetProvider } from "react-helmet-async";
 import ScrollToTop from "./components/ScrollToTop";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { CartProvider } from "./contexts/CartContext";
+import { SiteSettingsProvider } from "./contexts/SiteSettingsContext";
 
 // All pages - direct imports (no lazy loading)
 import Index from "./pages/Index";
@@ -62,6 +63,7 @@ import AdminRiskManagement from "./pages/admin/AdminRiskManagement";
 import AdminPaymentMethods from "./pages/admin/AdminPaymentMethods";
 import AdminInventory from "./pages/admin/AdminInventory";
 import AdminSEO from "./pages/admin/AdminSEO";
+import AdminSiteSettings from "./pages/admin/AdminSiteSettings";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -77,77 +79,80 @@ const queryClient = new QueryClient({
 const App = () => (
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>
-      <CartProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter
-            future={{
-              v7_startTransition: true,
-              v7_relativeSplatPath: true,
-            }}
-          >
-            <ScrollToTop />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/category/:category" element={<Category />} />
-              <Route path="/product/:productId" element={<ProductDetail />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/order-tracking" element={<OrderTracking />} />
-              <Route path="/about/our-story" element={<OurStory />} />
-              <Route path="/about/sustainability" element={<Sustainability />} />
-              <Route path="/about/size-guide" element={<SizeGuide />} />
-              <Route path="/about/customer-care" element={<CustomerCare />} />
-              <Route path="/about/store-locator" element={<StoreLocator />} />
-              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-              <Route path="/terms-of-service" element={<TermsOfService />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/blog" element={<Blog />} />
-              <Route path="/blog/:slug" element={<BlogPost />} />
-              
-              {/* Admin Routes - Protected */}
-              <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-              <Route path="/admin/products" element={<ProtectedRoute><AdminProducts /></ProtectedRoute>} />
-              <Route path="/admin/blog" element={<ProtectedRoute><AdminBlog /></ProtectedRoute>} />
-              <Route path="/admin/seo" element={<ProtectedRoute><AdminSEO /></ProtectedRoute>} />
-              <Route path="/admin/colors" element={<ProtectedRoute><AdminColors /></ProtectedRoute>} />
-              <Route path="/admin/sizes" element={<ProtectedRoute><AdminSizes /></ProtectedRoute>} />
-              <Route path="/admin/materials" element={<ProtectedRoute><AdminMaterials /></ProtectedRoute>} />
-              <Route path="/admin/size-guides" element={<ProtectedRoute><AdminSizeGuides /></ProtectedRoute>} />
-              <Route path="/admin/care-instructions" element={<ProtectedRoute><AdminCareInstructions /></ProtectedRoute>} />
-              <Route path="/admin/categories" element={<ProtectedRoute><AdminCategories /></ProtectedRoute>} />
-              <Route path="/admin/brands" element={<ProtectedRoute><AdminBrands /></ProtectedRoute>} />
-              <Route path="/admin/accounts" element={<ProtectedRoute><AdminAccounts /></ProtectedRoute>} />
-              <Route path="/admin/accounts-list" element={<ProtectedRoute><AdminAccountsList /></ProtectedRoute>} />
-              <Route path="/admin/income-categories" element={<ProtectedRoute><AdminIncomeCategories /></ProtectedRoute>} />
-              <Route path="/admin/expense-categories" element={<ProtectedRoute><AdminExpenseCategories /></ProtectedRoute>} />
-              <Route path="/admin/customers" element={<ProtectedRoute><AdminCustomers /></ProtectedRoute>} />
-              <Route path="/admin/divisions" element={<ProtectedRoute><AdminDivisions /></ProtectedRoute>} />
-              <Route path="/admin/thanas" element={<ProtectedRoute><AdminThanas /></ProtectedRoute>} />
-              <Route path="/admin/customer-types" element={<ProtectedRoute><AdminCustomerTypes /></ProtectedRoute>} />
-              <Route path="/admin/sms-api" element={<ProtectedRoute><AdminSmsApi /></ProtectedRoute>} />
-              <Route path="/admin/sms-marketing" element={<ProtectedRoute><AdminSmsMarketing /></ProtectedRoute>} />
-              <Route path="/admin/email-api" element={<ProtectedRoute><AdminEmailApi /></ProtectedRoute>} />
-              <Route path="/admin/email-marketing" element={<ProtectedRoute><AdminEmailMarketing /></ProtectedRoute>} />
-              <Route path="/admin/whatsapp-api" element={<ProtectedRoute><AdminWhatsappApi /></ProtectedRoute>} />
-              <Route path="/admin/whatsapp-marketing" element={<ProtectedRoute><AdminWhatsappMarketing /></ProtectedRoute>} />
-              <Route path="/admin/whatsapp-inbox" element={<ProtectedRoute><AdminWhatsappInbox /></ProtectedRoute>} />
-              <Route path="/admin/instagram-api" element={<ProtectedRoute><AdminInstagramApi /></ProtectedRoute>} />
-              <Route path="/admin/instagram-marketing" element={<ProtectedRoute><AdminInstagramMarketing /></ProtectedRoute>} />
-              <Route path="/admin/instagram-inbox" element={<ProtectedRoute><AdminInstagramInbox /></ProtectedRoute>} />
-              <Route path="/admin/orders" element={<ProtectedRoute><AdminOrders /></ProtectedRoute>} />
-              <Route path="/admin/verification-queue" element={<ProtectedRoute><AdminVerificationQueue /></ProtectedRoute>} />
-              <Route path="/admin/returns" element={<ProtectedRoute><AdminReturns /></ProtectedRoute>} />
-              <Route path="/admin/risk-management" element={<ProtectedRoute><AdminRiskManagement /></ProtectedRoute>} />
-              <Route path="/admin/payment-methods" element={<ProtectedRoute><AdminPaymentMethods /></ProtectedRoute>} />
-              <Route path="/admin/inventory" element={<ProtectedRoute><AdminInventory /></ProtectedRoute>} />
-              
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </CartProvider>
+      <SiteSettingsProvider>
+        <CartProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter
+              future={{
+                v7_startTransition: true,
+                v7_relativeSplatPath: true,
+              }}
+            >
+              <ScrollToTop />
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/category/:category" element={<Category />} />
+                <Route path="/product/:productId" element={<ProductDetail />} />
+                <Route path="/checkout" element={<Checkout />} />
+                <Route path="/order-tracking" element={<OrderTracking />} />
+                <Route path="/about/our-story" element={<OurStory />} />
+                <Route path="/about/sustainability" element={<Sustainability />} />
+                <Route path="/about/size-guide" element={<SizeGuide />} />
+                <Route path="/about/customer-care" element={<CustomerCare />} />
+                <Route path="/about/store-locator" element={<StoreLocator />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/terms-of-service" element={<TermsOfService />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/blog" element={<Blog />} />
+                <Route path="/blog/:slug" element={<BlogPost />} />
+                
+                {/* Admin Routes - Protected */}
+                <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+                <Route path="/admin/products" element={<ProtectedRoute><AdminProducts /></ProtectedRoute>} />
+                <Route path="/admin/blog" element={<ProtectedRoute><AdminBlog /></ProtectedRoute>} />
+                <Route path="/admin/seo" element={<ProtectedRoute><AdminSEO /></ProtectedRoute>} />
+                <Route path="/admin/site-settings" element={<ProtectedRoute><AdminSiteSettings /></ProtectedRoute>} />
+                <Route path="/admin/colors" element={<ProtectedRoute><AdminColors /></ProtectedRoute>} />
+                <Route path="/admin/sizes" element={<ProtectedRoute><AdminSizes /></ProtectedRoute>} />
+                <Route path="/admin/materials" element={<ProtectedRoute><AdminMaterials /></ProtectedRoute>} />
+                <Route path="/admin/size-guides" element={<ProtectedRoute><AdminSizeGuides /></ProtectedRoute>} />
+                <Route path="/admin/care-instructions" element={<ProtectedRoute><AdminCareInstructions /></ProtectedRoute>} />
+                <Route path="/admin/categories" element={<ProtectedRoute><AdminCategories /></ProtectedRoute>} />
+                <Route path="/admin/brands" element={<ProtectedRoute><AdminBrands /></ProtectedRoute>} />
+                <Route path="/admin/accounts" element={<ProtectedRoute><AdminAccounts /></ProtectedRoute>} />
+                <Route path="/admin/accounts-list" element={<ProtectedRoute><AdminAccountsList /></ProtectedRoute>} />
+                <Route path="/admin/income-categories" element={<ProtectedRoute><AdminIncomeCategories /></ProtectedRoute>} />
+                <Route path="/admin/expense-categories" element={<ProtectedRoute><AdminExpenseCategories /></ProtectedRoute>} />
+                <Route path="/admin/customers" element={<ProtectedRoute><AdminCustomers /></ProtectedRoute>} />
+                <Route path="/admin/divisions" element={<ProtectedRoute><AdminDivisions /></ProtectedRoute>} />
+                <Route path="/admin/thanas" element={<ProtectedRoute><AdminThanas /></ProtectedRoute>} />
+                <Route path="/admin/customer-types" element={<ProtectedRoute><AdminCustomerTypes /></ProtectedRoute>} />
+                <Route path="/admin/sms-api" element={<ProtectedRoute><AdminSmsApi /></ProtectedRoute>} />
+                <Route path="/admin/sms-marketing" element={<ProtectedRoute><AdminSmsMarketing /></ProtectedRoute>} />
+                <Route path="/admin/email-api" element={<ProtectedRoute><AdminEmailApi /></ProtectedRoute>} />
+                <Route path="/admin/email-marketing" element={<ProtectedRoute><AdminEmailMarketing /></ProtectedRoute>} />
+                <Route path="/admin/whatsapp-api" element={<ProtectedRoute><AdminWhatsappApi /></ProtectedRoute>} />
+                <Route path="/admin/whatsapp-marketing" element={<ProtectedRoute><AdminWhatsappMarketing /></ProtectedRoute>} />
+                <Route path="/admin/whatsapp-inbox" element={<ProtectedRoute><AdminWhatsappInbox /></ProtectedRoute>} />
+                <Route path="/admin/instagram-api" element={<ProtectedRoute><AdminInstagramApi /></ProtectedRoute>} />
+                <Route path="/admin/instagram-marketing" element={<ProtectedRoute><AdminInstagramMarketing /></ProtectedRoute>} />
+                <Route path="/admin/instagram-inbox" element={<ProtectedRoute><AdminInstagramInbox /></ProtectedRoute>} />
+                <Route path="/admin/orders" element={<ProtectedRoute><AdminOrders /></ProtectedRoute>} />
+                <Route path="/admin/verification-queue" element={<ProtectedRoute><AdminVerificationQueue /></ProtectedRoute>} />
+                <Route path="/admin/returns" element={<ProtectedRoute><AdminReturns /></ProtectedRoute>} />
+                <Route path="/admin/risk-management" element={<ProtectedRoute><AdminRiskManagement /></ProtectedRoute>} />
+                <Route path="/admin/payment-methods" element={<ProtectedRoute><AdminPaymentMethods /></ProtectedRoute>} />
+                <Route path="/admin/inventory" element={<ProtectedRoute><AdminInventory /></ProtectedRoute>} />
+                
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </CartProvider>
+      </SiteSettingsProvider>
     </QueryClientProvider>
   </HelmetProvider>
 );

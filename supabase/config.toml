@@ -1,10 +1,10 @@
 project_id = "zspmhkzosumopyfmlwvl"
 
 [functions.ai-seo-generate]
-verify_jwt = true
+verify_jwt = false
 
 [functions.sitemap]
 verify_jwt = false
 
 [functions.seed-products]
-verify_jwt = true
+verify_jwt = false

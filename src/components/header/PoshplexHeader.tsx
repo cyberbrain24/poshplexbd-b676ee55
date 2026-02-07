@@ -54,21 +54,30 @@ const PoshplexHeader = () => {
 
   // Build navigation items from site settings (if available) or fall back to categories
   const navItems: NavItem[] = useMemo(() => {
+    // Build category submenu from database
+    const parentCategories = allCategories.filter(c => !c.parent_id);
+    const categorySubmenu = parentCategories.map(cat => cat.name);
+    
     // If we have header menu from settings, use that
     if (settings.header_menu && settings.header_menu.length > 0) {
-      return settings.header_menu.map(item => ({
-        name: item.label.toUpperCase(),
-        href: item.path,
-        submenu: {
-          categories: [],
-          featured: []
-        }
-      }));
+      return settings.header_menu.map(item => {
+        // Check if this is a shop/category link - add mega menu with categories
+        const isShopLink = item.path.includes('/category') || 
+                          item.label.toLowerCase() === 'shop' ||
+                          item.label.toLowerCase() === 'products';
+        
+        return {
+          name: item.label.toUpperCase(),
+          href: item.path,
+          submenu: {
+            categories: isShopLink ? categorySubmenu : [],
+            featured: []
+          }
+        };
+      });
     }
     
     // Fallback to database categories
-    const parentCategories = allCategories.filter(c => !c.parent_id);
-    
     return parentCategories.map(parent => {
       const subcategories = allCategories
         .filter(c => c.parent_id === parent.id)

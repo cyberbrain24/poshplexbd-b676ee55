@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.seed-products]
 verify_jwt = false
+
+[functions.steadfast-courier]
+verify_jwt = false

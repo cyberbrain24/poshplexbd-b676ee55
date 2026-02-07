@@ -64,6 +64,8 @@ import AdminPaymentMethods from "./pages/admin/AdminPaymentMethods";
 import AdminInventory from "./pages/admin/AdminInventory";
 import AdminSEO from "./pages/admin/AdminSEO";
 import AdminSiteSettings from "./pages/admin/AdminSiteSettings";
+import AdminPages from "./pages/admin/AdminPages";
+import DynamicPage from "./pages/DynamicPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -145,6 +147,10 @@ const App = () => (
                 <Route path="/admin/risk-management" element={<ProtectedRoute><AdminRiskManagement /></ProtectedRoute>} />
                 <Route path="/admin/payment-methods" element={<ProtectedRoute><AdminPaymentMethods /></ProtectedRoute>} />
                 <Route path="/admin/inventory" element={<ProtectedRoute><AdminInventory /></ProtectedRoute>} />
+                <Route path="/admin/pages" element={<ProtectedRoute><AdminPages /></ProtectedRoute>} />
+                
+                {/* Dynamic CMS Pages - Catch-all before 404 */}
+                <Route path="/page/:slug" element={<DynamicPage />} />
                 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />

@@ -160,6 +160,24 @@ Deno.serve(async (req) => {
           });
         });
       }
+
+      // Fetch CMS pages
+      const { data: pages, error: pagesError } = await supabase
+        .from("pages")
+        .select("slug, updated_at")
+        .eq("status", "published")
+        .limit(500);
+
+      if (!pagesError && pages) {
+        pages.forEach((page) => {
+          entries.push({
+            loc: `${SITE_URL}/page/${page.slug}`,
+            lastmod: formatDate(page.updated_at),
+            changefreq: "weekly",
+            priority: 0.6,
+          });
+        });
+      }
     }
 
     console.log(`Generating sitemap with ${entries.length} URLs`);

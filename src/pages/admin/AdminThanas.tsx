@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Download, Loader2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -29,6 +29,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useThanas, useDeleteThana, useDivisions, Thana } from "@/hooks/useCustomers";
+import { useSyncLocationsFromSteadfast } from "@/hooks/useSteadfast";
 import ThanaModal from "@/components/admin/ThanaModal";
 
 const AdminThanas = () => {
@@ -40,6 +41,7 @@ const AdminThanas = () => {
   const { data: thanas, isLoading } = useThanas(divisionFilter);
   const { data: divisions } = useDivisions();
   const deleteThana = useDeleteThana();
+  const syncLocations = useSyncLocationsFromSteadfast();
 
   const handleEdit = (thana: Thana) => {
     setSelectedThana(thana);
@@ -60,10 +62,24 @@ const AdminThanas = () => {
           <h1 className="text-2xl font-semibold tracking-tight">Thanas</h1>
           <p className="text-muted-foreground">Manage thanas/sub-districts for customer addresses</p>
         </div>
-        <Button onClick={() => { setSelectedThana(null); setModalOpen(true); }}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Thana
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => syncLocations.mutate()}
+            disabled={syncLocations.isPending}
+          >
+            {syncLocations.isPending ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4 mr-2" />
+            )}
+            Import from Steadfast
+          </Button>
+          <Button onClick={() => { setSelectedThana(null); setModalOpen(true); }}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Thana
+          </Button>
+        </div>
       </div>
 
       <Card>

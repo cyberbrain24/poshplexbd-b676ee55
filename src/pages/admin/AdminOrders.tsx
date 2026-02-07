@@ -45,10 +45,57 @@ import OrderDetailModal from "@/components/admin/OrderDetailModal";
 import { useCreateShipment, STEADFAST_STATUS_MAP, useTrackShipment, useResetShipping } from "@/hooks/useSteadfast";
 import { formatCurrency } from "@/lib/currency";
 
+// Parcel ID cell component
+const ParcelIdCell = ({ order }: { order: { id: string; consignment_id: string | null; tracking_number: string | null } }) => {
+  const resetShipping = useResetShipping();
+  const { data: trackingData, isLoading: trackingLoading, isError } = useTrackShipment(order.tracking_number || undefined);
+
+  // If no consignment_id, show dash
+  if (!order.consignment_id) {
+    return <span className="text-muted-foreground">—</span>;
+  }
+
+  const deliveryStatus = trackingData?.delivery_status || "pending";
+  
+  // Check if parcel was deleted from Steadfast
+  const isDeletedFromSteadfast = isError || deliveryStatus === "unknown" || 
+    (trackingData?.status === 404) || (trackingData?.status === 400) ||
+    (trackingData?.message?.toLowerCase()?.includes("not found"));
+
+  // If deleted from Steadfast, show reset button
+  if (isDeletedFromSteadfast && !trackingLoading) {
+    return (
+      <div className="flex flex-col gap-1">
+        <span className="text-xs text-muted-foreground line-through">{order.consignment_id}</span>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={(e) => {
+            e.stopPropagation();
+            resetShipping.mutate(order.id);
+          }}
+          disabled={resetShipping.isPending}
+          className="h-6 text-xs"
+        >
+          {resetShipping.isPending ? (
+            <Loader2 className="h-3 w-3 animate-spin mr-1" />
+          ) : (
+            <Truck className="h-3 w-3 mr-1" />
+          )}
+          Re-ship
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <span className="text-xs font-mono text-muted-foreground">{order.consignment_id}</span>
+  );
+};
+
 // Courier status component for each order row
 const CourierStatusCell = ({ order }: { order: { id: string; tracking_number: string | null; courier_name: string | null } }) => {
   const createShipment = useCreateShipment();
-  const resetShipping = useResetShipping();
   const { data: trackingData, isLoading: trackingLoading, isError } = useTrackShipment(order.tracking_number || undefined);
 
   if (!order.tracking_number) {
@@ -92,31 +139,12 @@ const CourierStatusCell = ({ order }: { order: { id: string; tracking_number: st
     gray: "bg-gray-100 text-gray-800",
   };
 
-  // If deleted from Steadfast, show reset button
+  // If deleted from Steadfast, show deleted badge
   if (isDeletedFromSteadfast && !trackingLoading) {
     return (
-      <div className="flex flex-col gap-1">
-        <Badge className="bg-red-100 text-red-800" variant="outline">
-          Deleted
-        </Badge>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={(e) => {
-            e.stopPropagation();
-            resetShipping.mutate(order.id);
-          }}
-          disabled={resetShipping.isPending}
-          className="h-6 text-xs"
-        >
-          {resetShipping.isPending ? (
-            <Loader2 className="h-3 w-3 animate-spin mr-1" />
-          ) : (
-            <Truck className="h-3 w-3 mr-1" />
-          )}
-          Re-ship
-        </Button>
-      </div>
+      <Badge className="bg-red-100 text-red-800" variant="outline">
+        Deleted
+      </Badge>
     );
   }
 
@@ -294,6 +322,7 @@ const AdminOrders = () => {
               <TableHead>Paid</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Payment</TableHead>
+              <TableHead>Parcel ID</TableHead>
               <TableHead>Courier</TableHead>
               <TableHead>Risk</TableHead>
               <TableHead>Date</TableHead>
@@ -304,7 +333,7 @@ const AdminOrders = () => {
             {ordersLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 11 }).map((_, j) => (
+                  {Array.from({ length: 12 }).map((_, j) => (
                     <TableCell key={j}>
                       <Skeleton className="h-4 w-full" />
                     </TableCell>
@@ -313,7 +342,7 @@ const AdminOrders = () => {
               ))
             ) : orders?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
                   No orders found
                 </TableCell>
               </TableRow>
@@ -363,6 +392,9 @@ const AdminOrders = () => {
                     <Badge className={paymentStatusColors[order.payment_status]} variant="outline">
                       {order.payment_status.replace('_', ' ')}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <ParcelIdCell order={order as any} />
                   </TableCell>
                   <TableCell>
                     <CourierStatusCell order={order} />

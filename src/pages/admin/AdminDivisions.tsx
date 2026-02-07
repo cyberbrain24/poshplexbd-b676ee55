@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Download, Loader2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -22,6 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useDivisions, useDeleteDivision, Division } from "@/hooks/useCustomers";
+import { useSyncLocationsFromSteadfast } from "@/hooks/useSteadfast";
 import DivisionModal from "@/components/admin/DivisionModal";
 
 const AdminDivisions = () => {
@@ -31,6 +32,7 @@ const AdminDivisions = () => {
 
   const { data: divisions, isLoading } = useDivisions();
   const deleteDivision = useDeleteDivision();
+  const syncLocations = useSyncLocationsFromSteadfast();
 
   const handleEdit = (division: Division) => {
     setSelectedDivision(division);
@@ -51,10 +53,24 @@ const AdminDivisions = () => {
           <h1 className="text-2xl font-semibold tracking-tight">Districts</h1>
           <p className="text-muted-foreground">Manage geographical districts for customers</p>
         </div>
-        <Button onClick={() => { setSelectedDivision(null); setModalOpen(true); }}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add District
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => syncLocations.mutate()}
+            disabled={syncLocations.isPending}
+          >
+            {syncLocations.isPending ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4 mr-2" />
+            )}
+            Import from Steadfast
+          </Button>
+          <Button onClick={() => { setSelectedDivision(null); setModalOpen(true); }}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add District
+          </Button>
+        </div>
       </div>
 
       <Card>

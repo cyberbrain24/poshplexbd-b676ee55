@@ -251,6 +251,30 @@ export function usePoliceStations() {
   });
 }
 
+// Sync locations (Districts/Thanas) from Steadfast API
+export function useSyncLocationsFromSteadfast() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke(
+        "steadfast-courier?action=sync_locations",
+        { method: "POST" }
+      );
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "Locations synced from Steadfast API");
+      queryClient.invalidateQueries({ queryKey: ["divisions"] });
+      queryClient.invalidateQueries({ queryKey: ["thanas"] });
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to sync locations: ${error.message}`);
+    },
+  });
+}
+
 // Delivery status mapper
 export const STEADFAST_STATUS_MAP: Record<string, { label: string; color: string }> = {
   pending: { label: "Pending", color: "yellow" },

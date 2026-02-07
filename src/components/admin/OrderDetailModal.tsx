@@ -28,7 +28,10 @@ import {
   ItemFulfillmentStatus 
 } from "@/hooks/useOrders";
 import { useCreateShipment, useTrackShipment, STEADFAST_STATUS_MAP } from "@/hooks/useSteadfast";
+import { useApproveCODAmount } from "@/hooks/useCODApproval";
+import { useAccounts } from "@/hooks/useAccounts";
 import { format } from "date-fns";
+import { toast } from "sonner";
 import { 
   Package, 
   CreditCard, 
@@ -44,8 +47,11 @@ import {
   User,
   Loader2,
   Send,
-  Map
+  Map,
+  Pencil,
+  BadgeCheck
 } from "lucide-react";
+import OrderItemEditModal from "./OrderItemEditModal";
 
 interface OrderDetailModalProps {
   orderId: string;
@@ -71,10 +77,12 @@ const itemStatusOptions: ItemFulfillmentStatus[] = [
 const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => {
   const { data: order, isLoading } = useOrder(orderId);
   const { data: history } = useOrderHistory(orderId);
+  const { data: accounts } = useAccounts();
   const updateOrderStatus = useUpdateOrderStatus();
   const updatePaymentStatus = useUpdatePaymentStatus();
   const updateItemFulfillment = useUpdateItemFulfillment();
   const createShipment = useCreateShipment();
+  const approveCOD = useApproveCODAmount();
   const { data: trackingData, isLoading: trackingLoading } = useTrackShipment(
     order?.tracking_number || undefined
   );
@@ -82,6 +90,15 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
   const [statusNote, setStatusNote] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus | "">("");
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<PaymentStatus | "">("");
+  const [editingItem, setEditingItem] = useState<{
+    id: string;
+    product_name: string;
+    variant_sku: string | null;
+    quantity: number;
+    unit_price: number;
+    line_total: number;
+  } | null>(null);
+  const [selectedAccountId, setSelectedAccountId] = useState<string>("");
 
   const handleUpdateOrderStatus = () => {
     if (!selectedStatus || !order) return;
@@ -357,13 +374,28 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
                     <div className="flex-1">
                       <p className="font-medium text-sm">{item.product_name}</p>
                       <p className="text-xs text-muted-foreground">
-                        SKU: {item.variant_sku || 'N/A'} • Qty: {item.quantity}
+                        SKU: {item.variant_sku || 'N/A'} • Qty: {item.quantity} × ৳{item.unit_price.toLocaleString()}
                       </p>
                       <p className="text-sm font-medium mt-1">
                         ৳{item.line_total.toLocaleString()}
                       </p>
                     </div>
-                    <div>
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7"
+                        onClick={() => setEditingItem({
+                          id: item.id,
+                          product_name: item.product_name,
+                          variant_sku: item.variant_sku,
+                          quantity: item.quantity,
+                          unit_price: item.unit_price,
+                          line_total: item.line_total,
+                        })}
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </Button>
                       <Select
                         value={item.fulfillment_status}
                         onValueChange={(v) => handleUpdateItemStatus(item.id, v as ItemFulfillmentStatus)}
@@ -451,17 +483,96 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
                 <span className="font-mono ml-1">{order.tracking_number}</span>
               </div>
               {order.payment_method_type === "cod" && (
-                <div>
-                  <span className="text-blue-600">COD Amount:</span> ৳{order.total_amount.toLocaleString()}
-                </div>
+                <>
+                  <div>
+                    <span className="text-blue-600">COD Amount:</span> ৳{order.total_amount.toLocaleString()}
+                  </div>
+                  {trackingData?.cod_amount !== undefined && (
+                    <div>
+                      <span className="text-blue-600">Collected:</span> ৳{trackingData.cod_amount.toLocaleString()}
+                    </div>
+                  )}
+                </>
               )}
             </div>
+          </div>
+        )}
+
+        {/* COD Approval Section - Show after delivery */}
+        {order.payment_method_type === "cod" && 
+         order.tracking_number && 
+         deliveryStatus === "delivered" && 
+         !order.amount_approved_at && (
+          <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded space-y-3">
+            <h4 className="font-medium flex items-center gap-2 text-green-800">
+              <BadgeCheck className="h-4 w-4" /> Approve COD Collection
+            </h4>
+            <p className="text-sm text-green-700">
+              Steadfast reports collected amount: <span className="font-bold">৳{(trackingData?.cod_amount || order.total_amount).toLocaleString()}</span>
+            </p>
+            <div className="flex gap-2 items-center">
+              <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Select account to credit" />
+                </SelectTrigger>
+                <SelectContent>
+                  {accounts?.filter(a => a.is_active).map(account => (
+                    <SelectItem key={account.id} value={account.id}>
+                      {account.name} (৳{account.current_balance.toLocaleString()})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                onClick={() => {
+                  if (!selectedAccountId) {
+                    toast.error("Please select an account to credit");
+                    return;
+                  }
+                  approveCOD.mutate({
+                    orderId: order.id,
+                    collectedAmount: trackingData?.cod_amount || order.total_amount,
+                    accountId: selectedAccountId,
+                  });
+                }}
+                disabled={approveCOD.isPending || !selectedAccountId}
+                className="whitespace-nowrap"
+              >
+                {approveCOD.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                )}
+                Approve Amount
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Already Approved */}
+        {order.amount_approved_at && (
+          <div className="mt-4 p-4 bg-green-100 border border-green-300 rounded">
+            <div className="flex items-center gap-2 text-green-800">
+              <CheckCircle className="h-4 w-4" />
+              <span className="font-medium">Amount Approved</span>
+            </div>
+            <p className="text-sm text-green-700 mt-1">
+              Collected ৳{(order.collected_amount || order.total_amount).toLocaleString()} on {format(new Date(order.amount_approved_at), 'MMM d, yyyy h:mm a')}
+            </p>
           </div>
         )}
 
         <div className="flex justify-end gap-2 mt-6">
           <Button variant="outline" onClick={onClose}>Close</Button>
         </div>
+
+        {/* Order Item Edit Modal */}
+        <OrderItemEditModal
+          item={editingItem}
+          orderId={orderId}
+          open={!!editingItem}
+          onClose={() => setEditingItem(null)}
+        />
       </DialogContent>
     </Dialog>
   );

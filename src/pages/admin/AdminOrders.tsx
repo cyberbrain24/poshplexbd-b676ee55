@@ -32,7 +32,6 @@ import {
 import { 
   Package, 
   Search, 
-  Clock, 
   CreditCard, 
   AlertTriangle,
   TrendingUp,
@@ -170,7 +169,7 @@ const AdminOrders = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="p-4 border border-border">
           <Package className="h-5 w-5 text-muted-foreground mb-2" />
           <p className="text-2xl font-medium">
@@ -198,20 +197,6 @@ const AdminOrders = () => {
             {statsLoading ? <Skeleton className="h-8 w-16" /> : formatCurrency(stats?.todayRevenue || 0)}
           </p>
           <p className="text-sm text-muted-foreground">Today's Revenue</p>
-        </div>
-        <div className="p-4 border border-border bg-yellow-50">
-          <Clock className="h-5 w-5 text-yellow-600 mb-2" />
-          <p className="text-2xl font-medium text-yellow-700">
-            {statsLoading ? <Skeleton className="h-8 w-16" /> : stats?.pendingVerification || 0}
-          </p>
-          <p className="text-sm text-yellow-600">Pending Verification</p>
-        </div>
-        <div className="p-4 border border-border bg-blue-50">
-          <Package className="h-5 w-5 text-blue-600 mb-2" />
-          <p className="text-2xl font-medium text-blue-700">
-            {statsLoading ? <Skeleton className="h-8 w-16" /> : stats?.pendingFulfillment || 0}
-          </p>
-          <p className="text-sm text-blue-600">To Fulfill</p>
         </div>
         <div className="p-4 border border-border">
           <TrendingUp className="h-5 w-5 text-green-600 mb-2" />

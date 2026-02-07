@@ -3,8 +3,8 @@
  * Server-side pagination and selective fetching for product management
  */
 
-import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { usePagination, useDebounce, QUERY_CONFIG } from "@/utils/performance";
 import type { Product } from "@/types/product";
@@ -106,21 +106,19 @@ export const useOptimizedCategoryProducts = (
   sortBy: "newest" | "price_asc" | "price_desc" = "newest"
 ) => {
   const PAGE_SIZE = 12;
-  const [page, setPage] = useState(1);
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
+  const categoryIdRef = useRef<string | null>(null);
 
-  const queryKey = [
-    "category-products-optimized",
-    categorySlug,
-    sortBy,
-    page,
-  ];
-
-  const { data, isLoading, error, isFetching } = useQuery({
-    queryKey,
-    queryFn: async () => {
-      const offset = (page - 1) * PAGE_SIZE;
+  const {
+    data,
+    isLoading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["category-products-infinite", categorySlug, sortBy],
+    queryFn: async ({ pageParam = 0 }) => {
+      const offset = pageParam * PAGE_SIZE;
       
       let query = supabase
         .from("products")
@@ -142,15 +140,19 @@ export const useOptimizedCategoryProducts = (
 
       // Filter by category if not "all"
       if (categorySlug && categorySlug !== "all") {
-        const { data: categoryData } = await supabase
-          .from("categories")
-          .select("id")
-          .ilike("name", categorySlug.replace(/-/g, " "))
-          .single();
+        // Cache category ID lookup
+        if (!categoryIdRef.current) {
+          const { data: categoryData } = await supabase
+            .from("categories")
+            .select("id")
+            .ilike("name", categorySlug.replace(/-/g, " "))
+            .single();
+          categoryIdRef.current = categoryData?.id || null;
+        }
 
-        if (categoryData) {
-          query = query.eq("category_id", categoryData.id);
-          countQuery = countQuery.eq("category_id", categoryData.id);
+        if (categoryIdRef.current) {
+          query = query.eq("category_id", categoryIdRef.current);
+          countQuery = countQuery.eq("category_id", categoryIdRef.current);
         }
       }
 
@@ -175,63 +177,51 @@ export const useOptimizedCategoryProducts = (
       return {
         products: dataResult.data as Product[],
         totalCount: countResult.count || 0,
-        currentPage: page,
+        nextPage: pageParam + 1,
       };
     },
-    ...QUERY_CONFIG.listView,
+    getNextPageParam: (lastPage, allPages) => {
+      const totalLoaded = allPages.reduce((acc, page) => acc + page.products.length, 0);
+      if (totalLoaded < lastPage.totalCount) {
+        return lastPage.nextPage;
+      }
+      return undefined;
+    },
+    initialPageParam: 0,
+    staleTime: 1000 * 60 * 2,
+    gcTime: 1000 * 60 * 5,
   });
 
-  // Accumulate products when new page loads
-  useEffect(() => {
-    if (data?.products) {
-      if (data.currentPage === 1) {
-        setAllProducts(data.products);
-      } else {
-        setAllProducts(prev => {
-          // Avoid duplicates
-          const existingIds = new Set(prev.map(p => p.id));
-          const newProducts = data.products.filter(p => !existingIds.has(p.id));
-          return [...prev, ...newProducts];
-        });
-      }
-      setTotalCount(data.totalCount);
+  // Flatten all pages into single products array
+  const products = data?.pages.flatMap(page => page.products) || [];
+  const totalCount = data?.pages[0]?.totalCount || 0;
+
+  const loadMore = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
     }
-  }, [data]);
-
-  // Reset when category or sort changes
-  useEffect(() => {
-    setPage(1);
-    setAllProducts([]);
-  }, [categorySlug, sortBy]);
-
-  const loadMore = () => {
-    if (!isFetching && allProducts.length < totalCount) {
-      setPage(prev => prev + 1);
-    }
-  };
-
-  const hasMore = allProducts.length < totalCount;
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return {
-    products: allProducts,
-    isLoading: isLoading && page === 1,
-    isLoadingMore: isFetching && page > 1,
+    products,
+    isLoading,
+    isLoadingMore: isFetchingNextPage,
     error: error as Error | null,
     totalCount,
-    hasMore,
+    hasMore: hasNextPage ?? false,
     loadMore,
     // Keep pagination for backwards compatibility
     pagination: {
-      page,
+      page: data?.pages.length || 1,
       pageSize: PAGE_SIZE,
       totalPages: Math.ceil(totalCount / PAGE_SIZE),
-      hasNextPage: hasMore,
-      hasPrevPage: page > 1,
+      hasNextPage: hasNextPage ?? false,
+      hasPrevPage: false,
       nextPage: loadMore,
       prevPage: () => {},
       setTotalCount: () => {},
       totalCount,
-      offset: (page - 1) * PAGE_SIZE,
+      offset: 0,
     },
   };
 };

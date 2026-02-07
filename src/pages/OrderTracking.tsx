@@ -2,15 +2,14 @@ import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { 
   Package, 
-  CreditCard, 
   Truck, 
   CheckCircle2, 
   Clock, 
   XCircle,
-  ChevronRight,
   Search,
   RotateCcw,
-  AlertCircle
+  AlertCircle,
+  History
 } from "lucide-react";
 import CheckoutHeader from "@/components/header/CheckoutHeader";
 import PoshplexFooter from "@/components/footer/PoshplexFooter";
@@ -43,6 +42,8 @@ const getPaymentStatusBadge = (status: string) => {
       return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">Pending Verification</Badge>;
     case 'unpaid':
       return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">Unpaid (COD)</Badge>;
+    case 'partially_paid':
+      return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Partially Paid</Badge>;
     case 'refunded':
       return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Refunded</Badge>;
     case 'failed':
@@ -78,40 +79,59 @@ const OrderTracking = () => {
   
   const [orderNumber, setOrderNumber] = useState(searchParams.get('orderNumber') || '');
   const [phone, setPhone] = useState(searchParams.get('phone') || '');
-  const [order, setOrder] = useState<any>(null);
+  const [email, setEmail] = useState(searchParams.get('email') || '');
+  const [orders, setOrders] = useState<any[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [hasSearched, setHasSearched] = useState(false);
 
   // Auto-search if params provided
   useEffect(() => {
     const urlOrderNumber = searchParams.get('orderNumber');
     const urlPhone = searchParams.get('phone');
-    if (urlOrderNumber && urlPhone) {
-      handleTrackOrder(urlOrderNumber, urlPhone);
+    const urlEmail = searchParams.get('email');
+    if (urlOrderNumber || urlPhone || urlEmail) {
+      handleTrackOrder(urlOrderNumber || undefined, urlPhone || undefined, urlEmail || undefined);
     }
   }, []);
 
-  const handleTrackOrder = async (orderNum?: string, phoneNum?: string) => {
-    const searchOrderNumber = orderNum || orderNumber;
-    const searchPhone = phoneNum || phone;
+  const handleTrackOrder = async (orderNum?: string, phoneNum?: string, emailVal?: string) => {
+    const searchOrderNumber = orderNum ?? orderNumber;
+    const searchPhone = phoneNum ?? phone;
+    const searchEmail = emailVal ?? email;
     
-    if (!searchOrderNumber.trim() || !searchPhone.trim()) {
+    // Need at least one field
+    if (!searchOrderNumber.trim() && !searchPhone.trim() && !searchEmail.trim()) {
       return;
     }
 
     setHasSearched(true);
+    setSelectedOrder(null);
+    
     try {
       const result = await trackOrderMutation.mutateAsync({
-        orderNumber: searchOrderNumber.trim(),
-        phone: searchPhone.trim(),
+        orderNumber: searchOrderNumber.trim() || undefined,
+        phone: searchPhone.trim() || undefined,
+        email: searchEmail.trim() || undefined,
       });
-      setOrder(result);
+      
+      // Handle single or multiple results
+      if (Array.isArray(result)) {
+        setOrders(result);
+        if (result.length === 1) {
+          setSelectedOrder(result[0]);
+        }
+      } else {
+        setOrders([result]);
+        setSelectedOrder(result);
+      }
     } catch (error) {
-      setOrder(null);
+      setOrders([]);
+      setSelectedOrder(null);
     }
   };
 
-  const currentStatusIndex = order ? getStatusIndex(order.order_status) : -1;
-  const isCancelledOrFailed = order && ['cancelled', 'failed', 'rto'].includes(order.order_status);
+  const currentStatusIndex = selectedOrder ? getStatusIndex(selectedOrder.order_status) : -1;
+  const isCancelledOrFailed = selectedOrder && ['cancelled', 'failed', 'rto'].includes(selectedOrder.order_status);
 
   return (
     <div className="min-h-screen bg-background">
@@ -121,9 +141,12 @@ const OrderTracking = () => {
         <div className="max-w-3xl mx-auto px-6">
           <h1 className="text-2xl font-light text-foreground text-center mb-8">Track Your Order</h1>
 
-          {/* Search Form */}
+          {/* Search Form - Any single field works */}
           <div className="bg-muted/20 p-6 rounded-none mb-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <p className="text-sm text-muted-foreground mb-4 text-center">
+              Enter any one of the following to find your order(s)
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div>
                 <Label className="text-sm font-light">Order Number</Label>
                 <Input
@@ -142,10 +165,20 @@ const OrderTracking = () => {
                   className="mt-1.5 rounded-none"
                 />
               </div>
+              <div>
+                <Label className="text-sm font-light">Email Address</Label>
+                <Input
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  className="mt-1.5 rounded-none"
+                  type="email"
+                />
+              </div>
             </div>
             <Button 
               onClick={() => handleTrackOrder()}
-              disabled={trackOrderMutation.isPending || !orderNumber.trim() || !phone.trim()}
+              disabled={trackOrderMutation.isPending || (!orderNumber.trim() && !phone.trim() && !email.trim())}
               className="w-full rounded-none"
             >
               {trackOrderMutation.isPending ? (
@@ -160,31 +193,72 @@ const OrderTracking = () => {
           </div>
 
           {/* Not Found */}
-          {hasSearched && !order && !trackOrderMutation.isPending && (
+          {hasSearched && orders.length === 0 && !trackOrderMutation.isPending && (
             <div className="bg-muted/20 p-8 rounded-none text-center">
               <XCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h2 className="text-lg font-light text-foreground mb-2">Order Not Found</h2>
               <p className="text-muted-foreground text-sm">
-                We couldn't find an order with that number and phone combination. 
+                We couldn't find any orders matching your search. 
                 Please check your details and try again.
               </p>
             </div>
           )}
 
+          {/* Multiple Orders List */}
+          {orders.length > 1 && !selectedOrder && (
+            <div className="bg-muted/20 p-6 rounded-none mb-8">
+              <div className="flex items-center gap-2 mb-4">
+                <History className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-lg font-light text-foreground">Your Orders ({orders.length})</h2>
+              </div>
+              <div className="space-y-3">
+                {orders.map((o: any) => (
+                  <button
+                    key={o.id}
+                    onClick={() => setSelectedOrder(o)}
+                    className="w-full p-4 bg-background border border-muted-foreground/10 rounded-none flex justify-between items-center hover:bg-muted/30 transition-colors text-left"
+                  >
+                    <div>
+                      <p className="font-medium text-foreground">{o.order_number}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {format(new Date(o.created_at), 'MMM dd, yyyy')} • ৳{o.total_amount?.toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {getPaymentStatusBadge(o.payment_status)}
+                      <Badge variant="outline" className="capitalize">{o.order_status}</Badge>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Back to Orders List */}
+          {selectedOrder && orders.length > 1 && (
+            <Button 
+              variant="ghost" 
+              onClick={() => setSelectedOrder(null)} 
+              className="mb-4 rounded-none"
+            >
+              ← Back to all orders
+            </Button>
+          )}
+
           {/* Order Details */}
-          {order && (
+          {selectedOrder && (
             <div className="space-y-6">
               {/* Order Header */}
               <div className="bg-muted/20 p-6 rounded-none">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
                   <div>
-                    <h2 className="text-lg font-medium text-foreground">{order.order_number}</h2>
+                    <h2 className="text-lg font-medium text-foreground">{selectedOrder.order_number}</h2>
                     <p className="text-sm text-muted-foreground">
-                      Placed on {format(new Date(order.created_at), 'MMM dd, yyyy h:mm a')}
+                      Placed on {format(new Date(selectedOrder.created_at), 'MMM dd, yyyy h:mm a')}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    {getPaymentStatusBadge(order.payment_status)}
+                    {getPaymentStatusBadge(selectedOrder.payment_status)}
                   </div>
                 </div>
 
@@ -225,38 +299,64 @@ const OrderTracking = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-none">
-                    <AlertCircle className="h-6 w-6 text-red-600" />
+                  <div className="flex items-center gap-3 p-4 bg-destructive/10 border border-destructive/20 rounded-none">
+                    <AlertCircle className="h-6 w-6 text-destructive" />
                     <div>
-                      <p className="font-medium text-red-800">
-                        Order {order.order_status === 'cancelled' ? 'Cancelled' : 
-                               order.order_status === 'failed' ? 'Failed' : 'Returned to Origin'}
+                      <p className="font-medium text-destructive">
+                        Order {selectedOrder.order_status === 'cancelled' ? 'Cancelled' : 
+                               selectedOrder.order_status === 'failed' ? 'Failed' : 'Returned to Origin'}
                       </p>
-                      <p className="text-sm text-red-600">
-                        {order.order_status === 'cancelled' && 'This order has been cancelled.'}
-                        {order.order_status === 'failed' && 'This order could not be completed.'}
-                        {order.order_status === 'rto' && 'This order is being returned to us.'}
+                      <p className="text-sm text-destructive/80">
+                        {selectedOrder.order_status === 'cancelled' && 'This order has been cancelled.'}
+                        {selectedOrder.order_status === 'failed' && 'This order could not be completed.'}
+                        {selectedOrder.order_status === 'rto' && 'This order is being returned to us.'}
                       </p>
                     </div>
                   </div>
                 )}
 
                 {/* Tracking Info */}
-                {order.tracking_number && (
-                  <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-none">
-                    <p className="text-sm text-blue-800">
-                      <strong>Tracking Number:</strong> {order.tracking_number}
-                      {order.courier_name && <span> ({order.courier_name})</span>}
+                {selectedOrder.tracking_number && (
+                  <div className="mt-6 p-4 bg-primary/10 border border-primary/20 rounded-none">
+                    <p className="text-sm text-foreground">
+                      <strong>Tracking Number:</strong> {selectedOrder.tracking_number}
+                      {selectedOrder.courier_name && <span> ({selectedOrder.courier_name})</span>}
                     </p>
                   </div>
                 )}
               </div>
 
+              {/* Order Status History */}
+              {selectedOrder.status_history && selectedOrder.status_history.length > 0 && (
+                <div className="bg-muted/20 p-6 rounded-none">
+                  <div className="flex items-center gap-2 mb-4">
+                    <History className="h-4 w-4 text-muted-foreground" />
+                    <h3 className="text-base font-light text-foreground">Order Timeline</h3>
+                  </div>
+                  <div className="space-y-3">
+                    {selectedOrder.status_history.slice(0, 5).map((history: any) => (
+                      <div key={history.id} className="flex gap-3 text-sm">
+                        <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0" />
+                        <div className="flex-1">
+                          <p className="text-foreground capitalize">{history.new_status.replace(/_/g, ' ')}</p>
+                          <p className="text-muted-foreground text-xs">
+                            {format(new Date(history.created_at), 'MMM dd, yyyy h:mm a')}
+                          </p>
+                          {history.notes && (
+                            <p className="text-muted-foreground text-xs mt-1">{history.notes}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Order Items */}
               <div className="bg-muted/20 p-6 rounded-none">
                 <h3 className="text-base font-light text-foreground mb-4">Order Items</h3>
                 <div className="space-y-4">
-                  {order.items?.map((item: any) => (
+                  {selectedOrder.items?.map((item: any) => (
                     <div key={item.id} className="flex gap-4 p-4 bg-background border border-muted-foreground/10 rounded-none">
                       {item.variant_details?.image && (
                         <div className="w-16 h-16 bg-muted rounded-none overflow-hidden flex-shrink-0">
@@ -290,11 +390,11 @@ const OrderTracking = () => {
                 <div className="bg-muted/20 p-6 rounded-none">
                   <h3 className="text-base font-light text-foreground mb-4">Shipping Address</h3>
                   <div className="text-sm space-y-1">
-                    <p className="font-medium">{order.shipping_name}</p>
-                    <p className="text-muted-foreground">{order.shipping_phone}</p>
-                    <p className="text-muted-foreground">{order.shipping_address}</p>
-                    {order.shipping_city && (
-                      <p className="text-muted-foreground">{order.shipping_city}</p>
+                    <p className="font-medium">{selectedOrder.shipping_name}</p>
+                    <p className="text-muted-foreground">{selectedOrder.shipping_phone}</p>
+                    <p className="text-muted-foreground">{selectedOrder.shipping_address}</p>
+                    {selectedOrder.shipping_city && (
+                      <p className="text-muted-foreground">{selectedOrder.shipping_city}</p>
                     )}
                   </div>
                 </div>
@@ -304,25 +404,31 @@ const OrderTracking = () => {
                   <div className="text-sm space-y-2">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Subtotal</span>
-                      <span>৳{order.subtotal?.toLocaleString()}</span>
+                      <span>৳{selectedOrder.subtotal?.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Shipping</span>
-                      <span>৳{order.shipping_cost?.toLocaleString()}</span>
+                      <span>৳{selectedOrder.shipping_cost?.toLocaleString()}</span>
                     </div>
-                    {order.discount_amount > 0 && (
-                      <div className="flex justify-between text-green-600">
+                    {selectedOrder.discount_amount > 0 && (
+                      <div className="flex justify-between text-primary">
                         <span>Discount</span>
-                        <span>-৳{order.discount_amount?.toLocaleString()}</span>
+                        <span>-৳{selectedOrder.discount_amount?.toLocaleString()}</span>
                       </div>
                     )}
                     <div className="flex justify-between font-medium text-base border-t border-muted-foreground/20 pt-2">
                       <span>Total</span>
-                      <span>৳{order.total_amount?.toLocaleString()}</span>
+                      <span>৳{selectedOrder.total_amount?.toLocaleString()}</span>
                     </div>
+                    {selectedOrder.paid_amount > 0 && selectedOrder.paid_amount < selectedOrder.total_amount && (
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Paid</span>
+                        <span>৳{selectedOrder.paid_amount?.toLocaleString()}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between pt-2">
                       <span className="text-muted-foreground">Payment</span>
-                      <span>{order.payment_method?.name || 'N/A'}</span>
+                      <span>{selectedOrder.payment_method?.name || 'N/A'}</span>
                     </div>
                   </div>
                 </div>
@@ -335,8 +441,7 @@ const OrderTracking = () => {
                     Continue Shopping
                   </Link>
                 </Button>
-                {/* Future: Return request button */}
-                {order.order_status === 'delivered' && (
+                {selectedOrder.order_status === 'delivered' && (
                   <Button variant="outline" className="flex-1 rounded-none">
                     <RotateCcw className="h-4 w-4 mr-2" />
                     Request Return

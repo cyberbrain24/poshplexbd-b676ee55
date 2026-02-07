@@ -310,29 +310,58 @@ export const useCreateOrder = () => {
   });
 };
 
-// Track order by order number (for guest checkout)
+// Track order by order number, phone, or email (any one field)
 export const useTrackOrder = () => {
   return useMutation({
     mutationFn: async ({ 
       orderNumber, 
-      phone 
+      phone,
+      email,
     }: { 
-      orderNumber: string; 
-      phone: string;
+      orderNumber?: string; 
+      phone?: string;
+      email?: string;
     }) => {
-      const { data, error } = await supabase
+      // Build query based on provided fields
+      let query = supabase
         .from("orders")
         .select(`
           *,
           items:order_items(*),
-          payment_method:payment_methods(id, name, type)
+          payment_method:payment_methods(id, name, type),
+          status_history:order_status_history(*)
         `)
-        .eq("order_number", orderNumber)
-        .or(`shipping_phone.eq.${phone},guest_phone.eq.${phone}`)
-        .single();
+        .order("created_at", { referencedTable: "status_history", ascending: false });
+
+      // Apply filters based on what's provided
+      const filters: string[] = [];
+      
+      if (orderNumber?.trim()) {
+        filters.push(`order_number.eq.${orderNumber.trim()}`);
+      }
+      if (phone?.trim()) {
+        filters.push(`shipping_phone.eq.${phone.trim()}`);
+        filters.push(`guest_phone.eq.${phone.trim()}`);
+      }
+      if (email?.trim()) {
+        filters.push(`shipping_email.eq.${email.trim()}`);
+        filters.push(`guest_email.eq.${email.trim()}`);
+      }
+
+      if (filters.length === 0) {
+        throw new Error("Please provide at least one search field");
+      }
+
+      // Use OR to match any of the provided fields
+      query = query.or(filters.join(','));
+
+      const { data, error } = await query;
 
       if (error) throw new Error("Order not found");
-      return data;
+      if (!data || data.length === 0) throw new Error("Order not found");
+      
+      // Return orders array for multiple matches, or single order
+      return data.length === 1 ? data[0] : data;
     },
   });
 };

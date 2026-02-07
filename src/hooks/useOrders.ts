@@ -468,17 +468,32 @@ export const useOrderStats = () => {
         o.order_status === 'confirmed' || o.order_status === 'processing'
       ) || [];
 
+      // Today's order grand total (sum of all today's order amounts)
+      const todayOrderAmount = todayOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
+
+      // Today's revenue = actual payments received today (from order_payments)
+      const { data: todayPayments } = await supabase
+        .from("order_payments")
+        .select("amount")
+        .gte("recorded_at", today.toISOString());
+
+      const todayRevenue = (todayPayments || []).reduce((sum, p) => sum + (p.amount || 0), 0);
+
+      // Total revenue = all payments ever received
+      const { data: allPayments } = await supabase
+        .from("order_payments")
+        .select("amount");
+
+      const totalRevenue = (allPayments || []).reduce((sum, p) => sum + (p.amount || 0), 0);
+
       return {
         totalOrders: orders?.length || 0,
         todayOrders: todayOrders.length,
-        todayRevenue: todayOrders
-          .filter(o => o.payment_status === 'paid')
-          .reduce((sum, o) => sum + (o.total_amount || 0), 0),
+        todayOrderAmount,
+        todayRevenue,
         pendingVerification: pendingVerification.length,
         pendingFulfillment: pendingFulfillment.length,
-        totalRevenue: orders
-          ?.filter(o => o.payment_status === 'paid')
-          .reduce((sum, o) => sum + (o.total_amount || 0), 0) || 0,
+        totalRevenue,
       };
     },
     staleTime: 1000 * 60,

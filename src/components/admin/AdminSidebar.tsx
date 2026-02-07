@@ -33,6 +33,7 @@ import {
   Boxes,
   Globe,
   Puzzle,
+  Database,
   LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -371,6 +372,9 @@ const AdminSidebar = () => {
             isInstagramActive
           )
         )}
+
+        {/* Seed Data - Always visible for development */}
+        {renderNavLink("/admin/seed-data", Database, "Seed Data")}
       </nav>
 
       <div className="p-4 border-t border-border">

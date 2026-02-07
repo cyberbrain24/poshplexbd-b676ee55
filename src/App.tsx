@@ -7,6 +7,7 @@ import { HelmetProvider } from "react-helmet-async";
 import ScrollToTop from "./components/ScrollToTop";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { CartProvider } from "./contexts/CartContext";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import AdminLayout from "./components/admin/AdminLayout";
 
 // All pages - direct imports (no lazy loading)
@@ -67,12 +68,13 @@ const queryClient = new QueryClient({
 });
 
 const App = () => (
-  <HelmetProvider>
-    <QueryClientProvider client={queryClient}>
-      <CartProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
+  <ErrorBoundary>
+    <HelmetProvider>
+      <QueryClientProvider client={queryClient}>
+        <CartProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
           <BrowserRouter
             future={{
               v7_startTransition: true,
@@ -136,10 +138,11 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
-        </TooltipProvider>
-      </CartProvider>
-    </QueryClientProvider>
-  </HelmetProvider>
+          </TooltipProvider>
+        </CartProvider>
+      </QueryClientProvider>
+    </HelmetProvider>
+  </ErrorBoundary>
 );
 
 export default App;

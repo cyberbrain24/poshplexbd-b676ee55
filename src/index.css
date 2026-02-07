@@ -114,8 +114,8 @@
 
   body {
     @apply bg-background text-foreground font-normal;
-    background-image: radial-gradient(circle, hsl(var(--muted-foreground) / 0.15) 1px, transparent 1px);
-    background-size: 24px 24px;
+    background-image: radial-gradient(circle, rgba(0, 0, 0, 0.12) 1.5px, transparent 1.5px);
+    background-size: 20px 20px;
   }
   
   /* Industrial typography - heavy sans-serif */

@@ -235,10 +235,16 @@ export const SLIM_COLUMNS = {
     order_status,
     payment_status,
     total_amount,
+    paid_amount,
     shipping_name,
     shipping_phone,
+    risk_level,
+    tracking_number,
+    courier_name,
     created_at,
-    customer:customers(id, name, phone)
+    customer:customers(id, name, phone),
+    payment_method:payment_methods(id, name, type),
+    items:order_items(id)
   `,
   // Products list view
   productsList: `

@@ -1408,60 +1408,6 @@ export type Database = {
         }
         Relationships: []
       }
-      site_settings: {
-        Row: {
-          created_at: string
-          favicon_url: string | null
-          footer_address: string | null
-          footer_columns: Json
-          footer_contact_email: string | null
-          footer_contact_phone: string | null
-          footer_copyright: string | null
-          header_menu: Json
-          id: string
-          logo_dark_url: string | null
-          logo_url: string | null
-          site_name: string
-          social_links: Json
-          tagline: string | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          favicon_url?: string | null
-          footer_address?: string | null
-          footer_columns?: Json
-          footer_contact_email?: string | null
-          footer_contact_phone?: string | null
-          footer_copyright?: string | null
-          header_menu?: Json
-          id?: string
-          logo_dark_url?: string | null
-          logo_url?: string | null
-          site_name?: string
-          social_links?: Json
-          tagline?: string | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          favicon_url?: string | null
-          footer_address?: string | null
-          footer_columns?: Json
-          footer_contact_email?: string | null
-          footer_contact_phone?: string | null
-          footer_copyright?: string | null
-          header_menu?: Json
-          id?: string
-          logo_dark_url?: string | null
-          logo_url?: string | null
-          site_name?: string
-          social_links?: Json
-          tagline?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       size_guides: {
         Row: {
           content: string

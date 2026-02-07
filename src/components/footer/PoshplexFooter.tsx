@@ -1,28 +1,53 @@
 import { Link } from "react-router-dom";
 import { Instagram, Facebook, Youtube, Twitter } from "lucide-react";
-import { useSiteSettingsContext } from "@/contexts/SiteSettingsContext";
-import { isExternalLink } from "@/hooks/useSiteSettings";
+
+// Hardcoded site settings
+const SITE_NAME = "POSHPLEX";
+const SITE_TAGLINE = "Premium Fashion & Lifestyle";
+const FOOTER_COPYRIGHT = `© ${new Date().getFullYear()} Poshplex. All rights reserved.`;
+const FOOTER_EMAIL = "hello@poshplex.com";
+
+const FOOTER_COLUMNS = [
+  {
+    title: "Shop",
+    links: [
+      { label: "All Products", path: "/category/all" },
+      { label: "New Arrivals", path: "/category/new-arrivals" },
+    ],
+  },
+  {
+    title: "About",
+    links: [
+      { label: "Our Story", path: "/about/our-story" },
+      { label: "Sustainability", path: "/about/sustainability" },
+    ],
+  },
+  {
+    title: "Support",
+    links: [
+      { label: "Size Guide", path: "/about/size-guide" },
+      { label: "Customer Care", path: "/about/customer-care" },
+      { label: "Store Locator", path: "/about/store-locator" },
+    ],
+  },
+  {
+    title: "Legal",
+    links: [
+      { label: "Privacy Policy", path: "/privacy-policy" },
+      { label: "Terms of Service", path: "/terms-of-service" },
+    ],
+  },
+];
+
+const SOCIAL_LINKS = {
+  instagram: "",
+  facebook: "",
+  twitter: "",
+  youtube: "",
+};
 
 const PoshplexFooter = () => {
-  const { settings } = useSiteSettingsContext();
-
-  const renderLink = (path: string, label: string, className: string) => {
-    if (isExternalLink(path)) {
-      return (
-        <a href={path} target="_blank" rel="noopener noreferrer" className={className}>
-          {label}
-        </a>
-      );
-    }
-    return (
-      <Link to={path} className={className}>
-        {label}
-      </Link>
-    );
-  };
-
-  const socialLinks = settings.social_links || {};
-  const hasSocialLinks = Object.values(socialLinks).some(url => url && url.length > 0);
+  const hasSocialLinks = Object.values(SOCIAL_LINKS).some(url => url && url.length > 0);
 
   return (
     <footer className="w-full bg-foreground text-background mt-20">
@@ -31,22 +56,12 @@ const PoshplexFooter = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           {/* Brand & Newsletter */}
           <div className="lg:col-span-5">
-            {settings.logo_dark_url ? (
-              <img 
-                src={settings.logo_dark_url} 
-                alt={settings.site_name}
-                className="h-8 mb-6 object-contain"
-              />
-            ) : (
-              <span className="text-3xl font-black tracking-tighter block mb-6">
-                {settings.site_name.toUpperCase()}
-              </span>
-            )}
-            {settings.tagline && (
-              <p className="text-background/70 text-sm mb-6 max-w-sm">
-                {settings.tagline}
-              </p>
-            )}
+            <span className="text-3xl font-black tracking-tighter block mb-6">
+              {SITE_NAME}
+            </span>
+            <p className="text-background/70 text-sm mb-6 max-w-sm">
+              {SITE_TAGLINE}
+            </p>
             
             {/* Newsletter */}
             <div className="mb-8">
@@ -68,23 +83,23 @@ const PoshplexFooter = () => {
             {/* Social Icons */}
             {hasSocialLinks && (
               <div className="flex gap-4">
-                {socialLinks.instagram && (
-                  <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="p-2 border border-background/30 hover:bg-background hover:text-foreground transition-colors">
+                {SOCIAL_LINKS.instagram && (
+                  <a href={SOCIAL_LINKS.instagram} target="_blank" rel="noopener noreferrer" className="p-2 border border-background/30 hover:bg-background hover:text-foreground transition-colors">
                     <Instagram size={18} strokeWidth={1.5} />
                   </a>
                 )}
-                {socialLinks.facebook && (
-                  <a href={socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="p-2 border border-background/30 hover:bg-background hover:text-foreground transition-colors">
+                {SOCIAL_LINKS.facebook && (
+                  <a href={SOCIAL_LINKS.facebook} target="_blank" rel="noopener noreferrer" className="p-2 border border-background/30 hover:bg-background hover:text-foreground transition-colors">
                     <Facebook size={18} strokeWidth={1.5} />
                   </a>
                 )}
-                {socialLinks.twitter && (
-                  <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="p-2 border border-background/30 hover:bg-background hover:text-foreground transition-colors">
+                {SOCIAL_LINKS.twitter && (
+                  <a href={SOCIAL_LINKS.twitter} target="_blank" rel="noopener noreferrer" className="p-2 border border-background/30 hover:bg-background hover:text-foreground transition-colors">
                     <Twitter size={18} strokeWidth={1.5} />
                   </a>
                 )}
-                {socialLinks.youtube && (
-                  <a href={socialLinks.youtube} target="_blank" rel="noopener noreferrer" className="p-2 border border-background/30 hover:bg-background hover:text-foreground transition-colors">
+                {SOCIAL_LINKS.youtube && (
+                  <a href={SOCIAL_LINKS.youtube} target="_blank" rel="noopener noreferrer" className="p-2 border border-background/30 hover:bg-background hover:text-foreground transition-colors">
                     <Youtube size={18} strokeWidth={1.5} />
                   </a>
                 )}
@@ -92,9 +107,9 @@ const PoshplexFooter = () => {
             )}
           </div>
 
-          {/* Dynamic Footer Columns */}
+          {/* Footer Columns */}
           <div className="lg:col-span-7 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-            {settings.footer_columns.map((column, index) => (
+            {FOOTER_COLUMNS.map((column, index) => (
               <div key={index}>
                 <h4 className="text-xs font-medium tracking-wider mb-4">
                   {column.title.toUpperCase()}
@@ -102,11 +117,12 @@ const PoshplexFooter = () => {
                 <ul className="space-y-3">
                   {column.links.map((link, linkIndex) => (
                     <li key={linkIndex}>
-                      {renderLink(
-                        link.path,
-                        link.label,
-                        "text-sm text-background/70 hover:text-background transition-colors"
-                      )}
+                      <Link
+                        to={link.path}
+                        className="text-sm text-background/70 hover:text-background transition-colors"
+                      >
+                        {link.label}
+                      </Link>
                     </li>
                   ))}
                 </ul>
@@ -117,22 +133,12 @@ const PoshplexFooter = () => {
       </div>
 
       {/* Contact Info */}
-      {(settings.footer_contact_email || settings.footer_contact_phone || settings.footer_address) && (
+      {FOOTER_EMAIL && (
         <div className="border-t border-background/20 px-6 py-6">
           <div className="flex flex-col md:flex-row gap-6 text-sm text-background/70">
-            {settings.footer_contact_email && (
-              <a href={`mailto:${settings.footer_contact_email}`} className="hover:text-background transition-colors">
-                {settings.footer_contact_email}
-              </a>
-            )}
-            {settings.footer_contact_phone && (
-              <a href={`tel:${settings.footer_contact_phone}`} className="hover:text-background transition-colors">
-                {settings.footer_contact_phone}
-              </a>
-            )}
-            {settings.footer_address && (
-              <span>{settings.footer_address}</span>
-            )}
+            <a href={`mailto:${FOOTER_EMAIL}`} className="hover:text-background transition-colors">
+              {FOOTER_EMAIL}
+            </a>
           </div>
         </div>
       )}
@@ -141,7 +147,7 @@ const PoshplexFooter = () => {
       <div className="border-t border-background/20 px-6 py-4">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-xs text-background/50">
-            {settings.footer_copyright || `© ${new Date().getFullYear()} ${settings.site_name}. All rights reserved.`}
+            {FOOTER_COPYRIGHT}
           </p>
           <div className="flex gap-6">
             <Link to="/privacy-policy" className="text-xs text-background/50 hover:text-background transition-colors">

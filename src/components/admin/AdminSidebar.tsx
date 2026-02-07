@@ -234,9 +234,6 @@ const AdminSidebar = () => {
         {/* SEO Manager */}
         {renderNavLink("/admin/seo", Globe, "SEO Manager")}
 
-        {/* Site Settings */}
-        {renderNavLink("/admin/site-settings", Settings2, "Site Settings")}
-
         {/* Orders */}
         {renderCollapsible(
           ShoppingCart,

@@ -7,7 +7,6 @@ import { HelmetProvider } from "react-helmet-async";
 import ScrollToTop from "./components/ScrollToTop";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { CartProvider } from "./contexts/CartContext";
-import { SiteSettingsProvider } from "./contexts/SiteSettingsContext";
 import AdminLayout from "./components/admin/AdminLayout";
 
 // All pages - direct imports (no lazy loading)
@@ -50,7 +49,6 @@ import AdminCustomerTypes from "./pages/admin/AdminCustomerTypes";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminPaymentMethods from "./pages/admin/AdminPaymentMethods";
 import AdminSEO from "./pages/admin/AdminSEO";
-import AdminSiteSettings from "./pages/admin/AdminSiteSettings";
 import AdminSeedData from "./pages/admin/AdminSeedData";
 
 const queryClient = new QueryClient({
@@ -71,78 +69,75 @@ const queryClient = new QueryClient({
 const App = () => (
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>
-      <SiteSettingsProvider>
-        <CartProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter
-              future={{
-                v7_startTransition: true,
-                v7_relativeSplatPath: true,
-              }}
-            >
-              <ScrollToTop />
-              <Routes>
-                {/* Public Routes */}
-                <Route path="/" element={<Index />} />
-                <Route path="/category/:category" element={<Category />} />
-                <Route path="/product/:productId" element={<ProductDetail />} />
-                <Route path="/checkout" element={<Checkout />} />
-                <Route path="/order-tracking" element={<OrderTracking />} />
-                <Route path="/my-orders" element={<MyOrders />} />
-                <Route path="/account" element={<CustomerAccount />} />
-                <Route path="/about/our-story" element={<OurStory />} />
-                <Route path="/about/sustainability" element={<Sustainability />} />
-                <Route path="/about/size-guide" element={<SizeGuide />} />
-                <Route path="/about/customer-care" element={<CustomerCare />} />
-                <Route path="/about/store-locator" element={<StoreLocator />} />
-                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                <Route path="/terms-of-service" element={<TermsOfService />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/login" element={<CustomerAuth />} />
+      <CartProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter
+            future={{
+              v7_startTransition: true,
+              v7_relativeSplatPath: true,
+            }}
+          >
+            <ScrollToTop />
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Index />} />
+              <Route path="/category/:category" element={<Category />} />
+              <Route path="/product/:productId" element={<ProductDetail />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/order-tracking" element={<OrderTracking />} />
+              <Route path="/my-orders" element={<MyOrders />} />
+              <Route path="/account" element={<CustomerAccount />} />
+              <Route path="/about/our-story" element={<OurStory />} />
+              <Route path="/about/sustainability" element={<Sustainability />} />
+              <Route path="/about/size-guide" element={<SizeGuide />} />
+              <Route path="/about/customer-care" element={<CustomerCare />} />
+              <Route path="/about/store-locator" element={<StoreLocator />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/terms-of-service" element={<TermsOfService />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/login" element={<CustomerAuth />} />
+              
+              {/* Admin Routes - Nested under protected layout */}
+              <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="products" element={<AdminProducts />} />
+                <Route path="seo" element={<AdminSEO />} />
                 
-                {/* Admin Routes - Nested under protected layout */}
-                <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
-                  <Route index element={<AdminDashboard />} />
-                  <Route path="products" element={<AdminProducts />} />
-                  <Route path="seo" element={<AdminSEO />} />
-                  <Route path="site-settings" element={<AdminSiteSettings />} />
-                  
-                  {/* Product Edits */}
-                  <Route path="colors" element={<AdminColors />} />
-                  <Route path="sizes" element={<AdminSizes />} />
-                  <Route path="materials" element={<AdminMaterials />} />
-                  <Route path="size-guides" element={<AdminSizeGuides />} />
-                  <Route path="care-instructions" element={<AdminCareInstructions />} />
-                  <Route path="categories" element={<AdminCategories />} />
-                  <Route path="brands" element={<AdminBrands />} />
-                  
-                  {/* Accounts */}
-                  <Route path="accounts" element={<AdminAccounts />} />
-                  <Route path="accounts-list" element={<AdminAccountsList />} />
-                  <Route path="income-categories" element={<AdminIncomeCategories />} />
-                  <Route path="expense-categories" element={<AdminExpenseCategories />} />
-                  
-                  {/* Customers */}
-                  <Route path="customers" element={<AdminCustomers />} />
-                  <Route path="divisions" element={<AdminDivisions />} />
-                  <Route path="thanas" element={<AdminThanas />} />
-                  <Route path="customer-types" element={<AdminCustomerTypes />} />
-                  
-                  {/* Orders */}
-                  <Route path="orders" element={<AdminOrders />} />
-                  <Route path="payment-methods" element={<AdminPaymentMethods />} />
-                  <Route path="seed-data" element={<AdminSeedData />} />
-                </Route>
+                {/* Product Edits */}
+                <Route path="colors" element={<AdminColors />} />
+                <Route path="sizes" element={<AdminSizes />} />
+                <Route path="materials" element={<AdminMaterials />} />
+                <Route path="size-guides" element={<AdminSizeGuides />} />
+                <Route path="care-instructions" element={<AdminCareInstructions />} />
+                <Route path="categories" element={<AdminCategories />} />
+                <Route path="brands" element={<AdminBrands />} />
                 
-                {/* 404 Catch-all - MUST be last */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </CartProvider>
-      </SiteSettingsProvider>
+                {/* Accounts */}
+                <Route path="accounts" element={<AdminAccounts />} />
+                <Route path="accounts-list" element={<AdminAccountsList />} />
+                <Route path="income-categories" element={<AdminIncomeCategories />} />
+                <Route path="expense-categories" element={<AdminExpenseCategories />} />
+                
+                {/* Customers */}
+                <Route path="customers" element={<AdminCustomers />} />
+                <Route path="divisions" element={<AdminDivisions />} />
+                <Route path="thanas" element={<AdminThanas />} />
+                <Route path="customer-types" element={<AdminCustomerTypes />} />
+                
+                {/* Orders */}
+                <Route path="orders" element={<AdminOrders />} />
+                <Route path="payment-methods" element={<AdminPaymentMethods />} />
+                <Route path="seed-data" element={<AdminSeedData />} />
+              </Route>
+              
+              {/* 404 Catch-all - MUST be last */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </CartProvider>
     </QueryClientProvider>
   </HelmetProvider>
 );

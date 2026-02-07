@@ -726,6 +726,7 @@ export type Database = {
           amount_approved_at: string | null
           amount_approved_by: string | null
           collected_amount: number | null
+          consignment_id: string | null
           courier_name: string | null
           created_at: string
           currency: string
@@ -773,6 +774,7 @@ export type Database = {
           amount_approved_at?: string | null
           amount_approved_by?: string | null
           collected_amount?: number | null
+          consignment_id?: string | null
           courier_name?: string | null
           created_at?: string
           currency?: string
@@ -820,6 +822,7 @@ export type Database = {
           amount_approved_at?: string | null
           amount_approved_by?: string | null
           collected_amount?: number | null
+          consignment_id?: string | null
           courier_name?: string | null
           created_at?: string
           currency?: string

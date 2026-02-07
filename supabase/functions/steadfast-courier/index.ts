@@ -158,11 +158,12 @@ Deno.serve(async (req) => {
         const result = await steadfastRequest("/create_order", "POST", payload);
 
         if (result.status === 200 && result.data.consignment) {
-          // Update order with tracking info
+          // Update order with tracking info and consignment ID
           const { error: updateError } = await supabase
             .from("orders")
             .update({
               tracking_number: result.data.consignment.tracking_code,
+              consignment_id: String(result.data.consignment.consignment_id),
               courier_name: "Steadfast",
               order_status: "processing",
             })
@@ -254,6 +255,7 @@ Deno.serve(async (req) => {
                   .from("orders")
                   .update({
                     tracking_number: consignment.tracking_code,
+                    consignment_id: String(consignment.consignment_id),
                     courier_name: "Steadfast",
                     order_status: "processing",
                   })
@@ -572,11 +574,12 @@ Deno.serve(async (req) => {
           Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
         );
 
-        // Reset tracking info on the order
+        // Reset tracking info on the order including consignment_id
         const { error: updateError } = await serviceClient
           .from("orders")
           .update({
             tracking_number: null,
+            consignment_id: null,
             courier_name: null,
             order_status: "confirmed", // Reset to confirmed so it can be shipped again
           })

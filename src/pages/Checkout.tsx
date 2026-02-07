@@ -39,7 +39,7 @@ const Checkout = () => {
     notes: "",
   });
 
-  // Partial payment state
+  // Partial payment state - works for ALL payment methods including COD
   const [partialPaymentAmount, setPartialPaymentAmount] = useState<string>("");
   const [usePartialPayment, setUsePartialPayment] = useState(false);
 
@@ -72,6 +72,11 @@ const Checkout = () => {
 
   const subtotal = cartTotal;
   const total = subtotal + shippingCost;
+  
+  // Calculate amounts for display
+  const partialAmount = usePartialPayment ? (Number(partialPaymentAmount) || 0) : 0;
+  const remainingAmount = total - partialAmount;
+  const displayTotal = usePartialPayment && partialAmount > 0 ? partialAmount : total;
 
   const getPaymentIcon = (type: PaymentMethodType) => {
     switch (type) {
@@ -341,6 +346,18 @@ const Checkout = () => {
                     <span className="text-foreground">Total</span>
                     <span className="text-foreground">৳{total.toLocaleString()}</span>
                   </div>
+                  {usePartialPayment && partialAmount > 0 && (
+                    <>
+                      <div className="flex justify-between text-sm text-primary font-medium">
+                        <span>Paying Now</span>
+                        <span>৳{partialAmount.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>Due Later</span>
+                        <span>৳{remainingAmount.toLocaleString()}</span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -547,7 +564,7 @@ const Checkout = () => {
                   </RadioGroup>
                 )}
 
-                {/* Payment Instructions & Details */}
+                {/* Payment Instructions & Details for non-COD */}
                 {selectedPaymentMethod && selectedPaymentMethod.type !== 'cod' && (
                   <div className="mt-6 space-y-4">
                     {selectedPaymentMethod.instructions && (
@@ -578,44 +595,60 @@ const Checkout = () => {
                         />
                       </div>
                     </div>
+                  </div>
+                )}
 
-                    {/* Partial Payment Option */}
-                    <div className="space-y-3 pt-2">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="partialPayment"
-                          checked={usePartialPayment}
-                          onCheckedChange={(checked) => {
-                            setUsePartialPayment(checked as boolean);
-                            if (!checked) setPartialPaymentAmount("");
-                          }}
-                        />
-                        <Label htmlFor="partialPayment" className="text-sm font-light cursor-pointer">
-                          I want to make a partial payment now
-                        </Label>
-                      </div>
-                      
-                      {usePartialPayment && (
-                        <div className="pl-6">
-                          <Label className="text-sm font-light">Payment Amount</Label>
-                          <div className="flex items-center gap-2 mt-1.5">
-                            <span className="text-muted-foreground">৳</span>
-                            <Input
-                              type="number"
-                              value={partialPaymentAmount}
-                              onChange={(e) => setPartialPaymentAmount(e.target.value)}
-                              className="rounded-none max-w-[200px]"
-                              placeholder={`Max: ${total}`}
-                              min={1}
-                              max={total}
-                            />
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Remaining balance (৳{(total - (Number(partialPaymentAmount) || 0)).toLocaleString()}) can be paid later
-                          </p>
-                        </div>
-                      )}
+                {/* Partial Payment Option - Available for ALL payment methods */}
+                {selectedPaymentMethod && (
+                  <div className="mt-6 space-y-3 pt-4 border-t border-muted-foreground/20">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="partialPayment"
+                        checked={usePartialPayment}
+                        onCheckedChange={(checked) => {
+                          setUsePartialPayment(checked as boolean);
+                          if (!checked) setPartialPaymentAmount("");
+                        }}
+                      />
+                      <Label htmlFor="partialPayment" className="text-sm font-light cursor-pointer">
+                        {selectedPaymentMethod.type === 'cod' 
+                          ? "Customer will pay partial amount on delivery"
+                          : "I want to make a partial payment now"
+                        }
+                      </Label>
                     </div>
+                    
+                    {usePartialPayment && (
+                      <div className="pl-6 space-y-2">
+                        <Label className="text-sm font-light">
+                          {selectedPaymentMethod.type === 'cod' ? "Amount to collect on delivery" : "Payment Amount"}
+                        </Label>
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground">৳</span>
+                          <Input
+                            type="number"
+                            value={partialPaymentAmount}
+                            onChange={(e) => setPartialPaymentAmount(e.target.value)}
+                            className="rounded-none max-w-[200px]"
+                            placeholder={`Max: ${total}`}
+                            min={1}
+                            max={total}
+                          />
+                        </div>
+                        <div className="bg-accent/30 p-3 rounded-none text-sm space-y-1">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">
+                              {selectedPaymentMethod.type === 'cod' ? "Collect Now:" : "Paying Now:"}
+                            </span>
+                            <span className="font-medium text-primary">৳{partialAmount.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Remaining Due:</span>
+                            <span className="font-medium">৳{remainingAmount.toLocaleString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -631,9 +664,21 @@ const Checkout = () => {
                       <span>৳{shippingCost}</span>
                     </div>
                     <div className="flex justify-between text-lg font-medium border-t border-muted-foreground/20 pt-2">
-                      <span>Total</span>
+                      <span>Order Total</span>
                       <span>৳{total.toLocaleString()}</span>
                     </div>
+                    {usePartialPayment && partialAmount > 0 && (
+                      <>
+                        <div className="flex justify-between text-sm text-primary font-medium pt-2 border-t border-muted-foreground/10">
+                          <span>{selectedPaymentMethod?.type === 'cod' ? "Collect on Delivery" : "Paying Now"}</span>
+                          <span>৳{partialAmount.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between text-sm text-muted-foreground">
+                          <span>Due Later</span>
+                          <span>৳{remainingAmount.toLocaleString()}</span>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   <Button
@@ -641,7 +686,12 @@ const Checkout = () => {
                     disabled={isProcessing || cartItems.length === 0}
                     className="w-full rounded-none h-12 text-base"
                   >
-                    {isProcessing ? "Processing..." : `Place Order • ৳${total.toLocaleString()}`}
+                    {isProcessing 
+                      ? "Processing..." 
+                      : usePartialPayment && partialAmount > 0
+                        ? `Place Order • Pay ৳${displayTotal.toLocaleString()}`
+                        : `Place Order • ৳${total.toLocaleString()}`
+                    }
                   </Button>
 
                   <p className="text-xs text-muted-foreground text-center mt-4">

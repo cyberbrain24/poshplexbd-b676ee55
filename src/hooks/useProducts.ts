@@ -198,6 +198,29 @@ export const useDeleteProduct = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      // Manual cascade deletion: delete related records first
+      // 1. Delete product images
+      const { error: imagesError } = await supabase
+        .from("product_images")
+        .delete()
+        .eq("product_id", id);
+      if (imagesError) throw imagesError;
+
+      // 2. Delete product variants
+      const { error: variantsError } = await supabase
+        .from("product_variants")
+        .delete()
+        .eq("product_id", id);
+      if (variantsError) throw variantsError;
+
+      // 3. Nullify order_items product references (preserve order history)
+      const { error: orderItemsError } = await supabase
+        .from("order_items")
+        .update({ product_id: null, variant_id: null })
+        .eq("product_id", id);
+      if (orderItemsError) throw orderItemsError;
+
+      // 4. Delete the product
       const { error } = await supabase.from("products").delete().eq("id", id);
       if (error) throw error;
     },

@@ -275,6 +275,33 @@ export function useSyncLocationsFromSteadfast() {
   });
 }
 
+// Reset shipping data for an order (to re-ship after Steadfast deletion)
+export function useResetShipping() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (orderId: string) => {
+      const { data, error } = await supabase.functions.invoke(
+        "steadfast-courier?action=reset_shipping",
+        {
+          method: "POST",
+          body: { order_id: orderId },
+        }
+      );
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "Shipping reset. You can ship this order again.");
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["orders-optimized"] });
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to reset shipping: ${error.message}`);
+    },
+  });
+}
+
 // Delivery status mapper
 export const STEADFAST_STATUS_MAP: Record<string, { label: string; color: string }> = {
   pending: { label: "Pending", color: "yellow" },

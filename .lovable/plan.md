@@ -1,164 +1,134 @@
 
-# Steadfast Courier Integration for Orders Module
+# Manual Payment Recording for Orders
 
 ## Overview
-This plan integrates Steadfast courier functionality directly into the Orders admin module, adding single-click shipment creation, real-time Steadfast delivery status display, enhanced customer details in order view, and renaming "Division" to "District" throughout the system.
 
-## Changes Summary
+You need the ability to record manual payments (full or partial) for orders directly from the admin panel. Currently, the system only supports:
+1. COD approval after Steadfast delivery (auto-collects amount from courier)
+2. Basic payment status updates (without amount tracking)
 
-### 1. Orders Table Enhancement
-**File: `src/pages/admin/AdminOrders.tsx`**
+This plan adds a complete **Manual Payment Recording** feature that tracks payment amounts, creates income transactions, and updates payment status automatically.
 
-Add the following features:
-- **New "Courier" column** showing Steadfast delivery status (fetched via tracking code)
-- **"Ship to Steadfast" button** in each row for orders without tracking numbers
-- Color-coded Steadfast status badges using the existing `STEADFAST_STATUS_MAP`
-- Integrate the `useCreateShipment` hook for one-click shipping
+---
+
+## What You'll Get
+
+1. **"Record Payment" Button** in Order Detail Modal
+2. **Payment Recording Modal** with:
+   - Amount input (defaulting to remaining balance)
+   - Account selection (where to credit the payment)
+   - Payment reference/note field
+3. **Automatic Payment Status Updates**:
+   - Full payment → Status changes to "Paid"
+   - Partial payment → Status changes to "Partially Paid"
+4. **Payment History** visible in the order timeline
+5. **Income Transaction** automatically created in the accounts system
+6. **Running Balance** showing paid vs. remaining amount
+
+---
+
+## User Flow
 
 ```text
-Table columns:
-Order | Customer | Items | Total | Status | Payment | Courier Status | Date | Actions
-                                            ^^^^^^^^^^^^^^^^^
-                                            (NEW: Shows Steadfast status or "Ship" button)
-```
-
-### 2. Enhanced Order Detail Modal
-**File: `src/components/admin/OrderDetailModal.tsx`**
-
-Add comprehensive customer and shipping details:
-- **Customer Details Section**: Display customer name, phone, email, address, District (renamed from Division), Thana
-- **"Send to Steadfast" button** in the modal header (if no tracking exists)
-- **Live Steadfast tracking status** with auto-refresh
-- Show the COD amount being sent to Steadfast
-- Display item descriptions being sent to courier
-
-### 3. Rename "Division" to "District"
-Update the UI labels across all relevant files (keeping the database column names unchanged):
-
-| File | Changes |
-|------|---------|
-| `src/components/admin/AdminSidebar.tsx` | Sidebar menu: "Divisions" → "Districts" |
-| `src/pages/admin/AdminDivisions.tsx` | Page title: "Divisions" → "Districts" |
-| `src/components/admin/DivisionModal.tsx` | Modal title/labels: "Division" → "District" |
-| `src/components/admin/CustomerModal.tsx` | Form label: "Division" → "District" |
-| `src/pages/admin/AdminThanas.tsx` | Filter label: "All Divisions" → "All Districts" |
-| `src/components/admin/ThanaModal.tsx` | Form label: "Division" → "District" |
-| `src/components/admin/OrderDetailModal.tsx` | Display label: "Division" → "District" |
-| `src/components/admin/SmsCampaignModal.tsx` | Filter section: "Division" → "District" |
-| `src/components/admin/WhatsappCampaignModal.tsx` | Filter section: "Division" → "District" |
-
-### 4. Update Edge Function Payload
-**File: `supabase/functions/steadfast-courier/index.ts`**
-
-Enhance the order payload sent to Steadfast:
-- Include District and Thana names in the address
-- Build comprehensive address string: `{address}, {thana}, {district}`
-- Add order items description with quantities
-
----
-
-## Technical Implementation Details
-
-### AdminOrders.tsx Changes:
-```typescript
-// New imports
-import { useCreateShipment, STEADFAST_STATUS_MAP, useTrackShipment } from "@/hooks/useSteadfast";
-import { Truck, Send } from "lucide-react";
-
-// Add Steadfast status column to table
-// Add inline "Ship" button that calls createShipment.mutate(order.id)
-// Show tracking code and status if already shipped
-```
-
-### OrderDetailModal.tsx Changes:
-```typescript
-// Enhanced query to include division and thana relations
-const { data: order } = useOrder(orderId);
-// Already fetches: shipping_division:divisions(id, name), shipping_thana:thanas(id, name)
-
-// Add Steadfast section with:
-// - "Send to Steadfast" button (useCreateShipment hook)
-// - Live tracking status display (useTrackShipment hook with order.tracking_number)
-// - Customer details with District/Thana display
-```
-
-### Steadfast Edge Function Enhancement:
-```typescript
-// Fetch division and thana names along with order
-const { data: order } = await supabase
-  .from("orders")
-  .select(`
-    *,
-    order_items(product_name, quantity, variant_sku),
-    shipping_division:divisions(name),
-    shipping_thana:thanas(name)
-  `)
-  .eq("id", order_id)
-  .single();
-
-// Build comprehensive address
-const fullAddress = [
-  order.shipping_address,
-  order.shipping_thana?.name,
-  order.shipping_division?.name
-].filter(Boolean).join(", ");
-
-// Payload to Steadfast
-const payload = {
-  invoice: order.order_number,
-  recipient_name: order.shipping_name,
-  recipient_phone: order.shipping_phone,
-  recipient_address: fullAddress,
-  cod_amount: order.payment_method_type === "cod" ? order.total_amount : 0,
-  item_description: itemsDescription,
-  // ...
-};
+1. Open Order Detail Modal
+2. See "Payment Summary" showing:
+   - Total Amount: ৳5,000
+   - Paid Amount: ৳2,000
+   - Remaining: ৳3,000
+3. Click "Record Payment"
+4. Enter amount (e.g., ৳3,000)
+5. Select account to credit
+6. Add optional reference note
+7. Click "Confirm Payment"
+8. System updates payment status & creates income record
 ```
 
 ---
 
-## Files to Modify
+## Technical Implementation
 
-1. **`src/pages/admin/AdminOrders.tsx`** - Add Courier column and Ship button
-2. **`src/components/admin/OrderDetailModal.tsx`** - Enhanced customer details and Steadfast integration
-3. **`supabase/functions/steadfast-courier/index.ts`** - Include district/thana in address payload
-4. **`src/components/admin/AdminSidebar.tsx`** - Rename "Divisions" to "Districts"
-5. **`src/pages/admin/AdminDivisions.tsx`** - Rename page title/content
-6. **`src/components/admin/DivisionModal.tsx`** - Rename modal labels
-7. **`src/components/admin/CustomerModal.tsx`** - Rename form label
-8. **`src/pages/admin/AdminThanas.tsx`** - Rename filter label
-9. **`src/components/admin/ThanaModal.tsx`** - Rename form label
-10. **`src/components/admin/SmsCampaignModal.tsx`** - Rename filter section
-11. **`src/components/admin/WhatsappCampaignModal.tsx`** - Rename filter section
+### 1. Database Changes
+
+**New Table: `order_payments`**
+This table tracks individual payment entries for each order:
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| order_id | UUID | Links to orders table |
+| amount | DECIMAL | Payment amount |
+| account_id | UUID | Account credited |
+| transaction_id | UUID | Links to transactions table |
+| payment_reference | TEXT | Optional reference/note |
+| recorded_by | UUID | Admin who recorded |
+| recorded_at | TIMESTAMP | When payment was recorded |
+| created_at | TIMESTAMP | Record creation time |
+
+**Update `orders` Table:**
+- Add `paid_amount` column (DECIMAL) - tracks total amount paid so far
+
+### 2. New Hook: `useRecordPayment`
+
+Creates a mutation that:
+1. Validates payment amount (cannot exceed remaining balance)
+2. Inserts record into `order_payments`
+3. Updates `orders.paid_amount` by adding the new amount
+4. Creates income transaction in `transactions` table
+5. Updates `orders.payment_status`:
+   - If `paid_amount >= total_amount` → "paid"
+   - If `paid_amount > 0` but `< total_amount` → "partially_paid"
+6. Adds entry to `order_status_history`
+7. Invalidates relevant queries
+
+### 3. UI Components
+
+**A. Payment Summary Section** (in OrderDetailModal)
+```
+┌─────────────────────────────────────┐
+│ Payment Summary                      │
+├─────────────────────────────────────┤
+│ Total:     ৳5,000                   │
+│ Paid:      ৳2,000                   │
+│ Remaining: ৳3,000                   │
+│                                     │
+│ [Record Payment]                    │
+└─────────────────────────────────────┘
+```
+
+**B. New `PaymentRecordModal` Component**
+- Amount input with validation
+- Account dropdown (from accounts table)
+- Payment reference text field
+- Confirm/Cancel buttons
+
+**C. Payment History in Timeline**
+Shows each payment record with amount, date, and account
+
+### 4. Files to Create/Modify
+
+| File | Action |
+|------|--------|
+| `supabase/migrations/...` | Create `order_payments` table, add `paid_amount` to orders |
+| `src/hooks/useOrderPayments.ts` | New - payment recording & fetching hooks |
+| `src/components/admin/PaymentRecordModal.tsx` | New - payment entry modal |
+| `src/components/admin/OrderDetailModal.tsx` | Add payment summary section & record button |
+| `src/hooks/useOrders.ts` | Update Order interface to include paid_amount |
 
 ---
 
-## User Experience Flow
+## Validation Rules
 
-1. **Order List View**: Admin sees all orders with a "Courier" column
-   - Orders without tracking show a "Ship" button with truck icon
-   - Orders with tracking show Steadfast status badge (e.g., "In Review", "Delivered")
-
-2. **Single-Click Shipping**: Admin clicks "Ship" button
-   - System sends order data to Steadfast API
-   - On success, tracking code appears, order status updates to "processing"
-   - Toast notification confirms success with tracking code
-
-3. **Order Detail Modal**: Admin clicks eye icon to view order
-   - Full customer details including District and Thana
-   - "Send to Steadfast" button if not yet shipped
-   - Live tracking information if already shipped
-   - Order items and amounts clearly displayed
-
-4. **Consistent Terminology**: "Division" renamed to "District" everywhere in the UI
+1. Payment amount must be greater than 0
+2. Payment amount cannot exceed remaining balance
+3. Account selection is required
+4. Order must not be cancelled or refunded
 
 ---
 
-## Testing Considerations
+## Benefits
 
-After implementation:
-1. Test shipping an order from the order list (Ship button)
-2. Test shipping from order detail modal
-3. Verify tracking status updates correctly
-4. Verify District/Thana names appear in Steadfast console
-5. Confirm all "Division" → "District" renames are complete
+- Track exactly how much has been paid on each order
+- Support split/installment payments
+- Automatic income recording in accounts
+- Complete payment audit trail
+- Works for all payment methods (not just COD)

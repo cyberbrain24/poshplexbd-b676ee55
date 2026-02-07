@@ -60,8 +60,6 @@ import AdminInstagramMarketing from "./pages/admin/AdminInstagramMarketing";
 import AdminInstagramInbox from "./pages/admin/AdminInstagramInbox";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminVerificationQueue from "./pages/admin/AdminVerificationQueue";
-import AdminReturns from "./pages/admin/AdminReturns";
-import AdminRiskManagement from "./pages/admin/AdminRiskManagement";
 import AdminPaymentMethods from "./pages/admin/AdminPaymentMethods";
 import AdminInventory from "./pages/admin/AdminInventory";
 import AdminSEO from "./pages/admin/AdminSEO";
@@ -167,8 +165,6 @@ const App = () => (
                     {/* Orders */}
                     <Route path="orders" element={<GuardedRoute><AdminOrders /></GuardedRoute>} />
                     <Route path="verification-queue" element={<GuardedRoute><AdminVerificationQueue /></GuardedRoute>} />
-                    <Route path="returns" element={<GuardedRoute><AdminReturns /></GuardedRoute>} />
-                    <Route path="risk-management" element={<GuardedRoute><AdminRiskManagement /></GuardedRoute>} />
                     <Route path="payment-methods" element={<GuardedRoute><AdminPaymentMethods /></GuardedRoute>} />
                     <Route path="inventory" element={<GuardedRoute><AdminInventory /></GuardedRoute>} />
                     <Route path="seed-data" element={<AdminSeedData />} />

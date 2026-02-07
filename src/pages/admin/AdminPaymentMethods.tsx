@@ -1,5 +1,4 @@
 import { useState } from "react";
-import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -65,107 +64,105 @@ export default function AdminPaymentMethods() {
   };
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Payment Methods</h1>
-            <p className="text-muted-foreground">
-              Manage payment options available during checkout
-            </p>
-          </div>
-          <Button onClick={handleAdd}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Method
-          </Button>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Payment Methods</h1>
+          <p className="text-muted-foreground">
+            Manage payment options available during checkout
+          </p>
         </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>All Payment Methods</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-16 w-full" />
-                ))}
-              </div>
-            ) : !paymentMethods?.length ? (
-              <div className="text-center py-8 text-muted-foreground">
-                No payment methods configured. Add one to get started.
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Account Details</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Order</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paymentMethods.map((method) => (
-                    <TableRow key={method.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          {TYPE_ICONS[method.type]}
-                          {method.name}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">
-                          {TYPE_LABELS[method.type] || method.type}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {method.account_details && Object.keys(method.account_details).length > 0 ? (
-                          <div className="text-sm text-muted-foreground max-w-xs truncate">
-                            {Object.entries(method.account_details)
-                              .map(([key, value]) => `${key}: ${value}`)
-                              .join(", ")}
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Switch
-                          checked={method.is_active}
-                          onCheckedChange={() => handleToggleStatus(method)}
-                          disabled={toggleStatusMutation.isPending}
-                        />
-                      </TableCell>
-                      <TableCell>{method.sort_order}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEdit(method)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(method)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+        <Button onClick={handleAdd}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Method
+        </Button>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>All Payment Methods</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-16 w-full" />
+              ))}
+            </div>
+          ) : !paymentMethods?.length ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No payment methods configured. Add one to get started.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Account Details</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Order</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paymentMethods.map((method) => (
+                  <TableRow key={method.id}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        {TYPE_ICONS[method.type]}
+                        {method.name}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">
+                        {TYPE_LABELS[method.type] || method.type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {method.account_details && Object.keys(method.account_details).length > 0 ? (
+                        <div className="text-sm text-muted-foreground max-w-xs truncate">
+                          {Object.entries(method.account_details)
+                            .map(([key, value]) => `${key}: ${value}`)
+                            .join(", ")}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Switch
+                        checked={method.is_active}
+                        onCheckedChange={() => handleToggleStatus(method)}
+                        disabled={toggleStatusMutation.isPending}
+                      />
+                    </TableCell>
+                    <TableCell>{method.sort_order}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEdit(method)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDelete(method)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
 
       <PaymentMethodModal
         open={modalOpen}
@@ -192,6 +189,6 @@ export default function AdminPaymentMethods() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </AdminLayout>
+    </div>
   );
 }

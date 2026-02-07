@@ -1,4 +1,3 @@
-import AdminLayout from "@/components/admin/AdminLayout";
 import { useReturnRequests, useProcessReturnRequest, ReturnRequest } from "@/hooks/useReturns";
 import { useProcessReturn } from "@/hooks/useInventory";
 import { useState } from "react";
@@ -125,115 +124,113 @@ const AdminReturns = () => {
   };
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-medium tracking-tight flex items-center gap-2">
-              <RotateCcw className="h-6 w-6" /> Return Requests
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Manage product return requests and inventory restocking
-            </p>
-          </div>
-          
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="approved">Approved</SelectItem>
-              <SelectItem value="received">Received</SelectItem>
-              <SelectItem value="restocked">Restocked</SelectItem>
-              <SelectItem value="damaged">Damaged</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
-            </SelectContent>
-          </Select>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-medium tracking-tight flex items-center gap-2">
+            <RotateCcw className="h-6 w-6" /> Return Requests
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Manage product return requests and inventory restocking
+          </p>
         </div>
+        
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="approved">Approved</SelectItem>
+            <SelectItem value="received">Received</SelectItem>
+            <SelectItem value="restocked">Restocked</SelectItem>
+            <SelectItem value="damaged">Damaged</SelectItem>
+            <SelectItem value="rejected">Rejected</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-        {/* Returns Table */}
-        <div className="border border-border">
-          <Table>
-            <TableHeader>
+      {/* Returns Table */}
+      <div className="border border-border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Order</TableHead>
+              <TableHead>Product</TableHead>
+              <TableHead>Customer</TableHead>
+              <TableHead>Quantity</TableHead>
+              <TableHead>Reason</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <TableRow key={i}>
+                  {Array.from({ length: 8 }).map((_, j) => (
+                    <TableCell key={j}>
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : returns?.length === 0 ? (
               <TableRow>
-                <TableHead>Order</TableHead>
-                <TableHead>Product</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Quantity</TableHead>
-                <TableHead>Reason</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableCell colSpan={8} className="text-center py-12">
+                  <Package className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-lg font-medium">No return requests</p>
+                  <p className="text-muted-foreground">Return requests will appear here</p>
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <TableRow key={i}>
-                    {Array.from({ length: 8 }).map((_, j) => (
-                      <TableCell key={j}>
-                        <Skeleton className="h-4 w-full" />
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : returns?.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-12">
-                    <Package className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                    <p className="text-lg font-medium">No return requests</p>
-                    <p className="text-muted-foreground">Return requests will appear here</p>
+            ) : (
+              returns?.map((ret) => (
+                <TableRow key={ret.id}>
+                  <TableCell>
+                    <span className="font-medium">{ret.order?.order_number}</span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="font-medium text-sm">{ret.order_item?.product_name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      SKU: {ret.order_item?.variant_sku || 'N/A'}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm">{ret.customer?.name || 'Guest'}</span>
+                  </TableCell>
+                  <TableCell>
+                    <span>{ret.quantity}</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm">{ret.reason}</span>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={statusColors[ret.status]} variant="outline">
+                      {ret.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm text-muted-foreground">
+                      {format(new Date(ret.created_at), 'MMM d, yyyy')}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setSelectedReturn(ret)}
+                    >
+                      Manage
+                    </Button>
                   </TableCell>
                 </TableRow>
-              ) : (
-                returns?.map((ret) => (
-                  <TableRow key={ret.id}>
-                    <TableCell>
-                      <span className="font-medium">{ret.order?.order_number}</span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium text-sm">{ret.order_item?.product_name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        SKU: {ret.order_item?.variant_sku || 'N/A'}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm">{ret.customer?.name || 'Guest'}</span>
-                    </TableCell>
-                    <TableCell>
-                      <span>{ret.quantity}</span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm">{ret.reason}</span>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={statusColors[ret.status]} variant="outline">
-                        {ret.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-muted-foreground">
-                        {format(new Date(ret.created_at), 'MMM d, yyyy')}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setSelectedReturn(ret)}
-                      >
-                        Manage
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
 
       {/* Process Return Modal */}
@@ -354,7 +351,7 @@ const AdminReturns = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </AdminLayout>
+    </div>
   );
 };
 

@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import AdminSidebar from "./AdminSidebar";
 
 interface AdminLayoutProps {
@@ -7,11 +7,13 @@ interface AdminLayoutProps {
 }
 
 const AdminLayout = ({ children }: AdminLayoutProps) => {
+  const location = useLocation();
+  
   return (
     <div className="flex min-h-screen bg-background">
       <AdminSidebar />
       <main className="flex-1 p-8">
-        {children || <Outlet />}
+        {children || <Outlet key={location.pathname} />}
       </main>
     </div>
   );

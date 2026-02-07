@@ -1,5 +1,4 @@
 import { useState } from "react";
-import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -100,153 +99,151 @@ const AdminPages = () => {
   };
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <FileText className="h-6 w-6" />
-              Page Manager
-            </h1>
-            <p className="text-muted-foreground">
-              Create and manage dynamic pages for your site
-            </p>
-          </div>
-          <Button onClick={handleCreate} className="gap-2">
-            <Plus className="h-4 w-4" />
-            New Page
-          </Button>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <FileText className="h-6 w-6" />
+            Page Manager
+          </h1>
+          <p className="text-muted-foreground">
+            Create and manage dynamic pages for your site
+          </p>
         </div>
+        <Button onClick={handleCreate} className="gap-2">
+          <Plus className="h-4 w-4" />
+          New Page
+        </Button>
+      </div>
 
-        {/* Search */}
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search pages..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
-          />
-        </div>
+      {/* Search */}
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search pages..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-10"
+        />
+      </div>
 
-        {/* Pages Table */}
-        <div className="border rounded-lg">
-          <Table>
-            <TableHeader>
+      {/* Pages Table */}
+      <div className="border rounded-lg">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Title</TableHead>
+              <TableHead>URL Path</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Updated</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
               <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>URL Path</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Updated</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableCell colSpan={6} className="text-center py-12">
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    Loading pages...
+                  </div>
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-12">
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                      Loading pages...
-                    </div>
+            ) : pages?.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-12">
+                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                    <FileText className="h-8 w-8" />
+                    <p>No pages found</p>
+                    <Button variant="outline" size="sm" onClick={handleCreate}>
+                      Create your first page
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              pages?.map((page) => (
+                <TableRow key={page.id}>
+                  <TableCell>
+                    <div className="font-medium">{page.title}</div>
+                    {page.excerpt && (
+                      <div className="text-sm text-muted-foreground truncate max-w-[200px]">
+                        {page.excerpt}
+                      </div>
+                    )}
                   </TableCell>
-                </TableRow>
-              ) : pages?.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-12">
-                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                      <FileText className="h-8 w-8" />
-                      <p>No pages found</p>
-                      <Button variant="outline" size="sm" onClick={handleCreate}>
-                        Create your first page
-                      </Button>
-                    </div>
+                  <TableCell>
+                    <code className="text-sm bg-muted px-2 py-1 rounded">
+                      /{page.slug}
+                    </code>
                   </TableCell>
-                </TableRow>
-              ) : (
-                pages?.map((page) => (
-                  <TableRow key={page.id}>
-                    <TableCell>
-                      <div className="font-medium">{page.title}</div>
-                      {page.excerpt && (
-                        <div className="text-sm text-muted-foreground truncate max-w-[200px]">
-                          {page.excerpt}
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <code className="text-sm bg-muted px-2 py-1 rounded">
-                        /{page.slug}
-                      </code>
-                    </TableCell>
-                    <TableCell>{getStatusBadge(page.status)}</TableCell>
-                    <TableCell>{getTypeBadge(page.page_type, page.is_protected)}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {format(new Date(page.updated_at), "MMM d, yyyy")}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-end gap-1">
-                        {page.status === "published" && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            asChild
-                            title="View page"
-                          >
-                            <a
-                              href={`/${page.slug}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <ExternalLink className="h-4 w-4" />
-                            </a>
-                          </Button>
-                        )}
+                  <TableCell>{getStatusBadge(page.status)}</TableCell>
+                  <TableCell>{getTypeBadge(page.page_type, page.is_protected)}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {format(new Date(page.updated_at), "MMM d, yyyy")}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center justify-end gap-1">
+                      {page.status === "published" && (
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleEdit(page)}
-                          title="Edit page"
+                          asChild
+                          title="View page"
                         >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        {!page.is_protected && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setDeleteDialog(page)}
-                            title="Delete page"
-                            className="text-destructive hover:text-destructive"
+                          <a
+                            href={`/${page.slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
                           >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-
-        {/* Stats */}
-        {pages && pages.length > 0 && (
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span>{pages.length} total pages</span>
-            <span>•</span>
-            <span>
-              {pages.filter((p) => p.status === "published").length} published
-            </span>
-            <span>•</span>
-            <span>
-              {pages.filter((p) => p.status === "draft").length} drafts
-            </span>
-          </div>
-        )}
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEdit(page)}
+                        title="Edit page"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      {!page.is_protected && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setDeleteDialog(page)}
+                          title="Delete page"
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
+
+      {/* Stats */}
+      {pages && pages.length > 0 && (
+        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <span>{pages.length} total pages</span>
+          <span>•</span>
+          <span>
+            {pages.filter((p) => p.status === "published").length} published
+          </span>
+          <span>•</span>
+          <span>
+            {pages.filter((p) => p.status === "draft").length} drafts
+          </span>
+        </div>
+      )}
 
       {/* Page Modal */}
       <PageModal
@@ -276,7 +273,7 @@ const AdminPages = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </AdminLayout>
+    </div>
   );
 };
 

@@ -1,97 +1,54 @@
-import { ArrowRight, X, Minus, Plus } from "lucide-react";
+import { ArrowRight, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import ShoppingBag from "./ShoppingBag";
 import { useCart } from "@/contexts/CartContext";
-import pantheonImage from "@/assets/pantheon.jpg";
-import eclipseImage from "@/assets/eclipse.jpg";
-import haloImage from "@/assets/halo.jpg";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Category {
+  id: string;
+  name: string;
+  parent_id: string | null;
+}
 
 const Navigation = () => {
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [offCanvasType, setOffCanvasType] = useState<'favorites' | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isShoppingBagOpen, setIsShoppingBagOpen] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
   
   const { cartItems, updateQuantity, cartCount } = useCart();
 
   const handleUpdateQuantity = (id: string, variantId: string | undefined, newQuantity: number) => {
     updateQuantity(id, variantId, newQuantity);
   };
-  
-  // Preload dropdown images for faster display
+
+  // Fetch categories from database
   useEffect(() => {
-    const imagesToPreload = [
-      "/rings-collection.png",
-      "/earrings-collection.png", 
-      "/arcus-bracelet.png",
-      "/span-bracelet.png",
-      "/founders.png"
-    ];
+    const fetchCategories = async () => {
+      const { data } = await supabase
+        .from('categories')
+        .select('id, name, parent_id')
+        .is('parent_id', null)
+        .order('name');
+      
+      if (data) {
+        setCategories(data);
+      }
+    };
     
-    imagesToPreload.forEach(src => {
-      const img = new Image();
-      img.src = src;
-    });
+    fetchCategories();
   }, []);
 
   const popularSearches = [
-    "Gold Rings",
-    "Silver Necklaces", 
-    "Pearl Earrings",
-    "Designer Bracelets",
-    "Wedding Rings",
-    "Vintage Collection"
-  ];
-  
-  const navItems = [
-    { 
-      name: "Shop", 
-      href: "/category/shop",
-      submenuItems: [
-        "Rings",
-        "Necklaces", 
-        "Earrings",
-        "Bracelets",
-        "Watches"
-      ],
-      images: [
-        { src: "/rings-collection.png", alt: "Rings Collection", label: "Rings" },
-        { src: "/earrings-collection.png", alt: "Earrings Collection", label: "Earrings" }
-      ]
-    },
-    { 
-      name: "New in", 
-      href: "/category/new-in",
-      submenuItems: [
-        "This Week's Arrivals",
-        "Spring Collection",
-        "Featured Designers",
-        "Limited Edition",
-        "Pre-Orders"
-      ],
-      images: [
-        { src: "/arcus-bracelet.png", alt: "Arcus Bracelet", label: "Arcus Bracelet" },
-        { src: "/span-bracelet.png", alt: "Span Bracelet", label: "Span Bracelet" }
-      ]
-    },
-    { 
-      name: "About", 
-      href: "/about/our-story",
-      submenuItems: [
-        "Our Story",
-        "Sustainability",
-        "Size Guide",
-        "Customer Care",
-        "Store Locator"
-      ],
-      images: [
-        { src: "/founders.png", alt: "Company Founders", label: "Read our story" }
-      ]
-    }
+    "T-Shirts",
+    "Hoodies", 
+    "Jeans",
+    "Jackets",
+    "Dresses",
+    "Sweaters"
   ];
 
   return (
@@ -122,23 +79,17 @@ const Navigation = () => {
           </div>
         </button>
 
-        {/* Left navigation - Hidden on tablets and mobile */}
-        <div className="hidden lg:flex space-x-8">
-          {navItems.map((item) => (
-            <div
-              key={item.name}
-              className="relative"
-              onMouseEnter={() => setActiveDropdown(item.name)}
-              onMouseLeave={() => setActiveDropdown(null)}
-            >
-              <Link
-                to={item.href}
-                className="text-nav-foreground hover:text-nav-hover transition-colors duration-200 text-sm font-light py-6 block"
-              >
-                {item.name}
-              </Link>
-            </div>
-          ))}
+        {/* Left navigation - Categories dropdown */}
+        <div className="hidden lg:flex">
+          <div
+            className="relative"
+            onMouseEnter={() => setIsDropdownOpen(true)}
+            onMouseLeave={() => setIsDropdownOpen(false)}
+          >
+            <button className="text-nav-foreground hover:text-nav-hover transition-colors duration-200 text-sm font-light py-6 block">
+              Shop
+            </button>
+          </div>
         </div>
 
         {/* Center logo */}
@@ -198,66 +149,43 @@ const Navigation = () => {
         </div>
       </div>
 
-      {/* Full width dropdown */}
-      {activeDropdown && (
+      {/* Full width dropdown - Categories */}
+      {isDropdownOpen && (
         <div 
           className="absolute top-full left-0 right-0 bg-nav border-b border-border z-50"
-          onMouseEnter={() => setActiveDropdown(activeDropdown)}
-          onMouseLeave={() => setActiveDropdown(null)}
+          onMouseEnter={() => setIsDropdownOpen(true)}
+          onMouseLeave={() => setIsDropdownOpen(false)}
         >
           <div className="px-6 py-8">
             <div className="flex justify-between w-full">
-              {/* Left side - Menu items */}
+              {/* Categories list */}
               <div className="flex-1">
+                <p className="text-xs font-medium tracking-wider text-muted-foreground mb-4">
+                  CATEGORIES
+                </p>
                 <ul className="space-y-2">
-                   {navItems
-                     .find(item => item.name === activeDropdown)
-                     ?.submenuItems.map((subItem, index) => (
-                      <li key={index}>
-                        <Link 
-                          to={activeDropdown === "About" ? `/about/${subItem.toLowerCase().replace(/\s+/g, '-')}` : `/category/${subItem.toLowerCase()}`}
-                          className="text-nav-foreground hover:text-nav-hover transition-colors duration-200 text-sm font-light block py-2"
-                        >
-                          {subItem}
-                        </Link>
-                      </li>
-                   ))}
+                  {categories.map((category) => (
+                    <li key={category.id}>
+                      <Link 
+                        to={`/category/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
+                        className="text-nav-foreground hover:text-nav-hover transition-colors duration-200 text-sm font-light block py-2"
+                      >
+                        {category.name}
+                      </Link>
+                    </li>
+                  ))}
                 </ul>
               </div>
 
-              {/* Right side - Images */}
-              <div className="flex space-x-6">
-                {navItems
-                  .find(item => item.name === activeDropdown)
-                  ?.images.map((image, index) => {
-                    // Determine the link destination based on dropdown and image
-                    let linkTo = "/";
-                    if (activeDropdown === "Shop") {
-                      if (image.label === "Rings") linkTo = "/category/rings";
-                      else if (image.label === "Earrings") linkTo = "/category/earrings";
-                    } else if (activeDropdown === "New in") {
-                      if (image.label === "Arcus Bracelet") linkTo = "/product/arcus-bracelet";
-                      else if (image.label === "Span Bracelet") linkTo = "/product/span-bracelet";
-                    } else if (activeDropdown === "About") {
-                      linkTo = "/about/our-story";
-                    }
-                    
-                    return (
-                      <Link key={index} to={linkTo} className="w-[400px] h-[280px] cursor-pointer group relative overflow-hidden block">
-                        <img 
-                          src={image.src}
-                          alt={image.alt}
-                          className="w-full h-full object-cover transition-opacity duration-200 group-hover:opacity-90"
-                        />
-                        {(activeDropdown === "Shop" || activeDropdown === "New in" || activeDropdown === "About") && (
-                          <div className="absolute bottom-2 left-2 text-white text-xs font-light flex items-center gap-1">
-                            <span>{image.label}</span>
-                            <ArrowRight size={12} />
-                          </div>
-                        )}
-                      </Link>
-                    );
-                  })}
+              {/* View All CTA */}
+              <div className="flex items-end">
+                <Link 
+                  to="/category/all"
+                  className="inline-flex items-center gap-2 bg-foreground text-background px-6 py-3 text-sm font-medium tracking-wider hover:opacity-90 transition-opacity"
+                >
+                  VIEW ALL PRODUCTS
+                  <ArrowRight size={16} strokeWidth={1.5} />
+                </Link>
               </div>
             </div>
           </div>
@@ -279,7 +207,7 @@ const Navigation = () => {
                   </svg>
                   <input
                     type="text"
-                    placeholder="Search for jewelry..."
+                    placeholder="Search for products..."
                     className="flex-1 bg-transparent text-nav-foreground placeholder:text-nav-foreground/60 outline-none text-lg"
                     autoFocus
                   />
@@ -291,12 +219,13 @@ const Navigation = () => {
                 <h3 className="text-nav-foreground text-sm font-light mb-4">Popular Searches</h3>
                 <div className="flex flex-wrap gap-3">
                   {popularSearches.map((search, index) => (
-                    <button
+                    <Link
                       key={index}
+                      to={`/category/${search.toLowerCase().replace(/\s+/g, '-')}`}
                       className="text-nav-foreground hover:text-nav-hover text-sm font-light py-2 px-4 border border-border rounded-full transition-colors duration-200 hover:border-nav-hover"
                     >
                       {search}
-                    </button>
+                    </Link>
                   ))}
                 </div>
               </div>
@@ -310,29 +239,31 @@ const Navigation = () => {
         <div className="lg:hidden absolute top-full left-0 right-0 bg-nav border-b border-border z-50">
           <div className="px-6 py-8">
             <div className="space-y-6">
-              {navItems.map((item, index) => (
-                <div key={item.name}>
-                  <Link
-                    to={item.href}
-                    className="text-nav-foreground hover:text-nav-hover transition-colors duration-200 text-lg font-light block py-2"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    {item.name}
-                  </Link>
-                   <div className="mt-3 pl-4 space-y-2">
-                     {item.submenuItems.map((subItem, subIndex) => (
-                       <Link
-                         key={subIndex}
-                         to={item.name === "About" ? `/about/${subItem.toLowerCase().replace(/\s+/g, '-')}` : `/category/${subItem.toLowerCase()}`}
-                         className="text-nav-foreground/70 hover:text-nav-hover text-sm font-light block py-1"
-                         onClick={() => setIsMobileMenuOpen(false)}
-                       >
-                         {subItem}
-                       </Link>
-                     ))}
-                   </div>
+              <div>
+                <p className="text-xs font-medium tracking-wider text-muted-foreground mb-4">
+                  CATEGORIES
+                </p>
+                <div className="space-y-2">
+                  {categories.map((category) => (
+                    <Link
+                      key={category.id}
+                      to={`/category/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
+                      className="text-nav-foreground hover:text-nav-hover transition-colors duration-200 text-sm font-light block py-2"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      {category.name}
+                    </Link>
+                  ))}
                 </div>
-              ))}
+              </div>
+              <Link 
+                to="/category/all"
+                className="inline-flex items-center gap-2 text-nav-foreground hover:text-nav-hover text-sm font-light"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                View All Products
+                <ArrowRight size={14} />
+              </Link>
             </div>
           </div>
         </div>

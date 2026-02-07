@@ -58,85 +58,111 @@ Deno.serve(async (req) => {
 
     const entries: SitemapEntry[] = [];
 
-    // Static pages
-    const staticPages = [
-      { path: "/", priority: 1.0, changefreq: "daily" as const },
-      { path: "/category/all", priority: 0.9, changefreq: "daily" as const },
-      { path: "/blog", priority: 0.8, changefreq: "daily" as const },
-      { path: "/about/our-story", priority: 0.6, changefreq: "monthly" as const },
-      { path: "/about/sustainability", priority: 0.5, changefreq: "monthly" as const },
-      { path: "/about/size-guide", priority: 0.5, changefreq: "monthly" as const },
-      { path: "/about/customer-care", priority: 0.5, changefreq: "monthly" as const },
-      { path: "/about/store-locator", priority: 0.5, changefreq: "monthly" as const },
-      { path: "/privacy-policy", priority: 0.3, changefreq: "yearly" as const },
-      { path: "/terms-of-service", priority: 0.3, changefreq: "yearly" as const },
-    ];
+    // PRIMARY SOURCE: Fetch from seo_metadata table (Universal SEO)
+    const { data: seoEntries, error: seoError } = await supabase
+      .from("seo_metadata")
+      .select("page_path, updated_at, priority, change_frequency, no_index")
+      .eq("no_index", false)
+      .order("priority", { ascending: false })
+      .limit(5000);
 
-    staticPages.forEach((page) => {
-      entries.push({
-        loc: `${SITE_URL}${page.path}`,
-        lastmod: new Date().toISOString().split("T")[0],
-        changefreq: page.changefreq,
-        priority: page.priority,
-      });
-    });
-
-    // Fetch active products
-    const { data: products, error: productsError } = await supabase
-      .from("products")
-      .select("id, updated_at")
-      .eq("is_active", true)
-      .order("updated_at", { ascending: false })
-      .limit(1000);
-
-    if (!productsError && products) {
-      products.forEach((product) => {
+    if (!seoError && seoEntries) {
+      console.log(`Found ${seoEntries.length} SEO entries`);
+      seoEntries.forEach((entry) => {
         entries.push({
-          loc: `${SITE_URL}/product/${product.id}`,
-          lastmod: formatDate(product.updated_at),
-          changefreq: "weekly",
-          priority: 0.8,
+          loc: `${SITE_URL}${entry.page_path}`,
+          lastmod: formatDate(entry.updated_at),
+          changefreq: (entry.change_frequency as SitemapEntry["changefreq"]) || "weekly",
+          priority: entry.priority || 0.5,
         });
       });
     }
 
-    // Fetch published blog posts
-    const { data: posts, error: postsError } = await supabase
-      .from("blog_posts")
-      .select("slug, updated_at, published_at")
-      .eq("status", "published")
-      .order("published_at", { ascending: false })
-      .limit(500);
+    // FALLBACK: If seo_metadata is empty, fetch from source tables
+    if (entries.length === 0) {
+      console.log("No SEO entries found, falling back to source tables");
 
-    if (!postsError && posts) {
-      posts.forEach((post) => {
+      // Static pages fallback
+      const staticPages = [
+        { path: "/", priority: 1.0, changefreq: "daily" as const },
+        { path: "/category/all", priority: 0.9, changefreq: "daily" as const },
+        { path: "/blog", priority: 0.8, changefreq: "daily" as const },
+        { path: "/about/our-story", priority: 0.6, changefreq: "monthly" as const },
+        { path: "/about/sustainability", priority: 0.5, changefreq: "monthly" as const },
+        { path: "/about/size-guide", priority: 0.5, changefreq: "monthly" as const },
+        { path: "/about/customer-care", priority: 0.5, changefreq: "monthly" as const },
+        { path: "/about/store-locator", priority: 0.5, changefreq: "monthly" as const },
+        { path: "/privacy-policy", priority: 0.3, changefreq: "yearly" as const },
+        { path: "/terms-of-service", priority: 0.3, changefreq: "yearly" as const },
+      ];
+
+      staticPages.forEach((page) => {
         entries.push({
-          loc: `${SITE_URL}/blog/${post.slug}`,
-          lastmod: formatDate(post.updated_at || post.published_at),
-          changefreq: "weekly",
-          priority: 0.7,
+          loc: `${SITE_URL}${page.path}`,
+          lastmod: new Date().toISOString().split("T")[0],
+          changefreq: page.changefreq,
+          priority: page.priority,
         });
       });
-    }
 
-    // Fetch categories for category pages
-    const { data: categories, error: categoriesError } = await supabase
-      .from("categories")
-      .select("name, updated_at")
-      .limit(100);
+      // Fetch active products
+      const { data: products, error: productsError } = await supabase
+        .from("products")
+        .select("id, updated_at")
+        .eq("is_active", true)
+        .order("updated_at", { ascending: false })
+        .limit(1000);
 
-    if (!categoriesError && categories) {
-      categories.forEach((category) => {
-        const slug = category.name.toLowerCase().replace(/\s+/g, "-");
-        entries.push({
-          loc: `${SITE_URL}/category/${slug}`,
-          lastmod: formatDate(category.updated_at),
-          changefreq: "daily",
-          priority: 0.8,
+      if (!productsError && products) {
+        products.forEach((product) => {
+          entries.push({
+            loc: `${SITE_URL}/product/${product.id}`,
+            lastmod: formatDate(product.updated_at),
+            changefreq: "weekly",
+            priority: 0.8,
+          });
         });
-      });
+      }
+
+      // Fetch published blog posts
+      const { data: posts, error: postsError } = await supabase
+        .from("blog_posts")
+        .select("slug, updated_at, published_at")
+        .eq("status", "published")
+        .order("published_at", { ascending: false })
+        .limit(500);
+
+      if (!postsError && posts) {
+        posts.forEach((post) => {
+          entries.push({
+            loc: `${SITE_URL}/blog/${post.slug}`,
+            lastmod: formatDate(post.updated_at || post.published_at),
+            changefreq: "weekly",
+            priority: 0.7,
+          });
+        });
+      }
+
+      // Fetch categories
+      const { data: categories, error: categoriesError } = await supabase
+        .from("categories")
+        .select("name, updated_at")
+        .limit(100);
+
+      if (!categoriesError && categories) {
+        categories.forEach((category) => {
+          const slug = category.name.toLowerCase().replace(/\s+/g, "-");
+          entries.push({
+            loc: `${SITE_URL}/category/${slug}`,
+            lastmod: formatDate(category.updated_at),
+            changefreq: "daily",
+            priority: 0.8,
+          });
+        });
+      }
     }
 
+    console.log(`Generating sitemap with ${entries.length} URLs`);
     const xml = generateSitemapXML(entries);
 
     return new Response(xml, {

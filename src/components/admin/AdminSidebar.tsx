@@ -32,6 +32,7 @@ import {
   RotateCcw,
   Shield,
   Boxes,
+  Globe,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -160,6 +161,20 @@ const AdminSidebar = () => {
         >
           <FileText className="h-4 w-4" />
           Blog
+        </Link>
+
+        {/* SEO Manager */}
+        <Link
+          to="/admin/seo"
+          className={cn(
+            "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
+            location.pathname === "/admin/seo"
+              ? "bg-foreground text-background"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted"
+          )}
+        >
+          <Globe className="h-4 w-4" />
+          SEO Manager
         </Link>
 
         {/* Orders Collapsible */}

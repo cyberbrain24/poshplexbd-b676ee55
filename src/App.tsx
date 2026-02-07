@@ -61,6 +61,7 @@ import AdminReturns from "./pages/admin/AdminReturns";
 import AdminRiskManagement from "./pages/admin/AdminRiskManagement";
 import AdminPaymentMethods from "./pages/admin/AdminPaymentMethods";
 import AdminInventory from "./pages/admin/AdminInventory";
+import AdminSEO from "./pages/admin/AdminSEO";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -108,6 +109,7 @@ const App = () => (
               <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
               <Route path="/admin/products" element={<ProtectedRoute><AdminProducts /></ProtectedRoute>} />
               <Route path="/admin/blog" element={<ProtectedRoute><AdminBlog /></ProtectedRoute>} />
+              <Route path="/admin/seo" element={<ProtectedRoute><AdminSEO /></ProtectedRoute>} />
               <Route path="/admin/colors" element={<ProtectedRoute><AdminColors /></ProtectedRoute>} />
               <Route path="/admin/sizes" element={<ProtectedRoute><AdminSizes /></ProtectedRoute>} />
               <Route path="/admin/materials" element={<ProtectedRoute><AdminMaterials /></ProtectedRoute>} />

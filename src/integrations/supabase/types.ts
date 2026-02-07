@@ -1900,6 +1900,63 @@ export type Database = {
           },
         ]
       }
+      seo_metadata: {
+        Row: {
+          canonical_url: string | null
+          change_frequency: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          focus_keywords: string[] | null
+          id: string
+          is_dynamic: boolean
+          json_ld_type: string | null
+          meta_description: string | null
+          meta_title: string | null
+          no_index: boolean
+          og_image: string | null
+          page_path: string
+          priority: number | null
+          updated_at: string
+        }
+        Insert: {
+          canonical_url?: string | null
+          change_frequency?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          focus_keywords?: string[] | null
+          id?: string
+          is_dynamic?: boolean
+          json_ld_type?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          no_index?: boolean
+          og_image?: string | null
+          page_path: string
+          priority?: number | null
+          updated_at?: string
+        }
+        Update: {
+          canonical_url?: string | null
+          change_frequency?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          focus_keywords?: string[] | null
+          id?: string
+          is_dynamic?: boolean
+          json_ld_type?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          no_index?: boolean
+          og_image?: string | null
+          page_path?: string
+          priority?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       size_guides: {
         Row: {
           content: string
@@ -2730,6 +2787,16 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      upsert_seo_path: {
+        Args: {
+          p_entity_id?: string
+          p_entity_type?: string
+          p_is_dynamic?: boolean
+          p_json_ld_type?: string
+          p_page_path: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

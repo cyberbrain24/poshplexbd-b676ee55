@@ -107,13 +107,15 @@ const AdminReturns = () => {
 
     // Then process inventory
     const variantId = (selectedReturn.order_item as any).variant_id;
+    const orderNumber = (selectedReturn as any).order?.order_number || 'Unknown';
     if (variantId) {
       await processInventory.mutateAsync({
         variantId,
         quantity: selectedReturn.quantity,
         orderId: selectedReturn.order_id,
         orderItemId: selectedReturn.order_item_id,
-        returnType: restockDecision === 'restock' ? 'good' : 'damaged',
+        returnType: restockDecision,
+        orderNumber,
       });
     }
 

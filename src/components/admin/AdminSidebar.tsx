@@ -31,6 +31,7 @@ import {
   Clock,
   RotateCcw,
   Shield,
+  Boxes,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -52,6 +53,7 @@ const productEditsItems = [
 const orderItems = [
   { icon: ShoppingCart, label: "All Orders", path: "/admin/orders" },
   { icon: Clock, label: "Verification Queue", path: "/admin/verification-queue" },
+  { icon: Boxes, label: "Inventory", path: "/admin/inventory" },
   { icon: RotateCcw, label: "Returns", path: "/admin/returns" },
   { icon: Shield, label: "Risk Management", path: "/admin/risk-management" },
   { icon: CreditCard, label: "Payment Methods", path: "/admin/payment-methods" },

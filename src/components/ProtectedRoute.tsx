@@ -37,56 +37,101 @@ const ProtectedRoute = ({ children, requireAdmin = true }: ProtectedRouteProps) 
   };
 
   useEffect(() => {
+    let isMounted = true;
+    
     const initAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-
-      if (!session) {
-        setIsLoading(false);
-        navigate("/auth", { state: { from: window.location.pathname } });
-        return;
-      }
-
-      if (requireAdmin) {
-        const hasAdminRole = await checkAdminRole(session.user.id);
-        setIsAdmin(hasAdminRole);
-
-        if (!hasAdminRole) {
-          toast.error("Access denied: Admin privileges required");
-          navigate("/");
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (!isMounted) return;
+        
+        // Handle session errors (e.g., invalid refresh token)
+        if (error) {
+          console.error("Session error:", error);
+          setSession(null);
+          setIsLoading(false);
+          navigate("/auth", { state: { from: window.location.pathname }, replace: true });
+          return;
         }
-      } else {
-        setIsAdmin(true);
-      }
+        
+        setSession(session);
 
-      setIsLoading(false);
+        if (!session) {
+          setIsLoading(false);
+          navigate("/auth", { state: { from: window.location.pathname }, replace: true });
+          return;
+        }
+
+        if (requireAdmin) {
+          const hasAdminRole = await checkAdminRole(session.user.id);
+          if (!isMounted) return;
+          setIsAdmin(hasAdminRole);
+
+          if (!hasAdminRole) {
+            toast.error("Access denied: Admin privileges required");
+            navigate("/", { replace: true });
+          }
+        } else {
+          setIsAdmin(true);
+        }
+
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      } catch (err) {
+        console.error("Auth initialization error:", err);
+        if (isMounted) {
+          setSession(null);
+          setIsLoading(false);
+          navigate("/auth", { state: { from: window.location.pathname }, replace: true });
+        }
+      }
     };
 
     initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!isMounted) return;
+      
+      console.log("Auth state change:", event);
+      
+      // Handle sign out or token errors
+      if (event === "SIGNED_OUT" || event === "TOKEN_REFRESHED" && !session) {
+        setSession(null);
+        setIsAdmin(null);
+        setIsLoading(false);
+        navigate("/auth", { state: { from: window.location.pathname }, replace: true });
+        return;
+      }
+      
       setSession(session);
 
       if (!session) {
         setIsLoading(false);
-        navigate("/auth", { state: { from: window.location.pathname } });
+        navigate("/auth", { state: { from: window.location.pathname }, replace: true });
         return;
       }
 
       if (requireAdmin && event === "SIGNED_IN") {
         const hasAdminRole = await checkAdminRole(session.user.id);
+        if (!isMounted) return;
         setIsAdmin(hasAdminRole);
 
         if (!hasAdminRole) {
           toast.error("Access denied: Admin privileges required");
-          navigate("/");
+          navigate("/", { replace: true });
         }
       }
 
-      setIsLoading(false);
+      if (isMounted) {
+        setIsLoading(false);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, [navigate, requireAdmin]);
 
   if (isLoading) {

@@ -126,7 +126,8 @@ export function useBulkCreateShipments() {
   });
 }
 
-// Track shipment by tracking code
+// Track shipment by tracking code - MANUAL FETCH ONLY
+// This hook does NOT auto-fetch. Use refetch() to manually get tracking status
 export function useTrackShipment(trackingCode?: string) {
   return useQuery({
     queryKey: ["steadfast-track", trackingCode],
@@ -135,14 +136,19 @@ export function useTrackShipment(trackingCode?: string) {
         `steadfast-courier?action=track_by_tracking_code&tracking_code=${trackingCode}`
       );
       if (error) throw new Error(error.message);
+      // Handle deleted parcels gracefully
+      if (data?.status === 404 || data?.message?.toLowerCase().includes('not found')) {
+        return { delivery_status: 'unknown', deleted: true, message: 'Parcel not found in Steadfast' };
+      }
       return data;
     },
-    enabled: !!trackingCode,
-    staleTime: 1000 * 60, // 1 minute
+    enabled: false, // DISABLED auto-fetch - must call refetch() manually
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: false, // Don't retry on failure (parcel might be deleted)
   });
 }
 
-// Track by order number (invoice)
+// Track by order number (invoice) - MANUAL FETCH ONLY
 export function useTrackByInvoice(orderNumber?: string) {
   return useQuery({
     queryKey: ["steadfast-track-invoice", orderNumber],
@@ -151,10 +157,15 @@ export function useTrackByInvoice(orderNumber?: string) {
         `steadfast-courier?action=track_by_invoice&invoice=${orderNumber}`
       );
       if (error) throw new Error(error.message);
+      // Handle deleted parcels gracefully
+      if (data?.status === 404 || data?.message?.toLowerCase().includes('not found')) {
+        return { delivery_status: 'unknown', deleted: true, message: 'Parcel not found in Steadfast' };
+      }
       return data;
     },
-    enabled: !!orderNumber,
-    staleTime: 1000 * 60,
+    enabled: false, // DISABLED auto-fetch
+    staleTime: 1000 * 60 * 5,
+    retry: false,
   });
 }
 

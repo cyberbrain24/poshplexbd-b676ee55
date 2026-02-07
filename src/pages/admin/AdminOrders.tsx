@@ -42,61 +42,45 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import OrderDetailModal from "@/components/admin/OrderDetailModal";
-import { useCreateShipment, STEADFAST_STATUS_MAP, useTrackShipment, useResetShipping } from "@/hooks/useSteadfast";
+import { useCreateShipment, useResetShipping } from "@/hooks/useSteadfast";
 import { formatCurrency } from "@/lib/currency";
 
-// Parcel ID cell component
+// Parcel ID cell component - simplified, no auto-fetch
 const ParcelIdCell = ({ order }: { order: { id: string; consignment_id: string | null; tracking_number: string | null } }) => {
   const resetShipping = useResetShipping();
-  const { data: trackingData, isLoading: trackingLoading, isError } = useTrackShipment(order.tracking_number || undefined);
 
   // If no consignment_id, show dash
   if (!order.consignment_id) {
     return <span className="text-muted-foreground">—</span>;
   }
 
-  const deliveryStatus = trackingData?.delivery_status || "pending";
-  
-  // Check if parcel was deleted from Steadfast
-  const isDeletedFromSteadfast = isError || deliveryStatus === "unknown" || 
-    (trackingData?.status === 404) || (trackingData?.status === 400) ||
-    (trackingData?.message?.toLowerCase()?.includes("not found"));
-
-  // If deleted from Steadfast, show reset button
-  if (isDeletedFromSteadfast && !trackingLoading) {
-    return (
-      <div className="flex flex-col gap-1">
-        <span className="text-xs text-muted-foreground line-through">{order.consignment_id}</span>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={(e) => {
-            e.stopPropagation();
-            resetShipping.mutate(order.id);
-          }}
-          disabled={resetShipping.isPending}
-          className="h-6 text-xs"
-        >
-          {resetShipping.isPending ? (
-            <Loader2 className="h-3 w-3 animate-spin mr-1" />
-          ) : (
-            <Truck className="h-3 w-3 mr-1" />
-          )}
-          Re-ship
-        </Button>
-      </div>
-    );
-  }
-
   return (
-    <span className="text-xs font-mono text-muted-foreground">{order.consignment_id}</span>
+    <div className="flex items-center gap-2">
+      <span className="text-xs font-mono text-muted-foreground">{order.consignment_id}</span>
+      <Button
+        size="sm"
+        variant="ghost"
+        onClick={(e) => {
+          e.stopPropagation();
+          resetShipping.mutate(order.id);
+        }}
+        disabled={resetShipping.isPending}
+        className="h-5 w-5 p-0 text-muted-foreground hover:text-destructive"
+        title="Reset shipping (if deleted from Steadfast)"
+      >
+        {resetShipping.isPending ? (
+          <Loader2 className="h-3 w-3 animate-spin" />
+        ) : (
+          <Trash2 className="h-3 w-3" />
+        )}
+      </Button>
+    </div>
   );
 };
 
-// Courier status component for each order row
+// Courier status component - simplified, shows Ship button or tracking number only
 const CourierStatusCell = ({ order }: { order: { id: string; tracking_number: string | null; courier_name: string | null } }) => {
   const createShipment = useCreateShipment();
-  const { data: trackingData, isLoading: trackingLoading, isError } = useTrackShipment(order.tracking_number || undefined);
 
   if (!order.tracking_number) {
     return (
@@ -120,38 +104,10 @@ const CourierStatusCell = ({ order }: { order: { id: string; tracking_number: st
     );
   }
 
-  const deliveryStatus = trackingData?.delivery_status || "pending";
-  const statusInfo = STEADFAST_STATUS_MAP[deliveryStatus] || STEADFAST_STATUS_MAP["unknown"];
-
-  // Check if parcel was deleted from Steadfast (status is unknown or API error)
-  const isDeletedFromSteadfast = isError || deliveryStatus === "unknown" || 
-    (trackingData?.status === 404) || (trackingData?.status === 400) ||
-    (trackingData?.message?.toLowerCase()?.includes("not found"));
-
-  const colorClasses: Record<string, string> = {
-    yellow: "bg-yellow-100 text-yellow-800",
-    blue: "bg-blue-100 text-blue-800",
-    green: "bg-green-100 text-green-800",
-    red: "bg-red-100 text-red-800",
-    orange: "bg-orange-100 text-orange-800",
-    purple: "bg-purple-100 text-purple-800",
-    teal: "bg-teal-100 text-teal-800",
-    gray: "bg-gray-100 text-gray-800",
-  };
-
-  // If deleted from Steadfast, show deleted badge
-  if (isDeletedFromSteadfast && !trackingLoading) {
-    return (
-      <Badge className="bg-red-100 text-red-800" variant="outline">
-        Deleted
-      </Badge>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-1">
-      <Badge className={colorClasses[statusInfo.color] || "bg-gray-100 text-gray-800"} variant="outline">
-        {trackingLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : statusInfo.label}
+      <Badge className="bg-blue-100 text-blue-800" variant="outline">
+        {order.courier_name || "Steadfast"}
       </Badge>
       <span className="text-xs text-muted-foreground font-mono">{order.tracking_number}</span>
     </div>

@@ -89,7 +89,7 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
   const updateItemFulfillment = useUpdateItemFulfillment();
   const createShipment = useCreateShipment();
   const approveCOD = useApproveCODAmount();
-  const { data: trackingData, isLoading: trackingLoading } = useTrackShipment(
+  const { data: trackingData, isLoading: trackingLoading, refetch: refetchTracking, isFetching: trackingFetching } = useTrackShipment(
     order?.tracking_number || undefined
   );
   
@@ -531,10 +531,30 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
               <div className="flex items-center gap-2">
                 <Truck className="h-4 w-4" /> Steadfast Tracking
               </div>
-              <Badge className={colorClasses[statusInfo.color] || "bg-gray-100"} variant="outline">
-                {trackingLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : statusInfo.label}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 px-2 text-xs"
+                  onClick={() => refetchTracking()}
+                  disabled={trackingFetching}
+                >
+                  {trackingFetching ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    "Refresh"
+                  )}
+                </Button>
+                <Badge className={colorClasses[statusInfo.color] || "bg-gray-100"} variant="outline">
+                  {trackingLoading || trackingFetching ? <Loader2 className="h-3 w-3 animate-spin" /> : statusInfo.label}
+                </Badge>
+              </div>
             </h4>
+            {trackingData?.deleted && (
+              <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded">
+                ⚠️ This parcel was not found in Steadfast. It may have been deleted. Use "Reset Shipping" to re-ship.
+              </p>
+            )}
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>
                 <span className="text-blue-600">Courier:</span> {order.courier_name || "Steadfast"}
@@ -548,7 +568,7 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
                   <div>
                     <span className="text-blue-600">COD Amount:</span> ৳{order.total_amount.toLocaleString()}
                   </div>
-                  {trackingData?.cod_amount !== undefined && (
+                  {trackingData?.cod_amount !== undefined && !trackingData?.deleted && (
                     <div>
                       <span className="text-blue-600">Collected:</span> ৳{trackingData.cod_amount.toLocaleString()}
                     </div>

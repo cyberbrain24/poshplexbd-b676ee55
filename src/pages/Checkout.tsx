@@ -17,6 +17,7 @@ import { useDivisions, useThanas } from "@/hooks/useLocationData";
 import { getShippingForLocation, ShippingConfig, SHIPPING_OUTSIDE_DHAKA } from "@/config/shippingConfig";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { formatCurrency } from "@/lib/currency";
 
 const DEFAULT_PASSWORD = "poshplex";
 
@@ -351,7 +352,7 @@ const Checkout = () => {
                         </div>
                       </div>
                       <div className="text-foreground font-medium text-sm">
-                        ৳{(item.price * item.quantity).toLocaleString()}
+                        {formatCurrency(item.price * item.quantity)}
                       </div>
                     </div>
                   ))}
@@ -385,25 +386,25 @@ const Checkout = () => {
                 <div className="border-t border-muted-foreground/20 mt-4 pt-4 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Subtotal</span>
-                    <span className="text-foreground">৳{subtotal.toLocaleString()}</span>
+                    <span className="text-foreground">{formatCurrency(subtotal)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Shipping ({shippingConfig.label})</span>
-                    <span className="text-foreground">৳{shippingCost}</span>
+                    <span className="text-foreground">{formatCurrency(shippingCost)}</span>
                   </div>
                   <div className="flex justify-between text-lg font-medium border-t border-muted-foreground/20 pt-2">
                     <span className="text-foreground">Total</span>
-                    <span className="text-foreground">৳{total.toLocaleString()}</span>
+                    <span className="text-foreground">{formatCurrency(total)}</span>
                   </div>
                   {usePartialPayment && partialAmount > 0 && (
                     <>
                       <div className="flex justify-between text-sm text-primary font-medium">
                         <span>Paying Now</span>
-                        <span>৳{partialAmount.toLocaleString()}</span>
+                        <span>{formatCurrency(partialAmount)}</span>
                       </div>
                       <div className="flex justify-between text-sm text-muted-foreground">
                         <span>Due Later</span>
-                        <span>৳{remainingAmount.toLocaleString()}</span>
+                        <span>{formatCurrency(remainingAmount)}</span>
                       </div>
                     </>
                   )}
@@ -559,7 +560,7 @@ const Checkout = () => {
                           {shippingConfig.label} Delivery
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          ৳{shippingConfig.cost} • {shippingConfig.estimatedDays} business days
+                          {formatCurrency(shippingConfig.cost)} • {shippingConfig.estimatedDays} business days
                         </p>
                       </div>
                     </div>
@@ -701,11 +702,11 @@ const Checkout = () => {
                             <span className="text-muted-foreground">
                               {selectedPaymentMethod.type === 'cod' ? "Collect Now:" : "Paying Now:"}
                             </span>
-                            <span className="font-medium text-primary">৳{partialAmount.toLocaleString()}</span>
+                            <span className="font-medium text-primary">{formatCurrency(partialAmount)}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Remaining Due:</span>
-                            <span className="font-medium">৳{remainingAmount.toLocaleString()}</span>
+                            <span className="font-medium">{formatCurrency(remainingAmount)}</span>
                           </div>
                         </div>
                       </div>
@@ -718,25 +719,25 @@ const Checkout = () => {
                   <div className="bg-muted/10 p-4 rounded-none border border-muted-foreground/20 space-y-2 mb-4">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Subtotal</span>
-                      <span>৳{subtotal.toLocaleString()}</span>
+                      <span>{formatCurrency(subtotal)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Shipping ({shippingConfig.label})</span>
-                      <span>৳{shippingCost}</span>
+                      <span>{formatCurrency(shippingCost)}</span>
                     </div>
                     <div className="flex justify-between text-lg font-medium border-t border-muted-foreground/20 pt-2">
                       <span>Order Total</span>
-                      <span>৳{total.toLocaleString()}</span>
+                      <span>{formatCurrency(total)}</span>
                     </div>
                     {usePartialPayment && partialAmount > 0 && (
                       <>
                         <div className="flex justify-between text-sm text-primary font-medium pt-2 border-t border-muted-foreground/10">
                           <span>{selectedPaymentMethod?.type === 'cod' ? "Collect on Delivery" : "Paying Now"}</span>
-                          <span>৳{partialAmount.toLocaleString()}</span>
+                          <span>{formatCurrency(partialAmount)}</span>
                         </div>
                         <div className="flex justify-between text-sm text-muted-foreground">
                           <span>Due Later</span>
-                          <span>৳{remainingAmount.toLocaleString()}</span>
+                          <span>{formatCurrency(remainingAmount)}</span>
                         </div>
                       </>
                     )}
@@ -750,8 +751,8 @@ const Checkout = () => {
                     {isProcessing 
                       ? "Processing..." 
                       : usePartialPayment && partialAmount > 0
-                        ? `Place Order • Pay ৳${displayTotal.toLocaleString()}`
-                        : `Place Order • ৳${total.toLocaleString()}`
+                        ? `Place Order • Pay ${formatCurrency(displayTotal)}`
+                        : `Place Order • ${formatCurrency(total)}`
                     }
                   </Button>
 

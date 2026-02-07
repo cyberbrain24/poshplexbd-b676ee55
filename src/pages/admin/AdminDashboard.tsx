@@ -4,6 +4,7 @@ import { Package, Palette, Ruler, Shirt, FolderTree, Building2 } from "lucide-re
 import { Link } from "react-router-dom";
 import { AdminDashboardSkeleton } from "@/components/admin/AdminLoadingState";
 import { QueryErrorDisplay } from "@/components/admin/AdminErrorBoundary";
+import { formatCurrency } from "@/lib/currency";
 
 const AdminDashboard = () => {
   const { data: products = [], isLoading: productsLoading, error: productsError, refetch: refetchProducts } = useProducts();
@@ -115,7 +116,7 @@ const AdminDashboard = () => {
                 </div>
               </div>
               <div className="text-right">
-                <p className="font-medium">${product.base_price.toFixed(2)}</p>
+                <p className="font-medium">{formatCurrency(product.base_price)}</p>
                 <p className="text-sm text-muted-foreground">
                   {product.is_active ? "Active" : "Inactive"}
                 </p>

@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { formatCurrency } from "@/lib/currency";
 
 const getOrderStatusBadge = (status: string) => {
   switch (status) {
@@ -250,7 +251,7 @@ const MyOrders = () => {
                     {/* Total & Action */}
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <p className="font-medium text-foreground">৳{order.total_amount?.toLocaleString()}</p>
+                        <p className="font-medium text-foreground">{formatCurrency(order.total_amount)}</p>
                       </div>
                       <ChevronRight className="h-5 w-5 text-muted-foreground" />
                     </div>

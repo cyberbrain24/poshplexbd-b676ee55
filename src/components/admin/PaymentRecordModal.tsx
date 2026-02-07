@@ -20,6 +20,7 @@ import {
 import { useAccounts } from "@/hooks/useAccounts";
 import { useRecordPayment } from "@/hooks/useOrderPayments";
 import { Loader2, CreditCard } from "lucide-react";
+import { formatCurrency, CURRENCY_SYMBOL } from "@/lib/currency";
 
 interface PaymentRecordModalProps {
   open: boolean;
@@ -98,15 +99,15 @@ const PaymentRecordModal = ({
           <div className="bg-muted p-3 rounded-lg space-y-1 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Total Amount:</span>
-              <span className="font-medium">৳{totalAmount.toLocaleString()}</span>
+              <span className="font-medium">{formatCurrency(totalAmount)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Already Paid:</span>
-              <span className="font-medium text-green-600">৳{paidAmount.toLocaleString()}</span>
+              <span className="font-medium text-green-600">{formatCurrency(paidAmount)}</span>
             </div>
             <div className="flex justify-between border-t pt-1 mt-1">
               <span className="text-muted-foreground">Remaining:</span>
-              <span className="font-bold">৳{remainingBalance.toLocaleString()}</span>
+              <span className="font-bold">{formatCurrency(remainingBalance)}</span>
             </div>
           </div>
 
@@ -114,7 +115,7 @@ const PaymentRecordModal = ({
           <div className="space-y-2">
             <Label htmlFor="amount">Payment Amount *</Label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">৳</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{CURRENCY_SYMBOL}</span>
               <Input
                 id="amount"
                 type="number"
@@ -143,7 +144,7 @@ const PaymentRecordModal = ({
               <SelectContent>
                 {accounts?.filter(a => a.is_active).map((account) => (
                   <SelectItem key={account.id} value={account.id}>
-                    {account.name} (৳{account.current_balance.toLocaleString()})
+                    {account.name} ({formatCurrency(account.current_balance)})
                   </SelectItem>
                 ))}
               </SelectContent>

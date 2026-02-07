@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { formatCurrency } from "@/lib/currency";
 
 export interface OrderPayment {
   id: string;
@@ -65,7 +66,7 @@ export const useRecordPayment = () => {
         throw new Error("Payment amount must be greater than 0");
       }
       if (amount > remainingBalance) {
-        throw new Error(`Payment amount cannot exceed remaining balance of ৳${remainingBalance.toLocaleString()}`);
+        throw new Error(`Payment amount cannot exceed remaining balance of ${formatCurrency(remainingBalance)}`);
       }
 
       // 1. Create income transaction
@@ -120,7 +121,7 @@ export const useRecordPayment = () => {
           previous_status: currentPaidAmount > 0 ? "partially_paid" : "unpaid",
           new_status: newPaymentStatus,
           status_type: "payment",
-          notes: `Payment of ৳${amount.toLocaleString()} recorded. ${paymentReference ? `Ref: ${paymentReference}` : ''}`,
+          notes: `Payment of ${formatCurrency(amount)} recorded. ${paymentReference ? `Ref: ${paymentReference}` : ''}`,
           metadata: { amount, account_id: accountId, transaction_id: transaction.id },
         });
 

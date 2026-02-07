@@ -33,6 +33,7 @@ import {
 import { format } from "date-fns";
 import OrderDetailModal from "@/components/admin/OrderDetailModal";
 import { useCreateShipment, STEADFAST_STATUS_MAP, useTrackShipment } from "@/hooks/useSteadfast";
+import { formatCurrency } from "@/lib/currency";
 
 // Courier status component for each order row
 const CourierStatusCell = ({ order }: { order: { id: string; tracking_number: string | null; courier_name: string | null } }) => {
@@ -156,7 +157,7 @@ const AdminOrders = () => {
         <div className="p-4 border border-border">
           <CreditCard className="h-5 w-5 text-muted-foreground mb-2" />
           <p className="text-2xl font-medium">
-            {statsLoading ? <Skeleton className="h-8 w-16" /> : `৳${(stats?.todayRevenue || 0).toLocaleString()}`}
+            {statsLoading ? <Skeleton className="h-8 w-16" /> : formatCurrency(stats?.todayRevenue || 0)}
           </p>
           <p className="text-sm text-muted-foreground">Today's Revenue</p>
         </div>
@@ -177,7 +178,7 @@ const AdminOrders = () => {
         <div className="p-4 border border-border">
           <TrendingUp className="h-5 w-5 text-green-600 mb-2" />
           <p className="text-2xl font-medium text-green-700">
-            {statsLoading ? <Skeleton className="h-8 w-16" /> : `৳${(stats?.totalRevenue || 0).toLocaleString()}`}
+            {statsLoading ? <Skeleton className="h-8 w-16" /> : formatCurrency(stats?.totalRevenue || 0)}
           </p>
           <p className="text-sm text-muted-foreground">Total Revenue</p>
         </div>
@@ -276,7 +277,7 @@ const AdminOrders = () => {
                     <span className="text-sm">{order.items?.length || 0} items</span>
                   </TableCell>
                   <TableCell>
-                    <span className="font-medium">৳{order.total_amount.toLocaleString()}</span>
+                    <span className="font-medium">{formatCurrency(order.total_amount)}</span>
                   </TableCell>
                   <TableCell>
                     {(() => {
@@ -285,11 +286,11 @@ const AdminOrders = () => {
                       return (
                         <div className="flex flex-col">
                           <span className={`font-medium ${paidAmount > 0 ? 'text-green-600' : 'text-muted-foreground'}`}>
-                            ৳{paidAmount.toLocaleString()}
+                            {formatCurrency(paidAmount)}
                           </span>
                           {remaining > 0 && (
                             <span className="text-xs text-destructive">
-                              Due: ৳{remaining.toLocaleString()}
+                              Due: {formatCurrency(remaining)}
                             </span>
                           )}
                         </div>

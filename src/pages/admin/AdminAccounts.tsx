@@ -41,6 +41,7 @@ import {
 import TransactionModal from "@/components/admin/TransactionModal";
 import TransferModal from "@/components/admin/TransferModal";
 import { format } from "date-fns";
+import { formatCurrency } from "@/lib/currency";
 
 const AdminAccounts = () => {
   const [filters, setFilters] = useState<TransactionFilters>({});
@@ -105,12 +106,7 @@ const AdminAccounts = () => {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
-  };
+  // Using centralized BDT currency formatter from @/lib/currency
 
   return (
     <div className="space-y-6">

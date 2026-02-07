@@ -102,7 +102,7 @@ const PromoUsageHistoryModal = ({ open, onOpenChange, customer }: PromoUsageHist
                     </TableCell>
                     <TableCell>{promo.benefit_type || "-"}</TableCell>
                     <TableCell>
-                      {promo.benefit_amount ? `৳${promo.benefit_amount.toLocaleString()}` : "-"}
+                      {promo.benefit_amount ? `৳${promo.benefit_amount.toLocaleString("en-BD")}` : "-"}
                     </TableCell>
                     <TableCell>{format(new Date(promo.used_at), "PPp")}</TableCell>
                     <TableCell className="max-w-[150px] truncate">{promo.notes || "-"}</TableCell>

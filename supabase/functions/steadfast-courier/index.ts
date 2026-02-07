@@ -23,6 +23,47 @@ interface SteadfastOrderPayload {
   delivery_type?: number; // 0 = home delivery, 1 = point delivery
 }
 
+/**
+ * Format phone number to valid Bangladeshi format for Steadfast API
+ * Steadfast requires 11-digit numbers starting with 01
+ */
+function formatPhoneNumber(phone: string): string {
+  if (!phone) return "";
+  
+  // Remove all non-digit characters
+  let cleaned = phone.replace(/\D/g, "");
+  
+  // Handle +88 prefix
+  if (cleaned.startsWith("88") && cleaned.length === 13) {
+    cleaned = cleaned.substring(2);
+  }
+  
+  // Handle 88 prefix without +
+  if (cleaned.startsWith("88") && cleaned.length === 13) {
+    cleaned = cleaned.substring(2);
+  }
+  
+  // If starts with 1 and is 10 digits, add leading 0
+  if (cleaned.startsWith("1") && cleaned.length === 10) {
+    cleaned = "0" + cleaned;
+  }
+  
+  // If doesn't start with 0 and is 10 digits, add leading 0
+  if (!cleaned.startsWith("0") && cleaned.length === 10) {
+    cleaned = "0" + cleaned;
+  }
+  
+  // Validate: must be 11 digits starting with 01
+  if (cleaned.length === 11 && cleaned.startsWith("01")) {
+    return cleaned;
+  }
+  
+  // Return original cleaned number if we can't fix it
+  // Steadfast will reject it, but at least we tried
+  console.log(`[Steadfast] Could not normalize phone: ${phone} -> ${cleaned}`);
+  return cleaned;
+}
+
 async function steadfastRequest(
   endpoint: string,
   method: string = "GET",
@@ -145,7 +186,7 @@ Deno.serve(async (req) => {
         const payload: SteadfastOrderPayload = {
           invoice: order.order_number,
           recipient_name: order.shipping_name,
-          recipient_phone: order.shipping_phone,
+          recipient_phone: formatPhoneNumber(order.shipping_phone),
           recipient_address: fullAddress,
           recipient_city: order.shipping_division?.name || undefined,
           recipient_area: order.shipping_thana?.name || undefined,
@@ -234,7 +275,7 @@ Deno.serve(async (req) => {
           return {
             invoice: order.order_number,
             recipient_name: order.shipping_name,
-            recipient_phone: order.shipping_phone,
+            recipient_phone: formatPhoneNumber(order.shipping_phone),
             recipient_address: fullAddress,
             recipient_city: order.shipping_division?.name || undefined,
             recipient_area: order.shipping_thana?.name || undefined,

@@ -356,8 +356,12 @@ const AdminOrders = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="font-medium">{order.shipping_name}</div>
-                    <div className="text-xs text-muted-foreground">{order.shipping_phone}</div>
+                    <div className="font-medium">
+                      {order.customer?.name || order.shipping_name}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {order.customer?.phone || order.shipping_phone}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <span className="text-sm">{order.items?.length || 0} items</span>

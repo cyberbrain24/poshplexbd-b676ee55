@@ -216,16 +216,17 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
                 <User className="h-4 w-4" /> Customer Details
               </h3>
               <div className="space-y-2 text-sm">
-                <p className="font-medium">{order.shipping_name}</p>
+                <p className="font-medium">{order.customer?.name || order.shipping_name}</p>
                 <p className="flex items-center gap-2 text-muted-foreground">
-                  <Phone className="h-3 w-3" /> {order.shipping_phone}
+                  <Phone className="h-3 w-3" /> {order.customer?.phone || order.shipping_phone}
                 </p>
-                {order.shipping_email && (
+                {(order.customer?.email || order.shipping_email) && (
                   <p className="flex items-center gap-2 text-muted-foreground">
-                    <Mail className="h-3 w-3" /> {order.shipping_email}
+                    <Mail className="h-3 w-3" /> {order.customer?.email || order.shipping_email}
                   </p>
                 )}
                 <Separator className="my-2" />
+                <p className="text-xs text-muted-foreground mb-1">Shipping Address:</p>
                 <p className="flex items-start gap-2 text-muted-foreground">
                   <MapPin className="h-3 w-3 mt-0.5" /> {order.shipping_address}
                 </p>

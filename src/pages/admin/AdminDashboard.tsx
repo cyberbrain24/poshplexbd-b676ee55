@@ -2,14 +2,36 @@ import { useProducts } from "@/hooks/useProducts";
 import { useColors, useSizes, useMaterials, useCategories, useBrands } from "@/hooks/useMasterData";
 import { Package, Palette, Ruler, Shirt, FolderTree, Building2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { AdminDashboardSkeleton } from "@/components/admin/AdminLoadingState";
+import { QueryErrorDisplay } from "@/components/admin/AdminErrorBoundary";
 
 const AdminDashboard = () => {
-  const { data: products = [] } = useProducts();
-  const { data: colors = [] } = useColors();
-  const { data: sizes = [] } = useSizes();
-  const { data: materials = [] } = useMaterials();
-  const { data: categories = [] } = useCategories();
-  const { data: brands = [] } = useBrands();
+  const { data: products = [], isLoading: productsLoading, error: productsError, refetch: refetchProducts } = useProducts();
+  const { data: colors = [], isLoading: colorsLoading } = useColors();
+  const { data: sizes = [], isLoading: sizesLoading } = useSizes();
+  const { data: materials = [], isLoading: materialsLoading } = useMaterials();
+  const { data: categories = [], isLoading: categoriesLoading } = useCategories();
+  const { data: brands = [], isLoading: brandsLoading } = useBrands();
+
+  const isLoading = productsLoading || colorsLoading || sizesLoading || materialsLoading || categoriesLoading || brandsLoading;
+
+  // Show skeleton while loading
+  if (isLoading) {
+    return <AdminDashboardSkeleton />;
+  }
+
+  // Show error state if products failed to load
+  if (productsError) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-2xl font-medium tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground mt-1">Product management overview</p>
+        </div>
+        <QueryErrorDisplay error={productsError as Error} onRetry={() => refetchProducts()} />
+      </div>
+    );
+  }
 
   const stats = [
     { icon: Package, label: "Products", count: products.length, path: "/admin/products" },

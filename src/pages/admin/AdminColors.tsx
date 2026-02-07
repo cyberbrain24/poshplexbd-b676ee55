@@ -7,6 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useColors, useCreateColor, useUpdateColor, useDeleteColor } from "@/hooks/useMasterData";
 import { Color } from "@/types/product";
 import { toast } from "sonner";
+import { AdminTableSkeleton } from "@/components/admin/AdminLoadingState";
+import { QueryErrorDisplay } from "@/components/admin/AdminErrorBoundary";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,7 +26,7 @@ const AdminColors = () => {
   const [deleteItem, setDeleteItem] = useState<Color | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data: items = [], isLoading } = useColors();
+  const { data: items = [], isLoading, error, refetch } = useColors();
   const createMutation = useCreateColor();
   const updateMutation = useUpdateColor();
   const deleteMutation = useDeleteColor();
@@ -57,6 +59,24 @@ const AdminColors = () => {
       toast.error("Failed to delete color");
     }
   };
+
+  // Show skeleton while loading
+  if (isLoading) {
+    return <AdminTableSkeleton rows={5} />;
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-medium tracking-tight">Colors</h1>
+          <p className="text-muted-foreground mt-1">Manage product color options</p>
+        </div>
+        <QueryErrorDisplay error={error as Error} onRetry={() => refetch()} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -92,11 +112,7 @@ const AdminColors = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center py-8">Loading...</TableCell>
-              </TableRow>
-            ) : filteredItems.length === 0 ? (
+            {filteredItems.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
                   No colors found

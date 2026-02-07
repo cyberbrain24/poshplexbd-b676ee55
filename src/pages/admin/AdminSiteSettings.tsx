@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Settings, Globe, Image, Menu, Footprints, Plus, Trash2, GripVertical, Save, Upload, FileText } from "lucide-react";
+import { Settings, Globe, Image, Menu, Footprints, Plus, Trash2, GripVertical, Save, Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +29,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useSiteSettings, useSiteSettingsMutation, MenuLink, FooterColumn } from "@/hooks/useSiteSettings";
-import { usePublishedPages } from "@/hooks/usePages";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -71,7 +70,7 @@ const AdminSiteSettings = () => {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingLogoDark, setUploadingLogoDark] = useState(false);
   const [uploadingFavicon, setUploadingFavicon] = useState(false);
-  const { data: publishedPages } = usePublishedPages();
+  
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
     values: settings ? {
@@ -435,33 +434,6 @@ const AdminSiteSettings = () => {
                         Add Menu Item
                       </Button>
 
-                      {/* Quick Add from CMS Pages */}
-                      {publishedPages && publishedPages.length > 0 && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button type="button" variant="secondary">
-                              <FileText className="h-4 w-4 mr-2" />
-                              Add CMS Page
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start" className="w-56">
-                            <DropdownMenuLabel>Published Pages</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            {publishedPages.map((page) => (
-                              <DropdownMenuItem
-                                key={page.id}
-                                onClick={() => appendMenu({ 
-                                  label: page.title, 
-                                  path: `/page/${page.slug}` 
-                                })}
-                              >
-                                <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
-                                {page.title}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
                     </div>
                   </CardContent>
                 </Card>

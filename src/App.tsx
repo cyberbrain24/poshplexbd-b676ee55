@@ -27,6 +27,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import Auth from "./pages/Auth";
 import CustomerAuth from "./pages/CustomerAuth";
+import CustomerAccount from "./pages/CustomerAccount";
 import OrderTracking from "./pages/OrderTracking";
 import MyOrders from "./pages/MyOrders";
 
@@ -101,6 +102,7 @@ const App = () => (
                   <Route path="/checkout" element={<Checkout />} />
                   <Route path="/order-tracking" element={<OrderTracking />} />
                   <Route path="/my-orders" element={<MyOrders />} />
+                  <Route path="/account" element={<CustomerAccount />} />
                   <Route path="/about/our-story" element={<OurStory />} />
                   <Route path="/about/sustainability" element={<Sustainability />} />
                   <Route path="/about/size-guide" element={<SizeGuide />} />

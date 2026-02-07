@@ -177,6 +177,20 @@ const AdminSidebar = () => {
           SEO Manager
         </Link>
 
+        {/* Site Settings */}
+        <Link
+          to="/admin/site-settings"
+          className={cn(
+            "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
+            location.pathname === "/admin/site-settings"
+              ? "bg-foreground text-background"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted"
+          )}
+        >
+          <Settings2 className="h-4 w-4" />
+          Site Settings
+        </Link>
+
         {/* Orders Collapsible */}
         <Collapsible open={isOrdersOpen} onOpenChange={setIsOrdersOpen}>
           <CollapsibleTrigger className="w-full">

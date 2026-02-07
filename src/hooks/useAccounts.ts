@@ -351,7 +351,9 @@ export const useUpdateTransaction = () => {
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
       queryClient.invalidateQueries({ queryKey: ["order-payments"] });
       queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["order"] });
       queryClient.invalidateQueries({ queryKey: ["order-history"] });
+      queryClient.invalidateQueries({ queryKey: ["order-stats"] });
       toast.success("Transaction updated successfully");
     },
     onError: (error) => {
@@ -433,7 +435,9 @@ export const useDeleteTransaction = () => {
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
       queryClient.invalidateQueries({ queryKey: ["order-payments"] });
       queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["order"] });
       queryClient.invalidateQueries({ queryKey: ["order-history"] });
+      queryClient.invalidateQueries({ queryKey: ["order-stats"] });
       toast.success("Transaction deleted successfully");
     },
     onError: (error) => {

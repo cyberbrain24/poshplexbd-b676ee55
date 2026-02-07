@@ -28,6 +28,7 @@ import {
   Inbox,
   ShoppingCart,
   Clock,
+  ExternalLink,
   Boxes,
   Globe,
   Puzzle,
@@ -373,7 +374,16 @@ const AdminSidebar = () => {
         {renderNavLink("/admin/seed-data", Database, "Seed Data")}
       </nav>
 
-      <div className="p-4 border-t border-border">
+      <div className="p-4 border-t border-border space-y-2">
+        <a
+          href="/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors font-medium"
+        >
+          <ExternalLink className="h-4 w-4" />
+          Visit Site
+        </a>
         <Link
           to="/"
           className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"

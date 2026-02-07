@@ -291,12 +291,23 @@ export const useDeleteTransaction = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
+      // First, delete any order_payments that reference this transaction
+      const { error: paymentError } = await supabase
+        .from("order_payments")
+        .delete()
+        .eq("transaction_id", id);
+      
+      if (paymentError) throw paymentError;
+
+      // Then delete the transaction itself
       const { error } = await supabase.from("transactions").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["order-payments"] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
       toast.success("Transaction deleted successfully");
     },
     onError: (error) => {

@@ -126,6 +126,30 @@ function generateDescription(productName: string, category: string): { short: st
   }
 }
 
+// Helper to seed lookup data - select existing first, insert missing only
+async function seedLookupData<T extends { name?: string; label?: string }>(
+  supabase: ReturnType<typeof createClient>,
+  tableName: string,
+  items: T[],
+  keyField: 'name' | 'label' = 'name'
+): Promise<Map<string, string>> {
+  // Fetch existing records
+  const { data: existing } = await supabase.from(tableName).select(`id, ${keyField}`)
+  const existingMap = new Map((existing || []).map((item: any) => [item[keyField], item.id]))
+  
+  // Find items that don't exist
+  const toInsert = items.filter(item => !existingMap.has(item[keyField as keyof T] as string))
+  
+  if (toInsert.length > 0) {
+    const { data: inserted } = await supabase.from(tableName).insert(toInsert).select(`id, ${keyField}`)
+    for (const item of inserted || []) {
+      existingMap.set((item as any)[keyField], item.id)
+    }
+  }
+  
+  return existingMap
+}
+
 // Background seeding task
 async function runSeedingTask(supabase: ReturnType<typeof createClient>, jobId: string, productCount: number) {
   console.log(`[Job ${jobId}] Starting background seeding for ${productCount} products...`)
@@ -137,40 +161,30 @@ async function runSeedingTask(supabase: ReturnType<typeof createClient>, jobId: 
       started_at: new Date().toISOString()
     }).eq('id', jobId)
 
-    // Step 1: Seed Colors
+    // Step 1: Seed Colors (using select-first approach)
     console.log(`[Job ${jobId}] Seeding colors...`)
-    const colorInserts = colors.map(c => ({ name: c.name, hex_code: c.hex }))
-    await supabase.from('colors').upsert(colorInserts, { onConflict: 'name', ignoreDuplicates: true })
-    const { data: allColors } = await supabase.from('colors').select('id, name')
-    const colorMap = new Map(allColors?.map(c => [c.name, c.id]) || [])
+    const colorData = colors.map(c => ({ name: c.name, hex_code: c.hex }))
+    const colorMap = await seedLookupData(supabase, 'colors', colorData, 'name')
 
     // Step 2: Seed Sizes
     console.log(`[Job ${jobId}] Seeding sizes...`)
-    const sizeInserts = sizes.map(s => ({ label: s.label, sort_order: s.sortOrder }))
-    await supabase.from('sizes').upsert(sizeInserts, { onConflict: 'label', ignoreDuplicates: true })
-    const { data: allSizes } = await supabase.from('sizes').select('id, label')
-    const sizeMap = new Map(allSizes?.map(s => [s.label, s.id]) || [])
+    const sizeData = sizes.map(s => ({ label: s.label, sort_order: s.sortOrder }))
+    const sizeMap = await seedLookupData(supabase, 'sizes', sizeData, 'label')
 
     // Step 3: Seed Materials
     console.log(`[Job ${jobId}] Seeding materials...`)
-    const materialInserts = materials.map(m => ({ name: m.name, gsm: m.gsm, season: m.season }))
-    await supabase.from('materials').upsert(materialInserts, { onConflict: 'name', ignoreDuplicates: true })
-    const { data: allMaterials } = await supabase.from('materials').select('id, name')
-    const materialMap = new Map(allMaterials?.map(m => [m.name, m.id]) || [])
+    const materialData = materials.map(m => ({ name: m.name, gsm: m.gsm, season: m.season }))
+    const materialMap = await seedLookupData(supabase, 'materials', materialData, 'name')
 
     // Step 4: Seed Brands
     console.log(`[Job ${jobId}] Seeding brands...`)
-    const brandInserts = brands.map(b => ({ name: b }))
-    await supabase.from('brands').upsert(brandInserts, { onConflict: 'name', ignoreDuplicates: true })
-    const { data: allBrands } = await supabase.from('brands').select('id, name')
-    const brandMap = new Map(allBrands?.map(b => [b.name, b.id]) || [])
+    const brandData = brands.map(b => ({ name: b }))
+    const brandMap = await seedLookupData(supabase, 'brands', brandData, 'name')
 
     // Step 5: Seed Categories
     console.log(`[Job ${jobId}] Seeding categories...`)
-    const categoryInserts = productCategories.map(c => ({ name: c.name }))
-    await supabase.from('categories').upsert(categoryInserts, { onConflict: 'name', ignoreDuplicates: true })
-    const { data: allCategories } = await supabase.from('categories').select('id, name')
-    const categoryMap = new Map(allCategories?.map(c => [c.name, c.id]) || [])
+    const categoryData = productCategories.map(c => ({ name: c.name }))
+    const categoryMap = await seedLookupData(supabase, 'categories', categoryData, 'name')
 
     // Step 6: Generate and insert products in batches
     const batchSize = 25 // Smaller batches for stability

@@ -158,7 +158,7 @@ const Checkout = () => {
     return true;
   };
 
-  // Find or create customer by phone
+  // Find or create customer by phone, and update their details
   const findOrCreateCustomer = async (): Promise<string | null> => {
     const phone = customerDetails.phone.trim();
     
@@ -176,11 +176,33 @@ const Checkout = () => {
       }
 
       if (existingCustomer) {
-        // Customer exists, return their ID
+        // Customer exists - update their details with latest order info
+        const updateData: Record<string, unknown> = {
+          name: customerDetails.name,
+          updated_at: new Date().toISOString(),
+        };
+        
+        // Only update if values are provided (don't overwrite with empty)
+        if (customerDetails.email) updateData.email = customerDetails.email;
+        if (customerDetails.gender) updateData.gender = customerDetails.gender;
+        if (customerDetails.address) updateData.address = customerDetails.address;
+        if (customerDetails.divisionId) updateData.division_id = customerDetails.divisionId;
+        if (customerDetails.thanaId) updateData.thana_id = customerDetails.thanaId;
+        
+        const { error: updateError } = await supabase
+          .from('customers')
+          .update(updateData)
+          .eq('id', existingCustomer.id);
+        
+        if (updateError) {
+          console.warn('Error updating customer:', updateError);
+          // Continue anyway - order can still be placed
+        }
+        
         return existingCustomer.id;
       }
 
-      // Create new customer
+      // Create new customer with all details
       const { data: newCustomer, error: createError } = await supabase
         .from('customers')
         .insert({

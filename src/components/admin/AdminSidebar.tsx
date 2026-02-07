@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, MouseEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { 
   Package, 
   Palette, 
@@ -28,8 +29,10 @@ import {
   Globe,
   Puzzle,
   Database,
+  RefreshCw,
   LucideIcon,
 } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
   Collapsible,
@@ -79,7 +82,9 @@ const customerEditsItems: NavItem[] = [
 const AdminSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { isModuleActive } = useModulesContext();
+  const [isResetting, setIsResetting] = useState(false);
   
   // Debounce navigation to prevent rapid clicks
   const lastNavTimeRef = useRef<number>(0);
@@ -108,6 +113,25 @@ const AdminSidebar = () => {
       isNavigatingRef.current = false;
     }, NAV_DEBOUNCE_MS);
   }, [location.pathname, navigate]);
+
+  // System reset: cancel queries, clear cache, refresh
+  const handleSystemReset = useCallback(async () => {
+    setIsResetting(true);
+    try {
+      // Cancel all pending queries
+      await queryClient.cancelQueries();
+      // Clear all cached data
+      queryClient.clear();
+      toast.success("System reset complete");
+      // Reload the page after a brief delay
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    } catch (error) {
+      toast.error("Reset failed");
+      setIsResetting(false);
+    }
+  }, [queryClient]);
 
   const isProductEditsActive = productEditsItems.some(item => location.pathname === item.path);
   const isOrdersActive = orderItems.some(item => location.pathname === item.path);
@@ -292,6 +316,14 @@ const AdminSidebar = () => {
       </nav>
 
       <div className="p-4 border-t border-border space-y-2">
+        <button
+          onClick={handleSystemReset}
+          disabled={isResetting}
+          className="flex items-center gap-2 text-sm text-destructive hover:text-destructive/80 transition-colors font-medium w-full disabled:opacity-50"
+        >
+          <RefreshCw className={`h-4 w-4 ${isResetting ? "animate-spin" : ""}`} />
+          {isResetting ? "Resetting..." : "Reset System"}
+        </button>
         <a
           href="/"
           target="_blank"

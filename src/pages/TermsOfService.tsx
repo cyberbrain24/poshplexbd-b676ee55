@@ -59,7 +59,7 @@ const TermsOfService = () => {
                 <div>
                   <h3 className="text-xl font-light text-foreground mb-2">Payment Terms</h3>
                   <p className="text-muted-foreground leading-relaxed">
-                    Payment is due at the time of purchase. We accept major credit cards and other payment methods as displayed during checkout. All prices are in USD unless otherwise specified.
+                    Payment is due at the time of purchase. We accept major credit cards, mobile banking, and other payment methods as displayed during checkout. All prices are in BDT (Bangladeshi Taka) unless otherwise specified.
                   </p>
                 </div>
               </div>

@@ -33,6 +33,7 @@ import { useApproveCODAmount } from "@/hooks/useCODApproval";
 import { useAccounts } from "@/hooks/useAccounts";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { formatCurrency } from "@/lib/currency";
 import { 
   Package, 
   CreditCard, 
@@ -277,21 +278,21 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
               <div className="space-y-1">
                 <div className="flex justify-between text-sm">
                   <span>Subtotal:</span>
-                  <span>৳{order.subtotal.toLocaleString()}</span>
+                  <span>{formatCurrency(order.subtotal)}</span>
                 </div>
                 {order.discount_amount > 0 && (
                   <div className="flex justify-between text-sm text-green-600">
                     <span>Discount:</span>
-                    <span>-৳{order.discount_amount.toLocaleString()}</span>
+                    <span>-{formatCurrency(order.discount_amount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
                   <span>Shipping:</span>
-                  <span>৳{order.shipping_cost.toLocaleString()}</span>
+                  <span>{formatCurrency(order.shipping_cost)}</span>
                 </div>
                 <div className="flex justify-between font-medium pt-2 border-t">
                   <span>Total:</span>
-                  <span>৳{order.total_amount.toLocaleString()}</span>
+                  <span>{formatCurrency(order.total_amount)}</span>
                 </div>
               </div>
             </div>
@@ -304,16 +305,16 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Total Amount:</span>
-                  <span className="font-medium">৳{order.total_amount.toLocaleString()}</span>
+                  <span className="font-medium">{formatCurrency(order.total_amount)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Paid Amount:</span>
-                  <span className="font-medium text-green-600">৳{paidAmount.toLocaleString()}</span>
+                  <span className="font-medium text-green-600">{formatCurrency(paidAmount)}</span>
                 </div>
                 <div className="flex justify-between text-sm font-bold border-t pt-2">
                   <span>Remaining:</span>
                   <span className={remainingBalance > 0 ? "text-destructive" : "text-green-600"}>
-                    ৳{remainingBalance.toLocaleString()}
+                    {formatCurrency(remainingBalance)}
                   </span>
                 </div>
               </div>
@@ -333,7 +334,7 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
                   {orderPayments.map((payment) => (
                     <div key={payment.id} className="text-xs flex justify-between items-center bg-muted/50 p-2 rounded">
                       <div>
-                        <span className="font-medium">৳{payment.amount.toLocaleString()}</span>
+                        <span className="font-medium">{formatCurrency(payment.amount)}</span>
                         <span className="text-muted-foreground ml-2">→ {payment.account?.name}</span>
                       </div>
                       <span className="text-muted-foreground">
@@ -433,10 +434,10 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
                     <div className="flex-1">
                       <p className="font-medium text-sm">{item.product_name}</p>
                       <p className="text-xs text-muted-foreground">
-                        SKU: {item.variant_sku || 'N/A'} • Qty: {item.quantity} × ৳{item.unit_price.toLocaleString()}
+                        SKU: {item.variant_sku || 'N/A'} • Qty: {item.quantity} × {formatCurrency(item.unit_price)}
                       </p>
                       <p className="text-sm font-medium mt-1">
-                        ৳{item.line_total.toLocaleString()}
+                        {formatCurrency(item.line_total)}
                       </p>
                     </div>
                     <div className="flex flex-col gap-2">

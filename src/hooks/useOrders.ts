@@ -53,13 +53,24 @@ export interface Order {
     name: string;
     phone: string;
     email: string | null;
+    address?: string | null;
   } | null;
   payment_method?: {
     id: string;
     name: string;
     type: PaymentMethodType;
+    instructions?: string | null;
+    account_details?: Record<string, any>;
   } | null;
   items?: OrderItem[];
+  shipping_division?: {
+    id: string;
+    name: string;
+  } | null;
+  shipping_thana?: {
+    id: string;
+    name: string;
+  } | null;
 }
 
 export interface OrderItem {

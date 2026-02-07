@@ -234,7 +234,7 @@ const CustomerModal = ({ open, onOpenChange, customer }: CustomerModalProps) => 
                 render={({ field }) => (
                   <FormItem>
                   <FormLabel className="flex items-center justify-between">
-                    Division
+                    District
                     <Link
                       to="/admin/divisions"
                       target="_blank"
@@ -247,7 +247,7 @@ const CustomerModal = ({ open, onOpenChange, customer }: CustomerModalProps) => 
                     <Select onValueChange={handleDivisionChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select division" />
+                          <SelectValue placeholder="Select district" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -285,7 +285,7 @@ const CustomerModal = ({ open, onOpenChange, customer }: CustomerModalProps) => 
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder={selectedDivisionId ? "Select thana" : "Select division first"} />
+                          <SelectValue placeholder={selectedDivisionId ? "Select thana" : "Select district first"} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>

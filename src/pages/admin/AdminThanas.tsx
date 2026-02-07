@@ -77,7 +77,7 @@ const AdminThanas = () => {
               <SelectValue placeholder="Filter by division" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Divisions</SelectItem>
+              <SelectItem value="all">All Districts</SelectItem>
               {divisions?.map(div => (
                 <SelectItem key={div.id} value={div.id}>{div.name}</SelectItem>
               ))}
@@ -92,7 +92,7 @@ const AdminThanas = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead>Division</TableHead>
+                  <TableHead>District</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>

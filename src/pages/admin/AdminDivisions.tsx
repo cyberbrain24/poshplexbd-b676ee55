@@ -48,18 +48,18 @@ const AdminDivisions = () => {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Divisions</h1>
-          <p className="text-muted-foreground">Manage geographical divisions for customers</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Districts</h1>
+          <p className="text-muted-foreground">Manage geographical districts for customers</p>
         </div>
         <Button onClick={() => { setSelectedDivision(null); setModalOpen(true); }}>
           <Plus className="h-4 w-4 mr-2" />
-          Add Division
+          Add District
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>All Divisions</CardTitle>
+          <CardTitle>All Districts</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -103,7 +103,7 @@ const AdminDivisions = () => {
             </Table>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
-              No divisions found. Add your first division to get started.
+              No districts found. Add your first district to get started.
             </div>
           )}
         </CardContent>
@@ -118,9 +118,9 @@ const AdminDivisions = () => {
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Division</AlertDialogTitle>
+            <AlertDialogTitle>Delete District</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this division? This will also delete all associated thanas. This action cannot be undone.
+              Are you sure you want to delete this district? This will also delete all associated thanas. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

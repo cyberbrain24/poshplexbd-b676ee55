@@ -27,6 +27,7 @@ import {
   PaymentStatus,
   ItemFulfillmentStatus 
 } from "@/hooks/useOrders";
+import { useCreateShipment, useTrackShipment, STEADFAST_STATUS_MAP } from "@/hooks/useSteadfast";
 import { format } from "date-fns";
 import { 
   Package, 
@@ -39,7 +40,11 @@ import {
   Truck,
   CheckCircle,
   XCircle,
-  Image as ImageIcon
+  Image as ImageIcon,
+  User,
+  Loader2,
+  Send,
+  Map
 } from "lucide-react";
 
 interface OrderDetailModalProps {
@@ -69,6 +74,10 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
   const updateOrderStatus = useUpdateOrderStatus();
   const updatePaymentStatus = useUpdatePaymentStatus();
   const updateItemFulfillment = useUpdateItemFulfillment();
+  const createShipment = useCreateShipment();
+  const { data: trackingData, isLoading: trackingLoading } = useTrackShipment(
+    order?.tracking_number || undefined
+  );
   
   const [statusNote, setStatusNote] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus | "">("");
@@ -125,17 +134,47 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
 
   if (!order) return null;
 
+  const deliveryStatus = trackingData?.delivery_status || "pending";
+  const statusInfo = STEADFAST_STATUS_MAP[deliveryStatus] || STEADFAST_STATUS_MAP["unknown"];
+
+  const colorClasses: Record<string, string> = {
+    yellow: "bg-yellow-100 text-yellow-800",
+    blue: "bg-blue-100 text-blue-800",
+    green: "bg-green-100 text-green-800",
+    red: "bg-red-100 text-red-800",
+    orange: "bg-orange-100 text-orange-800",
+    purple: "bg-purple-100 text-purple-800",
+    teal: "bg-teal-100 text-teal-800",
+    gray: "bg-gray-100 text-gray-800",
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-4">
-            <span>Order {order.order_number}</span>
-            {order.risk_level !== 'low' && (
-              <Badge variant="destructive" className="flex items-center gap-1">
-                <AlertTriangle className="h-3 w-3" />
-                {order.risk_level} risk
-              </Badge>
+          <DialogTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <span>Order {order.order_number}</span>
+              {order.risk_level !== 'low' && (
+                <Badge variant="destructive" className="flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  {order.risk_level} risk
+                </Badge>
+              )}
+            </div>
+            {!order.tracking_number && (
+              <Button
+                size="sm"
+                onClick={() => createShipment.mutate(order.id)}
+                disabled={createShipment.isPending}
+              >
+                {createShipment.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Send className="h-4 w-4 mr-2" />
+                )}
+                Send to Steadfast
+              </Button>
             )}
           </DialogTitle>
         </DialogHeader>
@@ -146,7 +185,7 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
             {/* Customer Info */}
             <div className="border border-border p-4 space-y-3">
               <h3 className="font-medium flex items-center gap-2">
-                <Package className="h-4 w-4" /> Shipping Details
+                <User className="h-4 w-4" /> Customer Details
               </h3>
               <div className="space-y-2 text-sm">
                 <p className="font-medium">{order.shipping_name}</p>
@@ -158,9 +197,16 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
                     <Mail className="h-3 w-3" /> {order.shipping_email}
                   </p>
                 )}
+                <Separator className="my-2" />
                 <p className="flex items-start gap-2 text-muted-foreground">
                   <MapPin className="h-3 w-3 mt-0.5" /> {order.shipping_address}
                 </p>
+                {(order.shipping_division || order.shipping_thana) && (
+                  <p className="flex items-center gap-2 text-muted-foreground">
+                    <Map className="h-3 w-3" />
+                    {[order.shipping_thana?.name, order.shipping_division?.name].filter(Boolean).join(", ")}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -387,16 +433,29 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
 
         {/* Tracking Info */}
         {order.tracking_number && (
-          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded">
-            <h4 className="font-medium flex items-center gap-2 text-blue-800">
-              <Truck className="h-4 w-4" /> Tracking Information
+          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded space-y-3">
+            <h4 className="font-medium flex items-center justify-between text-blue-800">
+              <div className="flex items-center gap-2">
+                <Truck className="h-4 w-4" /> Steadfast Tracking
+              </div>
+              <Badge className={colorClasses[statusInfo.color] || "bg-gray-100"} variant="outline">
+                {trackingLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : statusInfo.label}
+              </Badge>
             </h4>
-            <p className="text-sm mt-1">
-              <span className="text-blue-600">Courier:</span> {order.courier_name}
-            </p>
-            <p className="text-sm">
-              <span className="text-blue-600">Tracking #:</span> {order.tracking_number}
-            </p>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div>
+                <span className="text-blue-600">Courier:</span> {order.courier_name || "Steadfast"}
+              </div>
+              <div>
+                <span className="text-blue-600">Tracking #:</span> 
+                <span className="font-mono ml-1">{order.tracking_number}</span>
+              </div>
+              {order.payment_method_type === "cod" && (
+                <div>
+                  <span className="text-blue-600">COD Amount:</span> ৳{order.total_amount.toLocaleString()}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

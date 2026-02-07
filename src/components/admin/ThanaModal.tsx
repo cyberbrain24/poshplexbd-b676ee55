@@ -118,11 +118,11 @@ const ThanaModal = ({ open, onOpenChange, thana }: ThanaModalProps) => {
               name="division_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Division *</FormLabel>
+                  <FormLabel>District *</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select division" />
+                        <SelectValue placeholder="Select district" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>

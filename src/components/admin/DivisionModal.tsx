@@ -81,7 +81,7 @@ const DivisionModal = ({ open, onOpenChange, division }: DivisionModalProps) => 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{division ? "Edit Division" : "Add Division"}</DialogTitle>
+          <DialogTitle>{division ? "Edit District" : "Add District"}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -92,7 +92,7 @@ const DivisionModal = ({ open, onOpenChange, division }: DivisionModalProps) => 
                 <FormItem>
                   <FormLabel>Name *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Division name" {...field} />
+                    <Input placeholder="District name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -169,7 +169,7 @@ export function useTrackByInvoice(orderNumber?: string) {
   });
 }
 
-// Get Steadfast balance
+// Get Steadfast balance - MANUAL FETCH ONLY
 export function useSteadfastBalance() {
   return useQuery({
     queryKey: ["steadfast-balance"],
@@ -180,7 +180,8 @@ export function useSteadfastBalance() {
       if (error) throw new Error(error.message);
       return data;
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled: false, // DISABLED auto-fetch - must call refetch() manually
+    staleTime: 1000 * 60 * 5,
   });
 }
 
@@ -217,7 +218,7 @@ export function useCreateReturn() {
   });
 }
 
-// Get return requests
+// Get return requests - MANUAL FETCH ONLY
 export function useReturnRequests() {
   return useQuery({
     queryKey: ["steadfast-returns"],
@@ -228,11 +229,12 @@ export function useReturnRequests() {
       if (error) throw new Error(error.message);
       return data;
     },
+    enabled: false, // DISABLED auto-fetch
     staleTime: 1000 * 60 * 2,
   });
 }
 
-// Get payments
+// Get payments - MANUAL FETCH ONLY
 export function useSteadfastPayments() {
   return useQuery({
     queryKey: ["steadfast-payments"],
@@ -243,11 +245,12 @@ export function useSteadfastPayments() {
       if (error) throw new Error(error.message);
       return data;
     },
+    enabled: false, // DISABLED auto-fetch
     staleTime: 1000 * 60 * 5,
   });
 }
 
-// Get police stations (for address lookup)
+// Get police stations (for address lookup) - MANUAL FETCH ONLY
 export function usePoliceStations() {
   return useQuery({
     queryKey: ["steadfast-police-stations"],
@@ -258,7 +261,8 @@ export function usePoliceStations() {
       if (error) throw new Error(error.message);
       return data;
     },
-    staleTime: 1000 * 60 * 60 * 24, // 24 hours - this data rarely changes
+    enabled: false, // DISABLED auto-fetch
+    staleTime: 1000 * 60 * 60 * 24,
   });
 }
 

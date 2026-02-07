@@ -140,7 +140,7 @@ Deno.serve(async (req) => {
         const body = await req.json();
         const { order_id } = body;
 
-        // Fetch order details from database with division and thana names
+        // Fetch order details from database with division, thana names, AND customer data
         const { data: order, error: orderError } = await supabase
           .from("orders")
           .select(`
@@ -152,7 +152,8 @@ Deno.serve(async (req) => {
               variant_sku
             ),
             shipping_division:divisions(name),
-            shipping_thana:thanas(name)
+            shipping_thana:thanas(name),
+            customer:customers(name, phone, email)
           `)
           .eq("id", order_id)
           .single();
@@ -183,17 +184,39 @@ Deno.serve(async (req) => {
         const paidAmount = Number(order.paid_amount) || 0;
         const dueAmount = Math.max(0, Number(order.total_amount) - paidAmount);
 
+        // Use customer data if available (linked customer), otherwise fall back to shipping fields
+        // This ensures we use the updated customer phone if they've corrected it
+        const recipientName = order.customer?.name || order.shipping_name;
+        const recipientPhone = order.customer?.phone || order.shipping_phone;
+        const recipientEmail = order.customer?.email || order.shipping_email;
+
+        const formattedPhone = formatPhoneNumber(recipientPhone);
+        
+        // Validate phone before sending to Steadfast
+        if (!formattedPhone || formattedPhone.length !== 11 || !formattedPhone.startsWith("01")) {
+          console.error(`[Steadfast] Invalid phone number: ${recipientPhone} -> ${formattedPhone}`);
+          return new Response(
+            JSON.stringify({ 
+              status: 400, 
+              errors: { 
+                recipient_phone: [`Invalid phone format. Expected 11-digit Bangladeshi number starting with 01. Got: ${formattedPhone}`] 
+              }
+            }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
         const payload: SteadfastOrderPayload = {
           invoice: order.order_number,
-          recipient_name: order.shipping_name,
-          recipient_phone: formatPhoneNumber(order.shipping_phone),
+          recipient_name: recipientName,
+          recipient_phone: formattedPhone,
           recipient_address: fullAddress,
           recipient_city: order.shipping_division?.name || undefined,
           recipient_area: order.shipping_thana?.name || undefined,
           cod_amount: dueAmount, // Send only the remaining due amount
           note: order.customer_notes || undefined,
           item_description: itemDescription,
-          recipient_email: order.shipping_email || undefined,
+          recipient_email: recipientEmail || undefined,
           delivery_type: 0, // Home delivery
         };
 

@@ -46,7 +46,7 @@ const PoshplexHeader = () => {
 
   const handleAccountClick = () => {
     if (isLoggedIn) {
-      navigate("/my-orders");
+      navigate("/account");
     } else {
       navigate("/login");
     }

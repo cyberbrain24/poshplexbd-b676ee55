@@ -5,20 +5,13 @@ import PoshplexFooter from "../components/footer/PoshplexFooter";
 import CategoryHeader from "../components/category/CategoryHeader";
 import FilterSortBar from "../components/category/FilterSortBar";
 import ProductGrid from "../components/category/ProductGrid";
-import { useProductsList } from "@/hooks/useProducts";
+import { useOptimizedCategoryProducts } from "@/hooks/useOptimizedProducts";
 import { CategorySEO } from "@/components/seo";
 
 const Category = () => {
   const { category } = useParams();
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const { data: products } = useProductsList();
-
-  // Calculate filtered count
-  const filteredCount = products?.filter(p => {
-    if (!p.is_active) return false;
-    if (!category || category === 'all') return true;
-    return p.category?.name?.toLowerCase().replace(/\s+/g, '-') === category.toLowerCase();
-  }).length || 0;
+  const { totalCount } = useOptimizedCategoryProducts(category);
 
   // Format category name for display
   const formatCategoryName = (cat: string | undefined) => {
@@ -36,7 +29,7 @@ const Category = () => {
       <CategorySEO 
         categoryName={displayName}
         categorySlug={slug}
-        itemCount={filteredCount}
+        itemCount={totalCount}
       />
       <PoshplexHeader />
       
@@ -48,7 +41,7 @@ const Category = () => {
         <FilterSortBar 
           filtersOpen={filtersOpen}
           setFiltersOpen={setFiltersOpen}
-          itemCount={filteredCount}
+          itemCount={totalCount}
         />
         
         <ProductGrid />

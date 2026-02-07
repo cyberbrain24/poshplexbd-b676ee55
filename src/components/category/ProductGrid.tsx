@@ -1,31 +1,23 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Link, useParams } from "react-router-dom";
-import { useProductsList } from "@/hooks/useProducts";
+import { useOptimizedCategoryProducts } from "@/hooks/useOptimizedProducts";
 import { Skeleton } from "@/components/ui/skeleton";
 import Pagination from "./Pagination";
 
 const ProductGrid = () => {
   const { category } = useParams();
-  const { data: products, isLoading } = useProductsList();
-
-  // Filter products based on category
-  const filteredProducts = products?.filter(p => {
-    if (!p.is_active) return false;
-    if (!category || category === 'all') return true;
-    // Match by category name (case-insensitive)
-    return p.category?.name?.toLowerCase().replace(/\s+/g, '-') === category.toLowerCase();
-  }) || [];
+  const { products, isLoading, pagination, totalCount } = useOptimizedCategoryProducts(category);
 
   const formatPrice = (price: number) => {
     return `৳${price.toLocaleString()}`;
   };
 
-  const getMainImage = (product: typeof filteredProducts[0]) => {
+  const getMainImage = (product: typeof products[0]) => {
     const mainImage = product.images?.find(img => img.is_main);
     return mainImage?.image_url || product.images?.[0]?.image_url || '/placeholder.svg';
   };
 
-  const getHoverImage = (product: typeof filteredProducts[0]) => {
+  const getHoverImage = (product: typeof products[0]) => {
     const images = product.images || [];
     if (images.length > 1) {
       const nonMainImage = images.find(img => !img.is_main);
@@ -50,7 +42,7 @@ const ProductGrid = () => {
     );
   }
 
-  if (filteredProducts.length === 0) {
+  if (products.length === 0 && !isLoading) {
     return (
       <section className="w-full px-6 mb-16">
         <div className="text-center py-16">
@@ -69,7 +61,7 @@ const ProductGrid = () => {
   return (
     <section className="w-full px-6 mb-16">
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-        {filteredProducts.map((product) => {
+        {products.map((product) => {
           const hoverImage = getHoverImage(product);
           
           return (
@@ -117,7 +109,28 @@ const ProductGrid = () => {
         })}
       </div>
       
-      {filteredProducts.length > 24 && <Pagination />}
+      {/* Pagination */}
+      {totalCount > pagination.pageSize && (
+        <div className="flex justify-center items-center gap-4 mt-8">
+          <button 
+            onClick={pagination.prevPage}
+            disabled={!pagination.hasPrevPage}
+            className="px-4 py-2 border border-border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted transition-colors"
+          >
+            Previous
+          </button>
+          <span className="text-sm text-muted-foreground">
+            Page {pagination.page} of {pagination.totalPages}
+          </span>
+          <button 
+            onClick={pagination.nextPage}
+            disabled={!pagination.hasNextPage}
+            className="px-4 py-2 border border-border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted transition-colors"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </section>
   );
 };

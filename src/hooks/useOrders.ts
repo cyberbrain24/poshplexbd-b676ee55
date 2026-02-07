@@ -426,6 +426,59 @@ export const useUpdateOrder = () => {
   });
 };
 
+// Delete order
+export const useDeleteOrder = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (orderId: string) => {
+      // First delete order items
+      const { error: itemsError } = await supabase
+        .from("order_items")
+        .delete()
+        .eq("order_id", orderId);
+      if (itemsError) throw itemsError;
+
+      // Delete order status history
+      const { error: historyError } = await supabase
+        .from("order_status_history")
+        .delete()
+        .eq("order_id", orderId);
+      if (historyError) throw historyError;
+
+      // Delete order payments
+      const { error: paymentsError } = await supabase
+        .from("order_payments")
+        .delete()
+        .eq("order_id", orderId);
+      if (paymentsError) throw paymentsError;
+
+      // Delete return requests
+      const { error: returnsError } = await supabase
+        .from("return_requests")
+        .delete()
+        .eq("order_id", orderId);
+      if (returnsError) throw returnsError;
+
+      // Finally delete the order
+      const { error } = await supabase
+        .from("orders")
+        .delete()
+        .eq("id", orderId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["order-stats"] });
+      toast.success("Order deleted successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to delete order");
+      console.error(error);
+    },
+  });
+};
+
 
 // Dashboard stats
 export const useOrderStats = () => {

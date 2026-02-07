@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useOrders, useOrderStats, OrderStatus, PaymentStatus } from "@/hooks/useOrders";
+import { useOrders, useOrderStats, useDeleteOrder, OrderStatus, PaymentStatus } from "@/hooks/useOrders";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { 
   Package, 
   Search, 
@@ -28,7 +38,8 @@ import {
   TrendingUp,
   Eye,
   Truck,
-  Loader2
+  Loader2,
+  Trash2
 } from "lucide-react";
 import { format } from "date-fns";
 import OrderDetailModal from "@/components/admin/OrderDetailModal";
@@ -120,6 +131,8 @@ const AdminOrders = () => {
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
   const [paymentFilter, setPaymentFilter] = useState<PaymentStatus | "all">("all");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null);
+  const [deleteOrderNumber, setDeleteOrderNumber] = useState<string>("");
 
   const { data: stats, isLoading: statsLoading } = useOrderStats();
   const { data: orders, isLoading: ordersLoading } = useOrders({
@@ -127,6 +140,24 @@ const AdminOrders = () => {
     paymentStatus: paymentFilter !== "all" ? paymentFilter : undefined,
     search: search || undefined,
   });
+  const deleteOrder = useDeleteOrder();
+
+  const handleDeleteClick = (orderId: string, orderNumber: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDeleteOrderId(orderId);
+    setDeleteOrderNumber(orderNumber);
+  };
+
+  const confirmDelete = () => {
+    if (deleteOrderId) {
+      deleteOrder.mutate(deleteOrderId, {
+        onSuccess: () => {
+          setDeleteOrderId(null);
+          setDeleteOrderNumber("");
+        },
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -331,13 +362,23 @@ const AdminOrders = () => {
                     </span>
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setSelectedOrderId(order.id)}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setSelectedOrderId(order.id)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={(e) => handleDeleteClick(order.id, order.order_number, e)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -354,6 +395,33 @@ const AdminOrders = () => {
           onClose={() => setSelectedOrderId(null)}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteOrderId} onOpenChange={() => setDeleteOrderId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Order</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete order <strong>{deleteOrderNumber}</strong>? 
+              This will permanently remove the order, all items, payment records, and history. 
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteOrder.isPending}
+            >
+              {deleteOrder.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

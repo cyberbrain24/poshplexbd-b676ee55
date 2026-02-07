@@ -540,6 +540,50 @@ Deno.serve(async (req) => {
         );
       }
 
+      case "reset_shipping": {
+        // Reset shipping data for an order so it can be re-shipped
+        const body = await req.json();
+        const { order_id } = body;
+
+        if (!order_id) {
+          return new Response(
+            JSON.stringify({ error: "order_id is required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Use service role client for admin operations
+        const serviceClient = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+        );
+
+        // Reset tracking info on the order
+        const { error: updateError } = await serviceClient
+          .from("orders")
+          .update({
+            tracking_number: null,
+            courier_name: null,
+            order_status: "confirmed", // Reset to confirmed so it can be shipped again
+          })
+          .eq("id", order_id);
+
+        if (updateError) {
+          console.error("[Steadfast] Failed to reset shipping:", updateError);
+          return new Response(
+            JSON.stringify({ error: "Failed to reset shipping", details: updateError }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        console.log(`[Steadfast] Reset shipping for order: ${order_id}`);
+
+        return new Response(
+          JSON.stringify({ success: true, message: "Shipping data reset. Order can be shipped again." }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       default:
         return new Response(
           JSON.stringify({ 
@@ -556,7 +600,8 @@ Deno.serve(async (req) => {
               "get_returns",
               "get_payments",
               "get_payment",
-              "get_police_stations"
+              "get_police_stations",
+              "reset_shipping"
             ]
           }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -42,13 +42,14 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import OrderDetailModal from "@/components/admin/OrderDetailModal";
-import { useCreateShipment, STEADFAST_STATUS_MAP, useTrackShipment } from "@/hooks/useSteadfast";
+import { useCreateShipment, STEADFAST_STATUS_MAP, useTrackShipment, useResetShipping } from "@/hooks/useSteadfast";
 import { formatCurrency } from "@/lib/currency";
 
 // Courier status component for each order row
 const CourierStatusCell = ({ order }: { order: { id: string; tracking_number: string | null; courier_name: string | null } }) => {
   const createShipment = useCreateShipment();
-  const { data: trackingData, isLoading: trackingLoading } = useTrackShipment(order.tracking_number || undefined);
+  const resetShipping = useResetShipping();
+  const { data: trackingData, isLoading: trackingLoading, isError } = useTrackShipment(order.tracking_number || undefined);
 
   if (!order.tracking_number) {
     return (
@@ -75,6 +76,11 @@ const CourierStatusCell = ({ order }: { order: { id: string; tracking_number: st
   const deliveryStatus = trackingData?.delivery_status || "pending";
   const statusInfo = STEADFAST_STATUS_MAP[deliveryStatus] || STEADFAST_STATUS_MAP["unknown"];
 
+  // Check if parcel was deleted from Steadfast (status is unknown or API error)
+  const isDeletedFromSteadfast = isError || deliveryStatus === "unknown" || 
+    (trackingData?.status === 404) || (trackingData?.status === 400) ||
+    (trackingData?.message?.toLowerCase()?.includes("not found"));
+
   const colorClasses: Record<string, string> = {
     yellow: "bg-yellow-100 text-yellow-800",
     blue: "bg-blue-100 text-blue-800",
@@ -85,6 +91,34 @@ const CourierStatusCell = ({ order }: { order: { id: string; tracking_number: st
     teal: "bg-teal-100 text-teal-800",
     gray: "bg-gray-100 text-gray-800",
   };
+
+  // If deleted from Steadfast, show reset button
+  if (isDeletedFromSteadfast && !trackingLoading) {
+    return (
+      <div className="flex flex-col gap-1">
+        <Badge className="bg-red-100 text-red-800" variant="outline">
+          Deleted
+        </Badge>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={(e) => {
+            e.stopPropagation();
+            resetShipping.mutate(order.id);
+          }}
+          disabled={resetShipping.isPending}
+          className="h-6 text-xs"
+        >
+          {resetShipping.isPending ? (
+            <Loader2 className="h-3 w-3 animate-spin mr-1" />
+          ) : (
+            <Truck className="h-3 w-3 mr-1" />
+          )}
+          Re-ship
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-1">

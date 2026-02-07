@@ -6,6 +6,7 @@ import CategoryHeader from "../components/category/CategoryHeader";
 import FilterSortBar from "../components/category/FilterSortBar";
 import ProductGrid from "../components/category/ProductGrid";
 import { useProductsList } from "@/hooks/useProducts";
+import { CategorySEO } from "@/components/seo";
 
 const Category = () => {
   const { category } = useParams();
@@ -27,8 +28,16 @@ const Category = () => {
     ).join(' ');
   };
 
+  const displayName = formatCategoryName(category);
+  const slug = category || "all";
+
   return (
     <div className="min-h-screen bg-background">
+      <CategorySEO 
+        categoryName={displayName}
+        categorySlug={slug}
+        itemCount={filteredCount}
+      />
       <PoshplexHeader />
       
       <main className="pt-6">

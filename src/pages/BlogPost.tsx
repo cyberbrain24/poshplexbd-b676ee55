@@ -1,10 +1,10 @@
 import { useParams, Link } from "react-router-dom";
-import { Helmet } from "react-helmet-async";
 import { ArrowLeft } from "lucide-react";
 import DOMPurify from "dompurify";
 import PoshplexHeader from "@/components/header/PoshplexHeader";
 import PoshplexFooter from "@/components/footer/PoshplexFooter";
 import { useBlogPost, useBlogPostProducts } from "@/hooks/useBlog";
+import { BlogSEO } from "@/components/seo";
 import { format } from "date-fns";
 
 const BlogPost = () => {
@@ -59,13 +59,7 @@ const BlogPost = () => {
 
   return (
     <>
-      <Helmet>
-        <title>{post.meta_title || post.title} | Poshplex</title>
-        <meta name="description" content={post.meta_description || post.excerpt || ""} />
-        {post.focus_keyword && (
-          <meta name="keywords" content={post.focus_keyword} />
-        )}
-      </Helmet>
+      <BlogSEO post={post} />
 
       <PoshplexHeader />
 

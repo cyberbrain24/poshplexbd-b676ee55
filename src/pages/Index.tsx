@@ -4,10 +4,12 @@ import HeroSection from "../components/home/HeroSection";
 import FeaturesBar from "../components/home/FeaturesBar";
 import StreetEditsGallery from "../components/home/StreetEditsGallery";
 import ProductGrid from "../components/home/ProductGrid";
+import { HomeSEO } from "@/components/seo";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
+      <HomeSEO />
       <PoshplexHeader />
       
       <main>

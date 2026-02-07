@@ -46,6 +46,9 @@ export interface Order {
   ip_address: string | null;
   customer_notes: string | null;
   internal_notes: string | null;
+  collected_amount: number | null;
+  amount_approved_at: string | null;
+  amount_approved_by: string | null;
   created_at: string;
   updated_at: string;
   customer?: {

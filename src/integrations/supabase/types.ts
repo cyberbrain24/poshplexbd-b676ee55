@@ -1368,6 +1368,9 @@ export type Database = {
       }
       orders: {
         Row: {
+          amount_approved_at: string | null
+          amount_approved_by: string | null
+          collected_amount: number | null
           courier_name: string | null
           created_at: string
           currency: string
@@ -1411,6 +1414,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          amount_approved_at?: string | null
+          amount_approved_by?: string | null
+          collected_amount?: number | null
           courier_name?: string | null
           created_at?: string
           currency?: string
@@ -1454,6 +1460,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          amount_approved_at?: string | null
+          amount_approved_by?: string | null
+          collected_amount?: number | null
           courier_name?: string | null
           created_at?: string
           currency?: string

@@ -28,6 +28,7 @@ export interface Order {
   shipping_cost: number;
   tax_amount: number;
   total_amount: number;
+  paid_amount: number;
   currency: string;
   shipping_name: string;
   shipping_phone: string;

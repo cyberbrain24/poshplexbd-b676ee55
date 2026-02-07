@@ -217,10 +217,18 @@ const Checkout = () => {
     setIsProcessing(true);
 
     try {
-      // Step 1: Find or create customer
-      const customerId = await findOrCreateCustomer();
+      // Step 1: Find or create customer (silently - don't block order if it fails)
+      let customerId: string | null = null;
+      try {
+        customerId = await findOrCreateCustomer();
+      } catch (customerError) {
+        console.warn('Customer sync failed, continuing with guest order:', customerError);
+      }
 
-      // Step 2: Create order
+      // Step 2: Calculate paid amount for partial payments
+      const orderPaidAmount = usePartialPayment && partialAmount > 0 ? partialAmount : 0;
+
+      // Step 3: Create order with paid_amount
       const result = await createOrderMutation.mutateAsync({
         checkoutData: {
           customerId: customerId || undefined,
@@ -240,6 +248,7 @@ const Checkout = () => {
           paymentProofUrl: paymentInfo.paymentProofUrl || undefined,
           subtotal: subtotal,
           shippingCost: shippingCost,
+          paidAmount: orderPaidAmount,
           customerNotes: customerDetails.notes || undefined,
         },
         cartItems,

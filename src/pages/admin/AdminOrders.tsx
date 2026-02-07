@@ -233,6 +233,7 @@ const AdminOrders = () => {
               <TableHead>Customer</TableHead>
               <TableHead>Items</TableHead>
               <TableHead>Total</TableHead>
+              <TableHead>Paid</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Payment</TableHead>
               <TableHead>Courier</TableHead>
@@ -245,7 +246,7 @@ const AdminOrders = () => {
             {ordersLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 10 }).map((_, j) => (
+                  {Array.from({ length: 11 }).map((_, j) => (
                     <TableCell key={j}>
                       <Skeleton className="h-4 w-full" />
                     </TableCell>
@@ -254,7 +255,7 @@ const AdminOrders = () => {
               ))
             ) : orders?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                   No orders found
                 </TableCell>
               </TableRow>
@@ -276,6 +277,24 @@ const AdminOrders = () => {
                   </TableCell>
                   <TableCell>
                     <span className="font-medium">৳{order.total_amount.toLocaleString()}</span>
+                  </TableCell>
+                  <TableCell>
+                    {(() => {
+                      const paidAmount = (order as any).paid_amount ?? 0;
+                      const remaining = order.total_amount - paidAmount;
+                      return (
+                        <div className="flex flex-col">
+                          <span className={`font-medium ${paidAmount > 0 ? 'text-green-600' : 'text-muted-foreground'}`}>
+                            ৳{paidAmount.toLocaleString()}
+                          </span>
+                          {remaining > 0 && (
+                            <span className="text-xs text-destructive">
+                              Due: ৳{remaining.toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell>
                     <Badge className={orderStatusColors[order.order_status]} variant="outline">

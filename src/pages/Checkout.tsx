@@ -158,6 +158,20 @@ const Checkout = () => {
     return true;
   };
 
+  // Create customer account via edge function
+  const createCustomerAccount = async (customerId: string, phone: string, email?: string, name?: string) => {
+    try {
+      const { error } = await supabase.functions.invoke('create-customer-account', {
+        body: { customerId, phone, email, name }
+      });
+      if (error) {
+        console.warn('Error creating customer account:', error);
+      }
+    } catch (err) {
+      console.warn('Customer account creation failed:', err);
+    }
+  };
+
   // Find or create customer by phone, and update their details
   const findOrCreateCustomer = async (): Promise<string | null> => {
     const phone = customerDetails.phone.trim();
@@ -196,8 +210,10 @@ const Checkout = () => {
         
         if (updateError) {
           console.warn('Error updating customer:', updateError);
-          // Continue anyway - order can still be placed
         }
+        
+        // Ensure customer has an account
+        await createCustomerAccount(existingCustomer.id, phone, customerDetails.email, customerDetails.name);
         
         return existingCustomer.id;
       }
@@ -221,6 +237,11 @@ const Checkout = () => {
       if (createError) {
         console.error('Error creating customer:', createError);
         return null;
+      }
+
+      // Create account for new customer
+      if (newCustomer?.id) {
+        await createCustomerAccount(newCustomer.id, phone, customerDetails.email, customerDetails.name);
       }
 
       return newCustomer?.id || null;

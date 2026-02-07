@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Plus, Pencil, Trash2, Play, Pause, Eye, FileText, MessageCircle } from "lucide-react";
 import {
@@ -111,7 +110,7 @@ const AdminWhatsappMarketing = () => {
   };
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -260,7 +259,7 @@ const AdminWhatsappMarketing = () => {
         }}
         campaignId={selectedCampaignId}
       />
-    </AdminLayout>
+    </>
   );
 };
 

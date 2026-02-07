@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -112,7 +111,7 @@ const AdminInstagramMarketing = () => {
   );
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -356,7 +355,7 @@ const AdminInstagramMarketing = () => {
         onOpenChange={setIsLogsModalOpen}
         campaignId={selectedCampaignId}
       />
-    </AdminLayout>
+    </>
   );
 };
 

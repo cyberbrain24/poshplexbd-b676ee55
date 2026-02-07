@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Plus, Pencil, Trash2, Search } from "lucide-react";
-import AdminLayout from "@/components/admin/AdminLayout";
 import MasterDataModal from "@/components/admin/MasterDataModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,7 +59,7 @@ const AdminCareInstructions = () => {
   };
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -159,7 +158,7 @@ const AdminCareInstructions = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </AdminLayout>
+    </>
   );
 };
 

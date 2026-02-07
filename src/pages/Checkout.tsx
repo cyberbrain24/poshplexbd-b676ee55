@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Minus, Plus, Check, Upload, Banknote, Smartphone, Building2, Truck, ChevronLeft, ShoppingBag } from "lucide-react";
+import { Minus, Plus, Check, Upload, Banknote, Smartphone, Building2, Truck, ChevronLeft, ShoppingBag, Eye, EyeOff } from "lucide-react";
 import CheckoutHeader from "../components/header/CheckoutHeader";
 import PoshplexFooter from "../components/footer/PoshplexFooter";
 import { Button } from "@/components/ui/button";
@@ -14,11 +14,15 @@ import { useCart } from "@/contexts/CartContext";
 import { usePaymentMethods, PaymentMethodType } from "@/hooks/useOrders";
 import { useCreateOrder } from "@/hooks/useCheckout";
 import { useDivisions, useThanas } from "@/hooks/useLocationData";
+import { getShippingForLocation, ShippingConfig, SHIPPING_OUTSIDE_DHAKA } from "@/config/shippingConfig";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
+const DEFAULT_PASSWORD = "poshplex";
 
 const Checkout = () => {
   const navigate = useNavigate();
-  const { cartItems, cartTotal, updateQuantity, removeFromCart } = useCart();
+  const { cartItems, cartTotal, updateQuantity, removeFromCart, clearCart } = useCart();
   const { data: paymentMethods, isLoading: loadingPaymentMethods } = usePaymentMethods(true);
   const { data: divisions } = useDivisions();
   const createOrderMutation = useCreateOrder();
@@ -37,7 +41,11 @@ const Checkout = () => {
     thanaId: "",
     postalCode: "",
     notes: "",
+    password: DEFAULT_PASSWORD,
   });
+
+  // Password visibility
+  const [showPassword, setShowPassword] = useState(true); // Visible by default
 
   // Partial payment state - works for ALL payment methods including COD
   const [partialPaymentAmount, setPartialPaymentAmount] = useState<string>("");
@@ -53,13 +61,28 @@ const Checkout = () => {
     paymentProofUrl: "",
   });
 
-  // Shipping
-  const [shippingOption, setShippingOption] = useState<"inside" | "outside">("inside");
-  const shippingCost = shippingOption === "inside" ? 60 : 120;
+  // Auto-determine shipping based on selected thana
+  const selectedDivision = useMemo(() => 
+    divisions?.find(d => d.id === customerDetails.divisionId),
+    [divisions, customerDetails.divisionId]
+  );
+
+  const selectedThana = useMemo(() => 
+    thanas?.find(t => t.id === customerDetails.thanaId),
+    [thanas, customerDetails.thanaId]
+  );
+
+  // Get shipping config based on location - updates automatically when thana changes
+  const shippingConfig: ShippingConfig = useMemo(() => {
+    if (!selectedDivision && !selectedThana) {
+      return SHIPPING_OUTSIDE_DHAKA;
+    }
+    return getShippingForLocation(selectedDivision?.name, selectedThana?.name);
+  }, [selectedDivision, selectedThana]);
+
+  const shippingCost = shippingConfig.cost;
 
   const [isProcessing, setIsProcessing] = useState(false);
-  const [orderComplete, setOrderComplete] = useState(false);
-  const [completedOrder, setCompletedOrder] = useState<{ orderNumber: string; orderId: string } | null>(null);
 
   const selectedPaymentMethod = paymentMethods?.find(pm => pm.id === selectedPaymentMethodId);
 
@@ -134,6 +157,56 @@ const Checkout = () => {
     return true;
   };
 
+  // Find or create customer by phone
+  const findOrCreateCustomer = async (): Promise<string | null> => {
+    const phone = customerDetails.phone.trim();
+    
+    try {
+      // Check if customer exists
+      const { data: existingCustomer, error: findError } = await supabase
+        .from('customers')
+        .select('id')
+        .eq('phone', phone)
+        .maybeSingle();
+
+      if (findError) {
+        console.error('Error finding customer:', findError);
+        return null;
+      }
+
+      if (existingCustomer) {
+        // Customer exists, return their ID
+        return existingCustomer.id;
+      }
+
+      // Create new customer
+      const { data: newCustomer, error: createError } = await supabase
+        .from('customers')
+        .insert({
+          name: customerDetails.name,
+          phone: phone,
+          email: customerDetails.email || null,
+          gender: customerDetails.gender || 'other',
+          address: customerDetails.address || null,
+          division_id: customerDetails.divisionId || null,
+          thana_id: customerDetails.thanaId || null,
+          is_active: true,
+        })
+        .select('id')
+        .single();
+
+      if (createError) {
+        console.error('Error creating customer:', createError);
+        return null;
+      }
+
+      return newCustomer?.id || null;
+    } catch (error) {
+      console.error('Error in findOrCreateCustomer:', error);
+      return null;
+    }
+  };
+
   const handleCompleteOrder = async () => {
     if (!validateForm()) return;
     if (cartItems.length === 0) {
@@ -144,8 +217,13 @@ const Checkout = () => {
     setIsProcessing(true);
 
     try {
+      // Step 1: Find or create customer
+      const customerId = await findOrCreateCustomer();
+
+      // Step 2: Create order
       const result = await createOrderMutation.mutateAsync({
         checkoutData: {
+          customerId: customerId || undefined,
           guestEmail: customerDetails.email || undefined,
           guestPhone: customerDetails.phone,
           shippingName: customerDetails.name,
@@ -167,8 +245,17 @@ const Checkout = () => {
         cartItems,
       });
 
-      setCompletedOrder(result);
-      setOrderComplete(true);
+      // Step 3: Store customer session for "auto-login"
+      localStorage.setItem('poshplex_customer_phone', customerDetails.phone);
+      localStorage.setItem('poshplex_customer_name', customerDetails.name);
+
+      // Step 4: Clear cart and redirect directly to orders page
+      clearCart();
+      toast.success(`Order ${result.orderNumber} placed successfully!`);
+      
+      // Direct redirect to orders page - no success screen
+      navigate('/my-orders');
+      
     } catch (error) {
       console.error("Order error:", error);
     } finally {
@@ -177,7 +264,7 @@ const Checkout = () => {
   };
 
   // Empty cart view
-  if (cartItems.length === 0 && !orderComplete) {
+  if (cartItems.length === 0) {
     return (
       <div className="min-h-screen bg-background">
         <CheckoutHeader />
@@ -189,53 +276,6 @@ const Checkout = () => {
             <Button onClick={() => navigate("/")} className="rounded-none">
               Continue Shopping
             </Button>
-          </div>
-        </main>
-        <PoshplexFooter />
-      </div>
-    );
-  }
-
-  // Order Complete View
-  if (orderComplete && completedOrder) {
-    return (
-      <div className="min-h-screen bg-background">
-        <CheckoutHeader />
-        <main className="pt-12 pb-12">
-          <div className="max-w-lg mx-auto px-6 text-center">
-            <div className="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
-              <Check className="h-10 w-10 text-green-600" />
-            </div>
-            <h1 className="text-2xl font-light text-foreground mb-2">Order Placed Successfully!</h1>
-            <p className="text-muted-foreground mb-2">Thank you for your order.</p>
-            <p className="text-lg font-medium text-foreground mb-6">
-              Order Number: <span className="text-primary">{completedOrder.orderNumber}</span>
-            </p>
-
-            {selectedPaymentMethod?.type !== 'cod' && (
-              <div className="bg-amber-50 border border-amber-200 rounded-none p-4 mb-6 text-left">
-                <p className="text-amber-800 text-sm">
-                  <strong>Payment Verification:</strong> Your payment is pending verification. 
-                  We'll confirm your order once we verify your transaction.
-                </p>
-              </div>
-            )}
-
-            <div className="space-y-3">
-              <Button 
-                onClick={() => navigate(`/order-tracking?orderNumber=${completedOrder.orderNumber}&phone=${customerDetails.phone}`)}
-                className="w-full rounded-none"
-              >
-                Track Your Order
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => navigate("/")}
-                className="w-full rounded-none"
-              >
-                Continue Shopping
-              </Button>
-            </div>
           </div>
         </main>
         <PoshplexFooter />
@@ -339,7 +379,7 @@ const Checkout = () => {
                     <span className="text-foreground">৳{subtotal.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Shipping</span>
+                    <span className="text-muted-foreground">Shipping ({shippingConfig.label})</span>
                     <span className="text-foreground">৳{shippingCost}</span>
                   </div>
                   <div className="flex justify-between text-lg font-medium border-t border-muted-foreground/20 pt-2">
@@ -421,6 +461,36 @@ const Checkout = () => {
                     </div>
                   </div>
 
+                  {/* Password Field with default value */}
+                  <div>
+                    <Label className="text-sm font-light">Password (for your account)</Label>
+                    <div className="relative mt-1.5">
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        value={customerDetails.password}
+                        onChange={(e) => handleCustomerChange("password", e.target.value)}
+                        className="rounded-none pr-10"
+                        placeholder="Create a password"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Default: poshplex (you can change it or leave as is)
+                    </p>
+                  </div>
+
                   <div>
                     <Label className="text-sm font-light">Address *</Label>
                     <Input
@@ -471,6 +541,21 @@ const Checkout = () => {
                     </div>
                   </div>
 
+                  {/* Auto-determined shipping display */}
+                  {(customerDetails.divisionId || customerDetails.thanaId) && (
+                    <div className="flex items-center gap-3 p-3 bg-accent/30 border border-accent rounded-none">
+                      <Truck className="h-5 w-5 text-primary" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-foreground">
+                          {shippingConfig.label} Delivery
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          ৳{shippingConfig.cost} • {shippingConfig.estimatedDays} business days
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   <div>
                     <Label className="text-sm font-light">Postal Code</Label>
                     <Input
@@ -492,39 +577,6 @@ const Checkout = () => {
                     />
                   </div>
                 </div>
-              </div>
-
-              {/* Shipping Options */}
-              <div className="bg-muted/20 p-6 rounded-none">
-                <h2 className="text-lg font-light text-foreground mb-4">Shipping Method</h2>
-                
-                <RadioGroup 
-                  value={shippingOption} 
-                  onValueChange={(v) => setShippingOption(v as "inside" | "outside")}
-                  className="space-y-3"
-                >
-                  <div className="flex items-center justify-between p-4 border border-muted-foreground/20 rounded-none">
-                    <div className="flex items-center space-x-3">
-                      <RadioGroupItem value="inside" id="inside" />
-                      <Label htmlFor="inside" className="font-light cursor-pointer flex items-center gap-2">
-                        <Truck className="h-4 w-4" />
-                        Inside Dhaka
-                      </Label>
-                    </div>
-                    <span className="text-sm text-muted-foreground">৳60 • 1-2 days</span>
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 border border-muted-foreground/20 rounded-none">
-                    <div className="flex items-center space-x-3">
-                      <RadioGroupItem value="outside" id="outside" />
-                      <Label htmlFor="outside" className="font-light cursor-pointer flex items-center gap-2">
-                        <Truck className="h-4 w-4" />
-                        Outside Dhaka
-                      </Label>
-                    </div>
-                    <span className="text-sm text-muted-foreground">৳120 • 3-5 days</span>
-                  </div>
-                </RadioGroup>
               </div>
 
               {/* Payment Section */}
@@ -660,7 +712,7 @@ const Checkout = () => {
                       <span>৳{subtotal.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Shipping</span>
+                      <span className="text-muted-foreground">Shipping ({shippingConfig.label})</span>
                       <span>৳{shippingCost}</span>
                     </div>
                     <div className="flex justify-between text-lg font-medium border-t border-muted-foreground/20 pt-2">

@@ -13,6 +13,8 @@ interface SteadfastOrderPayload {
   recipient_name: string;
   recipient_phone: string;
   recipient_address: string;
+  recipient_city?: string; // District name
+  recipient_area?: string; // Thana/Area name
   cod_amount: number;
   note?: string;
   item_description?: string;
@@ -142,6 +144,8 @@ Deno.serve(async (req) => {
           recipient_name: order.shipping_name,
           recipient_phone: order.shipping_phone,
           recipient_address: fullAddress,
+          recipient_city: order.shipping_division?.name || undefined,
+          recipient_area: order.shipping_thana?.name || undefined,
           cod_amount: dueAmount, // Send only the remaining due amount
           note: order.customer_notes || undefined,
           item_description: itemDescription,
@@ -228,6 +232,8 @@ Deno.serve(async (req) => {
             recipient_name: order.shipping_name,
             recipient_phone: order.shipping_phone,
             recipient_address: fullAddress,
+            recipient_city: order.shipping_division?.name || undefined,
+            recipient_area: order.shipping_thana?.name || undefined,
             cod_amount: dueAmount, // Send only the remaining due amount
             note: order.customer_notes || "",
             item_description: itemDescription,

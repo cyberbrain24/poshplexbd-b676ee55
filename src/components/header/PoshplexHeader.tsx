@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Search, User, ShoppingBag as ShoppingBagIcon, X } from "lucide-react";
 import MegaMenu from "./MegaMenu";
 import MobileMenu from "./MobileMenu";
@@ -8,6 +8,7 @@ import { useCategories } from "@/hooks/useMasterData";
 import { useCart } from "@/contexts/CartContext";
 import { useSiteSettingsContext } from "@/contexts/SiteSettingsContext";
 import { isExternalLink } from "@/hooks/useSiteSettings";
+import { supabase } from "@/integrations/supabase/client";
 
 interface NavItem {
   name: string;
@@ -23,10 +24,33 @@ const PoshplexHeader = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   
+  const navigate = useNavigate();
   const { data: allCategories = [] } = useCategories();
   const { cartItems, updateQuantity, cartCount } = useCart();
   const { settings } = useSiteSettingsContext();
+
+  // Check customer auth state
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      setIsLoggedIn(!!session?.user);
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsLoggedIn(!!session?.user);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleAccountClick = () => {
+    if (isLoggedIn) {
+      navigate("/my-orders");
+    } else {
+      navigate("/login");
+    }
+  };
 
   // Build navigation items from site settings (if available) or fall back to categories
   const navItems: NavItem[] = useMemo(() => {
@@ -148,13 +172,13 @@ const PoshplexHeader = () => {
           >
             <Search size={20} strokeWidth={1.5} />
           </button>
-          <Link 
-            to="/auth"
+          <button
+            onClick={handleAccountClick}
             className="hidden lg:block p-2 text-foreground hover:text-nav-hover transition-colors"
             aria-label="Account"
           >
             <User size={20} strokeWidth={1.5} />
-          </Link>
+          </button>
           <button
             onClick={() => setIsCartOpen(true)}
             className="p-2 text-foreground hover:text-nav-hover transition-colors relative"

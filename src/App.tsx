@@ -26,6 +26,7 @@ import StoreLocator from "./pages/about/StoreLocator";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import Auth from "./pages/Auth";
+import CustomerAuth from "./pages/CustomerAuth";
 import OrderTracking from "./pages/OrderTracking";
 import MyOrders from "./pages/MyOrders";
 
@@ -108,6 +109,7 @@ const App = () => (
                   <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                   <Route path="/terms-of-service" element={<TermsOfService />} />
                   <Route path="/auth" element={<Auth />} />
+                  <Route path="/login" element={<CustomerAuth />} />
                   
                   {/* Admin Routes - Nested under protected layout */}
                   <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>

@@ -48,16 +48,6 @@ import AdminCustomers from "./pages/admin/AdminCustomers";
 import AdminDivisions from "./pages/admin/AdminDivisions";
 import AdminThanas from "./pages/admin/AdminThanas";
 import AdminCustomerTypes from "./pages/admin/AdminCustomerTypes";
-import AdminSmsApi from "./pages/admin/AdminSmsApi";
-import AdminSmsMarketing from "./pages/admin/AdminSmsMarketing";
-import AdminEmailApi from "./pages/admin/AdminEmailApi";
-import AdminEmailMarketing from "./pages/admin/AdminEmailMarketing";
-import AdminWhatsappApi from "./pages/admin/AdminWhatsappApi";
-import AdminWhatsappMarketing from "./pages/admin/AdminWhatsappMarketing";
-import AdminWhatsappInbox from "./pages/admin/AdminWhatsappInbox";
-import AdminInstagramApi from "./pages/admin/AdminInstagramApi";
-import AdminInstagramMarketing from "./pages/admin/AdminInstagramMarketing";
-import AdminInstagramInbox from "./pages/admin/AdminInstagramInbox";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminVerificationQueue from "./pages/admin/AdminVerificationQueue";
 import AdminPaymentMethods from "./pages/admin/AdminPaymentMethods";
@@ -149,18 +139,6 @@ const App = () => (
                     <Route path="divisions" element={<GuardedRoute><AdminDivisions /></GuardedRoute>} />
                     <Route path="thanas" element={<GuardedRoute><AdminThanas /></GuardedRoute>} />
                     <Route path="customer-types" element={<GuardedRoute><AdminCustomerTypes /></GuardedRoute>} />
-                    
-                    {/* Marketing */}
-                    <Route path="sms-api" element={<GuardedRoute><AdminSmsApi /></GuardedRoute>} />
-                    <Route path="sms-marketing" element={<GuardedRoute><AdminSmsMarketing /></GuardedRoute>} />
-                    <Route path="email-api" element={<GuardedRoute><AdminEmailApi /></GuardedRoute>} />
-                    <Route path="email-marketing" element={<GuardedRoute><AdminEmailMarketing /></GuardedRoute>} />
-                    <Route path="whatsapp-api" element={<GuardedRoute><AdminWhatsappApi /></GuardedRoute>} />
-                    <Route path="whatsapp-marketing" element={<GuardedRoute><AdminWhatsappMarketing /></GuardedRoute>} />
-                    <Route path="whatsapp-inbox" element={<GuardedRoute><AdminWhatsappInbox /></GuardedRoute>} />
-                    <Route path="instagram-api" element={<GuardedRoute><AdminInstagramApi /></GuardedRoute>} />
-                    <Route path="instagram-marketing" element={<GuardedRoute><AdminInstagramMarketing /></GuardedRoute>} />
-                    <Route path="instagram-inbox" element={<GuardedRoute><AdminInstagramInbox /></GuardedRoute>} />
                     
                     {/* Orders */}
                     <Route path="orders" element={<GuardedRoute><AdminOrders /></GuardedRoute>} />

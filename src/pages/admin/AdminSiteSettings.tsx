@@ -3,7 +3,7 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Settings, Globe, Image, Menu, Footprints, Plus, Trash2, GripVertical, Save, Upload, FileText } from "lucide-react";
-import AdminLayout from "@/components/admin/AdminLayout";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -167,16 +167,14 @@ const AdminSiteSettings = () => {
 
   if (isLoading) {
     return (
-      <AdminLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-        </div>
-      </AdminLayout>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
     );
   }
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>

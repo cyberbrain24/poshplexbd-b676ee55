@@ -98,8 +98,11 @@ function randomElement<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]
 }
 
-function generateSKU(prefix: string, index: number): string {
-  return `${prefix}-${String(index).padStart(5, '0')}`
+function generateSKU(prefix: string): string {
+  // Use timestamp + random string for unique SKUs
+  const timestamp = Date.now().toString(36)
+  const random = Math.random().toString(36).substring(2, 8)
+  return `${prefix}-${timestamp}-${random}`.toUpperCase()
 }
 
 function generateDescription(productName: string, category: string): { short: string; full: string } {
@@ -201,7 +204,7 @@ async function runSeedingTask(supabase: ReturnType<typeof createClient>, jobId: 
 
         products.push({
           name: productName,
-          sku: generateSKU('PRD', i + 1),
+          sku: generateSKU('PRD'),
           product_type: 'variable' as const,
           category_id: categoryMap.get(category.name),
           brand_id: brandMap.get(brand),

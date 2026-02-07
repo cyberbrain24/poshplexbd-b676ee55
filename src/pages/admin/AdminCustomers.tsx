@@ -319,9 +319,10 @@ const AdminCustomers = () => {
                         <Button
                           size="icon"
                           variant="ghost"
-                          onClick={() => handleLoginAsCustomer(customer)}
-                          disabled={impersonating === customer.id}
-                          title="Login as customer"
+                          onClick={() => customer.has_account && handleLoginAsCustomer(customer)}
+                          disabled={impersonating === customer.id || !customer.has_account}
+                          title={customer.has_account ? "Login as customer" : "No account linked"}
+                          className={!customer.has_account ? "opacity-40 cursor-not-allowed" : ""}
                         >
                           <LogIn className="h-4 w-4" />
                         </Button>

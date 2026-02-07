@@ -26,10 +26,64 @@ import {
   CreditCard, 
   AlertTriangle,
   TrendingUp,
-  Eye 
+  Eye,
+  Truck,
+  Loader2
 } from "lucide-react";
 import { format } from "date-fns";
 import OrderDetailModal from "@/components/admin/OrderDetailModal";
+import { useCreateShipment, STEADFAST_STATUS_MAP, useTrackShipment } from "@/hooks/useSteadfast";
+
+// Courier status component for each order row
+const CourierStatusCell = ({ order }: { order: { id: string; tracking_number: string | null; courier_name: string | null } }) => {
+  const createShipment = useCreateShipment();
+  const { data: trackingData, isLoading: trackingLoading } = useTrackShipment(order.tracking_number || undefined);
+
+  if (!order.tracking_number) {
+    return (
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={(e) => {
+          e.stopPropagation();
+          createShipment.mutate(order.id);
+        }}
+        disabled={createShipment.isPending}
+        className="h-7 text-xs"
+      >
+        {createShipment.isPending ? (
+          <Loader2 className="h-3 w-3 animate-spin mr-1" />
+        ) : (
+          <Truck className="h-3 w-3 mr-1" />
+        )}
+        Ship
+      </Button>
+    );
+  }
+
+  const deliveryStatus = trackingData?.delivery_status || "pending";
+  const statusInfo = STEADFAST_STATUS_MAP[deliveryStatus] || STEADFAST_STATUS_MAP["unknown"];
+
+  const colorClasses: Record<string, string> = {
+    yellow: "bg-yellow-100 text-yellow-800",
+    blue: "bg-blue-100 text-blue-800",
+    green: "bg-green-100 text-green-800",
+    red: "bg-red-100 text-red-800",
+    orange: "bg-orange-100 text-orange-800",
+    purple: "bg-purple-100 text-purple-800",
+    teal: "bg-teal-100 text-teal-800",
+    gray: "bg-gray-100 text-gray-800",
+  };
+
+  return (
+    <div className="flex flex-col gap-1">
+      <Badge className={colorClasses[statusInfo.color] || "bg-gray-100 text-gray-800"} variant="outline">
+        {trackingLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : statusInfo.label}
+      </Badge>
+      <span className="text-xs text-muted-foreground font-mono">{order.tracking_number}</span>
+    </div>
+  );
+};
 
 const orderStatusColors: Record<OrderStatus, string> = {
   pending: "bg-yellow-100 text-yellow-800",
@@ -181,6 +235,7 @@ const AdminOrders = () => {
               <TableHead>Total</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Payment</TableHead>
+              <TableHead>Courier</TableHead>
               <TableHead>Risk</TableHead>
               <TableHead>Date</TableHead>
               <TableHead className="w-[50px]"></TableHead>
@@ -190,7 +245,7 @@ const AdminOrders = () => {
             {ordersLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 9 }).map((_, j) => (
+                  {Array.from({ length: 10 }).map((_, j) => (
                     <TableCell key={j}>
                       <Skeleton className="h-4 w-full" />
                     </TableCell>
@@ -199,7 +254,7 @@ const AdminOrders = () => {
               ))
             ) : orders?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                   No orders found
                 </TableCell>
               </TableRow>
@@ -231,6 +286,9 @@ const AdminOrders = () => {
                     <Badge className={paymentStatusColors[order.payment_status]} variant="outline">
                       {order.payment_status.replace('_', ' ')}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <CourierStatusCell order={order} />
                   </TableCell>
                   <TableCell>
                     {order.risk_level !== 'low' && (

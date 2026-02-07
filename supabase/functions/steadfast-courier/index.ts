@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
         const body = await req.json();
         const { order_id } = body;
 
-        // Fetch order details from database
+        // Fetch order details from database with division and thana names
         const { data: order, error: orderError } = await supabase
           .from("orders")
           .select(`
@@ -104,7 +104,9 @@ Deno.serve(async (req) => {
               quantity,
               unit_price,
               variant_sku
-            )
+            ),
+            shipping_division:divisions(name),
+            shipping_thana:thanas(name)
           `)
           .eq("id", order_id)
           .single();
@@ -123,17 +125,27 @@ Deno.serve(async (req) => {
           )
           .join(", ") || "";
 
+        // Build comprehensive address with thana and district
+        const addressParts = [
+          order.shipping_address,
+          order.shipping_thana?.name,
+          order.shipping_division?.name
+        ].filter(Boolean);
+        const fullAddress = addressParts.join(", ");
+
         const payload: SteadfastOrderPayload = {
           invoice: order.order_number,
           recipient_name: order.shipping_name,
           recipient_phone: order.shipping_phone,
-          recipient_address: `${order.shipping_address}${order.shipping_city ? `, ${order.shipping_city}` : ''}`,
+          recipient_address: fullAddress,
           cod_amount: order.payment_method_type === "cod" ? Number(order.total_amount) : 0,
           note: order.customer_notes || undefined,
           item_description: itemDescription,
           recipient_email: order.shipping_email || undefined,
           delivery_type: 0, // Home delivery
         };
+
+        console.log(`[Steadfast] Creating order with payload:`, JSON.stringify(payload));
 
         const result = await steadfastRequest("/create_order", "POST", payload);
 
@@ -170,12 +182,14 @@ Deno.serve(async (req) => {
           );
         }
 
-        // Fetch all orders
+        // Fetch all orders with division and thana
         const { data: orders, error: ordersError } = await supabase
           .from("orders")
           .select(`
             *,
-            order_items(product_name, quantity, variant_sku)
+            order_items(product_name, quantity, variant_sku),
+            shipping_division:divisions(name),
+            shipping_thana:thanas(name)
           `)
           .in("id", order_ids);
 
@@ -193,11 +207,19 @@ Deno.serve(async (req) => {
             )
             .join(", ") || "";
 
+          // Build comprehensive address
+          const addressParts = [
+            order.shipping_address,
+            order.shipping_thana?.name,
+            order.shipping_division?.name
+          ].filter(Boolean);
+          const fullAddress = addressParts.join(", ");
+
           return {
             invoice: order.order_number,
             recipient_name: order.shipping_name,
             recipient_phone: order.shipping_phone,
-            recipient_address: order.shipping_address,
+            recipient_address: fullAddress,
             cod_amount: order.payment_method_type === "cod" ? Number(order.total_amount) : 0,
             note: order.customer_notes || "",
             item_description: itemDescription,

@@ -79,7 +79,7 @@ const accountEditsItems: NavItem[] = [
 ];
 
 const customerEditsItems: NavItem[] = [
-  { icon: MapPin, label: "Divisions", path: "/admin/divisions" },
+  { icon: MapPin, label: "Districts", path: "/admin/divisions" },
   { icon: Map, label: "Thanas", path: "/admin/thanas" },
   { icon: Crown, label: "Customer Types", path: "/admin/customer-types" },
 ];

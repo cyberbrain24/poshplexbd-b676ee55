@@ -184,35 +184,6 @@ const AdminSidebar = () => {
           Products
         </Link>
 
-        {/* Pages */}
-        <Link
-          to="/admin/pages"
-          onClick={(e) => handleNavClick(e, "/admin/pages")}
-          className={cn(
-            "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
-            location.pathname === "/admin/pages"
-              ? "bg-foreground text-background"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted"
-          )}
-        >
-          <FileText className="h-4 w-4" />
-          Pages
-        </Link>
-
-        {/* Blog */}
-        <Link
-          to="/admin/blog"
-          onClick={(e) => handleNavClick(e, "/admin/blog")}
-          className={cn(
-            "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
-            location.pathname === "/admin/blog"
-              ? "bg-foreground text-background"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted"
-          )}
-        >
-          <FileText className="h-4 w-4" />
-          Blog
-        </Link>
         {/* SEO Manager */}
         <Link
           to="/admin/seo"

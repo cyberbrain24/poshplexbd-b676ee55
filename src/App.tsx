@@ -24,14 +24,12 @@ import StoreLocator from "./pages/about/StoreLocator";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import Auth from "./pages/Auth";
-import Blog from "./pages/Blog";
-import BlogPost from "./pages/BlogPost";
 import OrderTracking from "./pages/OrderTracking";
 
 // Admin pages - direct imports
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProducts from "./pages/admin/AdminProducts";
-import AdminBlog from "./pages/admin/AdminBlog";
+
 import AdminColors from "./pages/admin/AdminColors";
 import AdminSizes from "./pages/admin/AdminSizes";
 import AdminMaterials from "./pages/admin/AdminMaterials";
@@ -65,8 +63,6 @@ import AdminPaymentMethods from "./pages/admin/AdminPaymentMethods";
 import AdminInventory from "./pages/admin/AdminInventory";
 import AdminSEO from "./pages/admin/AdminSEO";
 import AdminSiteSettings from "./pages/admin/AdminSiteSettings";
-import AdminPages from "./pages/admin/AdminPages";
-import DynamicPage from "./pages/DynamicPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -113,17 +109,12 @@ const App = () => (
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/terms-of-service" element={<TermsOfService />} />
                 <Route path="/auth" element={<Auth />} />
-                <Route path="/blog" element={<Blog />} />
-                <Route path="/blog/:slug" element={<BlogPost />} />
-                
-                {/* Dynamic CMS Pages */}
-                <Route path="/page/:slug" element={<DynamicPage />} />
                 
                 {/* Admin Routes - Nested under protected layout */}
                 <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
                   <Route index element={<AdminDashboard />} />
                   <Route path="products" element={<AdminProducts />} />
-                  <Route path="blog" element={<AdminBlog />} />
+                  
                   <Route path="seo" element={<AdminSEO />} />
                   <Route path="site-settings" element={<AdminSiteSettings />} />
                   <Route path="colors" element={<AdminColors />} />
@@ -157,7 +148,7 @@ const App = () => (
                   <Route path="risk-management" element={<AdminRiskManagement />} />
                   <Route path="payment-methods" element={<AdminPaymentMethods />} />
                   <Route path="inventory" element={<AdminInventory />} />
-                  <Route path="pages" element={<AdminPages />} />
+                  
                 </Route>
                 
                 {/* 404 Catch-all - MUST be last */}

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAiGenerate } from "@/hooks/useBlog";
+import { useMutation } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   Tooltip,
@@ -9,8 +10,25 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+// AI Generation Hook (moved from useBlog)
+const useAiGenerate = () => {
+  return useMutation({
+    mutationFn: async (payload: {
+      type: 'product_description' | 'meta_tags';
+      context: Record<string, string | undefined>;
+    }) => {
+      const { data, error } = await supabase.functions.invoke('ai-seo-generate', {
+        body: payload,
+      });
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+      return data.result;
+    },
+  });
+};
+
 interface AiGenerateButtonProps {
-  type: 'product_description' | 'blog_content' | 'meta_tags' | 'blog_excerpt';
+  type: 'product_description' | 'meta_tags';
   context: Record<string, string | undefined>;
   onGenerated: (result: string | { meta_title: string; meta_description: string }) => void;
   disabled?: boolean;
@@ -45,9 +63,7 @@ const AiGenerateButton = ({
 
   const tooltipText = {
     product_description: "Generate product description with AI",
-    blog_content: "Generate blog content with AI",
     meta_tags: "Generate SEO meta tags with AI",
-    blog_excerpt: "Generate excerpt with AI",
   };
 
   return (

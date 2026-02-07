@@ -2741,6 +2741,10 @@ export type Database = {
         | "return_damaged"
         | "adjustment"
         | "initial"
+        | "sale"
+        | "cancellation"
+        | "write_off"
+        | "return"
       item_fulfillment_status:
         | "pending"
         | "reserved"
@@ -2914,6 +2918,10 @@ export const Constants = {
         "return_damaged",
         "adjustment",
         "initial",
+        "sale",
+        "cancellation",
+        "write_off",
+        "return",
       ],
       item_fulfillment_status: [
         "pending",

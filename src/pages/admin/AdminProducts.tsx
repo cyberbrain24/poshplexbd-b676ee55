@@ -1,13 +1,14 @@
-import { useState, useMemo } from "react";
-import { Plus, Pencil, Trash2, Package, Search, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { Plus, Pencil, Trash2, Package, Loader2 } from "lucide-react";
 import ProductModal from "@/components/admin/ProductModal";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { useProductsList, useDeleteProduct, useProduct, useProductCount } from "@/hooks/useProducts";
+import { useDeleteProduct, useProduct } from "@/hooks/useProducts";
+import { useOptimizedProducts } from "@/hooks/useOptimizedProducts";
 import { Product } from "@/types/product";
 import { toast } from "sonner";
+import DebouncedSearchInput from "@/components/admin/DebouncedSearchInput";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,36 +20,21 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-const PAGE_SIZE = 20;
-
 const AdminProducts = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
-  const { data: products = [], isLoading } = useProductsList();
-  const { data: totalCount = 0 } = useProductCount();
+  // Use optimized server-side pagination and search
+  const { products, isLoading, totalCount, pagination } = useOptimizedProducts(searchQuery);
   const { data: selectedProduct } = useProduct(selectedProductId || undefined);
   const deleteProductMutation = useDeleteProduct();
 
-  const filteredProducts = useMemo(() => {
-    return products.filter(product =>
-      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.sku?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [products, searchQuery]);
-
-  // Get visible products based on load more count
-  const visibleProducts = useMemo(() => {
-    return filteredProducts.slice(0, visibleCount);
-  }, [filteredProducts, visibleCount]);
-
-  const hasMore = visibleCount < filteredProducts.length;
+  const hasMore = pagination.page < pagination.totalPages;
 
   const handleLoadMore = () => {
-    setVisibleCount(prev => prev + PAGE_SIZE);
+    pagination.nextPage();
   };
 
   const handleEdit = (product: Product) => {
@@ -72,12 +58,6 @@ const AdminProducts = () => {
     setIsModalOpen(true);
   };
 
-  // Reset visible count when search changes
-  const handleSearchChange = (value: string) => {
-    setSearchQuery(value);
-    setVisibleCount(PAGE_SIZE);
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -94,15 +74,13 @@ const AdminProducts = () => {
       </div>
 
       {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          value={searchQuery}
-          onChange={(e) => handleSearchChange(e.target.value)}
-          placeholder="Search products..."
-          className="pl-10"
-        />
-      </div>
+      <DebouncedSearchInput
+        value={searchQuery}
+        onChange={setSearchQuery}
+        placeholder="Search products by name or SKU..."
+        className="max-w-md"
+        delay={400}
+      />
 
       {/* Products Table */}
       <div className="border border-border">
@@ -128,15 +106,17 @@ const AdminProducts = () => {
                   Loading products...
                 </TableCell>
               </TableRow>
-            ) : visibleProducts.length === 0 ? (
+            ) : products.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={9} className="text-center py-8">
                   <Package className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                  <p className="text-muted-foreground">No products found</p>
+                  <p className="text-muted-foreground">
+                    {searchQuery ? "No products match your search" : "No products found"}
+                  </p>
                 </TableCell>
               </TableRow>
             ) : (
-              visibleProducts.map((product) => (
+              products.map((product) => (
                 <TableRow key={product.id}>
                   <TableCell>
                     {product.images?.[0] ? (
@@ -194,16 +174,19 @@ const AdminProducts = () => {
       {/* Load More Button */}
       {hasMore && (
         <div className="flex justify-center">
-          <Button variant="outline" onClick={handleLoadMore}>
-            Load More ({visibleProducts.length} of {filteredProducts.length})
+          <Button variant="outline" onClick={handleLoadMore} disabled={isLoading}>
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            ) : null}
+            Load More ({products.length} of {totalCount})
           </Button>
         </div>
       )}
 
       {/* Show count when all loaded */}
-      {!hasMore && visibleProducts.length > 0 && (
+      {!hasMore && products.length > 0 && (
         <p className="text-center text-sm text-muted-foreground">
-          Showing all {filteredProducts.length} products
+          Showing all {totalCount} products
         </p>
       )}
 

@@ -3,6 +3,7 @@
  * Server-side pagination and selective fetching for product management
  */
 
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { usePagination, useDebounce, QUERY_CONFIG } from "@/utils/performance";
@@ -99,29 +100,35 @@ export const useOptimizedProducts = (
   };
 };
 
-// Optimized category products for storefront
+// Optimized category products for storefront with "Load More" pattern
 export const useOptimizedCategoryProducts = (
   categorySlug?: string,
   sortBy: "newest" | "price_asc" | "price_desc" = "newest"
 ) => {
-  const pagination = usePagination(24); // Smaller page for storefront grid
+  const PAGE_SIZE = 12;
+  const [page, setPage] = useState(1);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
 
   const queryKey = [
     "category-products-optimized",
     categorySlug,
     sortBy,
-    pagination.page,
+    page,
   ];
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, isFetching } = useQuery({
     queryKey,
     queryFn: async () => {
+      const offset = (page - 1) * PAGE_SIZE;
+      
       let query = supabase
         .from("products")
         .select(`
           id,
           name,
           base_price,
+          created_at,
           category:categories(id, name),
           images:product_images(id, image_url, is_main),
           variants:product_variants(id, selling_price, stock)
@@ -135,7 +142,6 @@ export const useOptimizedCategoryProducts = (
 
       // Filter by category if not "all"
       if (categorySlug && categorySlug !== "all") {
-        // Need to join and filter
         const { data: categoryData } = await supabase
           .from("categories")
           .select("id")
@@ -160,7 +166,7 @@ export const useOptimizedCategoryProducts = (
           query = query.order("created_at", { ascending: false });
       }
 
-      query = query.range(pagination.offset, pagination.offset + pagination.pageSize - 1);
+      query = query.range(offset, offset + PAGE_SIZE - 1);
 
       const [dataResult, countResult] = await Promise.all([query, countQuery]);
 
@@ -169,21 +175,64 @@ export const useOptimizedCategoryProducts = (
       return {
         products: dataResult.data as Product[],
         totalCount: countResult.count || 0,
+        currentPage: page,
       };
     },
     ...QUERY_CONFIG.listView,
   });
 
-  if (data?.totalCount !== undefined && data.totalCount !== pagination.totalCount) {
-    pagination.setTotalCount(data.totalCount);
-  }
+  // Accumulate products when new page loads
+  useEffect(() => {
+    if (data?.products) {
+      if (data.currentPage === 1) {
+        setAllProducts(data.products);
+      } else {
+        setAllProducts(prev => {
+          // Avoid duplicates
+          const existingIds = new Set(prev.map(p => p.id));
+          const newProducts = data.products.filter(p => !existingIds.has(p.id));
+          return [...prev, ...newProducts];
+        });
+      }
+      setTotalCount(data.totalCount);
+    }
+  }, [data]);
+
+  // Reset when category or sort changes
+  useEffect(() => {
+    setPage(1);
+    setAllProducts([]);
+  }, [categorySlug, sortBy]);
+
+  const loadMore = () => {
+    if (!isFetching && allProducts.length < totalCount) {
+      setPage(prev => prev + 1);
+    }
+  };
+
+  const hasMore = allProducts.length < totalCount;
 
   return {
-    products: data?.products || [],
-    isLoading,
+    products: allProducts,
+    isLoading: isLoading && page === 1,
+    isLoadingMore: isFetching && page > 1,
     error: error as Error | null,
-    pagination,
-    totalCount: data?.totalCount || 0,
+    totalCount,
+    hasMore,
+    loadMore,
+    // Keep pagination for backwards compatibility
+    pagination: {
+      page,
+      pageSize: PAGE_SIZE,
+      totalPages: Math.ceil(totalCount / PAGE_SIZE),
+      hasNextPage: hasMore,
+      hasPrevPage: page > 1,
+      nextPage: loadMore,
+      prevPage: () => {},
+      setTotalCount: () => {},
+      totalCount,
+      offset: (page - 1) * PAGE_SIZE,
+    },
   };
 };
 

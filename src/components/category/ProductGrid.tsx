@@ -2,11 +2,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Link, useParams } from "react-router-dom";
 import { useOptimizedCategoryProducts } from "@/hooks/useOptimizedProducts";
 import { Skeleton } from "@/components/ui/skeleton";
-import Pagination from "./Pagination";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 const ProductGrid = () => {
   const { category } = useParams();
-  const { products, isLoading, pagination, totalCount } = useOptimizedCategoryProducts(category);
+  const { products, isLoading, isLoadingMore, totalCount, hasMore, loadMore } = useOptimizedCategoryProducts(category);
 
   const formatPrice = (price: number) => {
     return `৳${price.toLocaleString()}`;
@@ -109,27 +110,33 @@ const ProductGrid = () => {
         })}
       </div>
       
-      {/* Pagination */}
-      {totalCount > pagination.pageSize && (
-        <div className="flex justify-center items-center gap-4 mt-8">
-          <button 
-            onClick={pagination.prevPage}
-            disabled={!pagination.hasPrevPage}
-            className="px-4 py-2 border border-border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted transition-colors"
+      {/* Load More Button */}
+      {hasMore && (
+        <div className="flex justify-center mt-10">
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={loadMore}
+            disabled={isLoadingMore}
+            className="min-w-[200px]"
           >
-            Previous
-          </button>
-          <span className="text-sm text-muted-foreground">
-            Page {pagination.page} of {pagination.totalPages}
-          </span>
-          <button 
-            onClick={pagination.nextPage}
-            disabled={!pagination.hasNextPage}
-            className="px-4 py-2 border border-border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted transition-colors"
-          >
-            Next
-          </button>
+            {isLoadingMore ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              `Load More (${products.length} of ${totalCount})`
+            )}
+          </Button>
         </div>
+      )}
+      
+      {/* Show count when all loaded */}
+      {!hasMore && products.length > 0 && (
+        <p className="text-center text-sm text-muted-foreground mt-8">
+          Showing all {totalCount} products
+        </p>
       )}
     </section>
   );

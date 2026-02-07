@@ -21,11 +21,6 @@ import {
   MapPin,
   Map,
   Crown,
-  MessageSquare,
-  Send,
-  Mail,
-  MessageCircle,
-  Inbox,
   ShoppingCart,
   Clock,
   ExternalLink,
@@ -81,32 +76,10 @@ const customerEditsItems: NavItem[] = [
   { icon: Crown, label: "Customer Types", path: "/admin/customer-types" },
 ];
 
-const smsItems: NavItem[] = [
-  { icon: Settings2, label: "SMS API", path: "/admin/sms-api" },
-  { icon: Send, label: "SMS Marketing", path: "/admin/sms-marketing" },
-];
-
-const emailItems: NavItem[] = [
-  { icon: Settings2, label: "Email API", path: "/admin/email-api" },
-  { icon: Send, label: "Email Marketing", path: "/admin/email-marketing" },
-];
-
-const whatsappItems: NavItem[] = [
-  { icon: Settings2, label: "WhatsApp API", path: "/admin/whatsapp-api" },
-  { icon: Send, label: "WhatsApp Marketing", path: "/admin/whatsapp-marketing" },
-  { icon: Inbox, label: "Inbox", path: "/admin/whatsapp-inbox" },
-];
-
-const instagramItems: NavItem[] = [
-  { icon: Settings2, label: "Instagram API", path: "/admin/instagram-api" },
-  { icon: Send, label: "Instagram Marketing", path: "/admin/instagram-marketing" },
-  { icon: Inbox, label: "Inbox", path: "/admin/instagram-inbox" },
-];
-
 const AdminSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isModuleActive, isLoading } = useModulesContext();
+  const { isModuleActive } = useModulesContext();
   
   // Debounce navigation to prevent rapid clicks
   const lastNavTimeRef = useRef<number>(0);
@@ -140,19 +113,11 @@ const AdminSidebar = () => {
   const isOrdersActive = orderItems.some(item => location.pathname === item.path);
   const isAccountEditsActive = accountEditsItems.some(item => location.pathname === item.path);
   const isCustomerEditsActive = customerEditsItems.some(item => location.pathname === item.path);
-  const isSmsActive = smsItems.some(item => location.pathname === item.path);
-  const isEmailActive = emailItems.some(item => location.pathname === item.path);
-  const isWhatsappActive = whatsappItems.some(item => location.pathname === item.path);
-  const isInstagramActive = instagramItems.some(item => location.pathname === item.path);
   
   const [isProductEditsOpen, setIsProductEditsOpen] = useState(isProductEditsActive);
   const [isOrdersOpen, setIsOrdersOpen] = useState(isOrdersActive);
   const [isAccountEditsOpen, setIsAccountEditsOpen] = useState(isAccountEditsActive);
   const [isCustomerEditsOpen, setIsCustomerEditsOpen] = useState(isCustomerEditsActive);
-  const [isSmsOpen, setIsSmsOpen] = useState(isSmsActive);
-  const [isEmailOpen, setIsEmailOpen] = useState(isEmailActive);
-  const [isWhatsappOpen, setIsWhatsappOpen] = useState(isWhatsappActive);
-  const [isInstagramOpen, setIsInstagramOpen] = useState(isInstagramActive);
 
   // Render a simple nav link
   const renderNavLink = (path: string, icon: LucideIcon, label: string) => {
@@ -319,54 +284,6 @@ const AdminSidebar = () => {
             isCustomerEditsOpen,
             setIsCustomerEditsOpen,
             isCustomerEditsActive
-          )
-        )}
-
-        {/* SMS Marketing Module */}
-        {isModuleActive("sms_marketing") && (
-          renderCollapsible(
-            MessageSquare,
-            "SMS",
-            smsItems,
-            isSmsOpen,
-            setIsSmsOpen,
-            isSmsActive
-          )
-        )}
-
-        {/* Email Marketing Module */}
-        {isModuleActive("email_marketing") && (
-          renderCollapsible(
-            Mail,
-            "Email",
-            emailItems,
-            isEmailOpen,
-            setIsEmailOpen,
-            isEmailActive
-          )
-        )}
-
-        {/* WhatsApp Marketing Module */}
-        {isModuleActive("whatsapp_marketing") && (
-          renderCollapsible(
-            MessageCircle,
-            "WhatsApp",
-            whatsappItems,
-            isWhatsappOpen,
-            setIsWhatsappOpen,
-            isWhatsappActive
-          )
-        )}
-
-        {/* Instagram Marketing Module */}
-        {isModuleActive("instagram_marketing") && (
-          renderCollapsible(
-            MessageCircle,
-            "Instagram",
-            instagramItems,
-            isInstagramOpen,
-            setIsInstagramOpen,
-            isInstagramActive
           )
         )}
 

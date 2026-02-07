@@ -139,7 +139,7 @@ const AdminOrders = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
         <div className="p-4 border border-border">
           <Package className="h-5 w-5 text-muted-foreground mb-2" />
           <p className="text-2xl font-medium">
@@ -153,6 +153,13 @@ const AdminOrders = () => {
             {statsLoading ? <Skeleton className="h-8 w-16" /> : stats?.todayOrders || 0}
           </p>
           <p className="text-sm text-muted-foreground">Today's Orders</p>
+        </div>
+        <div className="p-4 border border-border">
+          <Package className="h-5 w-5 text-muted-foreground mb-2" />
+          <p className="text-2xl font-medium">
+            {statsLoading ? <Skeleton className="h-8 w-16" /> : formatCurrency(stats?.todayOrderAmount || 0)}
+          </p>
+          <p className="text-sm text-muted-foreground">Today's Order Amount</p>
         </div>
         <div className="p-4 border border-border">
           <CreditCard className="h-5 w-5 text-muted-foreground mb-2" />

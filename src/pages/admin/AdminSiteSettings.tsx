@@ -676,7 +676,7 @@ const AdminSiteSettings = () => {
           </form>
         </Form>
       </div>
-    </AdminLayout>
+    </>
   );
 };
 

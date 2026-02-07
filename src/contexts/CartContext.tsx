@@ -28,8 +28,9 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-// Load cart from localStorage
+// Load cart from localStorage (safe for SSR)
 const loadCartFromStorage = (): CartItem[] => {
+  if (typeof window === "undefined") return [];
   try {
     const stored = localStorage.getItem(CART_STORAGE_KEY);
     if (stored) {
@@ -41,8 +42,9 @@ const loadCartFromStorage = (): CartItem[] => {
   return [];
 };
 
-// Save cart to localStorage
+// Save cart to localStorage (safe for SSR)
 const saveCartToStorage = (items: CartItem[]) => {
+  if (typeof window === "undefined") return;
   try {
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
   } catch (error) {

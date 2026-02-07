@@ -1545,51 +1545,6 @@ export type Database = {
           },
         ]
       }
-      system_modules: {
-        Row: {
-          created_at: string
-          description: string | null
-          icon: string
-          id: string
-          is_active: boolean
-          is_core: boolean
-          module_key: string
-          name: string
-          parent_module_key: string | null
-          routes: string[]
-          sort_order: number
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          icon?: string
-          id?: string
-          is_active?: boolean
-          is_core?: boolean
-          module_key: string
-          name: string
-          parent_module_key?: string | null
-          routes?: string[]
-          sort_order?: number
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          icon?: string
-          id?: string
-          is_active?: boolean
-          is_core?: boolean
-          module_key?: string
-          name?: string
-          parent_module_key?: string | null
-          routes?: string[]
-          sort_order?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
       thanas: {
         Row: {
           created_at: string

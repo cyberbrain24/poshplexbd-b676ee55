@@ -4,7 +4,6 @@ import { Link } from "react-router-dom";
 import ShoppingBag from "./ShoppingBag";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useSiteSettingsContext } from "@/contexts/SiteSettingsContext";
 
 interface Category {
   id: string;
@@ -16,6 +15,10 @@ interface CategoryWithChildren extends Category {
   children: Category[];
 }
 
+// Hardcoded site settings
+const SITE_NAME = "POSHPLEX";
+const SITE_LOGO_URL: string | null = null;
+
 const Navigation = () => {
   const [isShopMenuOpen, setIsShopMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -26,7 +29,6 @@ const Navigation = () => {
   const [expandedMobileCategory, setExpandedMobileCategory] = useState<string | null>(null);
   
   const { cartItems, updateQuantity, cartCount } = useCart();
-  const { settings } = useSiteSettingsContext();
 
   const handleUpdateQuantity = (id: string, variantId: string | undefined, newQuantity: number) => {
     updateQuantity(id, variantId, newQuantity);
@@ -65,9 +67,7 @@ const Navigation = () => {
   ];
 
   return (
-    <nav 
-      className="relative bg-white border-b border-border"
-    >
+    <nav className="relative bg-white border-b border-border">
       <div className="flex items-center justify-between h-16 px-6">
         {/* Mobile hamburger button */}
         <button
@@ -91,15 +91,15 @@ const Navigation = () => {
         {/* Left - Logo */}
         <div className="flex-shrink-0">
           <Link to="/" className="block">
-            {settings?.logo_url ? (
+            {SITE_LOGO_URL ? (
               <img 
-                src={settings.logo_url} 
-                alt={settings?.site_name || "Logo"} 
+                src={SITE_LOGO_URL} 
+                alt={SITE_NAME} 
                 className="h-5 w-auto"
               />
             ) : (
               <span className="text-lg font-bold tracking-wider text-foreground">
-                {settings?.site_name || "POSHPLEX"}
+                {SITE_NAME}
               </span>
             )}
           </Link>

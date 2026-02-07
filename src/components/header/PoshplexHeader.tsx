@@ -6,9 +6,11 @@ import MobileMenu from "./MobileMenu";
 import ShoppingBag from "./ShoppingBag";
 import { useCategories } from "@/hooks/useMasterData";
 import { useCart } from "@/contexts/CartContext";
-import { useSiteSettingsContext } from "@/contexts/SiteSettingsContext";
-import { isExternalLink } from "@/hooks/useSiteSettings";
 import { supabase } from "@/integrations/supabase/client";
+
+// Hardcoded site settings
+const SITE_NAME = "POSHPLEX";
+const SITE_LOGO_URL: string | null = null;
 
 interface NavItem {
   name: string;
@@ -18,6 +20,10 @@ interface NavItem {
     featured: { name: string; href: string }[];
   };
 }
+
+const isExternalLink = (path: string): boolean => {
+  return path.startsWith("http://") || path.startsWith("https://");
+};
 
 const PoshplexHeader = () => {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
@@ -29,7 +35,6 @@ const PoshplexHeader = () => {
   const navigate = useNavigate();
   const { data: allCategories = [] } = useCategories();
   const { cartItems, updateQuantity, cartCount } = useCart();
-  const { settings } = useSiteSettingsContext();
 
   // Check customer auth state
   useEffect(() => {
@@ -52,32 +57,10 @@ const PoshplexHeader = () => {
     }
   };
 
-  // Build navigation items from site settings (if available) or fall back to categories
+  // Build navigation items from categories
   const navItems: NavItem[] = useMemo(() => {
-    // Build category submenu from database
     const parentCategories = allCategories.filter(c => !c.parent_id);
-    const categorySubmenu = parentCategories.map(cat => cat.name);
     
-    // If we have header menu from settings, use that
-    if (settings.header_menu && settings.header_menu.length > 0) {
-      return settings.header_menu.map(item => {
-        // Check if this is a shop/category link - add mega menu with categories
-        const isShopLink = item.path.includes('/category') || 
-                          item.label.toLowerCase() === 'shop' ||
-                          item.label.toLowerCase() === 'products';
-        
-        return {
-          name: item.label.toUpperCase(),
-          href: item.path,
-          submenu: {
-            categories: isShopLink ? categorySubmenu : [],
-            featured: []
-          }
-        };
-      });
-    }
-    
-    // Fallback to database categories
     return parentCategories.map(parent => {
       const subcategories = allCategories
         .filter(c => c.parent_id === parent.id)
@@ -92,7 +75,7 @@ const PoshplexHeader = () => {
         }
       };
     });
-  }, [allCategories, settings.header_menu]);
+  }, [allCategories]);
 
   const handleUpdateQuantity = (id: string, variantId: string | undefined, newQuantity: number) => {
     updateQuantity(id, variantId, newQuantity);
@@ -145,15 +128,15 @@ const PoshplexHeader = () => {
 
         {/* Logo */}
         <Link to="/" className="absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0">
-          {settings.logo_url ? (
+          {SITE_LOGO_URL ? (
             <img 
-              src={settings.logo_url} 
-              alt={settings.site_name}
+              src={SITE_LOGO_URL} 
+              alt={SITE_NAME}
               className="h-8 object-contain"
             />
           ) : (
             <span className="text-2xl font-black tracking-tighter text-foreground">
-              {settings.site_name.toUpperCase()}
+              {SITE_NAME}
             </span>
           )}
         </Link>

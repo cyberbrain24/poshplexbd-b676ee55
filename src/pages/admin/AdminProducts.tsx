@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { useProductsList, useDeleteProduct } from "@/hooks/useProducts";
+import { useProductsList, useDeleteProduct, useProduct } from "@/hooks/useProducts";
 import { Product } from "@/types/product";
 import { toast } from "sonner";
 import {
@@ -22,11 +22,12 @@ import {
 
 const AdminProducts = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data: products = [], isLoading } = useProductsList();
+  const { data: selectedProduct } = useProduct(selectedProductId || undefined);
   const deleteProductMutation = useDeleteProduct();
 
   const filteredProducts = products.filter(product =>
@@ -35,7 +36,7 @@ const AdminProducts = () => {
   );
 
   const handleEdit = (product: Product) => {
-    setSelectedProduct(product);
+    setSelectedProductId(product.id);
     setIsModalOpen(true);
   };
 
@@ -51,7 +52,7 @@ const AdminProducts = () => {
   };
 
   const openCreateModal = () => {
-    setSelectedProduct(null);
+    setSelectedProductId(null);
     setIsModalOpen(true);
   };
 
@@ -169,7 +170,10 @@ const AdminProducts = () => {
 
       <ProductModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedProductId(null);
+        }}
         product={selectedProduct}
       />
 

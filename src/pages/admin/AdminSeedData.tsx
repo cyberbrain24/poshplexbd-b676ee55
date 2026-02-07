@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,6 +41,24 @@ const AdminSeedData = () => {
   const [currentJob, setCurrentJob] = useState<SeedJob | null>(null);
   const queryClient = useQueryClient();
 
+  // Fetch actual database counts
+  const { data: dbStats, refetch: refetchStats } = useQuery({
+    queryKey: ['seed-db-stats'],
+    queryFn: async () => {
+      const [productsResult, variantsResult, imagesResult] = await Promise.all([
+        supabase.from('products').select('id', { count: 'exact', head: true }),
+        supabase.from('product_variants').select('id', { count: 'exact', head: true }),
+        supabase.from('product_images').select('id', { count: 'exact', head: true }),
+      ]);
+      return {
+        products: productsResult.count || 0,
+        variants: variantsResult.count || 0,
+        images: imagesResult.count || 0,
+      };
+    },
+    refetchInterval: isSeeding ? 5000 : false, // Auto-refresh during seeding
+  });
+
   // Subscribe to job updates via realtime
   useEffect(() => {
     if (!currentJob?.id) return;
@@ -62,6 +80,7 @@ const AdminSeedData = () => {
           if (updatedJob.status === 'completed') {
             toast.success(`Successfully generated ${updatedJob.products_created} products!`);
             setIsSeeding(false);
+            refetchStats();
             queryClient.invalidateQueries({ queryKey: ['products'] });
             queryClient.invalidateQueries({ queryKey: ['products-list'] });
           } else if (updatedJob.status === 'failed') {
@@ -75,7 +94,7 @@ const AdminSeedData = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [currentJob?.id, queryClient]);
+  }, [currentJob?.id, queryClient, refetchStats]);
 
   // Poll for job status as backup (in case realtime misses updates)
   useEffect(() => {
@@ -92,6 +111,7 @@ const AdminSeedData = () => {
         setCurrentJob(data as SeedJob);
         if (data.status === 'completed' || data.status === 'failed') {
           setIsSeeding(false);
+          refetchStats();
           if (data.status === 'completed') {
             queryClient.invalidateQueries({ queryKey: ['products'] });
             queryClient.invalidateQueries({ queryKey: ['products-list'] });
@@ -101,7 +121,7 @@ const AdminSeedData = () => {
     }, 3000);
 
     return () => clearInterval(pollInterval);
-  }, [currentJob?.id, isSeeding, queryClient]);
+  }, [currentJob?.id, isSeeding, queryClient, refetchStats]);
 
   const handleSeed = async () => {
     setIsSeeding(true);
@@ -152,6 +172,7 @@ const AdminSeedData = () => {
 
       toast.success('All products cleared successfully');
       setCurrentJob(null);
+      refetchStats();
       queryClient.invalidateQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['products-list'] });
     } catch (error: any) {
@@ -184,6 +205,41 @@ const AdminSeedData = () => {
         <h1 className="text-3xl font-bold">Seed Data</h1>
         <p className="text-muted-foreground">Generate realistic dummy products with variations for testing</p>
       </div>
+
+      {/* Current Database Stats */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Database className="h-5 w-5 text-primary" />
+            Current Database Stats
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="flex items-center gap-3 p-4 rounded-lg bg-background border">
+              <Package className="h-8 w-8 text-primary" />
+              <div>
+                <p className="text-2xl font-bold">{(dbStats?.products || 0).toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">Total Products</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-4 rounded-lg bg-background border">
+              <Layers className="h-8 w-8 text-primary" />
+              <div>
+                <p className="text-2xl font-bold">{(dbStats?.variants || 0).toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">Total Variants</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-4 rounded-lg bg-background border">
+              <Tag className="h-8 w-8 text-primary" />
+              <div>
+                <p className="text-2xl font-bold">{(dbStats?.images || 0).toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">Total Images</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card>

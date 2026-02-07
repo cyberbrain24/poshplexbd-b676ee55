@@ -267,11 +267,9 @@ async function runSeedingTask(supabase: ReturnType<typeof createClient>, jobId: 
               color_id: colorMap.get(color.name),
               size_id: sizeMap.get(size.label),
               material_id: materialMap.get(material.name),
-              sku: `${product.id.slice(0, 8)}-${variantIndex}`,
+              sku: generateSKU(`V${variantIndex}`),
               purchase_price: purchasePrice,
               selling_price: sellingPrice,
-              stock: 10 + Math.floor(Math.random() * 90),
-              available_stock: 10 + Math.floor(Math.random() * 90),
               is_active: Math.random() > 0.1,
             })
             variantIndex++

@@ -10,7 +10,6 @@ import { CartProvider } from "./contexts/CartContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import AdminLayout from "./components/admin/AdminLayout";
 import MobileFooterNav from "./components/navigation/MobileFooterNav";
-import SprayCursor from "./components/ui/SprayCursor";
 
 // All pages - direct imports (no lazy loading)
 import Index from "./pages/Index";
@@ -75,7 +74,6 @@ const App = () => (
       <QueryClientProvider client={queryClient}>
         <CartProvider>
           <TooltipProvider>
-            <SprayCursor />
             <Toaster />
             <Sonner />
           <BrowserRouter

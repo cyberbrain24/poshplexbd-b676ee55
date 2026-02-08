@@ -130,8 +130,8 @@
     @apply font-bold tracking-tight uppercase leading-tight;
   }
   
-  /* Reduced spacing for sections */
-  section {
+  /* Reduced spacing for main content sections only */
+  main > section {
     @apply py-6 md:py-8;
   }
   

@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
   Breadcrumb, 
@@ -22,10 +22,10 @@ interface ProductInfoProps {
 }
 
 const ProductInfo = ({ product, isLoading }: ProductInfoProps) => {
+  const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const { addToCart } = useCart();
-
   const incrementQuantity = () => setQuantity(prev => prev + 1);
   const decrementQuantity = () => setQuantity(prev => Math.max(1, prev - 1));
   
@@ -44,15 +44,12 @@ const ProductInfo = ({ product, isLoading }: ProductInfoProps) => {
   const isVariableProduct = product?.product_type === 'variable';
   const canAddToCart = !isVariableProduct || selectedVariant !== null;
 
-  const handleAddToCart = () => {
-    if (!canAddToCart) return;
-
-    // Get the main image
+  const getCartItem = () => {
     const mainImage = product?.images?.find(img => img.is_main)?.image_url 
       || product?.images?.[0]?.image_url 
       || '/placeholder.svg';
 
-    addToCart({
+    return {
       id: product?.id || 'fallback-id',
       variantId: selectedVariant?.id,
       name: productName,
@@ -61,7 +58,13 @@ const ProductInfo = ({ product, isLoading }: ProductInfoProps) => {
       category: categoryName,
       color: selectedVariant?.color?.name,
       size: selectedVariant?.size?.label,
-    }, quantity);
+    };
+  };
+
+  const handleAddToCart = () => {
+    if (!canAddToCart) return;
+
+    addToCart(getCartItem(), quantity);
 
     toast.success(`${productName} added to bag`, {
       description: selectedVariant 
@@ -71,6 +74,14 @@ const ProductInfo = ({ product, isLoading }: ProductInfoProps) => {
 
     // Reset quantity after adding
     setQuantity(1);
+  };
+
+  const handleBuyNow = () => {
+    if (!canAddToCart) return;
+
+    // Add to cart and navigate to checkout
+    addToCart(getCartItem(), quantity);
+    navigate('/checkout');
   };
 
   if (isLoading) {
@@ -173,13 +184,23 @@ const ProductInfo = ({ product, isLoading }: ProductInfoProps) => {
           </div>
         </div>
 
-        <Button 
-          className="w-full h-12 bg-foreground text-background hover:bg-foreground/90 font-light rounded-none disabled:opacity-50"
-          disabled={!canAddToCart}
-          onClick={handleAddToCart}
-        >
-          {isVariableProduct && !selectedVariant ? "Select Options" : "Add to Bag"}
-        </Button>
+        <div className="flex gap-3">
+          <Button 
+            className="flex-1 h-12 bg-foreground text-background hover:bg-foreground/90 font-light rounded-none disabled:opacity-50"
+            disabled={!canAddToCart}
+            onClick={handleAddToCart}
+          >
+            {isVariableProduct && !selectedVariant ? "Select Options" : "Add to Bag"}
+          </Button>
+          <Button 
+            variant="outline"
+            className="flex-1 h-12 border-foreground text-foreground hover:bg-foreground hover:text-background font-light rounded-none disabled:opacity-50"
+            disabled={!canAddToCart}
+            onClick={handleBuyNow}
+          >
+            Buy Now
+          </Button>
+        </div>
         {isVariableProduct && !selectedVariant && (
           <p className="text-xs text-muted-foreground text-center">
             Please select color and size to add to bag

@@ -9,6 +9,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { CartProvider } from "./contexts/CartContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import AdminLayout from "./components/admin/AdminLayout";
+import MobileFooterNav from "./components/navigation/MobileFooterNav";
 
 // All pages - direct imports (no lazy loading)
 import Index from "./pages/Index";
@@ -137,6 +138,7 @@ const App = () => (
               {/* 404 Catch-all - MUST be last */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <MobileFooterNav />
           </BrowserRouter>
           </TooltipProvider>
         </CartProvider>

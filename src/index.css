@@ -151,3 +151,24 @@
     filter: grayscale(100%) contrast(1.1);
   }
 }
+
+/* Announcement Bar - Pure CSS ping-pong animation */
+.announcement-bar {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.announcement-text {
+  animation: announcement-slide 8s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes announcement-slide {
+  0%, 100% {
+    transform: translateX(-30%);
+  }
+  50% {
+    transform: translateX(30%);
+  }
+}

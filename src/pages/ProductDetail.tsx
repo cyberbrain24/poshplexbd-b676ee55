@@ -5,7 +5,7 @@ import PoshplexFooter from "../components/footer/PoshplexFooter";
 import ProductImageGallery from "../components/product/ProductImageGallery";
 import ProductInfo from "../components/product/ProductInfo";
 import ProductDescription from "../components/product/ProductDescription";
-import ProductCarousel from "../components/content/ProductCarousel";
+import RelatedProducts from "../components/product/RelatedProducts";
 import { useProduct } from "@/hooks/useProducts";
 import { ProductSEO } from "@/components/seo";
 import { 
@@ -66,18 +66,14 @@ const ProductDetail = () => {
           </div>
         </section>
         
+        {/* You Might Also Like - Dynamic products */}
         <section className="w-full mt-16 lg:mt-24">
-          <div className="mb-4 px-6">
-            <h2 className="text-sm font-light text-foreground">You might also like</h2>
-          </div>
-          <ProductCarousel />
-        </section>
-        
-        <section className="w-full">
-          <div className="mb-4 px-6">
-            <h2 className="text-sm font-light text-foreground">Our other {categoryName}</h2>
-          </div>
-          <ProductCarousel />
+          <RelatedProducts 
+            productId={productId}
+            categoryId={product?.category_id}
+            categoryName={categoryName}
+            title="You might also like"
+          />
         </section>
       </main>
       

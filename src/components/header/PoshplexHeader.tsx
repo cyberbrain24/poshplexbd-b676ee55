@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, User, ShoppingBag as ShoppingBagIcon, X } from "lucide-react";
+import AnnouncementBar from "./AnnouncementBar";
 import MegaMenu from "./MegaMenu";
 import MobileMenu from "./MobileMenu";
 import ShoppingBag from "./ShoppingBag";
@@ -105,8 +106,9 @@ const PoshplexHeader = () => {
   };
 
   return (
-    <header className="w-full sticky top-0 z-50 bg-background border-b border-border">
-      <nav className="flex items-center justify-between h-16 px-6">
+    <header className="w-full sticky top-0 z-50 bg-background">
+      <AnnouncementBar />
+      <nav className="flex items-center justify-between h-14 px-6 border-b border-border">
         {/* Mobile hamburger */}
         <button
           className="lg:hidden p-2 text-foreground"

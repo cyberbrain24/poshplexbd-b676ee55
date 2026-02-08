@@ -160,7 +160,7 @@
 
 .announcement-text {
   display: inline-block;
-  animation: announcement-slide 5s linear infinite alternate;
+  animation: announcement-slide 7s linear infinite alternate;
   will-change: transform;
 }
 

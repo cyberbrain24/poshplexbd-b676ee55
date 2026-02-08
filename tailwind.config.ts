@@ -13,6 +13,26 @@ export default {
       },
     },
     extend: {
+      fontSize: {
+        'xs': ['0.75rem', { lineHeight: '1.1rem' }],
+        'sm': ['0.8125rem', { lineHeight: '1.2rem' }],
+        'base': ['0.9375rem', { lineHeight: '1.4rem' }],
+        'lg': ['1.0625rem', { lineHeight: '1.5rem' }],
+        'xl': ['1.1875rem', { lineHeight: '1.6rem' }],
+        '2xl': ['1.4375rem', { lineHeight: '1.8rem' }],
+        '3xl': ['1.75rem', { lineHeight: '2rem' }],
+        '4xl': ['2.125rem', { lineHeight: '2.25rem' }],
+        '5xl': ['2.75rem', { lineHeight: '2.75rem' }],
+      },
+      lineHeight: {
+        'tighter': '1.15',
+        'snug': '1.3',
+      },
+      spacing: {
+        'section': '2rem',
+        'section-md': '2.5rem',
+        'section-lg': '3rem',
+      },
       fontFamily: {
         sans: ['Inter', 'Helvetica Neue', 'Arial', 'sans-serif'],
         display: ['Bebas Neue', 'Impact', 'sans-serif'],

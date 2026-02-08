@@ -112,15 +112,34 @@
     @apply border-border;
   }
 
+  html {
+    font-size: 15px; /* Slightly smaller base font */
+  }
+
   body {
-    @apply bg-background text-foreground font-normal;
+    @apply bg-background text-foreground font-normal leading-snug;
     background-image: radial-gradient(circle, rgba(0, 0, 0, 0.12) 1.5px, transparent 1.5px);
     background-size: 20px 20px;
   }
   
+  /* Tighter line heights globally */
+  p, span, li, a, label {
+    @apply leading-snug;
+  }
+  
   /* Industrial typography - heavy sans-serif */
   h1, h2, h3, h4, h5, h6 {
-    @apply font-bold tracking-tight uppercase;
+    @apply font-bold tracking-tight uppercase leading-tight;
+  }
+  
+  /* Reduced spacing for sections */
+  section {
+    @apply py-6 md:py-8;
+  }
+  
+  /* Tighter spacing utilities */
+  .space-y-compact > * + * {
+    margin-top: 0.5rem;
   }
 }
 

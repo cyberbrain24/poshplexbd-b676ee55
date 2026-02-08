@@ -152,23 +152,23 @@
   }
 }
 
-/* Announcement Bar - Pure CSS ping-pong animation */
+/* Announcement Bar - Pure CSS edge-to-edge animation */
 .announcement-bar {
   width: 100%;
-  display: flex;
-  justify-content: center;
+  overflow: hidden;
 }
 
 .announcement-text {
-  animation: announcement-slide 8s ease-in-out infinite;
+  display: inline-block;
+  animation: announcement-slide 5s linear infinite alternate;
   will-change: transform;
 }
 
 @keyframes announcement-slide {
-  0%, 100% {
-    transform: translateX(-30%);
+  0% {
+    transform: translateX(0);
   }
-  50% {
-    transform: translateX(30%);
+  100% {
+    transform: translateX(calc(100vw - 100%));
   }
 }

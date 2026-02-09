@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRelatedProducts } from "@/hooks/useRelatedProducts";
 import { Product } from "@/types/product";
+import { generateProductSlug } from "@/lib/slug";
 
 interface RelatedProductsProps {
   productId: string | undefined;
@@ -65,7 +66,7 @@ const RelatedProducts = ({
       {/* Grid: 3 cols on mobile (2 rows of 3), 6 cols on desktop (1 row of 6) */}
       <div className="grid grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
         {products.slice(0, 6).map((product) => (
-          <Link key={product.id} to={`/product/${product.id}`}>
+          <Link key={product.id} to={`/product/${generateProductSlug(product.name, product.id)}`}>
             <Card className="border-none shadow-none bg-transparent group">
               <CardContent className="p-0">
                 <div className="aspect-square mb-2 overflow-hidden bg-muted/10 relative">

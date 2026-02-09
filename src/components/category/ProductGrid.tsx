@@ -4,6 +4,7 @@ import { useOptimizedCategoryProducts } from "@/hooks/useOptimizedProducts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { generateProductSlug } from "@/lib/slug";
 
 const ProductGrid = () => {
   const { category } = useParams();
@@ -66,7 +67,7 @@ const ProductGrid = () => {
           const hoverImage = getHoverImage(product);
           
           return (
-            <Link key={product.id} to={`/product/${product.id}`}>
+            <Link key={product.id} to={`/product/${generateProductSlug(product.name, product.id)}`}>
               <Card className="border-none shadow-none bg-transparent group cursor-pointer">
                 <CardContent className="p-0">
                   <div className="aspect-square mb-3 overflow-hidden bg-muted/10 relative">

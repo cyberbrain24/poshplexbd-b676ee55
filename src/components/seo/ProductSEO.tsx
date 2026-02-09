@@ -8,6 +8,7 @@ import {
   generateDescription,
   getImageUrl,
 } from "@/utils/seo-helpers";
+import { generateProductSlug } from "@/lib/slug";
 import type { Product } from "@/types/product";
 
 interface ProductSEOProps {
@@ -24,7 +25,8 @@ const ProductSEO = ({ product }: ProductSEOProps) => {
   const mainImage = product.images?.find((img) => img.is_main)?.image_url ||
     product.images?.[0]?.image_url;
 
-  const productUrl = `${SITE_CONFIG.siteUrl}/product/${product.id}`;
+  const productSlug = generateProductSlug(product.name, product.id);
+  const productUrl = `${SITE_CONFIG.siteUrl}/product/${productSlug}`;
   const categoryName = product.category?.name || "Products";
   const categorySlug = categoryName.toLowerCase().replace(/\s+/g, "-");
 
@@ -52,7 +54,7 @@ const ProductSEO = ({ product }: ProductSEOProps) => {
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: "Home", url: "/" },
     { name: categoryName, url: `/category/${categorySlug}` },
-    { name: product.name, url: `/product/${product.id}` },
+    { name: product.name, url: `/product/${productSlug}` },
   ]);
 
   return (
@@ -61,7 +63,7 @@ const ProductSEO = ({ product }: ProductSEOProps) => {
         title={product.name}
         description={product.short_description || product.full_description}
         image={mainImage}
-        url={`/product/${product.id}`}
+        url={`/product/${productSlug}`}
         type="product"
       />
       <JsonLD data={[productSchema, breadcrumbSchema]} />

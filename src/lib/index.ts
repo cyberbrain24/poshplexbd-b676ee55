@@ -38,3 +38,9 @@ export {
   invalidatePaymentQueries,
   handleMutationError,
 } from './query-helpers';
+
+// Slug utilities
+export {
+  generateProductSlug,
+  extractIdFromSlug,
+} from './slug';

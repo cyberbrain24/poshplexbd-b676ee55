@@ -87,7 +87,7 @@ const App = () => (
               {/* Public Routes */}
               <Route path="/" element={<Index />} />
               <Route path="/category/:category" element={<Category />} />
-              <Route path="/product/:productId" element={<ProductDetail />} />
+              <Route path="/product/:productSlug" element={<ProductDetail />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/order-tracking" element={<OrderTracking />} />
               <Route path="/my-orders" element={<MyOrders />} />

@@ -23,7 +23,7 @@ const OurStorySection = () => {
   ];
 
   return (
-    <section className="py-12 md:py-16 bg-foreground text-background">
+    <section className="pt-12 md:pt-16 pb-0 bg-background text-foreground">
       <div className="container mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-12">
           {sections.map((section) => (
@@ -31,7 +31,7 @@ const OurStorySection = () => {
               <h3 className="text-lg font-bold tracking-widest">
                 {section.title}
               </h3>
-              <p className="text-sm leading-relaxed text-background/80">
+              <p className="text-sm leading-relaxed text-muted-foreground">
                 {section.content}
               </p>
             </div>

@@ -18,8 +18,8 @@ import {
 } from "@/components/ui/breadcrumb";
 
 const ProductDetail = () => {
-  const { productId } = useParams();
-  const { data: product, isLoading } = useProduct(productId);
+  const { productSlug } = useParams();
+  const { data: product, isLoading } = useProduct(productSlug);
 
   // Fallback for static product if not found in database
   const productName = product?.name || "Pantheon";
@@ -69,7 +69,7 @@ const ProductDetail = () => {
         {/* You Might Also Like - Dynamic products */}
         <section className="w-full mt-16 lg:mt-24">
           <RelatedProducts 
-            productId={productId}
+            productId={product?.id}
             categoryId={product?.category_id}
             categoryName={categoryName}
             title="You might also like"

@@ -84,12 +84,21 @@ export const useProducts = () => {
   });
 };
 
-export const useProduct = (id: string | undefined) => {
+export const useProduct = (slugOrId: string | undefined) => {
   return useQuery({
-    queryKey: ["product", id],
+    queryKey: ["product", slugOrId],
     queryFn: async () => {
-      if (!id) return null;
-      const { data, error } = await supabase
+      if (!slugOrId) return null;
+      
+      // Check if it's a full UUID
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const isFullUuid = uuidRegex.test(slugOrId);
+      
+      // Extract short ID from slug if not a full UUID
+      const parts = slugOrId.split('-');
+      const shortId = parts[parts.length - 1];
+      
+      let query = supabase
         .from("products")
         .select(`
           *,
@@ -104,14 +113,24 @@ export const useProduct = (id: string | undefined) => {
             size:sizes(*),
             material:materials(*)
           )
-        `)
-        .eq("id", id)
-        .single();
+        `);
+      
+      if (isFullUuid) {
+        // Match by full ID
+        query = query.eq("id", slugOrId);
+      } else if (shortId && /^[0-9a-f]{8}$/i.test(shortId)) {
+        // Match by ID starting with short ID
+        query = query.ilike("id", `${shortId}%`);
+      } else {
+        return null;
+      }
+      
+      const { data, error } = await query.single();
 
       if (error) throw error;
       return data as Product;
     },
-    enabled: !!id,
+    enabled: !!slugOrId,
     staleTime: 1000 * 60 * 2, // 2 minutes
     gcTime: 1000 * 60 * 5, // 5 minutes cache
   });

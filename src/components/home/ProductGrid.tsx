@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { ShoppingBag } from "lucide-react";
 import { useProducts } from "@/hooks/useProducts";
 import { Skeleton } from "@/components/ui/skeleton";
+import { generateProductSlug } from "@/lib/slug";
 
 const ProductGrid = () => {
   const { data: products, isLoading } = useProducts();
@@ -69,7 +70,7 @@ const ProductGrid = () => {
           <div key={product.id} className="group">
             {/* Product Image */}
             <Link 
-              to={`/product/${product.id}`}
+              to={`/product/${generateProductSlug(product.name, product.id)}`}
               className="block relative bg-slate-muted aspect-[3/4] overflow-hidden mb-4"
             >
               <img 
@@ -92,7 +93,7 @@ const ProductGrid = () => {
                 {product.category?.name || 'Uncategorized'}
               </p>
               <Link 
-                to={`/product/${product.id}`}
+                to={`/product/${generateProductSlug(product.name, product.id)}`}
                 className="block text-sm font-medium text-foreground tracking-wide mb-2 hover:text-nav-hover transition-colors"
               >
                 {product.name}

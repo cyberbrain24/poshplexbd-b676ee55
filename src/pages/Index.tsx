@@ -4,6 +4,7 @@ import HeroSection from "../components/home/HeroSection";
 import FeaturesBar from "../components/home/FeaturesBar";
 import StreetEditsGallery from "../components/home/StreetEditsGallery";
 import ProductGrid from "../components/home/ProductGrid";
+import OurStorySection from "../components/home/OurStorySection";
 import { HomeSEO } from "@/components/seo";
 
 const Index = () => {
@@ -17,6 +18,7 @@ const Index = () => {
         <FeaturesBar />
         <StreetEditsGallery />
         <ProductGrid />
+        <OurStorySection />
       </main>
       
       <PoshplexFooter />

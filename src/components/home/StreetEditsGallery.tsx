@@ -55,7 +55,7 @@ const StreetEditsGallery = () => {
             <Link 
               key={category.id}
               to={`/category/${categorySlug}`}
-              className="block w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(12.5%-14px)]"
+              className="block w-[calc(25%-12px)] lg:w-[calc(12.5%-14px)]"
             >
               <div className="aspect-[3/4] overflow-hidden mb-3">
                 <img 

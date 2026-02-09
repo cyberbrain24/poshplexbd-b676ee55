@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, ArrowRight } from "lucide-react";
 import { useProducts } from "@/hooks/useProducts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { generateProductSlug } from "@/lib/slug";
@@ -21,18 +21,25 @@ const ProductGrid = () => {
 
   if (isLoading) {
     return (
-      <section className="w-full px-6 py-20">
-        <div className="flex items-baseline gap-4 mb-10">
-          <span className="text-6xl md:text-8xl font-black text-muted-foreground/30">02</span>
-          <h2 className="text-2xl md:text-3xl font-black tracking-tight text-foreground">NEW ARRIVALS</h2>
+      <section className="w-full px-4 md:px-8 py-12 md:py-16 bg-background relative overflow-hidden">
+        <div className="flex items-end justify-between mb-8 md:mb-12">
+          <div className="relative">
+            <span className="absolute -left-2 -top-8 text-[80px] md:text-[120px] font-black text-foreground/[0.03] leading-none select-none">
+              DROP
+            </span>
+            <h2 className="text-xl md:text-2xl font-black tracking-[-0.02em] text-foreground uppercase">
+              New Arrivals
+            </h2>
+            <div className="h-[2px] w-12 bg-foreground mt-2" />
+          </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 lg:gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
-            <div key={i} className="space-y-4">
+            <div key={i} className="space-y-3">
               <Skeleton className="aspect-[3/4] w-full" />
-              <Skeleton className="h-4 w-20" />
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-14" />
             </div>
           ))}
         </div>
@@ -42,89 +49,135 @@ const ProductGrid = () => {
 
   if (displayProducts.length === 0) {
     return (
-      <section className="w-full px-6 py-20">
-        <div className="flex items-baseline gap-4 mb-10">
-          <span className="text-6xl md:text-8xl font-black text-muted-foreground/30">02</span>
-          <h2 className="text-2xl md:text-3xl font-black tracking-tight text-foreground">NEW ARRIVALS</h2>
+      <section className="w-full px-4 md:px-8 py-12 md:py-16 bg-background">
+        <div className="flex items-end justify-between mb-8 md:mb-12">
+          <div className="relative">
+            <span className="absolute -left-2 -top-8 text-[80px] md:text-[120px] font-black text-foreground/[0.03] leading-none select-none">
+              DROP
+            </span>
+            <h2 className="text-xl md:text-2xl font-black tracking-[-0.02em] text-foreground uppercase">
+              New Arrivals
+            </h2>
+            <div className="h-[2px] w-12 bg-foreground mt-2" />
+          </div>
         </div>
-        <p className="text-center text-muted-foreground py-12">No products available yet. Check back soon!</p>
+        <p className="text-center text-muted-foreground py-12 text-sm">No products available yet. Check back soon!</p>
       </section>
     );
   }
 
   return (
-    <section className="w-full px-6 py-20">
-      {/* Section Header */}
-      <div className="flex items-baseline gap-4 mb-10">
-        <span className="text-6xl md:text-8xl font-black text-muted-foreground/30">
-          02
-        </span>
-        <h2 className="text-2xl md:text-3xl font-black tracking-tight text-foreground">
-          NEW ARRIVALS
-        </h2>
+    <section className="w-full px-4 md:px-8 py-12 md:py-16 bg-background relative overflow-hidden">
+      {/* Street culture background element */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-muted/30 to-transparent" />
+        <div className="absolute bottom-0 left-0 text-[200px] md:text-[300px] font-black text-foreground/[0.015] leading-none select-none -translate-x-1/4 translate-y-1/4">
+          STREET
+        </div>
       </div>
 
-      {/* 5-Column Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 lg:gap-6">
-        {displayProducts.map((product) => (
-          <div key={product.id} className="group">
-            {/* Product Image */}
+      {/* Section Header - Urban style */}
+      <div className="flex items-end justify-between mb-8 md:mb-12 relative z-10">
+        <div className="relative">
+          <span className="absolute -left-2 -top-8 text-[80px] md:text-[120px] font-black text-foreground/[0.03] leading-none select-none">
+            DROP
+          </span>
+          <h2 className="text-xl md:text-2xl font-black tracking-[-0.02em] text-foreground uppercase">
+            New Arrivals
+          </h2>
+          <div className="h-[2px] w-12 bg-foreground mt-2" />
+        </div>
+        <Link 
+          to="/category/all"
+          className="hidden md:flex items-center gap-2 text-xs font-medium tracking-wider text-muted-foreground hover:text-foreground transition-colors group"
+        >
+          VIEW ALL
+          <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+        </Link>
+      </div>
+
+      {/* 5-Column Product Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 relative z-10">
+        {displayProducts.map((product, index) => (
+          <div 
+            key={product.id} 
+            className="group relative"
+          >
+            {/* Product Image Container */}
             <Link 
               to={`/product/${generateProductSlug(product.name, product.id)}`}
-              className="block relative bg-slate-muted aspect-[3/4] overflow-hidden mb-4"
+              className="block relative aspect-[3/4] overflow-hidden bg-muted mb-3"
             >
+              {/* Image */}
               <img 
                 src={getMainImage(product)}
                 alt={product.name}
-                className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                className="w-full h-full object-cover object-center transition-all duration-500 group-hover:scale-105"
               />
               
-              {/* Badges */}
-              <div className="absolute top-3 left-3 flex flex-col gap-2">
-                <span className="bg-foreground text-background px-2 py-1 text-[10px] font-medium tracking-wider">
-                  NEW
+              {/* Overlay on hover */}
+              <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/10 transition-colors duration-300" />
+              
+              {/* Index number - street style */}
+              <span className="absolute bottom-2 right-2 text-[10px] font-mono text-foreground/40 tracking-wider">
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              
+              {/* Badge */}
+              <div className="absolute top-0 left-0">
+                <span className="inline-block bg-foreground text-background px-2 py-1 text-[9px] font-bold tracking-[0.15em] uppercase">
+                  New
                 </span>
               </div>
+
+              {/* Quick add button - appears on hover */}
+              <button 
+                className="absolute bottom-3 left-3 right-3 py-2.5 bg-background/95 backdrop-blur-sm text-foreground text-[10px] font-bold tracking-[0.1em] uppercase opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 flex items-center justify-center gap-2 hover:bg-foreground hover:text-background"
+                aria-label="Add to cart"
+              >
+                <ShoppingBag size={12} strokeWidth={2} />
+                Quick Add
+              </button>
             </Link>
 
             {/* Product Info */}
-            <div>
-              <p className="text-xs text-muted-foreground mb-1 tracking-wide">
-                {product.category?.name || 'Uncategorized'}
+            <div className="space-y-1">
+              <p className="text-[10px] text-muted-foreground tracking-[0.1em] uppercase">
+                {product.category?.name || 'Streetwear'}
               </p>
               <Link 
                 to={`/product/${generateProductSlug(product.name, product.id)}`}
-                className="block text-sm font-medium text-foreground tracking-wide mb-2 hover:text-nav-hover transition-colors"
+                className="block text-xs font-medium text-foreground tracking-wide leading-tight hover:underline underline-offset-2 line-clamp-2"
               >
                 {product.name}
               </Link>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-foreground">
-                    {formatPrice(product.base_price)}
-                  </span>
-                </div>
-                
-                <button 
-                  className="p-2 border border-border hover:bg-foreground hover:text-background hover:border-foreground transition-colors"
-                  aria-label="Add to cart"
-                >
-                  <ShoppingBag size={16} strokeWidth={1.5} />
-                </button>
-              </div>
+              <p className="text-sm font-bold text-foreground tracking-tight">
+                {formatPrice(product.base_price)}
+              </p>
             </div>
           </div>
         ))}
       </div>
 
-      {/* View All Button */}
-      <div className="flex justify-center mt-12">
+      {/* Mobile View All Button */}
+      <div className="flex justify-center mt-10 md:hidden relative z-10">
         <Link 
           to="/category/all"
-          className="inline-flex items-center gap-2 border border-foreground px-8 py-4 text-sm font-medium tracking-wider hover:bg-foreground hover:text-background transition-colors"
+          className="inline-flex items-center gap-3 bg-foreground text-background px-8 py-3 text-[11px] font-bold tracking-[0.15em] uppercase hover:bg-foreground/90 transition-colors"
         >
-          VIEW ALL PRODUCTS
+          View All Products
+          <ArrowRight size={14} />
+        </Link>
+      </div>
+
+      {/* Desktop View All Button */}
+      <div className="hidden md:flex justify-center mt-12 relative z-10">
+        <Link 
+          to="/category/all"
+          className="group inline-flex items-center gap-3 border-2 border-foreground px-10 py-4 text-[11px] font-bold tracking-[0.15em] uppercase hover:bg-foreground hover:text-background transition-all duration-300"
+        >
+          Explore Full Collection
+          <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
         </Link>
       </div>
     </section>

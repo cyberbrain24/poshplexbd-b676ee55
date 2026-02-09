@@ -151,7 +151,7 @@ const MyOrders = () => {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <main className="pt-8 pb-12">
+        <main className="pt-8 pb-12 relative z-0">
           <div className="max-w-4xl mx-auto px-6">
             <div className="space-y-4">
               {[1, 2, 3].map(i => (
@@ -169,7 +169,7 @@ const MyOrders = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="pt-8 pb-12">
+      <main className="pt-8 pb-12 relative z-0">
         <div className="max-w-4xl mx-auto px-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">

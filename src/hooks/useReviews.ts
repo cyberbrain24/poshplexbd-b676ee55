@@ -8,6 +8,7 @@ export interface Review {
   rating: number;
   title: string | null;
   content: string;
+  images: string[] | null;
   is_approved: boolean;
   created_at: string;
   updated_at: string;
@@ -79,6 +80,7 @@ export const useCreateReview = () => {
       rating: number;
       title?: string;
       content: string;
+      images?: string[];
     }) => {
       const { data: result, error } = await supabase
         .from("reviews")
@@ -110,6 +112,7 @@ export const useUpdateReview = () => {
         rating?: number;
         title?: string;
         content?: string;
+        images?: string[];
       };
     }) => {
       const { data: result, error } = await supabase

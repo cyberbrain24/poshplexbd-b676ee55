@@ -3,10 +3,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Check, X, Star, Trash2, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import ReviewImages from "@/components/product/ReviewImages";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,6 +34,7 @@ interface Review {
   rating: number;
   title: string | null;
   content: string;
+  images: string[] | null;
   is_approved: boolean;
   created_at: string;
   customer?: {
@@ -310,6 +312,9 @@ const AdminReviews = () => {
                     <p className="text-sm text-muted-foreground line-clamp-2">
                       {review.content}
                     </p>
+
+                    {/* Review Images */}
+                    <ReviewImages images={review.images || []} size="sm" />
 
                     <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
                       <span>By: {review.customer?.name || "Unknown"}</span>

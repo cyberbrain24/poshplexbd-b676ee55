@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { generateProductSlug } from "@/lib/slug";
+import ReviewImages from "@/components/product/ReviewImages";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -144,6 +145,10 @@ const ReviewCard = ({ review }: { review: Review }) => {
             <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
               {review.content}
             </p>
+            
+            {/* Review Images */}
+            <ReviewImages images={review.images || []} size="sm" />
+            
             <p className="text-xs text-muted-foreground mt-2">
               {new Date(review.created_at).toLocaleDateString()}
             </p>

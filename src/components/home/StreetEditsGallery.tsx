@@ -1,15 +1,38 @@
-import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import streetEdit1 from "@/assets/street-edit-1.jpg";
-import streetEdit2 from "@/assets/street-edit-2.jpg";
-import streetEdit3 from "@/assets/street-edit-3.jpg";
+import { useCategories } from "@/hooks/useMasterData";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const StreetEditsGallery = () => {
-  const images = [
-    { src: streetEdit1, alt: "Male model in streetwear", href: "/category/men" },
-    { src: streetEdit2, alt: "Female model in streetwear", href: "/category/women" },
-    { src: streetEdit3, alt: "Streetwear detail", href: "/category/new-drops" },
-  ];
+  const { data: categories = [], isLoading } = useCategories();
+  
+  // Get main categories (no parent) that have images, limit to 3
+  const mainCategories = categories
+    .filter(c => !c.parent_id && c.image_url)
+    .slice(0, 3);
+
+  if (isLoading) {
+    return (
+      <section className="w-full px-6 py-20">
+        <div className="flex items-baseline gap-4 mb-10">
+          <Skeleton className="w-24 h-16" />
+          <Skeleton className="w-48 h-8" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="space-y-3">
+              <Skeleton className="aspect-[3/4] w-full" />
+              <Skeleton className="h-5 w-24" />
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  // If no categories with images, don't render the section
+  if (mainCategories.length === 0) {
+    return null;
+  }
 
   return (
     <section className="w-full px-6 py-20">
@@ -23,63 +46,30 @@ const StreetEditsGallery = () => {
         </h2>
       </div>
 
-      {/* Asymmetric Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-        {/* Large left image */}
-        <Link 
-          to={images[0].href}
-          className="md:col-span-5 relative group overflow-hidden"
-        >
-          <div className="aspect-[3/4]">
-            <img 
-              src={images[0].src}
-              alt={images[0].alt}
-              className="w-full h-full object-cover grayscale-filter group-hover:scale-105 transition-transform duration-500"
-            />
-          </div>
-          <div className="absolute bottom-4 left-4 flex items-center gap-2 text-background bg-foreground/80 px-4 py-2 text-sm font-medium tracking-wide opacity-0 group-hover:opacity-100 transition-opacity">
-            SHOP MEN
-            <ArrowRight size={14} strokeWidth={1.5} />
-          </div>
-        </Link>
-
-        {/* Right column with 2 stacked images */}
-        <div className="md:col-span-4 flex flex-col gap-4">
-          <Link 
-            to={images[1].href}
-            className="relative group overflow-hidden flex-1"
-          >
-            <div className="aspect-[3/4]">
-              <img 
-                src={images[1].src}
-                alt={images[1].alt}
-                className="w-full h-full object-cover grayscale-filter group-hover:scale-105 transition-transform duration-500"
-              />
-            </div>
-            <div className="absolute bottom-4 left-4 flex items-center gap-2 text-background bg-foreground/80 px-4 py-2 text-sm font-medium tracking-wide opacity-0 group-hover:opacity-100 transition-opacity">
-              SHOP WOMEN
-              <ArrowRight size={14} strokeWidth={1.5} />
-            </div>
-          </Link>
-        </div>
-
-        {/* Detail shot */}
-        <Link 
-          to={images[2].href}
-          className="md:col-span-3 relative group overflow-hidden"
-        >
-          <div className="aspect-[3/4]">
-            <img 
-              src={images[2].src}
-              alt={images[2].alt}
-              className="w-full h-full object-cover grayscale-filter group-hover:scale-105 transition-transform duration-500"
-            />
-          </div>
-          <div className="absolute bottom-4 left-4 flex items-center gap-2 text-background bg-foreground/80 px-4 py-2 text-sm font-medium tracking-wide opacity-0 group-hover:opacity-100 transition-opacity">
-            NEW DROPS
-            <ArrowRight size={14} strokeWidth={1.5} />
-          </div>
-        </Link>
+      {/* Category Grid - Equal columns */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {mainCategories.map((category) => {
+          const categorySlug = category.name.toLowerCase().replace(/\s+/g, '-');
+          
+          return (
+            <Link 
+              key={category.id}
+              to={`/category/${categorySlug}`}
+              className="group block"
+            >
+              <div className="aspect-[3/4] overflow-hidden mb-3">
+                <img 
+                  src={category.image_url!}
+                  alt={category.name}
+                  className="w-full h-full object-cover grayscale-[30%] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
+                />
+              </div>
+              <h3 className="text-sm font-medium tracking-wide text-foreground uppercase">
+                {category.name}
+              </h3>
+            </Link>
+          );
+        })}
       </div>
     </section>
   );

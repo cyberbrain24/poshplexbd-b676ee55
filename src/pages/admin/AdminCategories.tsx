@@ -112,6 +112,7 @@ const AdminCategories = () => {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-16">Image</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Subcategories</TableHead>
@@ -122,17 +123,32 @@ const AdminCategories = () => {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8">Loading...</TableCell>
+                <TableCell colSpan={6} className="text-center py-8">Loading...</TableCell>
               </TableRow>
             ) : filteredItems.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   No categories found
                 </TableCell>
               </TableRow>
             ) : (
               filteredItems.map((item) => (
                 <TableRow key={item.id} className={item.isChild ? "bg-muted/30" : ""}>
+                  <TableCell>
+                    {item.image_url ? (
+                      <div className="w-12 h-12 overflow-hidden bg-muted">
+                        <img 
+                          src={item.image_url} 
+                          alt={item.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 bg-muted flex items-center justify-center text-xs text-muted-foreground">
+                        No img
+                      </div>
+                    )}
+                  </TableCell>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
                       {item.isChild && (

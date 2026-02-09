@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { X, Upload, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,6 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCategories } from "@/hooks/useMasterData";
 import { Category } from "@/types/product";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface MasterDataModalProps {
   isOpen: boolean;
@@ -19,6 +21,7 @@ interface MasterDataModalProps {
 
 const MasterDataModal = ({ isOpen, onClose, onSave, title, type, initialData }: MasterDataModalProps) => {
   const [formData, setFormData] = useState<any>({});
+  const [isUploading, setIsUploading] = useState(false);
   const { data: categories = [] } = useCategories();
   
   // Get only parent categories (categories with no parent_id)
@@ -43,7 +46,7 @@ const MasterDataModal = ({ isOpen, onClose, onSave, title, type, initialData }: 
           setFormData({ name: "", content: "" });
           break;
         case "category":
-          setFormData({ name: "", parent_id: null });
+          setFormData({ name: "", parent_id: null, image_url: "" });
           break;
         case "brand":
           setFormData({ name: "" });
@@ -186,6 +189,46 @@ const MasterDataModal = ({ isOpen, onClose, onSave, title, type, initialData }: 
         );
 
       case "category":
+        const handleCategoryImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+
+          // Validate file
+          const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+          if (!allowedTypes.includes(file.type)) {
+            toast.error('Invalid file type. Only JPEG, PNG, WebP are allowed.');
+            return;
+          }
+          if (file.size > 5 * 1024 * 1024) {
+            toast.error('File size exceeds 5MB limit.');
+            return;
+          }
+
+          setIsUploading(true);
+          try {
+            const fileExt = file.name.split('.').pop()?.toLowerCase();
+            const fileName = `categories/${Date.now()}.${fileExt}`;
+            
+            const { error: uploadError } = await supabase.storage
+              .from('product-images')
+              .upload(fileName, file);
+            
+            if (uploadError) throw uploadError;
+            
+            const { data: urlData } = supabase.storage
+              .from('product-images')
+              .getPublicUrl(fileName);
+            
+            setFormData({ ...formData, image_url: urlData.publicUrl });
+            toast.success('Image uploaded successfully');
+          } catch (error) {
+            console.error('Upload error:', error);
+            toast.error('Failed to upload image');
+          } finally {
+            setIsUploading(false);
+          }
+        };
+
         return (
           <>
             <div className="space-y-2">
@@ -194,7 +237,7 @@ const MasterDataModal = ({ isOpen, onClose, onSave, title, type, initialData }: 
                 id="name"
                 value={formData.name || ""}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g., Earrings, Necklaces"
+                placeholder="e.g., T-Shirts, Jackets"
               />
             </div>
             <div className="space-y-2">
@@ -209,7 +252,7 @@ const MasterDataModal = ({ isOpen, onClose, onSave, title, type, initialData }: 
                 <SelectContent>
                   <SelectItem value="none">None (Main Category)</SelectItem>
                   {parentCategories
-                    .filter((c: Category) => c.id !== initialData?.id) // Prevent self-parenting
+                    .filter((c: Category) => c.id !== initialData?.id)
                     .map((category: Category) => (
                       <SelectItem key={category.id} value={category.id}>
                         {category.name}
@@ -219,6 +262,51 @@ const MasterDataModal = ({ isOpen, onClose, onSave, title, type, initialData }: 
               </Select>
               <p className="text-xs text-muted-foreground">
                 Main categories appear in the header navigation. Subcategories appear in dropdowns.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>Category Image</Label>
+              {formData.image_url ? (
+                <div className="relative w-full aspect-video bg-muted overflow-hidden border border-border">
+                  <img 
+                    src={formData.image_url} 
+                    alt="Category" 
+                    className="w-full h-full object-cover"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    onClick={() => setFormData({ ...formData, image_url: "" })}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border cursor-pointer hover:bg-muted/50 transition-colors">
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={handleCategoryImageUpload}
+                    disabled={isUploading}
+                  />
+                  {isUploading ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Uploading...</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2">
+                      <Upload className="h-8 w-8 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Click to upload image</span>
+                    </div>
+                  )}
+                </label>
+              )}
+              <p className="text-xs text-muted-foreground">
+                This image appears on the homepage category section. Recommended: 800x1000px
               </p>
             </div>
           </>

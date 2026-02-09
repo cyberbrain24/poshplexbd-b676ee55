@@ -29,6 +29,7 @@ import {
   RefreshCw,
   LucideIcon,
   MessageSquare,
+  Image,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -234,6 +235,9 @@ const AdminSidebar = () => {
 
         {/* Reviews */}
         {renderNavLink("/admin/reviews", MessageSquare, "Reviews")}
+
+        {/* Media Library */}
+        {renderNavLink("/admin/media", Image, "Media")}
 
         {/* SEO Manager */}
         {renderNavLink("/admin/seo", Globe, "SEO Manager")}

@@ -84,6 +84,64 @@ const Checkout = () => {
   const shippingCost = shippingConfig.cost;
 
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isLoadingCustomer, setIsLoadingCustomer] = useState(true);
+
+  // Auto-fill customer details if logged in
+  useEffect(() => {
+    const loadCustomerData = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session?.user) {
+          setIsLoadingCustomer(false);
+          return;
+        }
+
+        // First, get the customer_account to find customer_id
+        const { data: customerAccount, error: accountError } = await supabase
+          .from('customer_accounts')
+          .select('customer_id')
+          .eq('auth_user_id', session.user.id)
+          .maybeSingle();
+
+        if (accountError || !customerAccount?.customer_id) {
+          setIsLoadingCustomer(false);
+          return;
+        }
+
+        // Then fetch the full customer details
+        const { data: customer, error: customerError } = await supabase
+          .from('customers')
+          .select('*')
+          .eq('id', customerAccount.customer_id)
+          .maybeSingle();
+
+        if (customerError || !customer) {
+          setIsLoadingCustomer(false);
+          return;
+        }
+
+        // Auto-fill the form with customer data
+        setCustomerDetails(prev => ({
+          ...prev,
+          name: customer.name || prev.name,
+          email: customer.email || prev.email,
+          phone: customer.phone || prev.phone,
+          gender: customer.gender || prev.gender,
+          address: customer.address || prev.address,
+          divisionId: customer.division_id || prev.divisionId,
+          thanaId: customer.thana_id || prev.thanaId,
+        }));
+
+      } catch (error) {
+        console.warn('Error loading customer data:', error);
+      } finally {
+        setIsLoadingCustomer(false);
+      }
+    };
+
+    loadCustomerData();
+  }, []);
 
   const selectedPaymentMethod = paymentMethods?.find(pm => pm.id === selectedPaymentMethodId);
 

@@ -46,8 +46,8 @@ const StreetEditsGallery = () => {
         </h2>
       </div>
 
-      {/* Category Grid - 8 columns */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
+      {/* Category Grid - 8 columns, centered if less than 8 */}
+      <div className="flex flex-wrap justify-center gap-4">
         {mainCategories.map((category) => {
           const categorySlug = category.name.toLowerCase().replace(/\s+/g, '-');
           
@@ -55,13 +55,13 @@ const StreetEditsGallery = () => {
             <Link 
               key={category.id}
               to={`/category/${categorySlug}`}
-              className="group block"
+              className="block w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(12.5%-14px)]"
             >
               <div className="aspect-[3/4] overflow-hidden mb-3">
                 <img 
                   src={category.image_url!}
                   alt={category.name}
-                  className="w-full h-full object-cover grayscale-[30%] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
+                  className="w-full h-full object-cover"
                 />
               </div>
               <h3 className="text-sm font-medium tracking-wide text-foreground uppercase">

@@ -125,14 +125,24 @@ export const useProduct = (slugOrId: string | undefined) => {
         data = result.data;
         error = result.error;
       } else if (shortId && /^[0-9a-f]{8}$/i.test(shortId)) {
-        // Match by ID starting with short ID using text cast
+        // PostgREST doesn't support id::text cast, so we need to fetch products
+        // and filter by ID prefix client-side
         const result = await supabase
           .from("products")
-          .select(selectQuery)
-          .filter("id::text", "ilike", `${shortId}%`)
-          .single();
-        data = result.data;
-        error = result.error;
+          .select(selectQuery);
+        
+        if (result.error) {
+          error = result.error;
+        } else {
+          // Find product where ID starts with the short ID
+          const matchingProduct = result.data?.find(
+            (p: any) => p.id.toLowerCase().startsWith(shortId.toLowerCase())
+          );
+          data = matchingProduct || null;
+          if (!matchingProduct) {
+            error = { message: "Product not found", code: "PGRST116" };
+          }
+        }
       } else {
         return null;
       }

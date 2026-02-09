@@ -106,7 +106,7 @@ const Navigation = () => {
         </div>
 
         {/* Center - Navigation */}
-        <div className="hidden lg:flex items-center space-x-8 absolute left-1/2 transform -translate-x-1/2">
+        <div className="hidden lg:flex items-center space-x-6 absolute left-1/2 transform -translate-x-1/2">
           {navItems.map((item) => (
             <div
               key={item.name}
@@ -116,7 +116,7 @@ const Navigation = () => {
             >
               <Link
                 to={item.href}
-                className="text-foreground hover:text-muted-foreground transition-colors duration-200 text-xs font-medium tracking-wider py-6 block"
+                className="text-foreground hover:text-muted-foreground transition-colors duration-200 text-xs font-medium tracking-wide py-6 block"
               >
                 {item.name}
               </Link>

@@ -7,8 +7,8 @@ import { generateProductSlug } from "@/lib/slug";
 const ProductGrid = () => {
   const { data: products, isLoading } = useProducts();
 
-  // Get first 4 active products for homepage
-  const displayProducts = products?.filter(p => p.is_active).slice(0, 4) || [];
+  // Get first 10 active products for homepage (5 columns x 2 rows)
+  const displayProducts = products?.filter(p => p.is_active).slice(0, 10) || [];
 
   const formatPrice = (price: number) => {
     return `৳${price.toLocaleString()}`;
@@ -26,8 +26,8 @@ const ProductGrid = () => {
           <span className="text-6xl md:text-8xl font-black text-muted-foreground/30">02</span>
           <h2 className="text-2xl md:text-3xl font-black tracking-tight text-foreground">NEW ARRIVALS</h2>
         </div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-          {[1, 2, 3, 4].map((i) => (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 lg:gap-6">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
             <div key={i} className="space-y-4">
               <Skeleton className="aspect-[3/4] w-full" />
               <Skeleton className="h-4 w-20" />
@@ -64,8 +64,8 @@ const ProductGrid = () => {
         </h2>
       </div>
 
-      {/* 4-Column Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+      {/* 5-Column Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 lg:gap-6">
         {displayProducts.map((product) => (
           <div key={product.id} className="group">
             {/* Product Image */}

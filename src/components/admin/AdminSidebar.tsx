@@ -28,6 +28,7 @@ import {
   Database,
   RefreshCw,
   LucideIcon,
+  MessageSquare,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -230,6 +231,9 @@ const AdminSidebar = () => {
 
         {/* Products */}
         {renderNavLink("/admin/products", Package, "Products")}
+
+        {/* Reviews */}
+        {renderNavLink("/admin/reviews", MessageSquare, "Reviews")}
 
         {/* SEO Manager */}
         {renderNavLink("/admin/seo", Globe, "SEO Manager")}

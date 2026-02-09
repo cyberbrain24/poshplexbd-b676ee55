@@ -12,7 +12,7 @@ import {
   LogOut,
   AlertCircle
 } from "lucide-react";
-import Header from "@/components/header/Header";
+import PoshplexHeader from "@/components/header/PoshplexHeader";
 import PoshplexFooter from "@/components/footer/PoshplexFooter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -150,7 +150,7 @@ const MyOrders = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
+        <PoshplexHeader />
         <main className="pt-8 pb-12 relative z-0">
           <div className="max-w-4xl mx-auto px-6">
             <div className="space-y-4">
@@ -167,7 +167,7 @@ const MyOrders = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <PoshplexHeader />
       
       <main className="pt-8 pb-12 relative z-0">
         <div className="max-w-4xl mx-auto px-6">

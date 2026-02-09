@@ -333,7 +333,7 @@ const Checkout = () => {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <main className="pt-20 pb-12">
+        <main className="pt-20 pb-12 relative z-0">
           <div className="max-w-md mx-auto px-6 text-center">
             <ShoppingBag className="h-16 w-16 mx-auto text-muted-foreground mb-6" />
             <h1 className="text-2xl font-light text-foreground mb-4">Your cart is empty</h1>
@@ -352,7 +352,7 @@ const Checkout = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="pt-6 pb-12">
+      <main className="pt-6 pb-12 relative z-0">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             

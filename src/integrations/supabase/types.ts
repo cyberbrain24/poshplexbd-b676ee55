@@ -1139,6 +1139,7 @@ export type Database = {
           created_at: string
           customer_id: string
           id: string
+          images: string[] | null
           is_approved: boolean
           product_id: string
           rating: number
@@ -1150,6 +1151,7 @@ export type Database = {
           created_at?: string
           customer_id: string
           id?: string
+          images?: string[] | null
           is_approved?: boolean
           product_id: string
           rating: number
@@ -1161,6 +1163,7 @@ export type Database = {
           created_at?: string
           customer_id?: string
           id?: string
+          images?: string[] | null
           is_approved?: boolean
           product_id?: string
           rating?: number

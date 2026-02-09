@@ -6,8 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { useCreateReview, useUpdateReview, useProductReviews } from "@/hooks/useReviews";
+import { useCreateReview, useUpdateReview } from "@/hooks/useReviews";
 import { toast } from "sonner";
+import ReviewImageUpload from "./ReviewImageUpload";
 
 const CustomStar = ({ filled, onClick, className }: { filled: boolean; onClick: () => void; className?: string }) => (
   <svg 
@@ -33,6 +34,7 @@ const ReviewProduct = ({ productId }: ReviewProductProps) => {
   const [rating, setRating] = useState(0);
   const [title, setTitle] = useState("");
   const [review, setReview] = useState("");
+  const [images, setImages] = useState<string[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customerId, setCustomerId] = useState<string | null>(null);
@@ -85,6 +87,7 @@ const ReviewProduct = ({ productId }: ReviewProductProps) => {
             setRating(existingReview.rating);
             setTitle(existingReview.title || "");
             setReview(existingReview.content);
+            setImages(existingReview.images || []);
           }
         }
       } else {
@@ -127,6 +130,7 @@ const ReviewProduct = ({ productId }: ReviewProductProps) => {
             rating,
             title: title.trim() || undefined,
             content: review.trim(),
+            images,
           },
         });
         toast.success("Review updated successfully!");
@@ -138,6 +142,7 @@ const ReviewProduct = ({ productId }: ReviewProductProps) => {
           rating,
           title: title.trim() || undefined,
           content: review.trim(),
+          images,
         });
         toast.success("Review submitted! It will appear after approval.");
       }
@@ -203,6 +208,11 @@ const ReviewProduct = ({ productId }: ReviewProductProps) => {
               placeholder="Share your thoughts about this product..."
               className="min-h-24 resize-none rounded-none font-light"
             />
+          </div>
+
+          <div className="space-y-3">
+            <Label className="text-sm font-light text-foreground">Photos (optional)</Label>
+            <ReviewImageUpload images={images} onChange={setImages} maxImages={3} />
           </div>
           
           <Button 

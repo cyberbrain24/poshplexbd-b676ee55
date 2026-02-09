@@ -1133,6 +1133,57 @@ export type Database = {
           },
         ]
       }
+      reviews: {
+        Row: {
+          content: string
+          created_at: string
+          customer_id: string
+          id: string
+          is_approved: boolean
+          product_id: string
+          rating: number
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          customer_id: string
+          id?: string
+          is_approved?: boolean
+          product_id: string
+          rating: number
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          customer_id?: string
+          id?: string
+          is_approved?: boolean
+          product_id?: string
+          rating?: number
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seed_jobs: {
         Row: {
           completed_at: string | null

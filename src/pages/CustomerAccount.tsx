@@ -6,9 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { User, Package, LogOut, Key, Eye, EyeOff, Crown } from "lucide-react";
+import { User, Package, LogOut, Key, Eye, EyeOff, Crown, MessageSquare } from "lucide-react";
 import PoshplexHeader from "@/components/header/PoshplexHeader";
 import PoshplexFooter from "@/components/footer/PoshplexFooter";
+import MyReviews from "@/components/account/MyReviews";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 interface CustomerAccountData {
@@ -239,7 +240,18 @@ const CustomerAccount = () => {
             </CardContent>
           </Card>
 
-          {/* Change Password */}
+          {/* My Reviews */}
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-medium flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                My Reviews
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <MyReviews customerId={accountData?.customer_id || null} />
+            </CardContent>
+          </Card>
           <Card>
             <CardHeader className="pb-4">
               <CardTitle className="text-lg font-medium flex items-center gap-2">

@@ -52,6 +52,7 @@ import AdminOrders from "./pages/admin/AdminOrders";
 import AdminPaymentMethods from "./pages/admin/AdminPaymentMethods";
 import AdminSEO from "./pages/admin/AdminSEO";
 import AdminSeedData from "./pages/admin/AdminSeedData";
+import AdminReviews from "./pages/admin/AdminReviews";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -106,6 +107,7 @@ const App = () => (
               <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
                 <Route index element={<AdminDashboard />} />
                 <Route path="products" element={<AdminProducts />} />
+                <Route path="reviews" element={<AdminReviews />} />
                 <Route path="seo" element={<AdminSEO />} />
                 
                 {/* Product Edits */}

@@ -21,10 +21,10 @@ const ProductDetail = () => {
   const { productSlug } = useParams();
   const { data: product, isLoading } = useProduct(productSlug);
 
-  // Fallback for static product if not found in database
-  const productName = product?.name || "Pantheon";
-  const categoryName = product?.category?.name || "Earrings";
-  const categorySlug = categoryName.toLowerCase();
+  // Fallback for product data
+  const productName = product?.name || "Product";
+  const categoryName = product?.category?.name || "Apparel";
+  const categorySlug = categoryName.toLowerCase().replace(/\s+/g, '-');
 
   return (
     <div className="min-h-screen bg-background">

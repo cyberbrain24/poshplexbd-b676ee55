@@ -158,7 +158,7 @@ const Checkout = () => {
     return true;
   };
 
-  // Create customer account via edge function
+  // Create customer account via edge function and auto-login
   const createCustomerAccount = async (customerId: string, phone: string, email?: string, name?: string) => {
     try {
       const { error } = await supabase.functions.invoke('create-customer-account', {
@@ -166,6 +166,18 @@ const Checkout = () => {
       });
       if (error) {
         console.warn('Error creating customer account:', error);
+        return;
+      }
+      
+      // Auto-login the customer after account creation
+      const phoneEmail = `${phone}@phone.local`;
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: phoneEmail,
+        password: DEFAULT_PASSWORD,
+      });
+      
+      if (signInError) {
+        console.warn('Auto-login failed:', signInError);
       }
     } catch (err) {
       console.warn('Customer account creation failed:', err);

@@ -34,12 +34,12 @@ const ProductInfo = ({ product, isLoading }: ProductInfoProps) => {
   }, []);
 
   // Fallback data for static display
-  const productName = product?.name || "Pantheon";
-  const categoryName = product?.category?.name || "Earrings";
+  const productName = product?.name || "Product";
+  const categoryName = product?.category?.name || "Apparel";
   const categorySlug = categoryName.toLowerCase().replace(/\s+/g, '-');
-  const basePrice = product?.base_price || 2850;
+  const basePrice = product?.base_price || 0;
   const displayPrice = selectedVariant?.selling_price || basePrice;
-  const shortDescription = product?.short_description || "A modern interpretation of classical architecture, these earrings bridge timeless elegance with contemporary minimalism.";
+  const shortDescription = product?.short_description || "Quality streetwear designed for comfort and style.";
   const hasVariants = product?.variants && product.variants.length > 0;
   const isVariableProduct = product?.product_type === 'variable';
   const canAddToCart = !isVariableProduct || selectedVariant !== null;

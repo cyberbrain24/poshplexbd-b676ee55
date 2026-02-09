@@ -29,23 +29,22 @@ const ProductDescription = ({ product }: ProductDescriptionProps) => {
   const [isCareOpen, setIsCareOpen] = useState(false);
   const [isReviewsOpen, setIsReviewsOpen] = useState(false);
 
-  // Get dynamic content from product or use fallbacks
-  const fullDescription = product?.full_description || `The Pantheon earrings embody architectural elegance with their clean, geometric design. 
-Inspired by classical Roman architecture, these statement pieces feature a sophisticated 
-interplay of curves and angles that catch and reflect light beautifully.
+  // Get dynamic content from product or use generic fallbacks
+  const fullDescription = product?.full_description || `This product represents our commitment to quality streetwear. 
+Designed with attention to detail and crafted from premium materials for lasting comfort and style.
 
-Each earring is meticulously crafted from premium sterling silver with an 18k gold 
-plating, ensuring both durability and luxury. The minimalist aesthetic makes them 
-perfect for both everyday wear and special occasions.`;
+Each piece is created with care, ensuring both durability and a perfect fit. 
+The minimalist aesthetic makes it versatile for everyday wear or special occasions.`;
 
-  const sizeGuideContent = product?.size_guide?.content || `Small (S): 1.8cm x 0.9cm
-Medium (M): 2.5cm x 1.2cm
-Large (L): 3.2cm x 1.5cm`;
+  const sizeGuideContent = product?.size_guide?.content || `S: Chest 36-38"
+M: Chest 38-40"
+L: Chest 40-42"
+XL: Chest 42-44"`;
 
-  const careContent = product?.care_instruction?.content || `• Clean with a soft, dry cloth after each wear
-• Avoid contact with perfumes, lotions, and cleaning products
-• Store in the provided jewelry pouch when not wearing
-• Remove before swimming, exercising, or showering`;
+  const careContent = product?.care_instruction?.content || `• Machine wash cold with like colors
+• Tumble dry low or hang to dry
+• Do not bleach
+• Iron on low heat if needed`;
 
   return (
     <div className="space-y-0 mt-8 border-t border-border">

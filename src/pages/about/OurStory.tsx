@@ -18,7 +18,7 @@ const OurStory = () => {
         <main className="w-full lg:w-[70vw] lg:ml-auto px-6">
           <PageHeader 
             title="Our Story" 
-            subtitle="A journey of passion, craftsmanship, and timeless elegance"
+            subtitle="A journey of passion, creativity, and street culture"
           />
           
           <ContentSection>
@@ -26,7 +26,7 @@ const OurStory = () => {
               image="/founders.png"
               imageAlt="Company founders"
               title="Founded on Passion"
-              content="LINEA Jewelry was born from a shared vision of creating timeless pieces that transcend fleeting trends. Our founders, united by their passion for exceptional craftsmanship and sustainable practices, established the brand with a commitment to creating jewelry that tells a story - your story."
+              content="PoshPlex was born from street culture and the need to wear your identity out loud. Our founders, united by their passion for original designs and authentic expression, established the brand with a commitment to creating apparel that tells a story - your story."
               imagePosition="left"
             />
           </ContentSection>

@@ -11,7 +11,7 @@ import {
   AlertCircle,
   History
 } from "lucide-react";
-import CheckoutHeader from "@/components/header/CheckoutHeader";
+import PoshplexHeader from "@/components/header/PoshplexHeader";
 import PoshplexFooter from "@/components/footer/PoshplexFooter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -135,7 +135,7 @@ const OrderTracking = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <CheckoutHeader />
+      <PoshplexHeader />
       
       <main className="pt-8 pb-12">
         <div className="max-w-3xl mx-auto px-6">

@@ -168,7 +168,7 @@ XL: Chest 42-44"`;
         {isReviewsOpen && (
           <div className="pb-6 space-y-6">
             {/* Review Product Button */}
-            <ReviewProduct />
+            <ReviewProduct productId={product?.id || ""} />
 
             {/* Reviews List */}
             <div className="space-y-6">

@@ -159,43 +159,36 @@ const MyReviews = ({ customerId }: MyReviewsProps) => {
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <h2 className="text-lg font-medium">My Reviews</h2>
-        <div className="space-y-3">
-          {[1, 2].map((i) => (
-            <Card key={i}>
-              <CardContent className="p-4">
-                <div className="flex gap-4">
-                  <Skeleton className="w-20 h-20" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-5 w-48" />
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-4 w-full" />
-                  </div>
+      <div className="space-y-3">
+        {[1, 2].map((i) => (
+          <Card key={i}>
+            <CardContent className="p-4">
+              <div className="flex gap-4">
+                <Skeleton className="w-20 h-20" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-5 w-48" />
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-full" />
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-medium">My Reviews</h2>
-      
+    <div className="space-y-3">
       {reviews.length === 0 ? (
-        <Card>
-          <CardContent className="py-8 text-center">
-            <p className="text-muted-foreground">
-              You haven't written any reviews yet.
-            </p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Share your thoughts on products you've purchased!
-            </p>
-          </CardContent>
-        </Card>
+        <div className="py-4 text-center">
+          <p className="text-muted-foreground">
+            You haven't written any reviews yet.
+          </p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Share your thoughts on products you've purchased!
+          </p>
+        </div>
       ) : (
         <div className="space-y-3">
           {reviews.map((review) => (

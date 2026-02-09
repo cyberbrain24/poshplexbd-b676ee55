@@ -2,20 +2,6 @@ import { useState, useRef } from "react";
 import ImageZoom from "./ImageZoom";
 import { Product } from "@/types/product";
 import { Skeleton } from "@/components/ui/skeleton";
-import pantheonImage from "@/assets/pantheon.jpg";
-import eclipseImage from "@/assets/eclipse.jpg";
-import haloImage from "@/assets/halo.jpg";
-import organicEarring from "@/assets/organic-earring.png";
-import linkBracelet from "@/assets/link-bracelet.png";
-
-// Fallback images for products without database images
-const fallbackImages = [
-  pantheonImage,
-  organicEarring,
-  eclipseImage,
-  linkBracelet,
-  haloImage,
-];
 
 interface ProductImageGalleryProps {
   product?: Product | null;
@@ -29,12 +15,12 @@ const ProductImageGallery = ({ product, isLoading }: ProductImageGalleryProps) =
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
 
-  // Use product images from database or fallback
+  // Use product images from database only - no static fallbacks
   const productImages = product?.images && product.images.length > 0
     ? product.images
         .sort((a, b) => a.sort_order - b.sort_order)
         .map(img => img.image_url)
-    : fallbackImages;
+    : ['/placeholder.svg'];
 
   // YouTube video handling
   const youtubeUrl = product?.youtube_url;

@@ -98,34 +98,44 @@ export const useProduct = (slugOrId: string | undefined) => {
       const parts = slugOrId.split('-');
       const shortId = parts[parts.length - 1];
       
-      let query = supabase
-        .from("products")
-        .select(`
+      const selectQuery = `
+        *,
+        category:categories(*),
+        brand:brands(*),
+        size_guide:size_guides(*),
+        care_instruction:care_instructions(*),
+        images:product_images(*, color:colors(*)),
+        variants:product_variants(
           *,
-          category:categories(*),
-          brand:brands(*),
-          size_guide:size_guides(*),
-          care_instruction:care_instructions(*),
-          images:product_images(*, color:colors(*)),
-          variants:product_variants(
-            *,
-            color:colors(*),
-            size:sizes(*),
-            material:materials(*)
-          )
-        `);
+          color:colors(*),
+          size:sizes(*),
+          material:materials(*)
+        )
+      `;
+      
+      let data, error;
       
       if (isFullUuid) {
         // Match by full ID
-        query = query.eq("id", slugOrId);
+        const result = await supabase
+          .from("products")
+          .select(selectQuery)
+          .eq("id", slugOrId)
+          .single();
+        data = result.data;
+        error = result.error;
       } else if (shortId && /^[0-9a-f]{8}$/i.test(shortId)) {
-        // Match by ID starting with short ID
-        query = query.ilike("id", `${shortId}%`);
+        // Match by ID starting with short ID using text cast
+        const result = await supabase
+          .from("products")
+          .select(selectQuery)
+          .filter("id::text", "ilike", `${shortId}%`)
+          .single();
+        data = result.data;
+        error = result.error;
       } else {
         return null;
       }
-      
-      const { data, error } = await query.single();
 
       if (error) throw error;
       return data as Product;

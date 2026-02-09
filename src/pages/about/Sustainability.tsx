@@ -17,7 +17,7 @@ const Sustainability = () => {
         <main className="w-full lg:w-[70vw] lg:ml-auto px-6">
         <PageHeader 
           title="Sustainability" 
-          subtitle="Creating beautiful jewelry while protecting our planet for future generations"
+          subtitle="Creating quality streetwear while protecting our planet for future generations"
         />
         
         <ContentSection title="Our Environmental Commitment">
@@ -58,20 +58,20 @@ const Sustainability = () => {
         <ContentSection title="Circular Economy">
           <div className="space-y-8">
             <p className="text-lg text-muted-foreground leading-relaxed">
-              We believe in the power of circular design - creating jewelry that can be treasured, repaired, and eventually recycled into new pieces.
+              We believe in the power of circular design - creating apparel that can be treasured, repaired, and eventually recycled into new pieces.
             </p>
             
             <div className="grid md:grid-cols-2 gap-8">
               <div className="space-y-4">
                 <h3 className="text-lg font-light text-foreground">Lifetime Care</h3>
                 <p className="text-muted-foreground">
-                  Every piece comes with our lifetime care promise, including professional cleaning, repairs, and resizing services.
+                  Every piece comes with our lifetime care promise, including professional cleaning and repair services.
                 </p>
               </div>
               <div className="space-y-4">
                 <h3 className="text-lg font-light text-foreground">Take-Back Program</h3>
                 <p className="text-muted-foreground">
-                  When you're ready for something new, we'll take back your LINEA jewelry to be recycled into future pieces.
+                  When you're ready for something new, we'll take back your PoshPlex apparel to be recycled into future pieces.
                 </p>
               </div>
             </div>

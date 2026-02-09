@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Minus, Plus, Check, Upload, Banknote, Smartphone, Building2, Truck, ChevronLeft, ShoppingBag, Eye, EyeOff } from "lucide-react";
-import CheckoutHeader from "../components/header/CheckoutHeader";
+import Header from "../components/header/Header";
 import PoshplexFooter from "../components/footer/PoshplexFooter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -332,7 +332,7 @@ const Checkout = () => {
   if (cartItems.length === 0) {
     return (
       <div className="min-h-screen bg-background">
-        <CheckoutHeader />
+        <Header />
         <main className="pt-20 pb-12">
           <div className="max-w-md mx-auto px-6 text-center">
             <ShoppingBag className="h-16 w-16 mx-auto text-muted-foreground mb-6" />
@@ -350,7 +350,7 @@ const Checkout = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <CheckoutHeader />
+      <Header />
       
       <main className="pt-6 pb-12">
         <div className="max-w-7xl mx-auto px-6">

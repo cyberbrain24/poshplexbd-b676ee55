@@ -5,10 +5,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 const StreetEditsGallery = () => {
   const { data: categories = [], isLoading } = useCategories();
   
-  // Get main categories (no parent) that have images, limit to 3
+  // Get main categories (no parent) that have images, limit to 8
   const mainCategories = categories
     .filter(c => !c.parent_id && c.image_url)
-    .slice(0, 3);
+    .slice(0, 8);
 
   if (isLoading) {
     return (
@@ -17,8 +17,8 @@ const StreetEditsGallery = () => {
           <Skeleton className="w-24 h-16" />
           <Skeleton className="w-48 h-8" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
             <div key={i} className="space-y-3">
               <Skeleton className="aspect-[3/4] w-full" />
               <Skeleton className="h-5 w-24" />
@@ -46,8 +46,8 @@ const StreetEditsGallery = () => {
         </h2>
       </div>
 
-      {/* Category Grid - Equal columns */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Category Grid - 8 columns */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
         {mainCategories.map((category) => {
           const categorySlug = category.name.toLowerCase().replace(/\s+/g, '-');
           

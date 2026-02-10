@@ -125,19 +125,21 @@ export const useProduct = (slugOrId: string | undefined) => {
         data = result.data;
         error = result.error;
       } else if (shortId && /^[0-9a-f]{8}$/i.test(shortId)) {
-        // Use filter with text cast for UUID prefix matching
+        // Use DB function to resolve short ID to full UUID
+        const { data: fullId, error: rpcError } = await supabase
+          .rpc("find_product_by_short_id", { short_id: shortId });
+        
+        if (rpcError || !fullId) {
+          throw { message: "Product not found", code: "PGRST116" };
+        }
+
         const result = await supabase
           .from("products")
           .select(selectQuery)
-          .filter("id::text", "ilike", `${shortId}%`)
-          .limit(1)
-          .maybeSingle();
-        
+          .eq("id", fullId)
+          .single();
         data = result.data;
         error = result.error;
-        if (!data && !error) {
-          error = { message: "Product not found", code: "PGRST116" };
-        }
       } else {
         return null;
       }

@@ -1500,6 +1500,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      find_product_by_short_id: { Args: { short_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

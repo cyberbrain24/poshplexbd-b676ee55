@@ -125,11 +125,11 @@ export const useProduct = (slugOrId: string | undefined) => {
         data = result.data;
         error = result.error;
       } else if (shortId && /^[0-9a-f]{8}$/i.test(shortId)) {
-        // Use server-side filter with ilike to match by ID prefix
+        // Use filter with text cast for UUID prefix matching
         const result = await supabase
           .from("products")
           .select(selectQuery)
-          .ilike("id", `${shortId}%`)
+          .filter("id::text", "ilike", `${shortId}%`)
           .limit(1)
           .maybeSingle();
         

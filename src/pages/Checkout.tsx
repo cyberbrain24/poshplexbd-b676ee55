@@ -29,7 +29,9 @@ const Checkout = () => {
   const createOrderMutation = useCreateOrder();
 
   const [discountCode, setDiscountCode] = useState("");
-  const [showDiscountInput, setShowDiscountInput] = useState(false);
+  const [appliedPromo, setAppliedPromo] = useState<{ code: string; discount_type: string; discount_value: number; max_discount_amount: number | null } | null>(null);
+  const [promoDiscount, setPromoDiscount] = useState(0);
+  const [isApplyingPromo, setIsApplyingPromo] = useState(false);
   
   // Customer & Shipping Details
   const [customerDetails, setCustomerDetails] = useState({
@@ -73,8 +75,18 @@ const Checkout = () => {
     [thanas, customerDetails.thanaId]
   );
 
-  // Get shipping config based on location - updates automatically when thana changes
+  // Get shipping config based on thana's shipping_cost or fallback to division-based logic
   const shippingConfig: ShippingConfig = useMemo(() => {
+    if (selectedThana && (selectedThana as any).shipping_cost !== undefined) {
+      const cost = Number((selectedThana as any).shipping_cost);
+      const isDhaka = cost <= 60;
+      return {
+        method: isDhaka ? 'inside_dhaka' : 'outside_dhaka',
+        cost,
+        estimatedDays: isDhaka ? '1-2' : '3-5',
+        label: isDhaka ? 'Inside Dhaka' : 'Outside Dhaka',
+      };
+    }
     if (!selectedDivision && !selectedThana) {
       return SHIPPING_OUTSIDE_DHAKA;
     }
@@ -153,12 +165,75 @@ const Checkout = () => {
   }, [paymentMethods, selectedPaymentMethodId]);
 
   const subtotal = cartTotal;
-  const total = subtotal + shippingCost;
+  const total = subtotal - promoDiscount + shippingCost;
   
   // Calculate amounts for display
   const partialAmount = usePartialPayment ? (Number(partialPaymentAmount) || 0) : 0;
   const remainingAmount = total - partialAmount;
   const displayTotal = usePartialPayment && partialAmount > 0 ? partialAmount : total;
+
+  // Handle promo code application
+  const handleApplyPromo = async () => {
+    if (!discountCode.trim()) return;
+    setIsApplyingPromo(true);
+    try {
+      const { data, error } = await supabase
+        .from("promo_codes")
+        .select("*")
+        .eq("code", discountCode.trim().toUpperCase())
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) {
+        toast.error("Invalid promo code");
+        return;
+      }
+
+      // Check expiry
+      if (data.expires_at && new Date(data.expires_at) < new Date()) {
+        toast.error("This promo code has expired");
+        return;
+      }
+
+      // Check min order
+      if (data.min_order_amount && subtotal < data.min_order_amount) {
+        toast.error(`Minimum order amount is ${formatCurrency(data.min_order_amount)}`);
+        return;
+      }
+
+      // Check usage limit
+      if (data.usage_limit && data.usage_count >= data.usage_limit) {
+        toast.error("This promo code has reached its usage limit");
+        return;
+      }
+
+      // Calculate discount
+      let discount = 0;
+      if (data.discount_type === "percentage") {
+        discount = (subtotal * data.discount_value) / 100;
+        if (data.max_discount_amount) {
+          discount = Math.min(discount, data.max_discount_amount);
+        }
+      } else {
+        discount = data.discount_value;
+      }
+
+      discount = Math.min(discount, subtotal);
+      setPromoDiscount(discount);
+      setAppliedPromo({
+        code: data.code,
+        discount_type: data.discount_type,
+        discount_value: data.discount_value,
+        max_discount_amount: data.max_discount_amount,
+      });
+      toast.success(`Promo code applied! You save ${formatCurrency(discount)}`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to apply promo code");
+    } finally {
+      setIsApplyingPromo(false);
+    }
+  };
 
   const getPaymentIcon = (type: PaymentMethodType) => {
     switch (type) {
@@ -196,6 +271,18 @@ const Checkout = () => {
     }
     if (!customerDetails.address.trim()) {
       toast.error("Please enter your address");
+      return false;
+    }
+    if (!customerDetails.gender) {
+      toast.error("Please select your gender");
+      return false;
+    }
+    if (!customerDetails.divisionId) {
+      toast.error("Please select your district");
+      return false;
+    }
+    if (!customerDetails.thanaId) {
+      toast.error("Please select your thana");
       return false;
     }
     if (!selectedPaymentMethodId) {
@@ -361,6 +448,7 @@ const Checkout = () => {
           senderNumber: paymentInfo.senderNumber || undefined,
           paymentProofUrl: paymentInfo.paymentProofUrl || undefined,
           subtotal: subtotal,
+          discountAmount: promoDiscount,
           shippingCost: shippingCost,
           paidAmount: orderPaidAmount,
           customerNotes: customerDetails.notes || undefined,
@@ -471,26 +559,31 @@ const Checkout = () => {
                   ))}
                 </div>
 
-                {/* Discount Code */}
+                {/* Promo Code Section */}
                 <div className="mt-6 pt-4 border-t border-muted-foreground/20">
-                  {!showDiscountInput ? (
-                    <button 
-                      onClick={() => setShowDiscountInput(true)}
-                      className="text-sm text-foreground underline hover:no-underline"
+                  <div className="flex gap-2">
+                    <Input
+                      value={discountCode}
+                      onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
+                      placeholder="Write Promo Code"
+                      className="flex-1 rounded-none text-sm font-mono"
+                    />
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="rounded-none whitespace-nowrap"
+                      onClick={handleApplyPromo}
+                      disabled={!discountCode.trim() || isApplyingPromo}
                     >
-                      Have a discount code?
-                    </button>
-                  ) : (
-                    <div className="flex gap-2">
-                      <Input
-                        value={discountCode}
-                        onChange={(e) => setDiscountCode(e.target.value)}
-                        placeholder="Enter code"
-                        className="flex-1 rounded-none text-sm"
-                      />
-                      <Button variant="outline" size="sm" className="rounded-none">
-                        Apply
-                      </Button>
+                      {isApplyingPromo ? "Applying..." : "Apply Promo"}
+                    </Button>
+                  </div>
+                  {appliedPromo && (
+                    <div className="mt-2 flex items-center justify-between bg-green-50 dark:bg-green-950/30 p-2 border border-green-200 dark:border-green-800 rounded-none text-sm">
+                      <span className="text-green-700 dark:text-green-400">
+                        {appliedPromo.code}: -{appliedPromo.discount_type === 'percentage' ? `${appliedPromo.discount_value}%` : formatCurrency(appliedPromo.discount_value)}
+                      </span>
+                      <button onClick={() => { setAppliedPromo(null); setPromoDiscount(0); setDiscountCode(""); }} className="text-red-500 text-xs hover:underline">Remove</button>
                     </div>
                   )}
                 </div>
@@ -501,6 +594,12 @@ const Checkout = () => {
                     <span className="text-muted-foreground">Subtotal</span>
                     <span className="text-foreground">{formatCurrency(subtotal)}</span>
                   </div>
+                  {promoDiscount > 0 && (
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span>Promo Discount</span>
+                      <span>-{formatCurrency(promoDiscount)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Shipping ({shippingConfig.label})</span>
                     <span className="text-foreground">{formatCurrency(shippingCost)}</span>
@@ -567,7 +666,7 @@ const Checkout = () => {
                       />
                     </div>
                     <div>
-                      <Label className="text-sm font-light">Gender</Label>
+                      <Label className="text-sm font-light">Gender *</Label>
                       <Select
                         value={customerDetails.gender}
                         onValueChange={(value) => handleCustomerChange("gender", value)}
@@ -626,7 +725,7 @@ const Checkout = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label className="text-sm font-light">District</Label>
+                      <Label className="text-sm font-light">District *</Label>
                       <Select
                         value={customerDetails.divisionId}
                         onValueChange={(value) => handleCustomerChange("divisionId", value)}
@@ -644,7 +743,7 @@ const Checkout = () => {
                       </Select>
                     </div>
                     <div>
-                      <Label className="text-sm font-light">Thana/Upazila</Label>
+                      <Label className="text-sm font-light">Thana/Upazila *</Label>
                       <Select
                         value={customerDetails.thanaId}
                         onValueChange={(value) => handleCustomerChange("thanaId", value)}
@@ -786,10 +885,7 @@ const Checkout = () => {
                         }}
                       />
                       <Label htmlFor="partialPayment" className="text-sm font-light cursor-pointer">
-                        {selectedPaymentMethod.type === 'cod' 
-                          ? "Customer will pay partial amount on delivery"
-                          : "I want to make a partial payment now"
-                        }
+                        I want to pay partial amount
                       </Label>
                     </div>
                     

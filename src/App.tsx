@@ -54,6 +54,7 @@ import AdminSEO from "./pages/admin/AdminSEO";
 import AdminSeedData from "./pages/admin/AdminSeedData";
 import AdminReviews from "./pages/admin/AdminReviews";
 import AdminMedia from "./pages/admin/AdminMedia";
+import AdminPromoCodes from "./pages/admin/AdminPromoCodes";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -136,6 +137,7 @@ const App = () => (
                 {/* Orders */}
                 <Route path="orders" element={<AdminOrders />} />
                 <Route path="payment-methods" element={<AdminPaymentMethods />} />
+                <Route path="promo-codes" element={<AdminPromoCodes />} />
                 <Route path="seed-data" element={<AdminSeedData />} />
               </Route>
               

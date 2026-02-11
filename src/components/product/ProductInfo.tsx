@@ -68,14 +68,19 @@ const ProductInfo = ({ product, isLoading }: ProductInfoProps) => {
 
     addToCart(getCartItem(), quantity);
 
-    toast.success(`${productName} added to bag`, {
+    toast(`${productName} added to bag`, {
       description: selectedVariant 
         ? `${selectedVariant.color?.name || ''} ${selectedVariant.size?.label || ''} × ${quantity}`
-        : `× ${quantity}`
+        : `× ${quantity}`,
+      position: "bottom-center",
+      className: "mb-20",
     });
 
     // Reset quantity after adding
     setQuantity(1);
+
+    // Auto-open shopping bag sidebar
+    window.dispatchEvent(new CustomEvent('open-shopping-bag'));
   };
 
   const handleBuyNow = () => {

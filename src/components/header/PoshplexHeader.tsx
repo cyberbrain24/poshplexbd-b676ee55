@@ -37,6 +37,13 @@ const PoshplexHeader = () => {
   const { data: allCategories = [] } = useCategories();
   const { cartItems, updateQuantity, cartCount } = useCart();
 
+  // Listen for open-shopping-bag event from Add to Bag button
+  useEffect(() => {
+    const handler = () => setIsCartOpen(true);
+    window.addEventListener('open-shopping-bag', handler);
+    return () => window.removeEventListener('open-shopping-bag', handler);
+  }, []);
+
   // Check customer auth state
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {

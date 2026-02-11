@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Pencil, Trash2, Package, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, Loader2, AlertTriangle } from "lucide-react";
 import ProductModal from "@/components/admin/ProductModal";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -9,6 +9,7 @@ import { useOptimizedProducts } from "@/hooks/useOptimizedProducts";
 import { Product } from "@/types/product";
 import { toast } from "sonner";
 import DebouncedSearchInput from "@/components/admin/DebouncedSearchInput";
+import { supabase } from "@/integrations/supabase/client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +25,8 @@ const AdminProducts = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
+  const [deleteBlocked, setDeleteBlocked] = useState<{ count: number; refs: string[] } | null>(null);
+  const [checkingDelete, setCheckingDelete] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   // Use optimized server-side pagination and search
@@ -42,12 +45,31 @@ const AdminProducts = () => {
     setIsModalOpen(true);
   };
 
+  const handleDeleteClick = async (product: Product) => {
+    setCheckingDelete(true);
+    setDeleteBlocked(null);
+    setDeleteProduct(product);
+
+    const { data: orderItems, count } = await supabase
+      .from("order_items")
+      .select("order_id, orders!inner(order_number)", { count: "exact" })
+      .eq("product_id", product.id)
+      .limit(5);
+
+    if (count && count > 0) {
+      const refs = (orderItems || []).map((item: any) => item.orders?.order_number || item.order_id.slice(0, 8));
+      setDeleteBlocked({ count, refs: [...new Set(refs)] });
+    }
+    setCheckingDelete(false);
+  };
+
   const handleDelete = async () => {
     if (!deleteProduct) return;
     try {
       await deleteProductMutation.mutateAsync(deleteProduct.id);
       toast.success("Product deleted");
       setDeleteProduct(null);
+      setDeleteBlocked(null);
     } catch (error) {
       toast.error("Failed to delete product");
     }
@@ -158,7 +180,7 @@ const AdminProducts = () => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => setDeleteProduct(product)}
+                        onClick={() => handleDeleteClick(product)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
@@ -199,17 +221,39 @@ const AdminProducts = () => {
         product={selectedProduct}
       />
 
-      <AlertDialog open={!!deleteProduct} onOpenChange={() => setDeleteProduct(null)}>
+      <AlertDialog open={!!deleteProduct} onOpenChange={() => { setDeleteProduct(null); setDeleteBlocked(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Product</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "{deleteProduct?.name}"? This action cannot be undone.
+            <AlertDialogTitle className="flex items-center gap-2">
+              {deleteBlocked ? <AlertTriangle className="h-5 w-5 text-destructive" /> : null}
+              {deleteBlocked ? "Deletion Blocked" : "Delete Product"}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                {checkingDelete ? (
+                  <p>Checking references...</p>
+                ) : deleteBlocked ? (
+                  <>
+                    <p>Cannot delete "<strong>{deleteProduct?.name}</strong>" because it exists in <strong>{deleteBlocked.count}</strong> order{deleteBlocked.count > 1 ? "s" : ""}. You may archive/disable the product instead.</p>
+                    <div className="bg-muted p-3 rounded text-sm space-y-1 mt-2">
+                      <p className="font-medium text-foreground">Referenced orders:</p>
+                      <ul className="list-disc list-inside text-muted-foreground">
+                        {deleteBlocked.refs.map((ref, i) => <li key={i}>{ref}</li>)}
+                        {deleteBlocked.count > 5 && <li>...and {deleteBlocked.count - 5} more</li>}
+                      </ul>
+                    </div>
+                  </>
+                ) : (
+                  <p>Are you sure you want to delete "<strong>{deleteProduct?.name}</strong>"? This action cannot be undone.</p>
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+            {!deleteBlocked && !checkingDelete && (
+              <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

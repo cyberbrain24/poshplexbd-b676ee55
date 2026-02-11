@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Pencil, Trash2, Search, ChevronRight } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, ChevronRight, AlertTriangle } from "lucide-react";
 import MasterDataModal from "@/components/admin/MasterDataModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory 
 import { Category } from "@/types/product";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,6 +24,8 @@ const AdminCategories = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Category | null>(null);
   const [deleteItem, setDeleteItem] = useState<Category | null>(null);
+  const [deleteBlocked, setDeleteBlocked] = useState<{ count: number; names: string[] } | null>(null);
+  const [checkingDelete, setCheckingDelete] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data: items = [], isLoading } = useCategories();
@@ -74,12 +77,35 @@ const AdminCategories = () => {
     }
   };
 
+  const handleDeleteClick = async (item: Category) => {
+    setCheckingDelete(true);
+    setDeleteBlocked(null);
+    setDeleteItem(item);
+
+    // Check for products assigned to this category (or subcategories)
+    const categoryIds = [item.id, ...items.filter(c => c.parent_id === item.id).map(c => c.id)];
+    const { data: products, count } = await supabase
+      .from("products")
+      .select("name", { count: "exact" })
+      .in("category_id", categoryIds)
+      .limit(5);
+
+    if (count && count > 0) {
+      setDeleteBlocked({
+        count,
+        names: (products || []).map(p => p.name),
+      });
+    }
+    setCheckingDelete(false);
+  };
+
   const handleDelete = async () => {
     if (!deleteItem) return;
     try {
       await deleteMutation.mutateAsync(deleteItem.id);
       toast.success("Category deleted");
       setDeleteItem(null);
+      setDeleteBlocked(null);
     } catch (error) {
       toast.error("Failed to delete category");
     }
@@ -186,7 +212,7 @@ const AdminCategories = () => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => setDeleteItem(item)}
+                        onClick={() => handleDeleteClick(item)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
@@ -208,22 +234,46 @@ const AdminCategories = () => {
         initialData={selectedItem}
       />
 
-      <AlertDialog open={!!deleteItem} onOpenChange={() => setDeleteItem(null)}>
+      <AlertDialog open={!!deleteItem} onOpenChange={() => { setDeleteItem(null); setDeleteBlocked(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Category</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "{deleteItem?.name}"? 
-              {!deleteItem?.parent_id && getSubcategoryCount(deleteItem?.id || '') > 0 && (
-                <span className="block mt-2 text-destructive">
-                  Warning: This category has {getSubcategoryCount(deleteItem?.id || '')} subcategories that will become orphaned.
-                </span>
-              )}
+            <AlertDialogTitle className="flex items-center gap-2">
+              {deleteBlocked ? <AlertTriangle className="h-5 w-5 text-destructive" /> : null}
+              {deleteBlocked ? "Deletion Blocked" : "Delete Category"}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                {checkingDelete ? (
+                  <p>Checking references...</p>
+                ) : deleteBlocked ? (
+                  <>
+                    <p>Cannot delete "<strong>{deleteItem?.name}</strong>" because it contains <strong>{deleteBlocked.count}</strong> product{deleteBlocked.count > 1 ? "s" : ""}. Remove or reassign those products first.</p>
+                    <div className="bg-muted p-3 rounded text-sm space-y-1 mt-2">
+                      <p className="font-medium text-foreground">Referenced products:</p>
+                      <ul className="list-disc list-inside text-muted-foreground">
+                        {deleteBlocked.names.map((name, i) => <li key={i}>{name}</li>)}
+                        {deleteBlocked.count > 5 && <li>...and {deleteBlocked.count - 5} more</li>}
+                      </ul>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p>Are you sure you want to delete "<strong>{deleteItem?.name}</strong>"?</p>
+                    {!deleteItem?.parent_id && getSubcategoryCount(deleteItem?.id || '') > 0 && (
+                      <p className="text-destructive">
+                        Warning: This category has {getSubcategoryCount(deleteItem?.id || '')} subcategories that will become orphaned.
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+            {!deleteBlocked && !checkingDelete && (
+              <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

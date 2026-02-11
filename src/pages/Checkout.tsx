@@ -29,7 +29,16 @@ const Checkout = () => {
   const createOrderMutation = useCreateOrder();
 
   const [discountCode, setDiscountCode] = useState("");
-  const [appliedPromo, setAppliedPromo] = useState<{ code: string; discount_type: string; discount_value: number; max_discount_amount: number | null } | null>(null);
+  const [appliedPromo, setAppliedPromo] = useState<{
+    id: string;
+    code: string;
+    discount_type: string;
+    discount_value: number;
+    max_discount_amount: number | null;
+    reward_type: string;
+    freeDelivery: boolean;
+    membershipReward?: { typeId: string; trigger: 'paid' | 'delivered' };
+  } | null>(null);
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [isApplyingPromo, setIsApplyingPromo] = useState(false);
   
@@ -93,7 +102,8 @@ const Checkout = () => {
     return getShippingForLocation(selectedDivision?.name, selectedThana?.name);
   }, [selectedDivision, selectedThana]);
 
-  const shippingCost = shippingConfig.cost;
+  // If free delivery promo is applied, shipping is 0
+  const shippingCost = appliedPromo?.freeDelivery ? 0 : shippingConfig.cost;
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoadingCustomer, setIsLoadingCustomer] = useState(true);
@@ -172,62 +182,43 @@ const Checkout = () => {
   const remainingAmount = total - partialAmount;
   const displayTotal = usePartialPayment && partialAmount > 0 ? partialAmount : total;
 
-  // Handle promo code application
+  // Handle promo code application using centralized validation
   const handleApplyPromo = async () => {
     if (!discountCode.trim()) return;
     setIsApplyingPromo(true);
     try {
-      const { data, error } = await supabase
-        .from("promo_codes")
-        .select("*")
-        .eq("code", discountCode.trim().toUpperCase())
-        .eq("is_active", true)
-        .maybeSingle();
+      const { validatePromoCode } = await import("@/lib/promo");
+      const result = await validatePromoCode(
+        discountCode,
+        subtotal,
+        shippingCost,
+        customerDetails.phone || undefined,
+      );
 
-      if (error) throw error;
-      if (!data) {
-        toast.error("Invalid promo code");
+      if (!result.valid || !result.promo) {
+        toast.error(result.error || "Invalid promo code");
         return;
       }
 
-      // Check expiry
-      if (data.expires_at && new Date(data.expires_at) < new Date()) {
-        toast.error("This promo code has expired");
-        return;
-      }
-
-      // Check min order
-      if (data.min_order_amount && subtotal < data.min_order_amount) {
-        toast.error(`Minimum order amount is ${formatCurrency(data.min_order_amount)}`);
-        return;
-      }
-
-      // Check usage limit
-      if (data.usage_limit && data.usage_count >= data.usage_limit) {
-        toast.error("This promo code has reached its usage limit");
-        return;
-      }
-
-      // Calculate discount
-      let discount = 0;
-      if (data.discount_type === "percentage") {
-        discount = (subtotal * data.discount_value) / 100;
-        if (data.max_discount_amount) {
-          discount = Math.min(discount, data.max_discount_amount);
-        }
-      } else {
-        discount = data.discount_value;
-      }
-
-      discount = Math.min(discount, subtotal);
-      setPromoDiscount(discount);
+      setPromoDiscount(result.discount);
       setAppliedPromo({
-        code: data.code,
-        discount_type: data.discount_type,
-        discount_value: data.discount_value,
-        max_discount_amount: data.max_discount_amount,
+        id: result.promo.id,
+        code: result.promo.code,
+        discount_type: result.promo.discount_type,
+        discount_value: result.promo.discount_value,
+        max_discount_amount: result.promo.max_discount_amount,
+        reward_type: result.promo.reward_type,
+        freeDelivery: result.freeDelivery,
+        membershipReward: result.membershipReward,
       });
-      toast.success(`Promo code applied! You save ${formatCurrency(discount)}`);
+
+      if (result.freeDelivery) {
+        toast.success("Promo code applied! Free delivery!");
+      } else if (result.membershipReward && result.discount === 0) {
+        toast.success("Promo code applied! Membership will be awarded after payment success");
+      } else {
+        toast.success(`Promo code applied! You save ${formatCurrency(result.discount)}`);
+      }
     } catch (err: any) {
       toast.error(err.message || "Failed to apply promo code");
     } finally {
@@ -451,6 +442,9 @@ const Checkout = () => {
           discountAmount: promoDiscount,
           shippingCost: shippingCost,
           paidAmount: orderPaidAmount,
+          promoCodeId: appliedPromo?.id || undefined,
+          promoCode: appliedPromo?.code || undefined,
+          promoDiscount: promoDiscount || undefined,
           customerNotes: customerDetails.notes || undefined,
         },
         cartItems,
@@ -579,11 +573,19 @@ const Checkout = () => {
                     </Button>
                   </div>
                   {appliedPromo && (
-                    <div className="mt-2 flex items-center justify-between bg-green-50 dark:bg-green-950/30 p-2 border border-green-200 dark:border-green-800 rounded-none text-sm">
-                      <span className="text-green-700 dark:text-green-400">
-                        {appliedPromo.code}: -{appliedPromo.discount_type === 'percentage' ? `${appliedPromo.discount_value}%` : formatCurrency(appliedPromo.discount_value)}
-                      </span>
-                      <button onClick={() => { setAppliedPromo(null); setPromoDiscount(0); setDiscountCode(""); }} className="text-red-500 text-xs hover:underline">Remove</button>
+                    <div className="mt-2 space-y-1">
+                      <div className="flex items-center justify-between bg-green-50 dark:bg-green-950/30 p-2 border border-green-200 dark:border-green-800 rounded-none text-sm">
+                        <span className="text-green-700 dark:text-green-400">
+                          {appliedPromo.code}: {appliedPromo.freeDelivery ? 'Free Delivery!' : 
+                            `-${appliedPromo.discount_type === 'percentage' ? `${appliedPromo.discount_value}%` : formatCurrency(appliedPromo.discount_value)}`}
+                        </span>
+                        <button onClick={() => { setAppliedPromo(null); setPromoDiscount(0); setDiscountCode(""); }} className="text-red-500 text-xs hover:underline">Remove</button>
+                      </div>
+                      {appliedPromo.membershipReward && (
+                        <div className="text-xs text-purple-600 dark:text-purple-400 p-2 bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-none">
+                          🎖 Membership will be awarded after {appliedPromo.membershipReward.trigger === 'paid' ? 'payment confirmation' : 'delivery'}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -601,9 +603,20 @@ const Checkout = () => {
                     </div>
                   )}
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Shipping ({shippingConfig.label})</span>
-                    <span className="text-foreground">{formatCurrency(shippingCost)}</span>
+                    <span className="text-muted-foreground">
+                      Shipping ({shippingConfig.label})
+                      {appliedPromo?.freeDelivery && <span className="text-green-600 ml-1">(Free!)</span>}
+                    </span>
+                    <span className={`text-foreground ${appliedPromo?.freeDelivery ? 'line-through text-muted-foreground' : ''}`}>
+                      {formatCurrency(shippingConfig.cost)}
+                    </span>
                   </div>
+                  {appliedPromo?.freeDelivery && (
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span>Free Delivery Discount</span>
+                      <span>-{formatCurrency(shippingConfig.cost)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-lg font-medium border-t border-muted-foreground/20 pt-2">
                     <span className="text-foreground">Total</span>
                     <span className="text-foreground">{formatCurrency(total)}</span>

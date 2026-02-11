@@ -1100,6 +1100,9 @@ export type Database = {
           max_discount_amount: number | null
           min_order_amount: number | null
           per_customer_limit: number | null
+          reward_membership_type_id: string | null
+          reward_trigger: string
+          reward_type: string
           starts_at: string | null
           updated_at: string
           usage_count: number
@@ -1117,6 +1120,9 @@ export type Database = {
           max_discount_amount?: number | null
           min_order_amount?: number | null
           per_customer_limit?: number | null
+          reward_membership_type_id?: string | null
+          reward_trigger?: string
+          reward_type?: string
           starts_at?: string | null
           updated_at?: string
           usage_count?: number
@@ -1134,12 +1140,23 @@ export type Database = {
           max_discount_amount?: number | null
           min_order_amount?: number | null
           per_customer_limit?: number | null
+          reward_membership_type_id?: string | null
+          reward_trigger?: string
+          reward_type?: string
           starts_at?: string | null
           updated_at?: string
           usage_count?: number
           usage_limit?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "promo_codes_reward_membership_type_id_fkey"
+            columns: ["reward_membership_type_id"]
+            isOneToOne: false
+            referencedRelation: "customer_types"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       promo_usages: {
         Row: {

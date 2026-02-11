@@ -61,6 +61,7 @@ import {
 import OrderItemEditModal from "./OrderItemEditModal";
 import OrderItemAddModal from "./OrderItemAddModal";
 import PaymentRecordModal from "./PaymentRecordModal";
+import ImageLightbox from "@/components/ui/image-lightbox";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 
@@ -114,6 +115,7 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
   const [selectedAccountId, setSelectedAccountId] = useState<string>("");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showAddItemModal, setShowAddItemModal] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [promoInput, setPromoInput] = useState("");
   const [applyingPromo, setApplyingPromo] = useState(false);
 
@@ -129,6 +131,57 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
       return data;
     },
   });
+
+  // Fetch product images for order items
+  const productIds = order?.items?.map(i => i.product_id).filter((id): id is string => !!id) || [];
+  const { data: productImages } = useQuery({
+    queryKey: ["order-item-images", productIds],
+    queryFn: async () => {
+      if (productIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("product_images")
+        .select("product_id, image_url, color_id, is_main, sort_order")
+        .in("product_id", productIds)
+        .order("sort_order");
+      if (error) throw error;
+      return data;
+    },
+    enabled: productIds.length > 0,
+  });
+
+  // Fetch variant details (color, size, material names) for order items
+  const variantIds = order?.items?.map(i => i.variant_id).filter((id): id is string => !!id) || [];
+  const { data: variantDetails } = useQuery({
+    queryKey: ["order-item-variants", variantIds],
+    queryFn: async () => {
+      if (variantIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("product_variants")
+        .select("id, color:colors(name, hex_code), size:sizes(label), material:materials(name)")
+        .in("id", variantIds);
+      if (error) throw error;
+      return data;
+    },
+    enabled: variantIds.length > 0,
+  });
+
+  const getItemImage = (item: { product_id: string | null }) => {
+    if (!productImages || !item.product_id) return null;
+    const images = productImages.filter(img => img.product_id === item.product_id);
+    const mainImg = images.find(img => img.is_main);
+    return mainImg?.image_url || images[0]?.image_url || null;
+  };
+
+  const getVariantInfo = (variantId: string | null) => {
+    if (!variantId || !variantDetails) return null;
+    const variant = variantDetails.find(v => v.id === variantId) as any;
+    if (!variant) return null;
+    const parts: string[] = [];
+    if (variant.color?.name) parts.push(variant.color.name);
+    if (variant.size?.label) parts.push(variant.size.label);
+    if (variant.material?.name) parts.push(variant.material.name);
+    return { parts, hexCode: variant.color?.hex_code };
+  };
 
   // Calculate paid amount from order or default to 0
   const paidAmount = (order as any)?.paid_amount ?? 0;
@@ -581,64 +634,94 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
                 </Button>
               </div>
               <div className="space-y-3">
-                {order.items?.map((item) => (
-                  <div key={item.id} className="flex gap-3 p-3 bg-muted/50 rounded">
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{item.product_name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        SKU: {item.variant_sku || 'N/A'} • Qty: {item.quantity} × {formatCurrency(item.unit_price)}
-                      </p>
-                      <p className="text-sm font-medium mt-1">
-                        {formatCurrency(item.line_total)}
-                      </p>
+                {order.items?.map((item) => {
+                  const imageUrl = getItemImage(item);
+                  const variantInfo = getVariantInfo(item.variant_id);
+                  return (
+                    <div key={item.id} className="flex gap-3 p-3 bg-muted/50 rounded">
+                      {/* Product Image */}
+                      {imageUrl ? (
+                        <button
+                          onClick={() => setLightboxImage(imageUrl)}
+                          className="w-14 h-14 rounded overflow-hidden flex-shrink-0 border border-border hover:opacity-80 transition-opacity cursor-pointer"
+                        >
+                          <img src={imageUrl} alt={item.product_name} className="w-full h-full object-cover" />
+                        </button>
+                      ) : (
+                        <div className="w-14 h-14 rounded bg-muted flex items-center justify-center flex-shrink-0 border border-border">
+                          <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{item.product_name}</p>
+                        {variantInfo && variantInfo.parts.length > 0 && (
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            {variantInfo.hexCode && (
+                              <span
+                                className="w-3 h-3 rounded-full border border-border inline-block"
+                                style={{ backgroundColor: variantInfo.hexCode }}
+                              />
+                            )}
+                            <span className="text-xs text-muted-foreground">
+                              {variantInfo.parts.join(' / ')}
+                            </span>
+                          </div>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          SKU: {item.variant_sku || 'N/A'} • Qty: {item.quantity} × {formatCurrency(item.unit_price)}
+                        </p>
+                        <p className="text-sm font-medium mt-1">
+                          {formatCurrency(item.line_total)}
+                        </p>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          onClick={() => setEditingItem({
+                            id: item.id,
+                            product_name: item.product_name,
+                            variant_sku: item.variant_sku,
+                            quantity: item.quantity,
+                            unit_price: item.unit_price,
+                            line_total: item.line_total,
+                          })}
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 text-destructive"
+                          onClick={() => {
+                            if (confirm("Remove this item from the order?")) {
+                              removeItemMutation.mutate(item.id);
+                            }
+                          }}
+                          disabled={removeItemMutation.isPending}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                        <Select
+                          value={item.fulfillment_status}
+                          onValueChange={(v) => handleUpdateItemStatus(item.id, v as ItemFulfillmentStatus)}
+                        >
+                          <SelectTrigger className="w-[130px] h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {itemStatusOptions.map(s => (
+                              <SelectItem key={s} value={s} className="text-xs">
+                                {s.replace('_', ' ')}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                    <div className="flex flex-col gap-2">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7"
-                        onClick={() => setEditingItem({
-                          id: item.id,
-                          product_name: item.product_name,
-                          variant_sku: item.variant_sku,
-                          quantity: item.quantity,
-                          unit_price: item.unit_price,
-                          line_total: item.line_total,
-                        })}
-                      >
-                        <Pencil className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7 text-destructive"
-                        onClick={() => {
-                          if (confirm("Remove this item from the order?")) {
-                            removeItemMutation.mutate(item.id);
-                          }
-                        }}
-                        disabled={removeItemMutation.isPending}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                      <Select
-                        value={item.fulfillment_status}
-                        onValueChange={(v) => handleUpdateItemStatus(item.id, v as ItemFulfillmentStatus)}
-                      >
-                        <SelectTrigger className="w-[130px] h-8 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {itemStatusOptions.map(s => (
-                            <SelectItem key={s} value={s} className="text-xs">
-                              {s.replace('_', ' ')}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -833,6 +916,13 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
           orderId={orderId}
           open={showAddItemModal}
           onClose={() => setShowAddItemModal(false)}
+        />
+
+        {/* Image Lightbox */}
+        <ImageLightbox
+          images={lightboxImage ? [lightboxImage] : []}
+          isOpen={!!lightboxImage}
+          onClose={() => setLightboxImage(null)}
         />
       </DialogContent>
     </Dialog>

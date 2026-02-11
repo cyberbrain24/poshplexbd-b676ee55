@@ -245,12 +245,6 @@ const AdminSidebar = () => {
           isProductMgmtActive
         )}
 
-        {/* Media Library */}
-        {renderNavLink("/admin/media", Image, "Media")}
-
-        {/* SEO Manager */}
-        {renderNavLink("/admin/seo", Globe, "SEO Manager")}
-
         {/* Order Management */}
         {renderCollapsible(
           ShoppingCart,
@@ -259,6 +253,16 @@ const AdminSidebar = () => {
           isOrdersOpen,
           setIsOrdersOpen,
           isOrdersActive
+        )}
+
+        {/* Customer Management */}
+        {renderCollapsible(
+          Users,
+          "Customer Management",
+          customerManagementItems,
+          isCustomerMgmtOpen,
+          setIsCustomerMgmtOpen,
+          isCustomerMgmtActive
         )}
 
         {/* Account Management */}
@@ -271,15 +275,11 @@ const AdminSidebar = () => {
           isAccountMgmtActive
         )}
 
-        {/* Customer Management */}
-        {renderCollapsible(
-          Users,
-          "Customer Management",
-          customerManagementItems,
-          isCustomerMgmtOpen,
-          setIsCustomerMgmtOpen,
-          isCustomerMgmtActive
-        )}
+        {/* Media Library */}
+        {renderNavLink("/admin/media", Image, "Media")}
+
+        {/* SEO Manager */}
+        {renderNavLink("/admin/seo", Globe, "SEO Manager")}
 
         {/* Seed Data */}
         {renderNavLink("/admin/seed-data", Database, "Seed Data")}

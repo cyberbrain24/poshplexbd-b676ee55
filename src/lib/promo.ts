@@ -228,17 +228,6 @@ export const recordPromoUsage = async (
     discount_amount: discountAmount,
   });
 
-  // Increment usage_count
-  const { data: current } = await supabase
-    .from("promo_codes")
-    .select("usage_count")
-    .eq("id", promoCodeId)
-    .single();
-
-  if (current) {
-    await supabase
-      .from("promo_codes")
-      .update({ usage_count: (current.usage_count || 0) + 1 })
-      .eq("id", promoCodeId);
-  }
+  // Atomically increment usage_count (no read-then-write race condition)
+  await supabase.rpc("increment_promo_usage", { p_promo_code_id: promoCodeId });
 };

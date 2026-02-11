@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useMemo } from "react";
-import { X, Plus, Trash2, Upload, GripVertical, Play } from "lucide-react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { X, Plus, Trash2, Upload, GripVertical, Play, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,7 @@ import { useCategories, useBrands, useSizeGuides, useCareInstructions, useColors
 import { useCreateProduct, useUpdateProduct, useAddProductImage, useDeleteProductImage, useUpdateProductImage, useAddProductVariant, useUpdateProductVariant, useDeleteProductVariant, uploadProductImage } from "@/hooks/useProducts";
 import { Product, ProductFormData, VariantFormData, ProductImage } from "@/types/product";
 import { toast } from "sonner";
+import VariantBuilder from "@/components/admin/VariantBuilder";
 
 interface ProductModalProps {
   isOpen: boolean;
@@ -41,6 +42,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
   const [images, setImages] = useState<ProductImage[]>([]);
   const [variants, setVariants] = useState<VariantFormData[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [showBuilder, setShowBuilder] = useState(false);
   const [parentCategoryId, setParentCategoryId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -243,32 +245,9 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
     setVariants(prev => prev.filter((_, i) => i !== index));
   };
 
-  const generateVariantCombinations = () => {
-    const selectedColors = colors.slice(0, 3); // Example: first 3 colors
-    const selectedSizes = sizes;
-    const selectedMaterials = materials.slice(0, 1); // Example: first material
-
-    const newVariants: VariantFormData[] = [];
-    
-    for (const color of selectedColors) {
-      for (const size of selectedSizes) {
-        for (const material of selectedMaterials) {
-          newVariants.push({
-            color_id: color.id,
-            size_id: size.id,
-            material_id: material.id,
-            sku: "",
-            purchase_price: 0,
-            selling_price: formData.base_price,
-            is_active: true,
-          });
-        }
-      }
-    }
-
-    setVariants(newVariants);
-    toast.success(`Generated ${newVariants.length} variant combinations`);
-  };
+  const handleBuilderGenerate = useCallback((newVariants: VariantFormData[]) => {
+    setVariants((prev) => [...prev, ...newVariants]);
+  }, []);
 
   if (!isOpen) return null;
 
@@ -628,8 +607,9 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                       </p>
                     </div>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={generateVariantCombinations}>
-                        Auto-Generate
+                      <Button variant="outline" size="sm" onClick={() => setShowBuilder(!showBuilder)}>
+                        {showBuilder ? <ChevronUp className="h-4 w-4 mr-2" /> : <ChevronDown className="h-4 w-4 mr-2" />}
+                        {showBuilder ? "Hide Builder" : "Auto-Generate"}
                       </Button>
                       <Button variant="outline" size="sm" onClick={addNewVariant}>
                         <Plus className="h-4 w-4 mr-2" />
@@ -637,6 +617,17 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                       </Button>
                     </div>
                   </div>
+
+                  {showBuilder && (
+                    <VariantBuilder
+                      colors={colors}
+                      sizes={sizes}
+                      materials={materials}
+                      existingVariants={variants}
+                      basePrice={formData.base_price}
+                      onGenerate={handleBuilderGenerate}
+                    />
+                  )}
 
                   {variants.length > 0 ? (
                     <Table>

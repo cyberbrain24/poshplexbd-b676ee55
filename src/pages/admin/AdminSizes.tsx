@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, AlertTriangle } from "lucide-react";
 import MasterDataModal from "@/components/admin/MasterDataModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useSizes, useCreateSize, useUpdateSize, useDeleteSize } from "@/hooks/useMasterData";
 import { Size } from "@/types/product";
 import { toast } from "sonner";
+import { useAttributeDeletionCheck } from "@/hooks/useAttributeDeletionCheck";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,6 +29,7 @@ const AdminSizes = () => {
   const createMutation = useCreateSize();
   const updateMutation = useUpdateSize();
   const deleteMutation = useDeleteSize();
+  const { blocked, checking, check, reset } = useAttributeDeletionCheck("size");
 
   const filteredItems = items.filter(item =>
     item.label.toLowerCase().includes(searchQuery.toLowerCase())
@@ -47,12 +49,19 @@ const AdminSizes = () => {
     }
   };
 
+  const handleDeleteClick = async (item: Size) => {
+    setDeleteItem(item);
+    reset();
+    await check(item.id);
+  };
+
   const handleDelete = async () => {
     if (!deleteItem) return;
     try {
       await deleteMutation.mutateAsync(deleteItem.id);
       toast.success("Size deleted");
       setDeleteItem(null);
+      reset();
     } catch (error) {
       toast.error("Failed to delete size");
     }
@@ -73,12 +82,7 @@ const AdminSizes = () => {
 
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search sizes..."
-          className="pl-10"
-        />
+        <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search sizes..." className="pl-10" />
       </div>
 
       <div className="border border-border">
@@ -93,15 +97,9 @@ const AdminSizes = () => {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center py-8">Loading...</TableCell>
-              </TableRow>
+              <TableRow><TableCell colSpan={4} className="text-center py-8">Loading...</TableCell></TableRow>
             ) : filteredItems.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                  No sizes found
-                </TableCell>
-              </TableRow>
+              <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">No sizes found</TableCell></TableRow>
             ) : (
               filteredItems.map((item) => (
                 <TableRow key={item.id}>
@@ -110,20 +108,8 @@ const AdminSizes = () => {
                   <TableCell className="text-muted-foreground">{item.sort_order}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => { setSelectedItem(item); setIsModalOpen(true); }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setDeleteItem(item)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => { setSelectedItem(item); setIsModalOpen(true); }}><Pencil className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(item)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -133,26 +119,35 @@ const AdminSizes = () => {
         </Table>
       </div>
 
-      <MasterDataModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleSave}
-        title={selectedItem ? "Edit Size" : "Add Size"}
-        type="size"
-        initialData={selectedItem}
-      />
+      <MasterDataModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSave} title={selectedItem ? "Edit Size" : "Add Size"} type="size" initialData={selectedItem} />
 
-      <AlertDialog open={!!deleteItem} onOpenChange={() => setDeleteItem(null)}>
+      <AlertDialog open={!!deleteItem} onOpenChange={() => { setDeleteItem(null); reset(); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Size</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "{deleteItem?.label}"? This may affect products using this size.
+            <AlertDialogTitle className="flex items-center gap-2">
+              {blocked ? <AlertTriangle className="h-5 w-5 text-destructive" /> : null}
+              {blocked ? "Deletion Blocked" : "Delete Size"}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                {checking ? <p>Checking references...</p> : blocked ? (
+                  <>
+                    <p>Cannot delete "<strong>{deleteItem?.label}</strong>" because it is used in <strong>{blocked.count}</strong> product{blocked.count > 1 ? "s" : ""}. Remove or replace it from those products first.</p>
+                    <div className="bg-muted p-3 rounded text-sm space-y-1 mt-2">
+                      <p className="font-medium text-foreground">Referenced products:</p>
+                      <ul className="list-disc list-inside text-muted-foreground">
+                        {blocked.names.map((name, i) => <li key={i}>{name}</li>)}
+                        {blocked.count > 5 && <li>...and {blocked.count - 5} more</li>}
+                      </ul>
+                    </div>
+                  </>
+                ) : <p>Are you sure you want to delete "<strong>{deleteItem?.label}</strong>"?</p>}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+            {!blocked && !checking && <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

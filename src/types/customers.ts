@@ -26,6 +26,8 @@ export interface CustomerType {
   name: string;
   description: string | null;
   is_active: boolean;
+  show_on_public_page: boolean;
+  show_member_since: boolean;
   created_at: string;
   updated_at: string;
 }

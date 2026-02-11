@@ -53,7 +53,8 @@ const customerSchema = z.object({
   customer_type_id: z.string().optional(),
   notes: z.string().optional(),
   is_active: z.boolean(),
-   birthdate: z.date().optional(),
+  birthdate: z.date().optional(),
+  public_profile_visible: z.boolean(),
 });
 
 type CustomerFormValues = z.infer<typeof customerSchema>;
@@ -85,7 +86,8 @@ const CustomerModal = ({ open, onOpenChange, customer }: CustomerModalProps) => 
       customer_type_id: "",
       notes: "",
       is_active: true,
-       birthdate: undefined,
+      birthdate: undefined,
+      public_profile_visible: false,
     },
   });
 
@@ -102,7 +104,8 @@ const CustomerModal = ({ open, onOpenChange, customer }: CustomerModalProps) => 
         customer_type_id: customer.customer_type_id || "",
         notes: customer.notes || "",
         is_active: customer.is_active,
-       birthdate: customer.birthdate ? new Date(customer.birthdate) : undefined,
+        birthdate: customer.birthdate ? new Date(customer.birthdate) : undefined,
+        public_profile_visible: customer.public_profile_visible ?? false,
       });
       setSelectedDivisionId(customer.division_id || undefined);
     } else {
@@ -117,14 +120,15 @@ const CustomerModal = ({ open, onOpenChange, customer }: CustomerModalProps) => 
         customer_type_id: "",
         notes: "",
         is_active: true,
-       birthdate: undefined,
+        birthdate: undefined,
+        public_profile_visible: false,
       });
       setSelectedDivisionId(undefined);
     }
   }, [customer, form]);
 
   const onSubmit = async (values: CustomerFormValues) => {
-    const customerData = {
+    const customerData: Record<string, unknown> = {
       name: values.name,
       phone: values.phone,
       email: values.email || null,
@@ -135,13 +139,21 @@ const CustomerModal = ({ open, onOpenChange, customer }: CustomerModalProps) => 
       customer_type_id: values.customer_type_id || null,
       notes: values.notes || null,
       is_active: values.is_active,
-       birthdate: values.birthdate ? format(values.birthdate, "yyyy-MM-dd") : null,
+      birthdate: values.birthdate ? format(values.birthdate, "yyyy-MM-dd") : null,
+      public_profile_visible: values.public_profile_visible,
     };
 
+    // Track membership assignment date when membership type changes
+    if (customer && values.customer_type_id && values.customer_type_id !== customer.customer_type_id) {
+      customerData.membership_assigned_at = new Date().toISOString();
+    } else if (!customer && values.customer_type_id) {
+      customerData.membership_assigned_at = new Date().toISOString();
+    }
+
     if (customer) {
-      await updateCustomer.mutateAsync({ id: customer.id, ...customerData });
+      await updateCustomer.mutateAsync({ id: customer.id, ...customerData } as any);
     } else {
-      await createCustomer.mutateAsync(customerData);
+      await createCustomer.mutateAsync(customerData as any);
     }
     onOpenChange(false);
   };
@@ -407,6 +419,24 @@ const CustomerModal = ({ open, onOpenChange, customer }: CustomerModalProps) => 
                     <FormLabel className="text-base">Active</FormLabel>
                     <p className="text-sm text-muted-foreground">
                       Inactive customers won't appear in main lists
+                    </p>
+                  </div>
+                  <FormControl>
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="public_profile_visible"
+              render={({ field }) => (
+                <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Public Profile</FormLabel>
+                    <p className="text-sm text-muted-foreground">
+                      Show this customer on the public membership page
                     </p>
                   </div>
                   <FormControl>

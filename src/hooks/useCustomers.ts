@@ -26,6 +26,8 @@ export interface CustomerType {
   name: string;
   description: string | null;
   is_active: boolean;
+  show_on_public_page: boolean;
+  show_member_since: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -66,6 +68,8 @@ export interface Customer {
   birthdate: string | null;
   profile_image_url: string | null;
   postal_code: string | null;
+  public_profile_visible: boolean;
+  membership_assigned_at: string | null;
   division?: Division;
   thana?: Thana;
   customer_type?: CustomerType;

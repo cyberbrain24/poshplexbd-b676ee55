@@ -29,6 +29,7 @@ import CustomerAuth from "./pages/CustomerAuth";
 import CustomerAccount from "./pages/CustomerAccount";
 import OrderTracking from "./pages/OrderTracking";
 import MyOrders from "./pages/MyOrders";
+import Membership from "./pages/Membership";
 
 // Admin pages - direct imports
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -95,6 +96,7 @@ const App = () => (
               <Route path="/order-tracking" element={<OrderTracking />} />
               <Route path="/my-orders" element={<MyOrders />} />
               <Route path="/account" element={<CustomerAccount />} />
+              <Route path="/membership" element={<Membership />} />
               <Route path="/about/our-story" element={<OurStory />} />
               <Route path="/about/sustainability" element={<Sustainability />} />
               <Route path="/about/size-guide" element={<SizeGuide />} />

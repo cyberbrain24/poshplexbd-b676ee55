@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, AlertTriangle } from "lucide-react";
 import MasterDataModal from "@/components/admin/MasterDataModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Color } from "@/types/product";
 import { toast } from "sonner";
 import { AdminTableSkeleton } from "@/components/admin/AdminLoadingState";
 import { QueryErrorDisplay } from "@/components/admin/AdminErrorBoundary";
+import { useAttributeDeletionCheck } from "@/hooks/useAttributeDeletionCheck";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +31,7 @@ const AdminColors = () => {
   const createMutation = useCreateColor();
   const updateMutation = useUpdateColor();
   const deleteMutation = useDeleteColor();
+  const { blocked, checking, check, reset } = useAttributeDeletionCheck("color");
 
   const filteredItems = items.filter(item =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -49,12 +51,19 @@ const AdminColors = () => {
     }
   };
 
+  const handleDeleteClick = async (item: Color) => {
+    setDeleteItem(item);
+    reset();
+    await check(item.id);
+  };
+
   const handleDelete = async () => {
     if (!deleteItem) return;
     try {
       await deleteMutation.mutateAsync(deleteItem.id);
       toast.success("Color deleted");
       setDeleteItem(null);
+      reset();
     } catch (error) {
       toast.error("Failed to delete color");
     }
@@ -141,7 +150,7 @@ const AdminColors = () => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => setDeleteItem(item)}
+                        onClick={() => handleDeleteClick(item)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
@@ -163,17 +172,37 @@ const AdminColors = () => {
         initialData={selectedItem}
       />
 
-      <AlertDialog open={!!deleteItem} onOpenChange={() => setDeleteItem(null)}>
+      <AlertDialog open={!!deleteItem} onOpenChange={() => { setDeleteItem(null); reset(); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Color</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "{deleteItem?.name}"? This may affect products using this color.
+            <AlertDialogTitle className="flex items-center gap-2">
+              {blocked ? <AlertTriangle className="h-5 w-5 text-destructive" /> : null}
+              {blocked ? "Deletion Blocked" : "Delete Color"}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                {checking ? (
+                  <p>Checking references...</p>
+                ) : blocked ? (
+                  <>
+                    <p>Cannot delete "<strong>{deleteItem?.name}</strong>" because it is used in <strong>{blocked.count}</strong> product{blocked.count > 1 ? "s" : ""}. Remove or replace it from those products first.</p>
+                    <div className="bg-muted p-3 rounded text-sm space-y-1 mt-2">
+                      <p className="font-medium text-foreground">Referenced products:</p>
+                      <ul className="list-disc list-inside text-muted-foreground">
+                        {blocked.names.map((name, i) => <li key={i}>{name}</li>)}
+                        {blocked.count > 5 && <li>...and {blocked.count - 5} more</li>}
+                      </ul>
+                    </div>
+                  </>
+                ) : (
+                  <p>Are you sure you want to delete "<strong>{deleteItem?.name}</strong>"?</p>
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+            {!blocked && !checking && <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

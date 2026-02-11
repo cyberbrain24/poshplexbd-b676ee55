@@ -50,7 +50,8 @@ const ProductInfo = ({ product, isLoading }: ProductInfoProps) => {
       || '/placeholder.svg';
 
     return {
-      id: product?.id || 'fallback-id',
+      id: `${product?.id || 'fallback'}-${selectedVariant?.id || 'base'}`,
+      productId: product?.id,
       variantId: selectedVariant?.id,
       name: productName,
       price: displayPrice,
@@ -58,6 +59,7 @@ const ProductInfo = ({ product, isLoading }: ProductInfoProps) => {
       category: categoryName,
       color: selectedVariant?.color?.name,
       size: selectedVariant?.size?.label,
+      sku: selectedVariant?.sku,
     };
   };
 

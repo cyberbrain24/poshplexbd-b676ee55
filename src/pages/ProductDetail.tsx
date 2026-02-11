@@ -1,3 +1,4 @@
+import { useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
 import PoshplexHeader from "../components/header/PoshplexHeader";
@@ -20,8 +21,12 @@ import {
 const ProductDetail = () => {
   const { productSlug } = useParams();
   const { data: product, isLoading } = useProduct(productSlug);
+  const [selectedColorId, setSelectedColorId] = useState<string | null>(null);
 
-  // Fallback for product data
+  const handleColorChange = useCallback((colorId: string | null) => {
+    setSelectedColorId(colorId);
+  }, []);
+
   const productName = product?.name || "Product";
   const categoryName = product?.category?.name || "Apparel";
   const categorySlug = categoryName.toLowerCase().replace(/\s+/g, '-');
@@ -57,10 +62,18 @@ const ProductDetail = () => {
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
-            <ProductImageGallery product={product} isLoading={isLoading} />
+            <ProductImageGallery 
+              product={product} 
+              isLoading={isLoading} 
+              selectedColorId={selectedColorId}
+            />
             
             <div className="lg:pl-12 mt-8 lg:mt-0 lg:sticky lg:top-6 lg:h-fit">
-              <ProductInfo product={product} isLoading={isLoading} />
+              <ProductInfo 
+                product={product} 
+                isLoading={isLoading} 
+                onColorChange={handleColorChange}
+              />
               <ProductDescription product={product} />
             </div>
           </div>

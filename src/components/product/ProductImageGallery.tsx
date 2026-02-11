@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import ImageZoom from "./ImageZoom";
 import { Product } from "@/types/product";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -6,21 +6,37 @@ import { Skeleton } from "@/components/ui/skeleton";
 interface ProductImageGalleryProps {
   product?: Product | null;
   isLoading?: boolean;
+  selectedColorId?: string | null;
 }
 
-const ProductImageGallery = ({ product, isLoading }: ProductImageGalleryProps) => {
+const ProductImageGallery = ({ product, isLoading, selectedColorId }: ProductImageGalleryProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
   const [zoomInitialIndex, setZoomInitialIndex] = useState(0);
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
 
-  // Use product images from database only - no static fallbacks
-  const productImages = product?.images && product.images.length > 0
-    ? product.images
-        .sort((a, b) => a.sort_order - b.sort_order)
-        .map(img => img.image_url)
-    : ['/placeholder.svg'];
+  // Filter images based on selected color
+  const productImages = useMemo(() => {
+    if (!product?.images || product.images.length === 0) return ['/placeholder.svg'];
+    
+    const sorted = [...product.images].sort((a, b) => a.sort_order - b.sort_order);
+    
+    if (selectedColorId) {
+      // Show: main images (no color) + images matching selected color
+      const filtered = sorted.filter(
+        img => !img.color_id || img.color_id === selectedColorId
+      );
+      if (filtered.length > 0) return filtered.map(img => img.image_url);
+    }
+    
+    return sorted.map(img => img.image_url);
+  }, [product?.images, selectedColorId]);
+
+  // Reset image index when color changes
+  useEffect(() => {
+    setCurrentImageIndex(0);
+  }, [selectedColorId]);
 
   // YouTube video handling
   const youtubeUrl = product?.youtube_url;

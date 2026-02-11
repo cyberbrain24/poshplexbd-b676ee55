@@ -39,6 +39,7 @@ export {
   useUpdateProduct,
   useDeleteProduct,
   useAddProductImage,
+  useUpdateProductImage,
   useDeleteProductImage,
   useAddProductVariant,
   useUpdateProductVariant,

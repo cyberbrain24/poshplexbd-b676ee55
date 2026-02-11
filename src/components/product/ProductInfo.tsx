@@ -19,9 +19,10 @@ import { toast } from "sonner";
 interface ProductInfoProps {
   product?: Product | null;
   isLoading?: boolean;
+  onColorChange?: (colorId: string | null) => void;
 }
 
-const ProductInfo = ({ product, isLoading }: ProductInfoProps) => {
+const ProductInfo = ({ product, isLoading, onColorChange }: ProductInfoProps) => {
   const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
@@ -31,7 +32,13 @@ const ProductInfo = ({ product, isLoading }: ProductInfoProps) => {
   
   const handleVariantChange = useCallback((variant: ProductVariant | null) => {
     setSelectedVariant(variant);
-  }, []);
+    // Notify parent of color change for image filtering
+    if (variant?.color_id) {
+      onColorChange?.(variant.color_id);
+    } else if (!variant) {
+      onColorChange?.(null);
+    }
+  }, [onColorChange]);
 
   // Fallback data for static display
   const productName = product?.name || "Product";
@@ -76,17 +83,12 @@ const ProductInfo = ({ product, isLoading }: ProductInfoProps) => {
       className: "mb-20",
     });
 
-    // Reset quantity after adding
     setQuantity(1);
-
-    // Auto-open shopping bag sidebar
     window.dispatchEvent(new CustomEvent('open-shopping-bag'));
   };
 
   const handleBuyNow = () => {
     if (!canAddToCart) return;
-
-    // Add to cart and navigate to checkout
     addToCart(getCartItem(), quantity);
     navigate('/checkout');
   };

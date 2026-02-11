@@ -159,7 +159,7 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
       if (variantIds.length === 0) return [];
       const { data, error } = await supabase
         .from("product_variants")
-        .select("id, color:colors(name, hex_code), size:sizes(label), material:materials(name)")
+        .select("id, color_id, color:colors(id, name, hex_code), size:sizes(label), material:materials(name)")
         .in("id", variantIds);
       if (error) throw error;
       return data;
@@ -167,9 +167,19 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
     enabled: variantIds.length > 0,
   });
 
-  const getItemImage = (item: { product_id: string | null }) => {
+  const getItemImage = (item: { product_id: string | null; variant_id: string | null }) => {
     if (!productImages || !item.product_id) return null;
     const images = productImages.filter(img => img.product_id === item.product_id);
+    
+    // If variant has a color, prefer color-specific image
+    if (item.variant_id && variantDetails) {
+      const variant = variantDetails.find(v => v.id === item.variant_id) as any;
+      if (variant?.color_id) {
+        const colorImage = images.find(img => img.color_id === variant.color_id);
+        if (colorImage) return colorImage.image_url;
+      }
+    }
+    
     const mainImg = images.find(img => img.is_main);
     return mainImg?.image_url || images[0]?.image_url || null;
   };

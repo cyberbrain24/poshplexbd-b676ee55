@@ -161,3 +161,4 @@ export { useDebouncedNavigation } from './useDebouncedNavigation';
 export { useIsMobile } from './use-mobile';
 export { useToast } from './use-toast';
 export { useAdminQuery } from './useAdminQuery';
+export { useStorefrontPrefetch } from './useStorefrontPrefetch';

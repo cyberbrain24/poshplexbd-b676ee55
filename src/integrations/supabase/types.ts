@@ -505,6 +505,7 @@ export type Database = {
           amount: number
           created_at: string
           id: string
+          idempotency_key: string | null
           order_id: string
           payment_reference: string | null
           recorded_at: string
@@ -516,6 +517,7 @@ export type Database = {
           amount: number
           created_at?: string
           id?: string
+          idempotency_key?: string | null
           order_id: string
           payment_reference?: string | null
           recorded_at?: string
@@ -527,6 +529,7 @@ export type Database = {
           amount?: number
           created_at?: string
           id?: string
+          idempotency_key?: string | null
           order_id?: string
           payment_reference?: string | null
           recorded_at?: string
@@ -1660,6 +1663,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_order_atomic: {
+        Args: { p_items: Json; p_order: Json }
+        Returns: Json
+      }
       find_product_by_short_id: { Args: { short_id: string }; Returns: string }
       has_role: {
         Args: {
@@ -1667,6 +1674,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_promo_usage: {
+        Args: { p_promo_code_id: string }
+        Returns: undefined
       }
       is_admin: { Args: never; Returns: boolean }
       upsert_seo_path: {

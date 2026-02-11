@@ -40,7 +40,7 @@ export const useOrderPayments = (orderId: string | undefined) => {
   });
 };
 
-// Record a new payment
+// Record a new payment with idempotency protection
 export const useRecordPayment = () => {
   const queryClient = useQueryClient();
 
@@ -52,6 +52,7 @@ export const useRecordPayment = () => {
       paymentReference,
       totalAmount,
       currentPaidAmount,
+      idempotencyKey,
     }: {
       orderId: string;
       amount: number;
@@ -59,7 +60,21 @@ export const useRecordPayment = () => {
       paymentReference?: string;
       totalAmount: number;
       currentPaidAmount: number;
+      idempotencyKey?: string;
     }) => {
+      // Generate idempotency key if not provided
+      const idemKey = idempotencyKey || `${orderId}-${amount}-${Date.now()}`;
+
+      // Check for duplicate payment using idempotency key
+      const { data: existing } = await supabase
+        .from("order_payments")
+        .select("id")
+        .eq("idempotency_key", idemKey)
+        .maybeSingle();
+
+      if (existing) {
+        throw new Error("This payment has already been recorded");
+      }
       // Validate amount
       const remainingBalance = totalAmount - currentPaidAmount;
       if (amount <= 0) {
@@ -84,7 +99,7 @@ export const useRecordPayment = () => {
 
       if (transactionError) throw transactionError;
 
-      // 2. Insert order payment record
+      // 2. Insert order payment record with idempotency key
       const { error: paymentError } = await supabase
         .from("order_payments")
         .insert({
@@ -93,6 +108,7 @@ export const useRecordPayment = () => {
           account_id: accountId,
           transaction_id: transaction.id,
           payment_reference: paymentReference || null,
+          idempotency_key: idemKey,
         });
 
       if (paymentError) throw paymentError;

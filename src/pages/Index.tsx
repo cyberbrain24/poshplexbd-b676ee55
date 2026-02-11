@@ -6,8 +6,10 @@ import StreetEditsGallery from "../components/home/StreetEditsGallery";
 import ProductGrid from "../components/home/ProductGrid";
 import OurStorySection from "../components/home/OurStorySection";
 import { HomeSEO } from "@/components/seo";
+import { useStorefrontPrefetch } from "@/hooks/useStorefrontPrefetch";
 
 const Index = () => {
+  useStorefrontPrefetch();
   return (
     <div className="min-h-screen bg-background">
       <HomeSEO />

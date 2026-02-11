@@ -827,7 +827,15 @@ const Checkout = () => {
                 ) : (
                   <RadioGroup 
                     value={selectedPaymentMethodId} 
-                    onValueChange={setSelectedPaymentMethodId}
+                    onValueChange={(val) => {
+                      setSelectedPaymentMethodId(val);
+                      // Reset partial payment when switching to COD
+                      const method = paymentMethods?.find(m => m.id === val);
+                      if (method?.type === 'cod') {
+                        setUsePartialPayment(false);
+                        setPartialPaymentAmount("");
+                      }
+                    }}
                     className="space-y-3"
                   >
                     {paymentMethods?.map((method) => (
@@ -885,8 +893,8 @@ const Checkout = () => {
                   </div>
                 )}
 
-                {/* Partial Payment Option - Available for ALL payment methods */}
-                {selectedPaymentMethod && (
+                {/* Partial Payment Option - Available for non-COD payment methods */}
+                {selectedPaymentMethod && selectedPaymentMethod.type !== 'cod' && (
                   <div className="mt-6 space-y-3 pt-4 border-t border-muted-foreground/20">
                     <div className="flex items-center space-x-2">
                       <Checkbox
@@ -904,9 +912,7 @@ const Checkout = () => {
                     
                     {usePartialPayment && (
                       <div className="pl-6 space-y-2">
-                        <Label className="text-sm font-light">
-                          {selectedPaymentMethod.type === 'cod' ? "Amount to collect on delivery" : "Payment Amount"}
-                        </Label>
+                        <Label className="text-sm font-light">Payment Amount</Label>
                         <div className="flex items-center gap-2">
                           <span className="text-muted-foreground">৳</span>
                           <Input
@@ -921,9 +927,7 @@ const Checkout = () => {
                         </div>
                         <div className="bg-accent/30 p-3 rounded-none text-sm space-y-1">
                           <div className="flex justify-between">
-                            <span className="text-muted-foreground">
-                              {selectedPaymentMethod.type === 'cod' ? "Collect Now:" : "Paying Now:"}
-                            </span>
+                            <span className="text-muted-foreground">Paying Now:</span>
                             <span className="font-medium text-primary">{formatCurrency(partialAmount)}</span>
                           </div>
                           <div className="flex justify-between">
@@ -954,7 +958,7 @@ const Checkout = () => {
                     {usePartialPayment && partialAmount > 0 && (
                       <>
                         <div className="flex justify-between text-sm text-primary font-medium pt-2 border-t border-muted-foreground/10">
-                          <span>{selectedPaymentMethod?.type === 'cod' ? "Collect on Delivery" : "Paying Now"}</span>
+                          <span>Paying Now</span>
                           <span>{formatCurrency(partialAmount)}</span>
                         </div>
                         <div className="flex justify-between text-sm text-muted-foreground">

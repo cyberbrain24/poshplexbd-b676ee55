@@ -89,39 +89,42 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
         is_active: product.is_active,
       });
       setImages(product.images || []);
-      // Resolve parent category for the two-step selector
-      if (product.category_id) {
-        const cat = categories.find(c => c.id === product.category_id);
-        if (cat?.parent_id) {
-          setParentCategoryId(cat.parent_id);
-        } else {
-          setParentCategoryId(product.category_id);
-        }
-      } else {
-        setParentCategoryId(null);
-      }
-      // Load existing variants when editing a product
-      if (product.variants && product.variants.length > 0) {
-        setVariants(product.variants.map(v => ({
-          id: v.id,
-          color_id: v.color_id,
-          size_id: v.size_id,
-          material_id: v.material_id,
-          sku: v.sku,
-          purchase_price: v.purchase_price,
-          selling_price: v.selling_price,
-          is_active: v.is_active,
-        })));
-      } else {
-        setVariants([]);
-      }
+      setVariants([]);
     } else {
       setFormData(defaultFormData);
       setImages([]);
       setVariants([]);
       setParentCategoryId(null);
     }
-  }, [product, categories]);
+  }, [product]);
+
+  // Resolve parent category separately to avoid infinite loop
+  useEffect(() => {
+    if (product?.category_id && categories.length > 0) {
+      const cat = categories.find(c => c.id === product.category_id);
+      if (cat?.parent_id) {
+        setParentCategoryId(cat.parent_id);
+      } else {
+        setParentCategoryId(product.category_id);
+      }
+    }
+  }, [product?.category_id, categories.length]);
+
+  // Load existing variants when editing
+  useEffect(() => {
+    if (product?.variants && product.variants.length > 0) {
+      setVariants(product.variants.map(v => ({
+        id: v.id,
+        color_id: v.color_id,
+        size_id: v.size_id,
+        material_id: v.material_id,
+        sku: v.sku,
+        purchase_price: v.purchase_price,
+        selling_price: v.selling_price,
+        is_active: v.is_active,
+      })));
+    }
+  }, [product]);
 
   const getYouTubeVideoId = (url: string) => {
     const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
@@ -138,19 +141,24 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
         
         // Upload images for new product
         for (const img of images) {
-          if (img.image_url.startsWith("blob:")) {
-            // This is a local file, need to upload
-            // Handle in the image upload section
-          } else {
-            await addImage.mutateAsync({
-              productId: newProduct.id,
-              imageUrl: img.image_url,
-              altText: img.alt_text || undefined,
-              sortOrder: img.sort_order,
-              isMain: img.is_main,
-              colorId: img.color_id || undefined,
-            });
+          let imageUrl = img.image_url;
+          
+          // Upload blob files to storage first
+          if (imageUrl.startsWith("blob:")) {
+            const response = await fetch(imageUrl);
+            const blob = await response.blob();
+            const file = new File([blob], `image-${Date.now()}.${blob.type.split('/')[1] || 'jpg'}`, { type: blob.type });
+            imageUrl = await uploadProductImage(file, newProduct.id);
           }
+          
+          await addImage.mutateAsync({
+            productId: newProduct.id,
+            imageUrl,
+            altText: img.alt_text || undefined,
+            sortOrder: img.sort_order,
+            isMain: img.is_main,
+            colorId: img.color_id || undefined,
+          });
         }
 
         // Add variants for new product

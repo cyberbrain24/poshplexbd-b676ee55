@@ -74,6 +74,7 @@ const accountManagementItems: NavItem[] = [
 
 const customerManagementItems: NavItem[] = [
   { icon: Users, label: "Customers", path: "/admin/customers" },
+  { icon: MessageSquare, label: "Reviews", path: "/admin/reviews" },
   { icon: MapPin, label: "Districts", path: "/admin/divisions" },
   { icon: Map, label: "Thanas", path: "/admin/thanas" },
   { icon: Crown, label: "Customer Types", path: "/admin/customer-types" },
@@ -244,19 +245,16 @@ const AdminSidebar = () => {
           isProductMgmtActive
         )}
 
-        {/* Reviews */}
-        {renderNavLink("/admin/reviews", MessageSquare, "Reviews")}
-
         {/* Media Library */}
         {renderNavLink("/admin/media", Image, "Media")}
 
         {/* SEO Manager */}
         {renderNavLink("/admin/seo", Globe, "SEO Manager")}
 
-        {/* Orders */}
+        {/* Order Management */}
         {renderCollapsible(
           ShoppingCart,
-          "Orders",
+          "Order Management",
           orderItems,
           isOrdersOpen,
           setIsOrdersOpen,

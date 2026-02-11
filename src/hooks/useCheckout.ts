@@ -189,11 +189,22 @@ export const useCreateOrder = () => {
 
       if (orderError) throw orderError;
 
+      // Validate variant IDs exist before inserting
+      const variantIds = cartItems.map(i => i.variantId).filter(Boolean) as string[];
+      let validVariantIds = new Set<string>();
+      if (variantIds.length > 0) {
+        const { data: validVariants } = await supabase
+          .from("product_variants")
+          .select("id")
+          .in("id", variantIds);
+        validVariantIds = new Set((validVariants || []).map(v => v.id));
+      }
+
       // Create order items
       const orderItems = cartItems.map(item => ({
         order_id: order.id,
         product_id: item.productId || null,
-        variant_id: item.variantId || null,
+        variant_id: (item.variantId && validVariantIds.has(item.variantId)) ? item.variantId : null,
         product_name: item.name,
         variant_sku: item.sku || null,
         variant_details: {

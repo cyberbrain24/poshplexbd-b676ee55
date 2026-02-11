@@ -137,11 +137,21 @@ const AdminSidebar = () => {
   const isOrdersActive = orderItems.some(item => location.pathname === item.path);
   const isAccountMgmtActive = accountManagementItems.some(item => location.pathname === item.path);
   const isCustomerMgmtActive = customerManagementItems.some(item => location.pathname === item.path);
-  
-  const [isProductMgmtOpen, setIsProductMgmtOpen] = useState(isProductMgmtActive);
-  const [isOrdersOpen, setIsOrdersOpen] = useState(isOrdersActive);
-  const [isAccountMgmtOpen, setIsAccountMgmtOpen] = useState(isAccountMgmtActive);
-  const [isCustomerMgmtOpen, setIsCustomerMgmtOpen] = useState(isCustomerMgmtActive);
+
+  // Accordion behavior: only one group open at a time
+  type GroupKey = 'product' | 'orders' | 'account' | 'customer';
+  const getInitialOpen = (): GroupKey | null => {
+    if (isProductMgmtActive) return 'product';
+    if (isOrdersActive) return 'orders';
+    if (isCustomerMgmtActive) return 'customer';
+    if (isAccountMgmtActive) return 'account';
+    return null;
+  };
+  const [openGroup, setOpenGroup] = useState<GroupKey | null>(getInitialOpen);
+
+  const toggleGroup = (key: GroupKey) => {
+    setOpenGroup(prev => prev === key ? null : key);
+  };
 
   // Render a simple nav link
   const renderNavLink = (path: string, icon: LucideIcon, label: string) => {
@@ -170,12 +180,12 @@ const AdminSidebar = () => {
     label: string,
     items: NavItem[],
     isOpen: boolean,
-    setIsOpen: (open: boolean) => void,
+    onToggle: () => void,
     isGroupActive: boolean
   ) => {
     const Icon = icon;
     return (
-      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <Collapsible open={isOpen} onOpenChange={onToggle}>
         <CollapsibleTrigger className="w-full">
           <div
             className={cn(
@@ -240,8 +250,8 @@ const AdminSidebar = () => {
           Package,
           "Product Management",
           productManagementItems,
-          isProductMgmtOpen,
-          setIsProductMgmtOpen,
+          openGroup === 'product',
+          () => toggleGroup('product'),
           isProductMgmtActive
         )}
 
@@ -250,8 +260,8 @@ const AdminSidebar = () => {
           ShoppingCart,
           "Order Management",
           orderItems,
-          isOrdersOpen,
-          setIsOrdersOpen,
+          openGroup === 'orders',
+          () => toggleGroup('orders'),
           isOrdersActive
         )}
 
@@ -260,8 +270,8 @@ const AdminSidebar = () => {
           Users,
           "Customer Management",
           customerManagementItems,
-          isCustomerMgmtOpen,
-          setIsCustomerMgmtOpen,
+          openGroup === 'customer',
+          () => toggleGroup('customer'),
           isCustomerMgmtActive
         )}
 
@@ -270,8 +280,8 @@ const AdminSidebar = () => {
           Wallet,
           "Account Management",
           accountManagementItems,
-          isAccountMgmtOpen,
-          setIsAccountMgmtOpen,
+          openGroup === 'account',
+          () => toggleGroup('account'),
           isAccountMgmtActive
         )}
 

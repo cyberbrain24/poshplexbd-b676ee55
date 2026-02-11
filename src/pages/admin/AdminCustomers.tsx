@@ -287,7 +287,20 @@ const AdminCustomers = () => {
               <TableBody>
                 {customers.map((customer) => (
                   <TableRow key={customer.id}>
-                    <TableCell className="font-medium">{customer.name}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-full bg-muted overflow-hidden flex-shrink-0">
+                          {(customer as any).profile_image_url ? (
+                            <img src={(customer as any).profile_image_url} alt={customer.name} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center text-xs text-muted-foreground font-medium">
+                              {customer.name.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                        <span className="font-medium">{customer.name}</span>
+                      </div>
+                    </TableCell>
                     <TableCell>{customer.phone}</TableCell>
                     <TableCell>
                       <Badge variant={

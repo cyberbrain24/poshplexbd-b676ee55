@@ -10,7 +10,11 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
-  History
+  History,
+  Pencil,
+  Minus,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import PoshplexHeader from "@/components/header/PoshplexHeader";
 import PoshplexFooter from "@/components/footer/PoshplexFooter";
@@ -19,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { formatCurrency } from "@/lib/currency";
+import { toast } from "sonner";
 
 const getOrderStatusBadge = (status: string) => {
   const map: Record<string, { className: string; label: string }> = {
@@ -102,6 +107,9 @@ const MyOrders = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [customerPhone, setCustomerPhone] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedItems, setEditedItems] = useState<OrderItem[]>([]);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   useEffect(() => {
     const storedPhone = localStorage.getItem('poshplex_customer_phone');
@@ -142,6 +150,92 @@ const MyOrders = () => {
     localStorage.removeItem('poshplex_customer_phone');
     localStorage.removeItem('poshplex_customer_name');
     navigate('/');
+  };
+
+  const canEditOrder = (order: Order) => order.order_status === 'pending';
+
+  const startEditing = () => {
+    if (selectedOrder) {
+      setEditedItems(selectedOrder.items.map(item => ({ ...item })));
+      setIsEditing(true);
+    }
+  };
+
+  const updateItemQuantity = (itemId: string, delta: number) => {
+    setEditedItems(prev => prev.map(item => {
+      if (item.id === itemId) {
+        const newQty = Math.max(1, item.quantity + delta);
+        return { ...item, quantity: newQty, line_total: newQty * (item.line_total / item.quantity) };
+      }
+      return item;
+    }));
+  };
+
+  const removeItem = (itemId: string) => {
+    if (editedItems.length <= 1) {
+      toast.error("Order must have at least one item");
+      return;
+    }
+    setEditedItems(prev => prev.filter(item => item.id !== itemId));
+  };
+
+  const saveOrderEdits = async () => {
+    if (!selectedOrder) return;
+    setIsSavingEdit(true);
+    try {
+      // Update each item's quantity and line_total
+      for (const item of editedItems) {
+        const originalItem = selectedOrder.items.find(i => i.id === item.id);
+        if (originalItem && (originalItem.quantity !== item.quantity)) {
+          const unitPrice = originalItem.line_total / originalItem.quantity;
+          const newLineTotal = unitPrice * item.quantity;
+          const { error } = await supabase
+            .from("order_items")
+            .update({ quantity: item.quantity, line_total: newLineTotal })
+            .eq("id", item.id);
+          if (error) throw error;
+        }
+      }
+
+      // Delete removed items
+      const removedIds = selectedOrder.items
+        .filter(orig => !editedItems.find(e => e.id === orig.id))
+        .map(i => i.id);
+      
+      for (const id of removedIds) {
+        const { error } = await supabase.from("order_items").delete().eq("id", id);
+        if (error) throw error;
+      }
+
+      // Recalculate order totals
+      const newSubtotal = editedItems.reduce((sum, item) => {
+        const originalItem = selectedOrder.items.find(i => i.id === item.id);
+        const unitPrice = originalItem ? originalItem.line_total / originalItem.quantity : 0;
+        return sum + (unitPrice * item.quantity);
+      }, 0);
+      
+      const newTotal = newSubtotal + selectedOrder.shipping_cost - selectedOrder.discount_amount;
+      
+      const { error: orderError } = await supabase
+        .from("orders")
+        .update({ subtotal: newSubtotal, total_amount: Math.max(0, newTotal) })
+        .eq("id", selectedOrder.id);
+      
+      if (orderError) throw orderError;
+
+      toast.success("Order updated successfully");
+      setIsEditing(false);
+      
+      // Refresh orders
+      if (customerPhone) {
+        fetchOrders(customerPhone);
+        setSelectedOrder(null);
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update order");
+    } finally {
+      setIsSavingEdit(false);
+    }
   };
 
   const currentStatusIndex = selectedOrder ? getStatusIndex(selectedOrder.order_status) : -1;
@@ -206,6 +300,12 @@ const MyOrders = () => {
                   <div className="flex items-center gap-2">
                     {getOrderStatusBadge(selectedOrder.order_status)}
                     {getPaymentStatusBadge(selectedOrder.payment_status)}
+                    {canEditOrder(selectedOrder) && !isEditing && (
+                      <Button variant="outline" size="sm" onClick={startEditing} className="rounded-none">
+                        <Pencil className="h-4 w-4 mr-1" />
+                        Edit Order
+                      </Button>
+                    )}
                   </div>
                 </div>
 
@@ -277,36 +377,71 @@ const MyOrders = () => {
 
               {/* Items */}
               <div className="bg-muted/20 p-6 rounded-none">
-                <h3 className="text-base font-light text-foreground mb-4">Items ({selectedOrder.items?.length || 0})</h3>
+                <h3 className="text-base font-light text-foreground mb-4">
+                  Items ({(isEditing ? editedItems : selectedOrder.items)?.length || 0})
+                  {isEditing && <span className="text-xs text-muted-foreground ml-2">(Editing)</span>}
+                </h3>
                 <div className="space-y-3">
-                  {selectedOrder.items?.map(item => (
-                    <div key={item.id} className="flex gap-4 p-3 bg-background border border-muted-foreground/10 rounded-none">
-                      {item.variant_details?.image && (
-                        <div className="w-14 h-14 bg-muted rounded-none overflow-hidden flex-shrink-0">
-                          <img src={item.variant_details.image} alt={item.product_name} className="w-full h-full object-cover" />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-foreground text-sm">{item.product_name}</h4>
-                        {(item.variant_details?.color || item.variant_details?.size) && (
-                          <p className="text-xs text-muted-foreground">{[item.variant_details?.color, item.variant_details?.size].filter(Boolean).join(" / ")}</p>
+                  {(isEditing ? editedItems : selectedOrder.items)?.map(item => {
+                    const unitPrice = item.line_total / item.quantity;
+                    return (
+                      <div key={item.id} className="flex gap-4 p-3 bg-background border border-muted-foreground/10 rounded-none">
+                        {item.variant_details?.image && (
+                          <div className="w-14 h-14 bg-muted rounded-none overflow-hidden flex-shrink-0">
+                            <img src={item.variant_details.image} alt={item.product_name} className="w-full h-full object-cover" />
+                          </div>
                         )}
-                        <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-foreground text-sm">{item.product_name}</h4>
+                          {(item.variant_details?.color || item.variant_details?.size) && (
+                            <p className="text-xs text-muted-foreground">{[item.variant_details?.color, item.variant_details?.size].filter(Boolean).join(" / ")}</p>
+                          )}
+                          {isEditing ? (
+                            <div className="flex items-center gap-2 mt-1">
+                              <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateItemQuantity(item.id, -1)}>
+                                <Minus className="h-3 w-3" />
+                              </Button>
+                              <span className="text-sm font-medium w-6 text-center">{item.quantity}</span>
+                              <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateItemQuantity(item.id, 1)}>
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive ml-2" onClick={() => removeItem(item.id)}>
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
+                          )}
+                        </div>
+                        <div className="text-right text-sm">
+                          <p className="font-medium">{formatCurrency(isEditing ? unitPrice * item.quantity : item.line_total)}</p>
+                        </div>
                       </div>
-                      <div className="text-right text-sm">
-                        <p className="font-medium">{formatCurrency(item.line_total)}</p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
-                <div className="mt-4 pt-4 border-t border-muted-foreground/10 space-y-1 text-sm">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatCurrency(selectedOrder.subtotal)}</span></div>
-                  {selectedOrder.discount_amount > 0 && (
-                    <div className="flex justify-between text-green-600"><span>Discount</span><span>-{formatCurrency(selectedOrder.discount_amount)}</span></div>
-                  )}
-                  <div className="flex justify-between"><span className="text-muted-foreground">Shipping</span><span>{formatCurrency(selectedOrder.shipping_cost)}</span></div>
-                  <div className="flex justify-between font-medium text-base pt-2 border-t border-muted-foreground/10"><span>Total</span><span>{formatCurrency(selectedOrder.total_amount)}</span></div>
-                </div>
+
+                {isEditing && (
+                  <div className="flex gap-2 mt-4 pt-4 border-t border-muted-foreground/10">
+                    <Button onClick={saveOrderEdits} disabled={isSavingEdit} size="sm" className="rounded-none">
+                      {isSavingEdit ? "Saving..." : "Save Changes"}
+                    </Button>
+                    <Button variant="outline" size="sm" className="rounded-none" onClick={() => setIsEditing(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+                )}
+
+                {!isEditing && (
+                  <div className="mt-4 pt-4 border-t border-muted-foreground/10 space-y-1 text-sm">
+                    <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatCurrency(selectedOrder.subtotal)}</span></div>
+                    {selectedOrder.discount_amount > 0 && (
+                      <div className="flex justify-between text-green-600"><span>Discount</span><span>-{formatCurrency(selectedOrder.discount_amount)}</span></div>
+                    )}
+                    <div className="flex justify-between"><span className="text-muted-foreground">Shipping</span><span>{formatCurrency(selectedOrder.shipping_cost)}</span></div>
+                    <div className="flex justify-between font-medium text-base pt-2 border-t border-muted-foreground/10"><span>Total</span><span>{formatCurrency(selectedOrder.total_amount)}</span></div>
+                  </div>
+                )}
               </div>
             </div>
           ) : (

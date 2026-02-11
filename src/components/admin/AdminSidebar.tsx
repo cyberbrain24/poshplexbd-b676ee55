@@ -77,7 +77,7 @@ const customerManagementItems: NavItem[] = [
   { icon: MessageSquare, label: "Reviews", path: "/admin/reviews" },
   { icon: MapPin, label: "Districts", path: "/admin/divisions" },
   { icon: Map, label: "Thanas", path: "/admin/thanas" },
-  { icon: Crown, label: "Customer Types", path: "/admin/customer-types" },
+  { icon: Crown, label: "Membership Types", path: "/admin/customer-types" },
 ];
 
 const AdminSidebar = () => {

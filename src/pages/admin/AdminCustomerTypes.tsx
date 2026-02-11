@@ -49,18 +49,18 @@ const AdminCustomerTypes = () => {
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Customer Types</h1>
-            <p className="text-muted-foreground">Manage membership types for customers</p>
+            <h1 className="text-2xl font-semibold tracking-tight">Membership Types</h1>
+            <p className="text-muted-foreground">Manage membership plans for customers</p>
           </div>
           <Button onClick={() => { setSelectedType(null); setModalOpen(true); }}>
             <Plus className="h-4 w-4 mr-2" />
-            Add Customer Type
+            Add Membership Type
           </Button>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>All Customer Types</CardTitle>
+            <CardTitle>All Membership Types</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -108,7 +108,7 @@ const AdminCustomerTypes = () => {
               </Table>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
-                No customer types found. Add your first customer type to get started.
+                No membership types found. Add your first membership type to get started.
               </div>
             )}
           </CardContent>
@@ -124,9 +124,9 @@ const AdminCustomerTypes = () => {
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Customer Type</AlertDialogTitle>
+            <AlertDialogTitle>Delete Membership Type</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this customer type? Customers with this type will have their type cleared. This action cannot be undone.
+              Are you sure you want to delete this membership type? Customers with this type will have their type cleared. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -60,6 +60,7 @@ const BUCKET_LABELS: Record<string, string> = {
   media: "General Media",
   "product-images": "Product Images",
   "review-images": "Review Images",
+  "profile-images": "Profile Images",
 };
 
 const AdminMedia = () => {

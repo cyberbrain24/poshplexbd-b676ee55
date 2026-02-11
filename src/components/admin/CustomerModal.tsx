@@ -307,11 +307,11 @@ const CustomerModal = ({ open, onOpenChange, customer }: CustomerModalProps) => 
               name="customer_type_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Customer Type (Membership)</FormLabel>
+                  <FormLabel>Membership Type</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select customer type" />
+                        <SelectValue placeholder="Select membership type" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>

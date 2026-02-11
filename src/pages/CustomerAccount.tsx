@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { User, Package, LogOut, Key, Eye, EyeOff, Crown, MessageSquare, Camera, Pencil, ShoppingBag, Hash } from "lucide-react";
+import { User, Package, LogOut, Key, Eye, EyeOff, Crown, MessageSquare, Camera, Pencil, ShoppingBag, Hash, Info } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import PoshplexHeader from "@/components/header/PoshplexHeader";
 import PoshplexFooter from "@/components/footer/PoshplexFooter";
 import MyReviews from "@/components/account/MyReviews";
@@ -28,16 +29,31 @@ interface CustomerAccountData {
     profile_image_url: string | null;
     division_id: string | null;
     thana_id: string | null;
+    postal_code: string | null;
     customer_type_id: string | null;
     customer_type?: {
       name: string;
+      description: string | null;
     } | null;
+    division?: { id: string; name: string } | null;
+    thana?: { id: string; name: string } | null;
   } | null;
 }
 
 interface CustomerStats {
   total_spent: number;
   order_count: number;
+}
+
+interface Division {
+  id: string;
+  name: string;
+}
+
+interface Thana {
+  id: string;
+  name: string;
+  division_id: string;
 }
 
 const CustomerAccount = () => {
@@ -52,7 +68,12 @@ const CustomerAccount = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [editForm, setEditForm] = useState({ name: "", email: "", phone: "", address: "" });
+  const [editForm, setEditForm] = useState({
+    name: "", email: "", phone: "", address: "",
+    gender: "", division_id: "", thana_id: "", postal_code: "",
+  });
+  const [divisions, setDivisions] = useState<Division[]>([]);
+  const [thanas, setThanas] = useState<Thana[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -73,8 +94,23 @@ const CustomerAccount = () => {
       }
     });
 
+    // Fetch divisions
+    supabase.from("divisions").select("id, name").eq("is_active", true).order("name")
+      .then(({ data }) => setDivisions(data || []));
+
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  // Fetch thanas when division changes
+  useEffect(() => {
+    if (editForm.division_id) {
+      supabase.from("thanas").select("id, name, division_id")
+        .eq("division_id", editForm.division_id).eq("is_active", true).order("name")
+        .then(({ data }) => setThanas(data || []));
+    } else {
+      setThanas([]);
+    }
+  }, [editForm.division_id]);
 
   const fetchAccountData = async (authUserId: string) => {
     try {
@@ -89,23 +125,38 @@ const CustomerAccount = () => {
       if (data?.customer_id) {
         const { data: customerData } = await supabase
           .from("customers")
-          .select("name, phone, email, address, gender, profile_image_url, division_id, thana_id, customer_type_id")
+          .select("name, phone, email, address, gender, profile_image_url, division_id, thana_id, postal_code, customer_type_id")
           .eq("id", data.customer_id)
           .maybeSingle();
 
         let customerType = null;
+        let division = null;
+        let thana = null;
+
         if (customerData?.customer_type_id) {
           const { data: typeData } = await supabase
             .from("customer_types")
-            .select("name")
+            .select("name, description")
             .eq("id", customerData.customer_type_id)
             .maybeSingle();
           customerType = typeData;
         }
 
+        if (customerData?.division_id) {
+          const { data: divData } = await supabase
+            .from("divisions").select("id, name").eq("id", customerData.division_id).maybeSingle();
+          division = divData;
+        }
+
+        if (customerData?.thana_id) {
+          const { data: thanaData } = await supabase
+            .from("thanas").select("id, name").eq("id", customerData.thana_id).maybeSingle();
+          thana = thanaData;
+        }
+
         setAccountData({
           ...data,
-          customer: customerData ? { ...customerData, customer_type: customerType } : null,
+          customer: customerData ? { ...customerData, customer_type: customerType, division, thana } : null,
         });
 
         if (customerData) {
@@ -114,10 +165,14 @@ const CustomerAccount = () => {
             email: customerData.email || "",
             phone: customerData.phone || "",
             address: customerData.address || "",
+            gender: customerData.gender || "",
+            division_id: customerData.division_id || "",
+            thana_id: customerData.thana_id || "",
+            postal_code: customerData.postal_code || "",
           });
         }
 
-        // Fetch customer stats (total spend + order count)
+        // Fetch customer stats
         const { data: orders } = await supabase
           .from("orders")
           .select("total_amount, order_status")
@@ -169,49 +224,24 @@ const CustomerAccount = () => {
   const handleProfileImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    // 300KB limit
-    if (file.size > 300 * 1024) {
-      toast.error("Image must be less than 300 KB");
-      return;
-    }
-
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file");
-      return;
-    }
-
+    if (file.size > 300 * 1024) { toast.error("Image must be less than 300 KB"); return; }
+    if (!file.type.startsWith("image/")) { toast.error("Please select an image file"); return; }
     if (!accountData?.customer_id) return;
 
     setIsUploadingImage(true);
     try {
       const ext = file.name.split(".").pop();
       const filePath = `${accountData.customer_id}/profile.${ext}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("profile-images")
-        .upload(filePath, file, { upsert: true });
-
+      const { error: uploadError } = await supabase.storage.from("profile-images").upload(filePath, file, { upsert: true });
       if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from("profile-images")
-        .getPublicUrl(filePath);
-
+      const { data: urlData } = supabase.storage.from("profile-images").getPublicUrl(filePath);
       const publicUrl = urlData.publicUrl + "?t=" + Date.now();
-
-      const { error: updateError } = await supabase
-        .from("customers")
-        .update({ profile_image_url: publicUrl })
-        .eq("id", accountData.customer_id);
-
+      const { error: updateError } = await supabase.from("customers").update({ profile_image_url: publicUrl }).eq("id", accountData.customer_id);
       if (updateError) throw updateError;
-
       setAccountData(prev => prev ? {
         ...prev,
         customer: prev.customer ? { ...prev.customer, profile_image_url: publicUrl } : prev.customer,
       } : prev);
-
       toast.success("Profile image updated");
     } catch (error: any) {
       toast.error(error.message || "Failed to upload image");
@@ -222,6 +252,14 @@ const CustomerAccount = () => {
 
   const handleSaveProfile = async () => {
     if (!accountData?.customer_id) return;
+    if (!editForm.name.trim()) { toast.error("Name is required"); return; }
+    if (!editForm.phone.trim()) { toast.error("Phone is required"); return; }
+    if (!editForm.gender) { toast.error("Gender is required"); return; }
+    if (!editForm.address?.trim()) { toast.error("Address is required"); return; }
+    if (!editForm.division_id) { toast.error("District is required"); return; }
+    if (!editForm.thana_id) { toast.error("Thana/Upazila is required"); return; }
+    if (!editForm.postal_code?.trim()) { toast.error("Postal code is required"); return; }
+
     setIsUpdating(true);
     try {
       const { error } = await supabase
@@ -231,16 +269,23 @@ const CustomerAccount = () => {
           email: editForm.email || null,
           phone: editForm.phone,
           address: editForm.address || null,
+          gender: editForm.gender,
+          division_id: editForm.division_id || null,
+          thana_id: editForm.thana_id || null,
+          postal_code: editForm.postal_code || null,
         })
         .eq("id", accountData.customer_id);
 
       if (error) throw error;
 
-      // Also update customer_accounts
       await supabase
         .from("customer_accounts")
         .update({ phone: editForm.phone, email: editForm.email || null })
         .eq("customer_id", accountData.customer_id);
+
+      // Update local state with division/thana names
+      const selectedDiv = divisions.find(d => d.id === editForm.division_id);
+      const selectedThana = thanas.find(t => t.id === editForm.thana_id);
 
       setAccountData(prev => prev ? {
         ...prev,
@@ -252,6 +297,12 @@ const CustomerAccount = () => {
           email: editForm.email || null,
           phone: editForm.phone,
           address: editForm.address || null,
+          gender: editForm.gender,
+          division_id: editForm.division_id || null,
+          thana_id: editForm.thana_id || null,
+          postal_code: editForm.postal_code || null,
+          division: selectedDiv ? { id: selectedDiv.id, name: selectedDiv.name } : null,
+          thana: selectedThana ? { id: selectedThana.id, name: selectedThana.name } : null,
         } : prev.customer,
       } : prev);
 
@@ -268,6 +319,7 @@ const CustomerAccount = () => {
   const displayPhone = accountData?.phone || user?.phone || "Not set";
   const displayEmail = accountData?.email || (user?.email?.includes("@phone.local") ? "Not set" : user?.email) || "Not set";
   const membershipType = accountData?.customer?.customer_type?.name || "Standard";
+  const membershipDescription = accountData?.customer?.customer_type?.description || null;
   const profileImageUrl = accountData?.customer?.profile_image_url;
 
   if (isLoading) {
@@ -318,13 +370,7 @@ const CustomerAccount = () => {
                   </div>
                   <label className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center cursor-pointer hover:bg-primary/90">
                     <Camera className="h-3.5 w-3.5" />
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleProfileImageUpload}
-                      disabled={isUploadingImage}
-                    />
+                    <input type="file" accept="image/*" className="hidden" onChange={handleProfileImageUpload} disabled={isUploadingImage} />
                   </label>
                 </div>
                 <div>
@@ -339,11 +385,11 @@ const CustomerAccount = () => {
                 <div className="space-y-3 pt-2">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <Label className="text-sm">Name</Label>
+                      <Label className="text-sm">Name *</Label>
                       <Input value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} className="mt-1" />
                     </div>
                     <div>
-                      <Label className="text-sm">Phone</Label>
+                      <Label className="text-sm">Phone *</Label>
                       <Input value={editForm.phone} onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))} className="mt-1" />
                     </div>
                     <div>
@@ -351,8 +397,41 @@ const CustomerAccount = () => {
                       <Input value={editForm.email} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} className="mt-1" />
                     </div>
                     <div>
-                      <Label className="text-sm">Address</Label>
+                      <Label className="text-sm">Gender *</Label>
+                      <Select value={editForm.gender} onValueChange={v => setEditForm(f => ({ ...f, gender: v }))}>
+                        <SelectTrigger className="mt-1"><SelectValue placeholder="Select gender" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="male">Male</SelectItem>
+                          <SelectItem value="female">Female</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <Label className="text-sm">Address *</Label>
                       <Input value={editForm.address} onChange={e => setEditForm(f => ({ ...f, address: e.target.value }))} className="mt-1" />
+                    </div>
+                    <div>
+                      <Label className="text-sm">District *</Label>
+                      <Select value={editForm.division_id} onValueChange={v => setEditForm(f => ({ ...f, division_id: v, thana_id: "" }))}>
+                        <SelectTrigger className="mt-1"><SelectValue placeholder="Select district" /></SelectTrigger>
+                        <SelectContent>
+                          {divisions.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-sm">Thana/Upazila *</Label>
+                      <Select value={editForm.thana_id} onValueChange={v => setEditForm(f => ({ ...f, thana_id: v }))} disabled={!editForm.division_id}>
+                        <SelectTrigger className="mt-1"><SelectValue placeholder={editForm.division_id ? "Select thana" : "Select district first"} /></SelectTrigger>
+                        <SelectContent>
+                          {thanas.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-sm">Postal Code *</Label>
+                      <Input value={editForm.postal_code} onChange={e => setEditForm(f => ({ ...f, postal_code: e.target.value }))} className="mt-1" placeholder="e.g. 1205" />
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -377,8 +456,24 @@ const CustomerAccount = () => {
                     <p className="font-medium">{displayEmail}</p>
                   </div>
                   <div>
+                    <Label className="text-muted-foreground text-sm">Gender</Label>
+                    <p className="font-medium capitalize">{accountData?.customer?.gender || "Not set"}</p>
+                  </div>
+                  <div className="sm:col-span-2">
                     <Label className="text-muted-foreground text-sm">Address</Label>
                     <p className="font-medium">{accountData?.customer?.address || "Not set"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-sm">District</Label>
+                    <p className="font-medium">{accountData?.customer?.division?.name || "Not set"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-sm">Thana/Upazila</Label>
+                    <p className="font-medium">{accountData?.customer?.thana?.name || "Not set"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-sm">Postal Code</Label>
+                    <p className="font-medium">{accountData?.customer?.postal_code || "Not set"}</p>
                   </div>
                 </div>
               )}
@@ -398,8 +493,23 @@ const CustomerAccount = () => {
                 <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
                   <Crown className="h-6 w-6 text-primary" />
                 </div>
-                <div>
-                  <p className="font-medium">{membershipType}</p>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium">{membershipType}</p>
+                    {membershipDescription && (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-5 w-5">
+                            <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-72 text-sm">
+                          <p className="font-medium mb-1">{membershipType}</p>
+                          <p className="text-muted-foreground">{membershipDescription}</p>
+                        </PopoverContent>
+                      </Popover>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground">Member since {new Date(user?.created_at || Date.now()).toLocaleDateString()}</p>
                 </div>
               </div>

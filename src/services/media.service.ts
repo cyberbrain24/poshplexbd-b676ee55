@@ -17,7 +17,7 @@ export interface MediaBucket {
   public: boolean;
 }
 
-const SUPPORTED_BUCKETS = ["media", "product-images", "review-images"];
+const SUPPORTED_BUCKETS = ["media", "product-images", "review-images", "profile-images"];
 
 /**
  * Get file extension from filename

@@ -13,7 +13,6 @@ import {
   LayoutDashboard,
   ArrowLeft,
   ChevronDown,
-  Settings2,
   Wallet,
   CreditCard,
   TrendingUp,
@@ -49,7 +48,8 @@ interface NavItem {
   path: string;
 }
 
-const productEditsItems: NavItem[] = [
+const productManagementItems: NavItem[] = [
+  { icon: Package, label: "Products", path: "/admin/products" },
   { icon: Palette, label: "Colors", path: "/admin/colors" },
   { icon: Ruler, label: "Sizes", path: "/admin/sizes" },
   { icon: Shirt, label: "Materials", path: "/admin/materials" },
@@ -65,13 +65,15 @@ const orderItems: NavItem[] = [
   { icon: Tag, label: "Promo Codes", path: "/admin/promo-codes" },
 ];
 
-const accountEditsItems: NavItem[] = [
+const accountManagementItems: NavItem[] = [
+  { icon: Wallet, label: "Accounts", path: "/admin/accounts" },
   { icon: CreditCard, label: "Accounts List", path: "/admin/accounts-list" },
   { icon: TrendingUp, label: "Income Categories", path: "/admin/income-categories" },
   { icon: TrendingDown, label: "Expense Categories", path: "/admin/expense-categories" },
 ];
 
-const customerEditsItems: NavItem[] = [
+const customerManagementItems: NavItem[] = [
+  { icon: Users, label: "Customers", path: "/admin/customers" },
   { icon: MapPin, label: "Districts", path: "/admin/divisions" },
   { icon: Map, label: "Thanas", path: "/admin/thanas" },
   { icon: Crown, label: "Customer Types", path: "/admin/customer-types" },
@@ -130,15 +132,15 @@ const AdminSidebar = () => {
     }
   }, [queryClient]);
 
-  const isProductEditsActive = productEditsItems.some(item => location.pathname === item.path);
+  const isProductMgmtActive = productManagementItems.some(item => location.pathname === item.path);
   const isOrdersActive = orderItems.some(item => location.pathname === item.path);
-  const isAccountEditsActive = accountEditsItems.some(item => location.pathname === item.path);
-  const isCustomerEditsActive = customerEditsItems.some(item => location.pathname === item.path);
+  const isAccountMgmtActive = accountManagementItems.some(item => location.pathname === item.path);
+  const isCustomerMgmtActive = customerManagementItems.some(item => location.pathname === item.path);
   
-  const [isProductEditsOpen, setIsProductEditsOpen] = useState(isProductEditsActive);
+  const [isProductMgmtOpen, setIsProductMgmtOpen] = useState(isProductMgmtActive);
   const [isOrdersOpen, setIsOrdersOpen] = useState(isOrdersActive);
-  const [isAccountEditsOpen, setIsAccountEditsOpen] = useState(isAccountEditsActive);
-  const [isCustomerEditsOpen, setIsCustomerEditsOpen] = useState(isCustomerEditsActive);
+  const [isAccountMgmtOpen, setIsAccountMgmtOpen] = useState(isAccountMgmtActive);
+  const [isCustomerMgmtOpen, setIsCustomerMgmtOpen] = useState(isCustomerMgmtActive);
 
   // Render a simple nav link
   const renderNavLink = (path: string, icon: LucideIcon, label: string) => {
@@ -225,15 +227,22 @@ const AdminSidebar = () => {
     <aside className="w-64 min-h-screen bg-background border-r border-border flex flex-col">
       <div className="p-6 border-b border-border">
         <h1 className="text-lg font-medium tracking-tight">Admin Panel</h1>
-        <p className="text-sm text-muted-foreground mt-1">Product Management</p>
+        <p className="text-sm text-muted-foreground mt-1">Management Console</p>
       </div>
       
       <nav className="flex-1 p-4 space-y-1">
         {/* Dashboard */}
         {renderNavLink("/admin", LayoutDashboard, "Dashboard")}
 
-        {/* Products */}
-        {renderNavLink("/admin/products", Package, "Products")}
+        {/* Product Management */}
+        {renderCollapsible(
+          Package,
+          "Product Management",
+          productManagementItems,
+          isProductMgmtOpen,
+          setIsProductMgmtOpen,
+          isProductMgmtActive
+        )}
 
         {/* Reviews */}
         {renderNavLink("/admin/reviews", MessageSquare, "Reviews")}
@@ -254,40 +263,24 @@ const AdminSidebar = () => {
           isOrdersActive
         )}
 
-        {/* Product Edits */}
+        {/* Account Management */}
         {renderCollapsible(
-          Settings2,
-          "Product Edits",
-          productEditsItems,
-          isProductEditsOpen,
-          setIsProductEditsOpen,
-          isProductEditsActive
+          Wallet,
+          "Account Management",
+          accountManagementItems,
+          isAccountMgmtOpen,
+          setIsAccountMgmtOpen,
+          isAccountMgmtActive
         )}
 
-        {/* Accounts */}
-        {renderNavLink("/admin/accounts", Wallet, "Accounts")}
-
-        {/* Account Edits */}
+        {/* Customer Management */}
         {renderCollapsible(
-          Settings2,
-          "Accounts Edits",
-          accountEditsItems,
-          isAccountEditsOpen,
-          setIsAccountEditsOpen,
-          isAccountEditsActive
-        )}
-
-        {/* Customers */}
-        {renderNavLink("/admin/customers", Users, "Customers")}
-
-        {/* Customer Edits */}
-        {renderCollapsible(
-          Settings2,
-          "Customer Edits",
-          customerEditsItems,
-          isCustomerEditsOpen,
-          setIsCustomerEditsOpen,
-          isCustomerEditsActive
+          Users,
+          "Customer Management",
+          customerManagementItems,
+          isCustomerMgmtOpen,
+          setIsCustomerMgmtOpen,
+          isCustomerMgmtActive
         )}
 
         {/* Seed Data */}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { X, Plus, Trash2, Upload, GripVertical, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,9 +41,17 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
   const [images, setImages] = useState<ProductImage[]>([]);
   const [variants, setVariants] = useState<VariantFormData[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [parentCategoryId, setParentCategoryId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: categories = [] } = useCategories();
+
+  // Derived: parent categories (no parent_id) and subcategories of selected parent
+  const parentCategories = useMemo(() => categories.filter(c => !c.parent_id), [categories]);
+  const subcategories = useMemo(() =>
+    parentCategoryId ? categories.filter(c => c.parent_id === parentCategoryId) : [],
+    [categories, parentCategoryId]
+  );
   const { data: brands = [] } = useBrands();
   const { data: sizeGuides = [] } = useSizeGuides();
   const { data: careInstructions = [] } = useCareInstructions();
@@ -79,6 +87,17 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
         is_active: product.is_active,
       });
       setImages(product.images || []);
+      // Resolve parent category for the two-step selector
+      if (product.category_id) {
+        const cat = categories.find(c => c.id === product.category_id);
+        if (cat?.parent_id) {
+          setParentCategoryId(cat.parent_id);
+        } else {
+          setParentCategoryId(product.category_id);
+        }
+      } else {
+        setParentCategoryId(null);
+      }
       // Load existing variants when editing a product
       if (product.variants && product.variants.length > 0) {
         setVariants(product.variants.map(v => ({
@@ -98,8 +117,9 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
       setFormData(defaultFormData);
       setImages([]);
       setVariants([]);
+      setParentCategoryId(null);
     }
-  }, [product]);
+  }, [product, categories]);
 
   const getYouTubeVideoId = (url: string) => {
     const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
@@ -335,19 +355,47 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label>Category</Label>
+                  <Label>Category *</Label>
                   <Select
-                    value={formData.category_id || "none"}
-                    onValueChange={(value) => setFormData({ ...formData, category_id: value === "none" ? null : value })}
+                    value={parentCategoryId || "none"}
+                    onValueChange={(value) => {
+                      const newParentId = value === "none" ? null : value;
+                      setParentCategoryId(newParentId);
+                      // If this parent has no children, assign it directly; otherwise clear
+                      const children = categories.filter(c => c.parent_id === newParentId);
+                      if (children.length === 0) {
+                        setFormData(prev => ({ ...prev, category_id: newParentId }));
+                      } else {
+                        setFormData(prev => ({ ...prev, category_id: null }));
+                      }
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">No Category</SelectItem>
-                      {categories.map((cat) => (
+                      {parentCategories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Subcategory{subcategories.length > 0 ? " *" : ""}</Label>
+                  <Select
+                    value={formData.category_id || "none"}
+                    onValueChange={(value) => setFormData({ ...formData, category_id: value === "none" ? null : value })}
+                    disabled={!parentCategoryId || subcategories.length === 0}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={!parentCategoryId ? "Select category first" : subcategories.length === 0 ? "No subcategories" : "Select subcategory"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {subcategories.map((cat) => (
                         <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                       ))}
                     </SelectContent>

@@ -411,11 +411,31 @@ export const useCustomers = (filters?: CustomerFilters) => {
         promoCountMap[p.customer_id] = (promoCountMap[p.customer_id] || 0) + 1;
       });
 
-      // Add promo_usage_count and has_account to each customer
+      // Add promo_usage_count, has_account, order stats to each customer
+      // Fetch order stats (count + total spent) per customer
+      const { data: orderStats, error: orderError } = await supabase
+        .from("orders")
+        .select("customer_id, total_amount, order_status")
+        .in("customer_id", customerIds)
+        .not("order_status", "in", '("cancelled","failed","returned")');
+
+      const orderCountMap: Record<string, number> = {};
+      const totalSpentMap: Record<string, number> = {};
+      if (!orderError && orderStats) {
+        orderStats.forEach(o => {
+          if (o.customer_id) {
+            orderCountMap[o.customer_id] = (orderCountMap[o.customer_id] || 0) + 1;
+            totalSpentMap[o.customer_id] = (totalSpentMap[o.customer_id] || 0) + Number(o.total_amount);
+          }
+        });
+      }
+
       const customersWithPromo = data.map(customer => ({
         ...customer,
         promo_usage_count: promoCountMap[customer.id] || 0,
         has_account: accountMap[customer.id] || false,
+        order_count: orderCountMap[customer.id] || 0,
+        total_spent: totalSpentMap[customer.id] || 0,
       }));
 
       // Filter by promo usage if specified

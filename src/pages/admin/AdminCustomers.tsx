@@ -32,6 +32,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { formatCurrency } from "@/lib/currency";
 import {
   useCustomers,
   useDeleteCustomer,
@@ -274,10 +275,11 @@ const AdminCustomers = () => {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Phone</TableHead>
-                  <TableHead>Email</TableHead>
                   <TableHead>Gender</TableHead>
                   <TableHead>Division / Thana</TableHead>
                   <TableHead>Customer Type</TableHead>
+                  <TableHead>Orders</TableHead>
+                  <TableHead>Total Spent</TableHead>
                   <TableHead>Promo Usage</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -287,7 +289,6 @@ const AdminCustomers = () => {
                   <TableRow key={customer.id}>
                     <TableCell className="font-medium">{customer.name}</TableCell>
                     <TableCell>{customer.phone}</TableCell>
-                    <TableCell>{customer.email || "-"}</TableCell>
                     <TableCell>
                       <Badge variant={
                         customer.gender === "male" ? "default" :
@@ -302,6 +303,12 @@ const AdminCustomers = () => {
                     </TableCell>
                     <TableCell>
                       {customer.customer_type?.name || "-"}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {(customer as any).order_count ?? 0}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {formatCurrency((customer as any).total_spent ?? 0)}
                     </TableCell>
                     <TableCell>
                       <Button

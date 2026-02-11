@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   Dialog, 
   DialogContent, 
@@ -34,6 +35,7 @@ import { useAccounts } from "@/hooks/useAccounts";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/currency";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   Package, 
   CreditCard, 
@@ -53,9 +55,11 @@ import {
   Pencil,
   BadgeCheck,
   Plus,
-  Banknote
+  Banknote,
+  Trash2
 } from "lucide-react";
 import OrderItemEditModal from "./OrderItemEditModal";
+import OrderItemAddModal from "./OrderItemAddModal";
 import PaymentRecordModal from "./PaymentRecordModal";
 
 interface OrderDetailModalProps {
@@ -80,6 +84,7 @@ const itemStatusOptions: ItemFulfillmentStatus[] = [
 ];
 
 const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => {
+  const queryClient = useQueryClient();
   const { data: order, isLoading } = useOrder(orderId);
   const { data: history } = useOrderHistory(orderId);
   const { data: orderPayments } = useOrderPayments(orderId);
@@ -106,6 +111,7 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
   } | null>(null);
   const [selectedAccountId, setSelectedAccountId] = useState<string>("");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showAddItemModal, setShowAddItemModal] = useState(false);
 
   // Calculate paid amount from order or default to 0
   const paidAmount = (order as any)?.paid_amount ?? 0;
@@ -141,6 +147,44 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
       status,
     });
   };
+
+  const removeItemMutation = useMutation({
+    mutationFn: async (itemId: string) => {
+      const { error: deleteError } = await supabase
+        .from("order_items")
+        .delete()
+        .eq("id", itemId);
+      if (deleteError) throw deleteError;
+
+      // Recalculate order totals
+      const { data: allItems, error: itemsError } = await supabase
+        .from("order_items")
+        .select("line_total")
+        .eq("order_id", orderId);
+      if (itemsError) throw itemsError;
+
+      const newSubtotal = allItems.reduce((sum, i) => sum + Number(i.line_total), 0);
+      const { data: orderData, error: orderError } = await supabase
+        .from("orders")
+        .select("shipping_cost, discount_amount, tax_amount")
+        .eq("id", orderId)
+        .single();
+      if (orderError) throw orderError;
+
+      const newTotal = newSubtotal - Number(orderData.discount_amount) + Number(orderData.shipping_cost) + Number(orderData.tax_amount);
+      const { error: updateError } = await supabase
+        .from("orders")
+        .update({ subtotal: newSubtotal, total_amount: newTotal })
+        .eq("id", orderId);
+      if (updateError) throw updateError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["order", orderId] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      toast.success("Item removed from order");
+    },
+    onError: (error: Error) => toast.error("Failed to remove item: " + error.message),
+  });
 
   if (isLoading) {
     return (
@@ -428,7 +472,12 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
 
             {/* Order Items */}
             <div className="border border-border p-4 space-y-3">
-              <h3 className="font-medium">Order Items ({order.items?.length || 0})</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="font-medium">Order Items ({order.items?.length || 0})</h3>
+                <Button size="sm" variant="outline" onClick={() => setShowAddItemModal(true)}>
+                  <Plus className="h-3 w-3 mr-1" /> Add Product
+                </Button>
+              </div>
               <div className="space-y-3">
                 {order.items?.map((item) => (
                   <div key={item.id} className="flex gap-3 p-3 bg-muted/50 rounded">
@@ -456,6 +505,19 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
                         })}
                       >
                         <Pencil className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 text-destructive"
+                        onClick={() => {
+                          if (confirm("Remove this item from the order?")) {
+                            removeItemMutation.mutate(item.id);
+                          }
+                        }}
+                        disabled={removeItemMutation.isPending}
+                      >
+                        <Trash2 className="h-3 w-3" />
                       </Button>
                       <Select
                         value={item.fulfillment_status}
@@ -662,6 +724,13 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
           orderId={orderId}
           totalAmount={order.total_amount}
           paidAmount={paidAmount}
+        />
+
+        {/* Order Item Add Modal */}
+        <OrderItemAddModal
+          orderId={orderId}
+          open={showAddItemModal}
+          onClose={() => setShowAddItemModal(false)}
         />
       </DialogContent>
     </Dialog>

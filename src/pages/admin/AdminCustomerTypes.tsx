@@ -72,6 +72,7 @@ const AdminCustomerTypes = () => {
                     <TableHead>Name</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Public Page</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -85,6 +86,11 @@ const AdminCustomerTypes = () => {
                       <TableCell>
                         <Badge variant={type.is_active ? "default" : "secondary"}>
                           {type.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={(type as any).show_on_public_page ? "default" : "outline"}>
+                          {(type as any).show_on_public_page ? "Visible" : "Hidden"}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">

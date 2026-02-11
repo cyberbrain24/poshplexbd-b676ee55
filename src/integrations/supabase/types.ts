@@ -261,6 +261,8 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          show_member_since: boolean
+          show_on_public_page: boolean
           updated_at: string
         }
         Insert: {
@@ -269,6 +271,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          show_member_since?: boolean
+          show_on_public_page?: boolean
           updated_at?: string
         }
         Update: {
@@ -277,6 +281,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          show_member_since?: boolean
+          show_on_public_page?: boolean
           updated_at?: string
         }
         Relationships: []
@@ -292,11 +298,13 @@ export type Database = {
           gender: string
           id: string
           is_active: boolean
+          membership_assigned_at: string | null
           name: string
           notes: string | null
           phone: string
           postal_code: string | null
           profile_image_url: string | null
+          public_profile_visible: boolean
           thana_id: string | null
           updated_at: string
         }
@@ -310,11 +318,13 @@ export type Database = {
           gender: string
           id?: string
           is_active?: boolean
+          membership_assigned_at?: string | null
           name: string
           notes?: string | null
           phone: string
           postal_code?: string | null
           profile_image_url?: string | null
+          public_profile_visible?: boolean
           thana_id?: string | null
           updated_at?: string
         }
@@ -328,11 +338,13 @@ export type Database = {
           gender?: string
           id?: string
           is_active?: boolean
+          membership_assigned_at?: string | null
           name?: string
           notes?: string | null
           phone?: string
           postal_code?: string | null
           profile_image_url?: string | null
+          public_profile_visible?: boolean
           thana_id?: string | null
           updated_at?: string
         }

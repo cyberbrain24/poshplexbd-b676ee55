@@ -313,6 +313,25 @@ export const useAddProductImage = () => {
   });
 };
 
+export const useUpdateProductImage = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, colorId, isMain }: { id: string; colorId?: string | null; isMain?: boolean }) => {
+      const updates: Record<string, any> = {};
+      if (colorId !== undefined) updates.color_id = colorId;
+      if (isMain !== undefined) updates.is_main = isMain;
+      const { error } = await supabase.from("product_images").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["products-list"] });
+      queryClient.invalidateQueries({ queryKey: ["product"] });
+    },
+  });
+};
+
 export const useDeleteProductImage = () => {
   const queryClient = useQueryClient();
 

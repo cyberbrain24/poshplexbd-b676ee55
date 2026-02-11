@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useCategories, useBrands, useSizeGuides, useCareInstructions, useColors, useSizes, useMaterials } from "@/hooks/useMasterData";
-import { useCreateProduct, useUpdateProduct, useAddProductImage, useDeleteProductImage, useAddProductVariant, useUpdateProductVariant, useDeleteProductVariant, uploadProductImage } from "@/hooks/useProducts";
+import { useCreateProduct, useUpdateProduct, useAddProductImage, useDeleteProductImage, useUpdateProductImage, useAddProductVariant, useUpdateProductVariant, useDeleteProductVariant, uploadProductImage } from "@/hooks/useProducts";
 import { Product, ProductFormData, VariantFormData, ProductImage } from "@/types/product";
 import { toast } from "sonner";
 
@@ -55,6 +55,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
   const updateProduct = useUpdateProduct();
   const addImage = useAddProductImage();
   const deleteImage = useDeleteProductImage();
+  const updateImage = useUpdateProductImage();
   const addVariant = useAddProductVariant();
   const updateVariant = useUpdateProductVariant();
   const deleteVariant = useDeleteProductVariant();
@@ -531,11 +532,16 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                         <Select
                           value={image.color_id || "none"}
                           onValueChange={(value) => {
+                            const newColorId = value === "none" ? null : value;
                             setImages(prev => prev.map(img =>
                               img.id === image.id
-                                ? { ...img, color_id: value === "none" ? null : value }
+                                ? { ...img, color_id: newColorId }
                                 : img
                             ));
+                            // Persist for existing images
+                            if (product && !image.id.startsWith("temp-")) {
+                              updateImage.mutate({ id: image.id, colorId: newColorId });
+                            }
                           }}
                         >
                           <SelectTrigger className="w-48">

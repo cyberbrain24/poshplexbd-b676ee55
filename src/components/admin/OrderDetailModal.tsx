@@ -118,6 +118,8 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [promoInput, setPromoInput] = useState("");
   const [applyingPromo, setApplyingPromo] = useState(false);
+  const [approvalAccountId, setApprovalAccountId] = useState<string>("");
+  const [approvingPayment, setApprovingPayment] = useState(false);
 
   // Fetch promo codes for lookup
   const { data: promoCodes } = useQuery({
@@ -186,6 +188,66 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
   // Calculate paid amount from order or default to 0
   const paidAmount = (order as any)?.paid_amount ?? 0;
   const remainingBalance = (order?.total_amount ?? 0) - paidAmount;
+
+  // Calculate unreconciled payment (paid_amount on order but not in order_payments)
+  const reconciledAmount = (orderPayments || []).reduce((sum, p) => sum + Number(p.amount), 0);
+  const unreconciledAmount = paidAmount - reconciledAmount;
+
+  // Handle approving a pending customer payment
+  const handleApprovePayment = async () => {
+    if (!order || !approvalAccountId || unreconciledAmount <= 0) return;
+    setApprovingPayment(true);
+    try {
+      // 1. Create income transaction
+      const { data: transaction, error: txError } = await supabase
+        .from("transactions")
+        .insert({
+          account_id: approvalAccountId,
+          type: "income",
+          amount: unreconciledAmount,
+          notes: `Approved customer payment for order ${order.order_number}`,
+          date: new Date().toISOString().split('T')[0],
+        })
+        .select()
+        .single();
+      if (txError) throw txError;
+
+      // 2. Create order_payment record
+      const { error: payError } = await supabase
+        .from("order_payments")
+        .insert({
+          order_id: order.id,
+          amount: unreconciledAmount,
+          account_id: approvalAccountId,
+          transaction_id: transaction.id,
+          payment_reference: "Customer partial payment (approved by admin)",
+        });
+      if (payError) throw payError;
+
+      // 3. Add status history
+      await supabase.from("order_status_history").insert({
+        order_id: order.id,
+        previous_status: order.payment_status,
+        new_status: order.payment_status,
+        status_type: "payment",
+        notes: `Admin approved customer payment of ${formatCurrency(unreconciledAmount)}`,
+        metadata: { amount: unreconciledAmount, account_id: approvalAccountId, transaction_id: transaction.id },
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["order", orderId] });
+      queryClient.invalidateQueries({ queryKey: ["order-payments", orderId] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["order-history", orderId] });
+      setApprovalAccountId("");
+      toast.success(`Payment of ${formatCurrency(unreconciledAmount)} approved and recorded to accounts`);
+    } catch (err: any) {
+      toast.error("Failed to approve payment: " + (err.message || "Unknown error"));
+    } finally {
+      setApprovingPayment(false);
+    }
+  };
 
   const handleUpdateOrderStatus = () => {
     if (!selectedStatus || !order) return;
@@ -528,6 +590,49 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
                   Record Payment
                 </Button>
               )}
+
+              {/* Pending Payment Approval - shows when paid_amount > recorded payments */}
+              {unreconciledAmount > 0 && (
+                <div className="border border-yellow-300 bg-yellow-50 dark:bg-yellow-950/20 dark:border-yellow-800 rounded-md p-3 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                    <span className="text-sm font-medium text-yellow-800 dark:text-yellow-400">
+                      Pending Payment Approval
+                    </span>
+                  </div>
+                  <p className="text-xs text-yellow-700 dark:text-yellow-500">
+                    Customer declared <strong>{formatCurrency(unreconciledAmount)}</strong> payment during checkout that hasn't been recorded to accounts yet.
+                  </p>
+                  <div className="space-y-2">
+                    <Select value={approvalAccountId} onValueChange={setApprovalAccountId}>
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder="Select account to credit" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {accounts?.filter(a => a.is_active).map((account) => (
+                          <SelectItem key={account.id} value={account.id}>
+                            {account.name} ({formatCurrency(account.current_balance)})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      size="sm"
+                      className="w-full"
+                      disabled={!approvalAccountId || approvingPayment}
+                      onClick={handleApprovePayment}
+                    >
+                      {approvingPayment ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <BadgeCheck className="h-4 w-4 mr-2" />
+                      )}
+                      Approve {formatCurrency(unreconciledAmount)} Payment
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {orderPayments && orderPayments.length > 0 && (
                 <div className="pt-2 border-t space-y-2">
                   <span className="text-xs font-medium text-muted-foreground">Payment History:</span>

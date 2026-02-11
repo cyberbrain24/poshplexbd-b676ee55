@@ -12,6 +12,7 @@ export interface Thana {
   name: string;
   division_id: string;
   is_active: boolean;
+  shipping_cost?: number;
 }
 
 export const useDivisions = () => {

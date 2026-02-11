@@ -30,6 +30,7 @@ import {
   LucideIcon,
   MessageSquare,
   Image,
+  Tag,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -61,6 +62,7 @@ const productEditsItems: NavItem[] = [
 const orderItems: NavItem[] = [
   { icon: ShoppingCart, label: "All Orders", path: "/admin/orders" },
   { icon: CreditCard, label: "Payment Methods", path: "/admin/payment-methods" },
+  { icon: Tag, label: "Promo Codes", path: "/admin/promo-codes" },
 ];
 
 const accountEditsItems: NavItem[] = [

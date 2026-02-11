@@ -295,6 +295,7 @@ export type Database = {
           name: string
           notes: string | null
           phone: string
+          postal_code: string | null
           profile_image_url: string | null
           thana_id: string | null
           updated_at: string
@@ -312,6 +313,7 @@ export type Database = {
           name: string
           notes?: string | null
           phone: string
+          postal_code?: string | null
           profile_image_url?: string | null
           thana_id?: string | null
           updated_at?: string
@@ -329,6 +331,7 @@ export type Database = {
           name?: string
           notes?: string | null
           phone?: string
+          postal_code?: string | null
           profile_image_url?: string | null
           thana_id?: string | null
           updated_at?: string

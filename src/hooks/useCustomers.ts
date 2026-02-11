@@ -63,7 +63,9 @@ export interface Customer {
   is_active: boolean;
   created_at: string;
   updated_at: string;
-   birthdate: string | null;
+  birthdate: string | null;
+  profile_image_url: string | null;
+  postal_code: string | null;
   division?: Division;
   thana?: Thana;
   customer_type?: CustomerType;
@@ -457,7 +459,7 @@ export const useCreateCustomer = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (customer: Omit<Customer, "id" | "created_at" | "updated_at" | "division" | "thana" | "customer_type" | "promo_usages" | "promo_usage_count">) => {
+    mutationFn: async (customer: Omit<Customer, "id" | "created_at" | "updated_at" | "division" | "thana" | "customer_type" | "promo_usages" | "promo_usage_count" | "profile_image_url" | "postal_code">) => {
       const { data, error } = await supabase
         .from("customers")
         .insert(customer)
@@ -482,7 +484,7 @@ export const useUpdateCustomer = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...customer }: Partial<Customer> & { id: string }) => {
-      const { division, thana, customer_type, promo_usages, promo_usage_count, ...customerData } = customer;
+      const { division, thana, customer_type, promo_usages, promo_usage_count, profile_image_url, postal_code, ...customerData } = customer;
       const { data, error } = await supabase
         .from("customers")
         .update(customerData)

@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { format } from "date-fns";
-import { Plus, Pencil, Trash2, Search, Filter, Users, UserCheck, Gift, X, LogIn } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Filter, Users, UserCheck, Gift, X, LogIn, AlertTriangle } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -48,6 +48,8 @@ const AdminCustomers = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteBlocked, setDeleteBlocked] = useState<{ orders: number; orderRefs: string[]; promoUsages: { code: string; amount: number }[] } | null>(null);
+  const [checkingDelete, setCheckingDelete] = useState(false);
   const [promoHistoryCustomer, setPromoHistoryCustomer] = useState<Customer | null>(null);
   const [impersonating, setImpersonating] = useState<string | null>(null);
 
@@ -93,10 +95,46 @@ const AdminCustomers = () => {
     setModalOpen(true);
   };
 
+  const handleDeleteClick = async (customerId: string) => {
+    setCheckingDelete(true);
+    setDeleteBlocked(null);
+    setDeleteId(customerId);
+
+    // Check orders
+    const { count: orderCount, data: orderData } = await supabase
+      .from("orders")
+      .select("order_number", { count: "exact" })
+      .eq("customer_id", customerId)
+      .limit(5);
+
+    // Check promo usages
+    const { data: promoData } = await supabase
+      .from("promo_code_usages")
+      .select("discount_amount, promo_codes(code)")
+      .eq("customer_id", customerId)
+      .limit(5);
+
+    const hasOrders = (orderCount || 0) > 0;
+    const hasPromo = (promoData?.length || 0) > 0;
+
+    if (hasOrders || hasPromo) {
+      setDeleteBlocked({
+        orders: orderCount || 0,
+        orderRefs: (orderData || []).map((o: any) => o.order_number),
+        promoUsages: (promoData || []).map((p: any) => ({
+          code: p.promo_codes?.code || "Unknown",
+          amount: p.discount_amount || 0,
+        })),
+      });
+    }
+    setCheckingDelete(false);
+  };
+
   const handleDelete = async () => {
     if (deleteId) {
       await deleteCustomer.mutateAsync(deleteId);
       setDeleteId(null);
+      setDeleteBlocked(null);
     }
   };
 
@@ -353,7 +391,7 @@ const AdminCustomers = () => {
                           size="icon"
                           variant="ghost"
                           className="text-destructive"
-                          onClick={() => setDeleteId(customer.id)}
+                          onClick={() => handleDeleteClick(customer.id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -385,19 +423,53 @@ const AdminCustomers = () => {
         />
       )}
 
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+      <AlertDialog open={!!deleteId} onOpenChange={() => { setDeleteId(null); setDeleteBlocked(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Customer</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this customer? This will also delete all their promo usage history. This action cannot be undone.
+            <AlertDialogTitle className="flex items-center gap-2">
+              {deleteBlocked ? <AlertTriangle className="h-5 w-5 text-destructive" /> : null}
+              {deleteBlocked ? "Deletion Blocked" : "Delete Customer"}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                {checkingDelete ? (
+                  <p>Checking references...</p>
+                ) : deleteBlocked ? (
+                  <>
+                    <p>Cannot delete this customer because related records exist:</p>
+                    {deleteBlocked.orders > 0 && (
+                      <div className="bg-muted p-3 rounded text-sm space-y-1">
+                        <p className="font-medium text-foreground">Orders ({deleteBlocked.orders}):</p>
+                        <ul className="list-disc list-inside text-muted-foreground">
+                          {deleteBlocked.orderRefs.map((ref, i) => <li key={i}>{ref}</li>)}
+                          {deleteBlocked.orders > 5 && <li>...and {deleteBlocked.orders - 5} more</li>}
+                        </ul>
+                      </div>
+                    )}
+                    {deleteBlocked.promoUsages.length > 0 && (
+                      <div className="bg-muted p-3 rounded text-sm space-y-1">
+                        <p className="font-medium text-foreground">Promo code usages:</p>
+                        <ul className="list-disc list-inside text-muted-foreground">
+                          {deleteBlocked.promoUsages.map((p, i) => (
+                            <li key={i}>{p.code} — ৳{p.amount.toLocaleString()}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p>Are you sure you want to delete this customer? This action cannot be undone.</p>
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
-              Delete
-            </AlertDialogAction>
+            {!deleteBlocked && !checkingDelete && (
+              <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+                Delete
+              </AlertDialogAction>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

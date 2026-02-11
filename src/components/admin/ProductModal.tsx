@@ -190,7 +190,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
           // Store locally for new product
           const localUrl = URL.createObjectURL(file);
           setImages(prev => [...prev, {
-            id: `temp-${Date.now()}`,
+            id: `temp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
             product_id: "",
             image_url: localUrl,
             alt_text: null,

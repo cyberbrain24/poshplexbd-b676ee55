@@ -21,10 +21,11 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Pencil, Trash2, Search, Tag, Percent, DollarSign } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Tag, Percent, DollarSign, Truck, Crown } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { formatCurrency } from "@/lib/currency";
+import type { RewardType } from "@/lib/promo";
 
 interface PromoCode {
   id: string;
@@ -40,6 +41,9 @@ interface PromoCode {
   is_active: boolean;
   starts_at: string | null;
   expires_at: string | null;
+  reward_type: RewardType;
+  reward_membership_type_id: string | null;
+  reward_trigger: 'paid' | 'delivered';
   created_at: string;
 }
 
@@ -57,17 +61,49 @@ const usePromoCodes = () => {
   });
 };
 
+const useMembershipTypes = () => {
+  return useQuery({
+    queryKey: ["customer-types"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("customer_types")
+        .select("*")
+        .eq("is_active", true)
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+};
+
+const rewardTypeLabels: Record<RewardType, string> = {
+  percentage_discount: "Percentage Discount",
+  fixed_discount: "Fixed Discount",
+  free_delivery: "Free Delivery",
+  membership_reward: "Membership Reward",
+};
+
+const rewardTypeIcons: Record<RewardType, React.ReactNode> = {
+  percentage_discount: <Percent className="h-3 w-3 mr-1" />,
+  fixed_discount: <DollarSign className="h-3 w-3 mr-1" />,
+  free_delivery: <Truck className="h-3 w-3 mr-1" />,
+  membership_reward: <Crown className="h-3 w-3 mr-1" />,
+};
+
 const AdminPromoCodes = () => {
   const queryClient = useQueryClient();
   const { data: promoCodes, isLoading } = usePromoCodes();
+  const { data: membershipTypes } = useMembershipTypes();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPromo, setEditingPromo] = useState<PromoCode | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [usagePromoId, setUsagePromoId] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     code: "",
     description: "",
+    reward_type: "percentage_discount" as RewardType,
     discount_type: "percentage" as "percentage" | "fixed",
     discount_value: "",
     max_discount_amount: "",
@@ -77,14 +113,17 @@ const AdminPromoCodes = () => {
     is_active: true,
     starts_at: "",
     expires_at: "",
+    reward_membership_type_id: "",
+    reward_trigger: "paid" as "paid" | "delivered",
   });
 
   const resetForm = () => {
     setForm({
-      code: "", description: "", discount_type: "percentage",
-      discount_value: "", max_discount_amount: "", min_order_amount: "",
-      usage_limit: "", per_customer_limit: "1", is_active: true,
-      starts_at: "", expires_at: "",
+      code: "", description: "", reward_type: "percentage_discount",
+      discount_type: "percentage", discount_value: "", max_discount_amount: "",
+      min_order_amount: "", usage_limit: "", per_customer_limit: "1",
+      is_active: true, starts_at: "", expires_at: "",
+      reward_membership_type_id: "", reward_trigger: "paid",
     });
     setEditingPromo(null);
   };
@@ -95,6 +134,7 @@ const AdminPromoCodes = () => {
     setForm({
       code: promo.code,
       description: promo.description || "",
+      reward_type: promo.reward_type || "percentage_discount",
       discount_type: promo.discount_type,
       discount_value: String(promo.discount_value),
       max_discount_amount: promo.max_discount_amount ? String(promo.max_discount_amount) : "",
@@ -104,8 +144,21 @@ const AdminPromoCodes = () => {
       is_active: promo.is_active,
       starts_at: promo.starts_at ? promo.starts_at.slice(0, 16) : "",
       expires_at: promo.expires_at ? promo.expires_at.slice(0, 16) : "",
+      reward_membership_type_id: promo.reward_membership_type_id || "",
+      reward_trigger: promo.reward_trigger || "paid",
     });
     setModalOpen(true);
+  };
+
+  // Sync discount_type when reward_type changes
+  const handleRewardTypeChange = (rt: RewardType) => {
+    setForm(f => ({
+      ...f,
+      reward_type: rt,
+      discount_type: rt === "percentage_discount" || rt === "membership_reward" ? "percentage" : "fixed",
+      // Clear discount for free delivery
+      ...(rt === "free_delivery" ? { discount_value: "0" } : {}),
+    }));
   };
 
   const saveMutation = useMutation({
@@ -113,8 +166,10 @@ const AdminPromoCodes = () => {
       const payload = {
         code: form.code.toUpperCase().trim(),
         description: form.description || null,
-        discount_type: form.discount_type,
-        discount_value: Number(form.discount_value),
+        reward_type: form.reward_type,
+        discount_type: form.reward_type === "percentage_discount" ? "percentage" : 
+                       form.reward_type === "fixed_discount" ? "fixed" : form.discount_type,
+        discount_value: form.reward_type === "free_delivery" ? 0 : Number(form.discount_value),
         max_discount_amount: form.max_discount_amount ? Number(form.max_discount_amount) : null,
         min_order_amount: form.min_order_amount ? Number(form.min_order_amount) : 0,
         usage_limit: form.usage_limit ? Number(form.usage_limit) : null,
@@ -122,6 +177,8 @@ const AdminPromoCodes = () => {
         is_active: form.is_active,
         starts_at: form.starts_at ? new Date(form.starts_at).toISOString() : new Date().toISOString(),
         expires_at: form.expires_at ? new Date(form.expires_at).toISOString() : null,
+        reward_membership_type_id: form.reward_type === "membership_reward" && form.reward_membership_type_id ? form.reward_membership_type_id : null,
+        reward_trigger: form.reward_type === "membership_reward" ? form.reward_trigger : "paid",
       };
 
       if (editingPromo) {
@@ -143,6 +200,8 @@ const AdminPromoCodes = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      // Delete usages first
+      await supabase.from("promo_code_usages").delete().eq("promo_code_id", id);
       const { error } = await supabase.from("promo_codes").delete().eq("id", id);
       if (error) throw error;
     },
@@ -163,6 +222,8 @@ const AdminPromoCodes = () => {
     active: promoCodes?.filter(p => p.is_active).length || 0,
     totalUsage: promoCodes?.reduce((s, p) => s + p.usage_count, 0) || 0,
   };
+
+  const showDiscountFields = form.reward_type !== "free_delivery";
 
   return (
     <div className="p-6 space-y-6">
@@ -214,7 +275,7 @@ const AdminPromoCodes = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Code</TableHead>
-                  <TableHead>Type</TableHead>
+                  <TableHead>Reward Type</TableHead>
                   <TableHead>Value</TableHead>
                   <TableHead>Min Order</TableHead>
                   <TableHead>Usage</TableHead>
@@ -228,18 +289,31 @@ const AdminPromoCodes = () => {
                   <TableRow key={promo.id}>
                     <TableCell className="font-mono font-bold">{promo.code}</TableCell>
                     <TableCell>
-                      <Badge variant="outline">
-                        {promo.discount_type === "percentage" ? <Percent className="h-3 w-3 mr-1" /> : <DollarSign className="h-3 w-3 mr-1" />}
-                        {promo.discount_type}
+                      <Badge variant="outline" className="whitespace-nowrap">
+                        {rewardTypeIcons[promo.reward_type] || rewardTypeIcons.percentage_discount}
+                        {rewardTypeLabels[promo.reward_type] || promo.reward_type}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {promo.discount_type === "percentage" ? `${promo.discount_value}%` : formatCurrency(promo.discount_value)}
-                      {promo.max_discount_amount && <span className="text-xs text-muted-foreground block">Max: {formatCurrency(promo.max_discount_amount)}</span>}
+                      {promo.reward_type === 'free_delivery' ? (
+                        <span className="text-green-600 font-medium">Free Shipping</span>
+                      ) : promo.reward_type === 'membership_reward' && promo.discount_value === 0 ? (
+                        <span className="text-purple-600 font-medium">Membership Only</span>
+                      ) : (
+                        <>
+                          {promo.discount_type === "percentage" ? `${promo.discount_value}%` : formatCurrency(promo.discount_value)}
+                          {promo.max_discount_amount && <span className="text-xs text-muted-foreground block">Max: {formatCurrency(promo.max_discount_amount)}</span>}
+                        </>
+                      )}
                     </TableCell>
                     <TableCell>{promo.min_order_amount ? formatCurrency(promo.min_order_amount) : "—"}</TableCell>
                     <TableCell>
-                      {promo.usage_count}{promo.usage_limit ? `/${promo.usage_limit}` : ""}
+                      <button
+                        className="text-primary hover:underline cursor-pointer"
+                        onClick={() => setUsagePromoId(promo.id)}
+                      >
+                        {promo.usage_count}{promo.usage_limit ? `/${promo.usage_limit}` : ""}
+                      </button>
                     </TableCell>
                     <TableCell>
                       <Badge className={promo.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
@@ -270,7 +344,7 @@ const AdminPromoCodes = () => {
 
       {/* Create/Edit Modal */}
       <Dialog open={modalOpen} onOpenChange={() => { setModalOpen(false); resetForm(); }}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingPromo ? "Edit Promo Code" : "Create Promo Code"}</DialogTitle>
           </DialogHeader>
@@ -283,22 +357,70 @@ const AdminPromoCodes = () => {
               <Label>Description</Label>
               <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Summer sale 20% off" className="mt-1" rows={2} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Discount Type *</Label>
-                <Select value={form.discount_type} onValueChange={v => setForm(f => ({ ...f, discount_type: v as any }))}>
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="percentage">Percentage (%)</SelectItem>
-                    <SelectItem value="fixed">Fixed Amount (৳)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Discount Value *</Label>
-                <Input type="number" value={form.discount_value} onChange={e => setForm(f => ({ ...f, discount_value: e.target.value }))} placeholder={form.discount_type === "percentage" ? "20" : "200"} className="mt-1" />
-              </div>
+
+            {/* Reward Type */}
+            <div>
+              <Label>Reward Type *</Label>
+              <Select value={form.reward_type} onValueChange={(v) => handleRewardTypeChange(v as RewardType)}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="percentage_discount">Percentage Discount (%)</SelectItem>
+                  <SelectItem value="fixed_discount">Fixed Discount (৳)</SelectItem>
+                  <SelectItem value="free_delivery">Free Delivery</SelectItem>
+                  <SelectItem value="membership_reward">Membership Reward</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+
+            {/* Discount fields - hidden for free delivery */}
+            {showDiscountFields && (
+              <div className="grid grid-cols-2 gap-4">
+                {form.reward_type === "membership_reward" && (
+                  <div>
+                    <Label>Discount Type</Label>
+                    <Select value={form.discount_type} onValueChange={v => setForm(f => ({ ...f, discount_type: v as any }))}>
+                      <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="percentage">Percentage (%)</SelectItem>
+                        <SelectItem value="fixed">Fixed Amount (৳)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div className={form.reward_type === "membership_reward" ? "" : "col-span-2"}>
+                  <Label>Discount Value {form.reward_type !== "membership_reward" ? "*" : "(optional)"}</Label>
+                  <Input type="number" value={form.discount_value} onChange={e => setForm(f => ({ ...f, discount_value: e.target.value }))} placeholder={form.discount_type === "percentage" ? "20" : "200"} className="mt-1" />
+                </div>
+              </div>
+            )}
+
+            {/* Membership Reward fields */}
+            {form.reward_type === "membership_reward" && (
+              <div className="space-y-4 p-3 border border-purple-200 dark:border-purple-800 bg-purple-50/50 dark:bg-purple-950/20 rounded-md">
+                <div>
+                  <Label>Membership Plan *</Label>
+                  <Select value={form.reward_membership_type_id} onValueChange={v => setForm(f => ({ ...f, reward_membership_type_id: v }))}>
+                    <SelectTrigger className="mt-1"><SelectValue placeholder="Select membership plan" /></SelectTrigger>
+                    <SelectContent>
+                      {membershipTypes?.map(mt => (
+                        <SelectItem key={mt.id} value={mt.id}>{mt.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Award Membership After</Label>
+                  <Select value={form.reward_trigger} onValueChange={v => setForm(f => ({ ...f, reward_trigger: v as any }))}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="paid">Payment Confirmed (Paid)</SelectItem>
+                      <SelectItem value="delivered">Order Delivered</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Max Discount Amount</Label>
@@ -336,7 +458,10 @@ const AdminPromoCodes = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setModalOpen(false); resetForm(); }}>Cancel</Button>
-            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !form.code || !form.discount_value}>
+            <Button 
+              onClick={() => saveMutation.mutate()} 
+              disabled={saveMutation.isPending || !form.code || (showDiscountFields && form.reward_type !== "membership_reward" && !form.discount_value)}
+            >
               {saveMutation.isPending ? "Saving..." : editingPromo ? "Update" : "Create"}
             </Button>
           </DialogFooter>
@@ -348,7 +473,7 @@ const AdminPromoCodes = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Promo Code</AlertDialogTitle>
-            <AlertDialogDescription>Are you sure? This action cannot be undone.</AlertDialogDescription>
+            <AlertDialogDescription>Are you sure? This will also delete all usage history for this promo code.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -356,7 +481,75 @@ const AdminPromoCodes = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Usage History Modal */}
+      {usagePromoId && (
+        <PromoCodeUsageModal
+          open={!!usagePromoId}
+          onOpenChange={(open) => { if (!open) setUsagePromoId(null); }}
+          promoCodeId={usagePromoId}
+          promoCode={promoCodes?.find(p => p.id === usagePromoId)?.code || ""}
+        />
+      )}
     </div>
+  );
+};
+
+// Inline modal for promo code usage history
+const PromoCodeUsageModal = ({ open, onOpenChange, promoCodeId, promoCode }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  promoCodeId: string;
+  promoCode: string;
+}) => {
+  const { data: usages, isLoading } = useQuery({
+    queryKey: ["promo-code-usages", promoCodeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("promo_code_usages")
+        .select("*, customer:customers(name, phone), order:orders(order_number)")
+        .eq("promo_code_id", promoCodeId)
+        .order("used_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!promoCodeId,
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Usage History — {promoCode}</DialogTitle>
+        </DialogHeader>
+        {isLoading ? (
+          <div className="text-center py-4 text-muted-foreground">Loading...</div>
+        ) : usages?.length === 0 ? (
+          <div className="text-center py-4 text-muted-foreground">No usage records yet</div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Customer</TableHead>
+                <TableHead>Order</TableHead>
+                <TableHead>Discount</TableHead>
+                <TableHead>Date</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {usages?.map((u: any) => (
+                <TableRow key={u.id}>
+                  <TableCell>{u.customer?.name || "Guest"}<br/><span className="text-xs text-muted-foreground">{u.customer?.phone}</span></TableCell>
+                  <TableCell className="font-mono text-sm">{u.order?.order_number || "—"}</TableCell>
+                  <TableCell>{formatCurrency(u.discount_amount)}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{format(new Date(u.used_at), "MMM d, yyyy")}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 };
 

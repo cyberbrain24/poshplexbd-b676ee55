@@ -367,67 +367,76 @@ export const useDeleteTransaction = () => {
   return useMutation({
     mutationFn: async (id: string) => {
       // Find linked order_payments before deleting
-      const { data: linkedPayments } = await supabase
+      const { data: linkedPayments, error: fetchError } = await supabase
         .from("order_payments")
         .select("id, order_id, amount")
         .eq("transaction_id", id);
 
-      // Delete order_payments referencing this transaction
-      const { error: paymentError } = await supabase
-        .from("order_payments")
-        .delete()
-        .eq("transaction_id", id);
-      if (paymentError) throw paymentError;
+      if (fetchError) throw fetchError;
 
-      // Delete the transaction
-      const { error } = await supabase.from("transactions").delete().eq("id", id);
-      if (error) throw error;
-
-      // Recalculate each affected order's paid_amount and add timeline entry
+      // Collect affected order IDs and removed amounts BEFORE deleting
+      const affectedOrders: { orderId: string; removedAmount: number }[] = [];
       if (linkedPayments && linkedPayments.length > 0) {
         const orderIds = [...new Set(linkedPayments.map((p) => p.order_id))];
         for (const orderId of orderIds) {
           const removedAmount = linkedPayments
             .filter((p) => p.order_id === orderId)
             .reduce((sum, p) => sum + (p.amount || 0), 0);
-
-          // Get remaining payments for this order
-          const { data: remainingPayments } = await supabase
-            .from("order_payments")
-            .select("amount")
-            .eq("order_id", orderId);
-
-          const newPaidAmount = (remainingPayments || []).reduce(
-            (sum, p) => sum + (p.amount || 0), 0
-          );
-
-          const { data: order } = await supabase
-            .from("orders")
-            .select("total_amount, order_number, payment_status")
-            .eq("id", orderId)
-            .single();
-
-          const newPaymentStatus = newPaidAmount >= (order?.total_amount || 0)
-            ? "paid"
-            : newPaidAmount > 0
-              ? "partially_paid"
-              : "unpaid";
-
-          await supabase
-            .from("orders")
-            .update({ paid_amount: newPaidAmount, payment_status: newPaymentStatus })
-            .eq("id", orderId);
-
-          // Add timeline history entry
-          await supabase.from("order_status_history").insert({
-            order_id: orderId,
-            previous_status: order?.payment_status || "unknown",
-            new_status: newPaymentStatus,
-            status_type: "payment",
-            notes: `Payment of ${formatCurrency(removedAmount)} deleted from accounts. New paid: ${formatCurrency(newPaidAmount)}`,
-            metadata: { deleted_transaction_id: id },
-          });
+          affectedOrders.push({ orderId, removedAmount });
         }
+
+        // Delete order_payments referencing this transaction
+        const { error: paymentError } = await supabase
+          .from("order_payments")
+          .delete()
+          .eq("transaction_id", id);
+        if (paymentError) throw paymentError;
+      }
+
+      // Delete the transaction
+      const { error } = await supabase.from("transactions").delete().eq("id", id);
+      if (error) throw error;
+
+      // Recalculate each affected order's paid_amount and payment_status
+      for (const { orderId, removedAmount } of affectedOrders) {
+        // Get remaining payments for this order
+        const { data: remainingPayments } = await supabase
+          .from("order_payments")
+          .select("amount")
+          .eq("order_id", orderId);
+
+        const newPaidAmount = (remainingPayments || []).reduce(
+          (sum, p) => sum + (p.amount || 0), 0
+        );
+
+        const { data: order } = await supabase
+          .from("orders")
+          .select("total_amount, order_number, payment_status")
+          .eq("id", orderId)
+          .single();
+
+        const newPaymentStatus = newPaidAmount >= (order?.total_amount || 0)
+          ? "paid"
+          : newPaidAmount > 0
+            ? "partially_paid"
+            : "unpaid";
+
+        // Update order paid_amount and payment_status
+        const { error: updateError } = await supabase
+          .from("orders")
+          .update({ paid_amount: newPaidAmount, payment_status: newPaymentStatus })
+          .eq("id", orderId);
+        if (updateError) throw updateError;
+
+        // Add timeline history entry
+        await supabase.from("order_status_history").insert({
+          order_id: orderId,
+          previous_status: order?.payment_status || "unknown",
+          new_status: newPaymentStatus,
+          status_type: "payment",
+          notes: `Payment of ${formatCurrency(removedAmount)} reversed — transaction deleted from accounts. New paid: ${formatCurrency(newPaidAmount)}`,
+          metadata: { deleted_transaction_id: id },
+        });
       }
     },
     onSuccess: () => {
@@ -438,7 +447,7 @@ export const useDeleteTransaction = () => {
       queryClient.invalidateQueries({ queryKey: ["order"] });
       queryClient.invalidateQueries({ queryKey: ["order-history"] });
       queryClient.invalidateQueries({ queryKey: ["order-stats"] });
-      toast.success("Transaction deleted successfully");
+      toast.success("Transaction and linked payment records deleted successfully");
     },
     onError: (error) => {
       toast.error("Failed to delete transaction: " + error.message);

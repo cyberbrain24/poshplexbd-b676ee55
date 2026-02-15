@@ -69,11 +69,13 @@ const PoshplexHeader = () => {
     }
   };
 
-  // Build navigation items from categories
+  // Build navigation items from categories with custom display order
+  const NAV_ORDER: string[] = ["UPPER WEAR", "BOTTOM WEAR", "COMBO", "ACCESSORIES", "LIMITED EDITION"];
+
   const navItems: NavItem[] = useMemo(() => {
     const parentCategories = allCategories.filter(c => !c.parent_id);
     
-    return parentCategories.map(parent => {
+    const items = parentCategories.map(parent => {
       const subcategories: SubcategoryItem[] = allCategories
         .filter(c => c.parent_id === parent.id)
         .map(c => ({ id: c.id, name: c.name, image_url: c.image_url }));
@@ -83,6 +85,12 @@ const PoshplexHeader = () => {
         href: `/category/${parent.name.toLowerCase().replace(/\s+/g, '-')}`,
         subcategories,
       };
+    });
+
+    return items.sort((a, b) => {
+      const ai = NAV_ORDER.indexOf(a.name);
+      const bi = NAV_ORDER.indexOf(b.name);
+      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
     });
   }, [allCategories]);
 

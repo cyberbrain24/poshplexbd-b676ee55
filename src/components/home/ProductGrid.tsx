@@ -3,6 +3,7 @@ import { ShoppingBag, ArrowRight } from "lucide-react";
 import { useProductsList } from "@/hooks/useProducts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { generateProductSlug } from "@/lib/slug";
+import { getOptimizedImageUrl } from "@/lib/image-optimization";
 
 const SKELETON_HEADER = (
   <div className="flex items-end justify-between mb-8 md:mb-12">
@@ -25,9 +26,11 @@ const ProductGrid = () => {
     return `৳${price.toLocaleString()}`;
   };
 
-  const getMainImage = (product: typeof displayProducts[0]) => {
+  const getMainImage = (product: typeof displayProducts[0], eager: boolean) => {
     const mainImage = product.images?.find(img => img.is_main);
-    return mainImage?.image_url || product.images?.[0]?.image_url || '/placeholder.svg';
+    const rawUrl = mainImage?.image_url || product.images?.[0]?.image_url || '/placeholder.svg';
+    // Serve resized images: mobile cards are ~200px wide, desktop ~300px
+    return getOptimizedImageUrl(rawUrl, { width: eager ? 400 : 300, quality: 70 });
   };
 
   if (isLoading) {
@@ -88,7 +91,7 @@ const ProductGrid = () => {
               className="block relative aspect-[3/4] overflow-hidden bg-muted mb-3"
             >
               <img 
-                src={getMainImage(product)}
+                src={getMainImage(product, index < 4)}
                 alt={product.name}
                 loading={index < 4 ? "eager" : "lazy"}
                 decoding="async"

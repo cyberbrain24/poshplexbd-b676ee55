@@ -318,7 +318,7 @@ const AdminMedia = () => {
                 </div>
                 <CardContent className="p-3 space-y-2">
                   <p className="text-sm font-medium truncate" title={file.name}>
-                    {file.name}
+                    {file.name.includes("/") ? file.name.split("/").pop() : file.name}
                   </p>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>{formatFileSize(file.size)}</span>

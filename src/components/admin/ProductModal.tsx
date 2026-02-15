@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { X, Plus, Trash2, Upload, GripVertical, Play, ChevronDown, ChevronUp } from "lucide-react";
+import { X, Plus, Trash2, Upload, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,7 +44,6 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [showBuilder, setShowBuilder] = useState(false);
   const [parentCategoryId, setParentCategoryId] = useState<string | null>(null);
-  const [imageVariantTypes, setImageVariantTypes] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: categories = [] } = useCategories();
@@ -126,43 +125,6 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
       })));
     }
   }, [product]);
-
-  // Memoize variant type detection to avoid recalculating on every render
-  const { variantTypes, hasVariantTypes } = useMemo(() => {
-    const types: { key: string; label: string; values: { id: string; label: string; hex?: string }[] }[] = [];
-    const colorMap = new Map<string, { id: string; label: string; hex: string }>();
-    const materialMap = new Map<string, { id: string; label: string }>();
-    const sizeMap = new Map<string, { id: string; label: string }>();
-
-    variants.forEach(v => {
-      if (v.color_id) {
-        const c = colors.find(col => col.id === v.color_id);
-        if (c) colorMap.set(c.id, { id: c.id, label: c.name, hex: c.hex_code });
-      }
-      if (v.material_id) {
-        const m = materials.find(mat => mat.id === v.material_id);
-        if (m) materialMap.set(m.id, { id: m.id, label: m.name });
-      }
-      if (v.size_id) {
-        const s = sizes.find(sz => sz.id === v.size_id);
-        if (s) sizeMap.set(s.id, { id: s.id, label: s.label });
-      }
-    });
-
-    if (product?.variants) {
-      product.variants.forEach(v => {
-        if (v.color_id && v.color) colorMap.set(v.color.id, { id: v.color.id, label: v.color.name, hex: v.color.hex_code });
-        if (v.material_id && v.material) materialMap.set(v.material.id, { id: v.material.id, label: v.material.name });
-        if (v.size_id && v.size) sizeMap.set(v.size.id, { id: v.size.id, label: v.size.label });
-      });
-    }
-
-    if (colorMap.size > 0) types.push({ key: "color", label: "Color", values: [...colorMap.values()] });
-    if (materialMap.size > 0) types.push({ key: "material", label: "Material", values: [...materialMap.values()] });
-    if (sizeMap.size > 0) types.push({ key: "size", label: "Size", values: [...sizeMap.values()] });
-
-    return { variantTypes: types, hasVariantTypes: types.length > 0 };
-  }, [variants, product?.variants, colors, materials, sizes]);
 
   const getYouTubeVideoId = (url: string) => {
     const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
@@ -589,117 +551,6 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                 </div>
               </div>
 
-              {/* Variation-Specific Images */}
-              {formData.product_type === "variable" && (
-                  <div className="space-y-4 pt-6 border-t border-border">
-                    <Label>Variation-Specific Images</Label>
-                    <p className="text-sm text-muted-foreground">
-                      {hasVariantTypes
-                        ? `Assign images to specific variation values. Detected types: ${variantTypes.map(t => t.label).join(", ")}`
-                        : "Add variants in the Variants tab first to enable variation-specific image assignment"}
-                    </p>
-                    {images.length > 0 && hasVariantTypes && (
-                      <div className="space-y-3">
-                        {images.map((image) => {
-                          // Determine type from assigned IDs, or fall back to pending selection
-                          const assignedType = image.color_id ? "color" : image.material_id ? "material" : image.size_id ? "size" : null;
-                          const pendingType = imageVariantTypes[image.id];
-                          const currentType = assignedType || pendingType || "none";
-                          const currentValue = image.color_id || image.material_id || image.size_id || "none";
-                          const activeType = variantTypes.find(t => t.key === currentType);
-
-                          return (
-                            <div key={image.id} className="flex items-center gap-3 p-2 border border-border">
-                              <img src={image.image_url} alt="" className="w-12 h-12 object-cover flex-shrink-0" />
-                              
-                              {/* Variation Type - dynamic based on product variants */}
-                              <Select
-                                value={currentType}
-                                onValueChange={(type) => {
-                                  if (type === "none") {
-                                    // Clear assignment and pending type
-                                    setImageVariantTypes(prev => { const n = { ...prev }; delete n[image.id]; return n; });
-                                    setImages(prev => prev.map(img =>
-                                      img.id === image.id
-                                        ? { ...img, color_id: null, material_id: null, size_id: null }
-                                        : img
-                                    ));
-                                    if (product && !image.id.startsWith("temp-")) {
-                                      updateImage.mutate({ id: image.id, colorId: null, materialId: null, sizeId: null });
-                                    }
-                                  } else {
-                                    // Set pending type, clear current value
-                                    setImageVariantTypes(prev => ({ ...prev, [image.id]: type }));
-                                    setImages(prev => prev.map(img =>
-                                      img.id === image.id
-                                        ? { ...img, color_id: null, material_id: null, size_id: null }
-                                        : img
-                                    ));
-                                    if (product && !image.id.startsWith("temp-")) {
-                                      updateImage.mutate({ id: image.id, colorId: null, materialId: null, sizeId: null });
-                                    }
-                                  }
-                                }}
-                              >
-                                <SelectTrigger className="w-32">
-                                  <SelectValue placeholder="Type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="none">All</SelectItem>
-                                  {variantTypes.map(t => (
-                                    <SelectItem key={t.key} value={t.key}>{t.label}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-
-                              {/* Variation Value - only values from this product's variants */}
-                              {activeType && (
-                                <Select
-                                  value={currentValue}
-                                  onValueChange={(value) => {
-                                    const newId = value === "none" ? null : value;
-                                    const updates = { color_id: null as string | null, material_id: null as string | null, size_id: null as string | null };
-                                    if (currentType === "color") updates.color_id = newId;
-                                    else if (currentType === "material") updates.material_id = newId;
-                                    else if (currentType === "size") updates.size_id = newId;
-
-                                    setImages(prev => prev.map(img =>
-                                      img.id === image.id ? { ...img, ...updates } : img
-                                    ));
-                                    if (product && !image.id.startsWith("temp-")) {
-                                      updateImage.mutate({ id: image.id, colorId: updates.color_id, materialId: updates.material_id, sizeId: updates.size_id });
-                                    }
-                                    // Clear pending type once a value is assigned (or cleared)
-                                    if (newId) {
-                                      setImageVariantTypes(prev => { const n = { ...prev }; delete n[image.id]; return n; });
-                                    }
-                                  }}
-                                >
-                                  <SelectTrigger className="w-44">
-                                    <SelectValue placeholder={`Select ${activeType.label.toLowerCase()}`} />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="none">All</SelectItem>
-                                    {activeType.values.map((val: any) => (
-                                      <SelectItem key={val.id} value={val.id}>
-                                        {val.hex ? (
-                                          <div className="flex items-center gap-2">
-                                            <div className="w-4 h-4 border border-border" style={{ backgroundColor: val.hex }} />
-                                            {val.label}
-                                          </div>
-                                        ) : val.label}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-              )}
             </TabsContent>
 
             <TabsContent value="variants" className="mt-6 space-y-6">

@@ -4,6 +4,17 @@ import { useProducts } from "@/hooks/useProducts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { generateProductSlug } from "@/lib/slug";
 
+const SKELETON_HEADER = (
+  <div className="flex items-end justify-between mb-8 md:mb-12">
+    <div className="relative min-h-[3rem]">
+      <h2 className="text-xl md:text-2xl font-black tracking-[-0.02em] text-foreground uppercase">
+        New Arrivals
+      </h2>
+      <div className="h-[2px] w-12 bg-foreground mt-2" />
+    </div>
+  </div>
+);
+
 const ProductGrid = () => {
   const { data: products, isLoading } = useProducts();
 
@@ -21,18 +32,8 @@ const ProductGrid = () => {
 
   if (isLoading) {
     return (
-      <section className="w-full px-4 md:px-8 py-12 md:py-16 bg-background relative overflow-hidden">
-        <div className="flex items-end justify-between mb-8 md:mb-12">
-          <div className="relative">
-            <span className="absolute -left-2 -top-8 text-[80px] md:text-[120px] font-black text-foreground/[0.03] leading-none select-none">
-              DROP
-            </span>
-            <h2 className="text-xl md:text-2xl font-black tracking-[-0.02em] text-foreground uppercase">
-              New Arrivals
-            </h2>
-            <div className="h-[2px] w-12 bg-foreground mt-2" />
-          </div>
-        </div>
+      <section className="w-full px-4 md:px-8 py-12 md:py-16 bg-background">
+        {SKELETON_HEADER}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
             <div key={i} className="space-y-3">
@@ -50,17 +51,7 @@ const ProductGrid = () => {
   if (displayProducts.length === 0) {
     return (
       <section className="w-full px-4 md:px-8 py-12 md:py-16 bg-background">
-        <div className="flex items-end justify-between mb-8 md:mb-12">
-          <div className="relative">
-            <span className="absolute -left-2 -top-8 text-[80px] md:text-[120px] font-black text-foreground/[0.03] leading-none select-none">
-              DROP
-            </span>
-            <h2 className="text-xl md:text-2xl font-black tracking-[-0.02em] text-foreground uppercase">
-              New Arrivals
-            </h2>
-            <div className="h-[2px] w-12 bg-foreground mt-2" />
-          </div>
-        </div>
+        {SKELETON_HEADER}
         <p className="text-center text-muted-foreground py-12 text-sm">No products available yet. Check back soon!</p>
       </section>
     );
@@ -68,18 +59,18 @@ const ProductGrid = () => {
 
   return (
     <section className="w-full px-4 md:px-8 py-12 md:py-16 bg-background relative overflow-hidden">
-      {/* Street culture background element */}
-      <div className="absolute inset-0 pointer-events-none">
+      {/* Street culture background element — fixed position to avoid CLS */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-muted/30 to-transparent" />
-        <div className="absolute bottom-0 left-0 text-[200px] md:text-[300px] font-black text-foreground/[0.015] leading-none select-none -translate-x-1/4 translate-y-1/4">
+        <div className="absolute bottom-0 left-0 text-[200px] md:text-[300px] font-black text-foreground/[0.02] leading-none select-none -translate-x-1/4 translate-y-1/4 will-change-auto">
           STREET
         </div>
       </div>
 
       {/* Section Header - Urban style */}
       <div className="flex items-end justify-between mb-8 md:mb-12 relative z-10">
-        <div className="relative">
-          <span className="absolute -left-2 -top-8 text-[80px] md:text-[120px] font-black text-foreground/[0.03] leading-none select-none">
+        <div className="relative min-h-[3rem]">
+          <span className="absolute -left-2 -top-8 text-[80px] md:text-[120px] font-black text-foreground/5 leading-none select-none" aria-hidden="true">
             DROP
           </span>
           <h2 className="text-xl md:text-2xl font-black tracking-[-0.02em] text-foreground uppercase">
@@ -108,10 +99,11 @@ const ProductGrid = () => {
               to={`/product/${generateProductSlug(product.name, product.id)}`}
               className="block relative aspect-[3/4] overflow-hidden bg-muted mb-3"
             >
-              {/* Image */}
               <img 
                 src={getMainImage(product)}
                 alt={product.name}
+                loading={index < 5 ? "eager" : "lazy"}
+                decoding="async"
                 className="w-full h-full object-cover object-center transition-all duration-500 group-hover:scale-105"
               />
               

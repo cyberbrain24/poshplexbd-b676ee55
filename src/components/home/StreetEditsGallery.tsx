@@ -13,7 +13,7 @@ const StreetEditsGallery = () => {
   if (isLoading) {
     return (
       <section className="w-full px-6 py-20">
-        <div className="flex items-baseline gap-4 mb-10">
+        <div className="flex items-baseline gap-4 mb-10 min-h-[4rem]">
           <Skeleton className="w-24 h-16" />
           <Skeleton className="w-48 h-8" />
         </div>
@@ -37,8 +37,8 @@ const StreetEditsGallery = () => {
   return (
     <section className="w-full px-6 py-20">
       {/* Section Header */}
-      <div className="flex items-baseline gap-4 mb-10">
-        <span className="text-6xl md:text-8xl font-black text-muted-foreground/30">
+      <div className="flex items-baseline gap-4 mb-10 min-h-[4rem]">
+        <span className="text-6xl md:text-8xl font-black text-muted-foreground/30" aria-hidden="true">
           01
         </span>
         <h2 className="text-2xl md:text-3xl font-black tracking-tight text-foreground">
@@ -61,6 +61,8 @@ const StreetEditsGallery = () => {
                 <img 
                   src={category.image_url!}
                   alt={category.name}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover"
                 />
               </div>

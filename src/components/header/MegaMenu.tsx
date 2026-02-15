@@ -62,18 +62,18 @@ const MegaMenu = ({ activeItem, onMouseEnter, onMouseLeave }: MegaMenuProps) => 
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <div className="max-w-7xl mx-auto px-8 py-10">
+      <div className="max-w-7xl mx-auto px-8 pt-5 pb-5">
         {/* Section Title */}
-        <div className="mb-8">
+        <div className="mb-4">
           <h3 className="text-[11px] font-semibold tracking-[0.2em] text-muted-foreground uppercase">
             {activeItem.name}
           </h3>
-          <div className="mt-2 w-8 h-px bg-foreground" />
+          <div className="mt-1.5 w-8 h-px bg-foreground" />
         </div>
 
         {/* Subcategory Grid – 6 per row, centered if fewer */}
         {activeItem.subcategories.length > 0 ? (
-          <div className="flex flex-wrap justify-center gap-x-6 gap-y-8">
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-5">
             {activeItem.subcategories.map((sub) => {
               const imgUrl = sub.image_url || categoryImages[sub.id];
               const slug = sub.name.toLowerCase().replace(/\s+/g, '-');
@@ -123,7 +123,7 @@ const MegaMenu = ({ activeItem, onMouseEnter, onMouseLeave }: MegaMenuProps) => 
         )}
 
         {/* CTA Button */}
-        <div className="mt-10 flex justify-center">
+        <div className="mt-5 flex justify-center">
           <Link
             to={activeItem.href}
             className="inline-flex items-center gap-2 bg-foreground text-background px-7 py-3 text-[11px] font-semibold tracking-[0.15em] uppercase rounded-[9px] hover:bg-foreground/85 hover:-translate-y-px transition-all duration-200"

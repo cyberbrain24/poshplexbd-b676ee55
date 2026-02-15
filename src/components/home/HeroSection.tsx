@@ -2,7 +2,7 @@ import heroBanner from "@/assets/hero-banner.png";
 
 const HeroSection = () => {
   return (
-    <section className="w-full">
+    <section className="w-full !py-0">
       <img
         src={heroBanner}
         alt="Poshplex streetwear collection"

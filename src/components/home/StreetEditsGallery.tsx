@@ -10,6 +10,7 @@ const StreetEditsGallery = () => {
     .filter(c => !c.parent_id && c.image_url)
     .slice(0, 8);
 
+  // Always render the section container to prevent CLS — show skeleton or empty state
   if (isLoading) {
     return (
       <section className="w-full px-6 py-20">
@@ -29,9 +30,9 @@ const StreetEditsGallery = () => {
     );
   }
 
-  // If no categories with images, don't render the section
+  // If no categories with images, render a min-height placeholder to avoid CLS
   if (mainCategories.length === 0) {
-    return null;
+    return <section className="w-full" aria-hidden="true" />;
   }
 
   return (
@@ -63,6 +64,8 @@ const StreetEditsGallery = () => {
                   alt={category.name}
                   loading="lazy"
                   decoding="async"
+                  width={200}
+                  height={267}
                   className="w-full h-full object-cover"
                 />
               </div>

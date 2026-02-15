@@ -1,13 +1,23 @@
-import heroBannerWebp from "@/assets/hero-banner.webp";
-import heroBannerPng from "@/assets/hero-banner.png";
+import heroBannerDesktop from "@/assets/hero-banner-optimized.webp";
+import heroBannerMobile from "@/assets/hero-banner-mobile.webp";
 
 const HeroSection = () => {
   return (
     <section className="w-full !py-0">
       <picture>
-        <source srcSet={heroBannerWebp} type="image/webp" />
+        {/* Mobile: smaller file, 16:9 crop */}
+        <source
+          srcSet={heroBannerMobile}
+          type="image/webp"
+          media="(max-width: 768px)"
+        />
+        {/* Desktop: full width banner */}
+        <source
+          srcSet={heroBannerDesktop}
+          type="image/webp"
+        />
         <img
-          src={heroBannerPng}
+          src={heroBannerDesktop}
           alt="Poshplex streetwear collection"
           loading="eager"
           decoding="async"

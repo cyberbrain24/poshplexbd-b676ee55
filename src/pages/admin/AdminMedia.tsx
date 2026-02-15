@@ -1,6 +1,8 @@
 import { useState, useRef, useMemo } from "react";
 import { useMediaFiles, useUploadMedia, useDeleteMedia, useRenameMedia, MediaFile } from "@/hooks/useMedia";
+import { useAllMediaMetadata, useDeleteMediaMetadata } from "@/hooks/useMediaMetadata";
 import { getFileType, formatFileSize, copyFileUrl } from "@/services/media.service";
+import MediaSeoEditor from "@/components/admin/MediaSeoEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -75,8 +77,10 @@ const AdminMedia = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: files = [], isLoading } = useMediaFiles();
+  const { data: allMetadata = [] } = useAllMediaMetadata();
   const uploadMutation = useUploadMedia();
   const deleteMutation = useDeleteMedia();
+  const deleteMetadataMutation = useDeleteMediaMetadata();
   const renameMutation = useRenameMedia();
 
   // Filter files based on search, type, and bucket
@@ -137,6 +141,12 @@ const AdminMedia = () => {
     await deleteMutation.mutateAsync({
       bucketId: selectedFile.bucket_id,
       fileName: selectedFile.name,
+    });
+
+    // Also clean up any associated metadata
+    deleteMetadataMutation.mutate({
+      bucketId: selectedFile.bucket_id,
+      filePath: selectedFile.name,
     });
 
     setIsDeleteOpen(false);
@@ -372,9 +382,11 @@ const AdminMedia = () => {
 
       {/* Preview Dialog */}
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="truncate pr-8">{selectedFile?.name}</DialogTitle>
+            <DialogTitle className="truncate pr-8">
+              {selectedFile?.name.includes("/") ? selectedFile?.name.split("/").pop() : selectedFile?.name}
+            </DialogTitle>
           </DialogHeader>
           <div className="flex items-center justify-center py-4">
             {selectedFile && renderFilePreview(selectedFile, "lg")}
@@ -419,6 +431,18 @@ const AdminMedia = () => {
                   </a>
                 </Button>
               </div>
+
+              {/* SEO Metadata Editor */}
+              <MediaSeoEditor
+                bucketId={selectedFile.bucket_id}
+                filePath={selectedFile.name}
+                fileName={selectedFile.name.includes("/") ? selectedFile.name.split("/").pop()! : selectedFile.name}
+                metadata={
+                  allMetadata.find(
+                    (m) => m.bucket_id === selectedFile.bucket_id && m.file_path === selectedFile.name
+                  ) || null
+                }
+              />
             </div>
           )}
         </DialogContent>

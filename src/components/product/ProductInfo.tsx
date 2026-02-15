@@ -109,7 +109,7 @@ const ProductInfo = ({ product, isLoading, onColorChange }: ProductInfoProps) =>
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2 lg:space-y-3">
       {/* Breadcrumb - Show only on desktop */}
       <div className="hidden lg:block">
         <Breadcrumb>
@@ -138,7 +138,7 @@ const ProductInfo = ({ product, isLoading, onColorChange }: ProductInfoProps) =>
         <div className="flex justify-between items-start">
           <div>
             <p className="text-sm font-light text-muted-foreground mb-1">{categoryName}</p>
-            <h1 className="text-2xl md:text-3xl font-light text-foreground">{productName}</h1>
+            <h1 className="text-xl md:text-3xl font-light text-foreground">{productName}</h1>
           </div>
           <div className="text-right">
             <p className="text-2xl font-bold text-foreground">৳{displayPrice.toLocaleString()}</p>
@@ -167,7 +167,7 @@ const ProductInfo = ({ product, isLoading, onColorChange }: ProductInfoProps) =>
       )}
 
       {/* Quantity and Add to Cart */}
-      <div className="space-y-3">
+      <div className="space-y-2 lg:space-y-3">
         <div className="flex items-center gap-4">
           <span className="text-sm font-light text-foreground">Quantity</span>
           <div className="flex items-center border border-border">
@@ -175,18 +175,18 @@ const ProductInfo = ({ product, isLoading, onColorChange }: ProductInfoProps) =>
               variant="ghost"
               size="sm"
               onClick={decrementQuantity}
-              className="h-10 w-10 p-0 hover:bg-transparent hover:opacity-50 rounded-none border-none"
+              className="h-8 lg:h-10 w-8 lg:w-10 p-0 hover:bg-transparent hover:opacity-50 rounded-none border-none"
             >
               <Minus className="h-4 w-4" />
             </Button>
-            <span className="h-10 flex items-center px-4 text-sm font-light min-w-12 justify-center border-l border-r border-border">
+            <span className="h-8 lg:h-10 flex items-center px-3 lg:px-4 text-sm font-light min-w-10 lg:min-w-12 justify-center border-l border-r border-border">
               {quantity}
             </span>
             <Button
               variant="ghost"
               size="sm"
               onClick={incrementQuantity}
-              className="h-10 w-10 p-0 hover:bg-transparent hover:opacity-50 rounded-none border-none"
+              className="h-8 lg:h-10 w-8 lg:w-10 p-0 hover:bg-transparent hover:opacity-50 rounded-none border-none"
             >
               <Plus className="h-4 w-4" />
             </Button>
@@ -195,7 +195,7 @@ const ProductInfo = ({ product, isLoading, onColorChange }: ProductInfoProps) =>
 
         <div className="flex gap-3">
           <Button 
-            className="flex-1 h-12 bg-foreground text-background hover:bg-foreground/90 font-light rounded-none disabled:opacity-50"
+            className="flex-1 h-10 lg:h-12 bg-foreground text-background hover:bg-foreground/90 font-light rounded-none disabled:opacity-50"
             disabled={!canAddToCart}
             onClick={handleAddToCart}
           >
@@ -203,7 +203,7 @@ const ProductInfo = ({ product, isLoading, onColorChange }: ProductInfoProps) =>
           </Button>
           <Button 
             variant="outline"
-            className="flex-1 h-12 border-foreground text-foreground hover:bg-foreground hover:text-background font-light rounded-none disabled:opacity-50"
+            className="flex-1 h-10 lg:h-12 border-foreground text-foreground hover:bg-foreground hover:text-background font-light rounded-none disabled:opacity-50"
             disabled={!canAddToCart}
             onClick={handleBuyNow}
           >

@@ -8,7 +8,7 @@
   :root {
     /* Core palette: Black, White, Slate Grey */
     --background: 0 0% 100%;
-    --foreground: 0 0% 0%;
+    --foreground: 0 0% 18.4%;
     
     /* Slate grey variants */
     --slate: 215 16% 47%;
@@ -18,34 +18,34 @@
     
     /* Navigation */
     --nav-background: 0 0% 100%;
-    --nav-foreground: 0 0% 0%;
+    --nav-foreground: 0 0% 18.4%;
     --nav-hover: 0 0% 30%;
     
     /* Interactive elements */
-    --primary: 0 0% 0%;
+    --primary: 0 0% 18.4%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 0 0% 15%;
+    --primary-hover: 0 0% 25%;
     
     /* Secondary - outline style */
     --secondary: 0 0% 100%;
-    --secondary-foreground: 0 0% 0%;
+    --secondary-foreground: 0 0% 18.4%;
     
     --muted: 215 10% 92%;
     --muted-foreground: 215 16% 47%;
     
     --accent: 215 10% 96%;
-    --accent-foreground: 0 0% 0%;
+    --accent-foreground: 0 0% 18.4%;
     
     --border: 0 0% 85%;
     --input: 0 0% 85%;
-    --ring: 0 0% 0%;
+    --ring: 0 0% 18.4%;
     
     /* Cards and surfaces */
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 0%;
+    --card-foreground: 0 0% 18.4%;
     
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
+    --popover-foreground: 0 0% 18.4%;
     
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
@@ -57,13 +57,13 @@
     --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
     --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 0 0% 0%;
-    --sidebar-primary: 0 0% 0%;
+    --sidebar-foreground: 0 0% 18.4%;
+    --sidebar-primary: 0 0% 18.4%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 215 10% 96%;
-    --sidebar-accent-foreground: 0 0% 0%;
+    --sidebar-accent-foreground: 0 0% 18.4%;
     --sidebar-border: 0 0% 85%;
-    --sidebar-ring: 0 0% 0%;
+    --sidebar-ring: 0 0% 18.4%;
   }
 
   .dark {

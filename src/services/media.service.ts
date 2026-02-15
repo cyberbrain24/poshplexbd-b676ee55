@@ -51,34 +51,48 @@ export const getFileType = (mimeType: string | null, filename: string): string =
 };
 
 /**
- * Fetch all files from a specific bucket
+ * Recursively fetch all files from a bucket, including subfolders
  */
-export const fetchBucketFiles = async (bucketId: string): Promise<MediaFile[]> => {
-  const { data: files, error } = await supabase.storage.from(bucketId).list("", {
+export const fetchBucketFiles = async (bucketId: string, prefix = ""): Promise<MediaFile[]> => {
+  const { data: items, error } = await supabase.storage.from(bucketId).list(prefix, {
     limit: 1000,
     sortBy: { column: "created_at", order: "desc" },
   });
 
   if (error) throw error;
+  if (!items) return [];
 
-  return (files || [])
-    .filter((file) => file.name !== ".emptyFolderPlaceholder")
-    .map((file) => {
-      const { data: { publicUrl } } = supabase.storage
-        .from(bucketId)
-        .getPublicUrl(file.name);
+  const results: MediaFile[] = [];
 
-      return {
-        id: file.id || file.name,
-        name: file.name,
-        bucket_id: bucketId,
-        created_at: file.created_at || new Date().toISOString(),
-        updated_at: file.updated_at || new Date().toISOString(),
-        size: file.metadata?.size || 0,
-        mime_type: file.metadata?.mimetype || null,
-        public_url: publicUrl,
-      };
+  for (const item of items) {
+    if (item.name === ".emptyFolderPlaceholder") continue;
+
+    const fullPath = prefix ? `${prefix}/${item.name}` : item.name;
+
+    // If item has no id and no metadata, it's a folder — recurse into it
+    if (!item.id && !item.metadata) {
+      const nested = await fetchBucketFiles(bucketId, fullPath);
+      results.push(...nested);
+      continue;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from(bucketId)
+      .getPublicUrl(fullPath);
+
+    results.push({
+      id: item.id || fullPath,
+      name: fullPath,
+      bucket_id: bucketId,
+      created_at: item.created_at || new Date().toISOString(),
+      updated_at: item.updated_at || new Date().toISOString(),
+      size: item.metadata?.size || 0,
+      mime_type: item.metadata?.mimetype || null,
+      public_url: publicUrl,
     });
+  }
+
+  return results;
 };
 
 /**

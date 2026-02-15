@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ShoppingBag, ArrowRight } from "lucide-react";
-import { useProducts } from "@/hooks/useProducts";
+import { useProductsList } from "@/hooks/useProducts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { generateProductSlug } from "@/lib/slug";
 
@@ -16,9 +16,9 @@ const SKELETON_HEADER = (
 );
 
 const ProductGrid = () => {
-  const { data: products, isLoading } = useProducts();
+  // Use lightweight query - only fetches fields needed for cards (no variants, care instructions, etc.)
+  const { data: products, isLoading } = useProductsList(10);
 
-  // Get first 10 active products for homepage (5 columns x 2 rows)
   const displayProducts = products?.filter(p => p.is_active).slice(0, 10) || [];
 
   const formatPrice = (price: number) => {
@@ -83,7 +83,6 @@ const ProductGrid = () => {
             key={product.id} 
             className="group relative"
           >
-            {/* Product Image Container */}
             <Link 
               to={`/product/${generateProductSlug(product.name, product.id)}`}
               className="block relative aspect-[3/4] overflow-hidden bg-muted mb-3"
@@ -91,27 +90,25 @@ const ProductGrid = () => {
               <img 
                 src={getMainImage(product)}
                 alt={product.name}
-                loading={index < 5 ? "eager" : "lazy"}
+                loading={index < 4 ? "eager" : "lazy"}
                 decoding="async"
+                width={400}
+                height={533}
                 className="w-full h-full object-cover object-center transition-all duration-500 group-hover:scale-105"
               />
               
-              {/* Overlay on hover */}
               <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/10 transition-colors duration-300" />
               
-              {/* Index number - street style */}
               <span className="absolute bottom-2 right-2 text-[10px] font-mono text-foreground/40 tracking-wider">
                 {String(index + 1).padStart(2, '0')}
               </span>
               
-              {/* Badge */}
               <div className="absolute top-0 left-0">
                 <span className="inline-block bg-foreground text-background px-2 py-1 text-[9px] font-bold tracking-[0.15em] uppercase">
                   New
                 </span>
               </div>
 
-              {/* Quick add button - appears on hover */}
               <button 
                 className="absolute bottom-3 left-3 right-3 py-2.5 bg-background/95 backdrop-blur-sm text-foreground text-[10px] font-bold tracking-[0.1em] uppercase opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 flex items-center justify-center gap-2 hover:bg-foreground hover:text-background"
                 aria-label="Add to cart"
@@ -121,7 +118,6 @@ const ProductGrid = () => {
               </button>
             </Link>
 
-            {/* Product Info */}
             <div className="space-y-1">
               <p className="text-[10px] text-muted-foreground tracking-[0.1em] uppercase">
                 {product.category?.name || 'Streetwear'}

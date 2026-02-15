@@ -1002,12 +1002,14 @@ export type Database = {
           created_at: string
           id: string
           is_active: boolean
+          low_stock_threshold: number
           material_id: string | null
           product_id: string
           purchase_price: number
           selling_price: number
           size_id: string | null
           sku: string
+          stock_quantity: number
           updated_at: string
         }
         Insert: {
@@ -1015,12 +1017,14 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          low_stock_threshold?: number
           material_id?: string | null
           product_id: string
           purchase_price?: number
           selling_price?: number
           size_id?: string | null
           sku: string
+          stock_quantity?: number
           updated_at?: string
         }
         Update: {
@@ -1028,12 +1032,14 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          low_stock_threshold?: number
           material_id?: string | null
           product_id?: string
           purchase_price?: number
           selling_price?: number
           size_id?: string | null
           sku?: string
+          stock_quantity?: number
           updated_at?: string
         }
         Relationships: [
@@ -1786,6 +1792,18 @@ export type Database = {
         Returns: undefined
       }
       is_admin: { Args: never; Returns: boolean }
+      upsert_checkout_customer: {
+        Args: {
+          p_address?: string
+          p_division_id?: string
+          p_email?: string
+          p_gender?: string
+          p_name: string
+          p_phone: string
+          p_thana_id?: string
+        }
+        Returns: string
+      }
       upsert_seo_path: {
         Args: {
           p_entity_id?: string

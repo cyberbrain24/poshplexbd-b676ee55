@@ -11,6 +11,7 @@ import { CartProvider } from "./contexts/CartContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import AdminLayout from "./components/admin/AdminLayout";
 import MobileFooterNav from "./components/navigation/MobileFooterNav";
+import GA4Script from "./components/GA4Script";
 
 // Critical pages - direct imports (above the fold / high traffic)
 import Index from "./pages/Index";
@@ -60,6 +61,7 @@ const AdminSeedData = lazy(() => import("./pages/admin/AdminSeedData"));
 const AdminReviews = lazy(() => import("./pages/admin/AdminReviews"));
 const AdminMedia = lazy(() => import("./pages/admin/AdminMedia"));
 const AdminPromoCodes = lazy(() => import("./pages/admin/AdminPromoCodes"));
+const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -95,6 +97,7 @@ const App = () => (
               v7_relativeSplatPath: true,
             }}
           >
+            <GA4Script />
             <ScrollToTop />
             <Suspense fallback={<PageLoader />}>
               <Routes>
@@ -145,6 +148,7 @@ const App = () => (
                   <Route path="orders" element={<AdminOrders />} />
                   <Route path="payment-methods" element={<AdminPaymentMethods />} />
                   <Route path="promo-codes" element={<AdminPromoCodes />} />
+                  <Route path="analytics" element={<AdminAnalytics />} />
                   <Route path="seed-data" element={<AdminSeedData />} />
                 </Route>
                 

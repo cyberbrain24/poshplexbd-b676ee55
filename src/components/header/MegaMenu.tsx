@@ -73,7 +73,7 @@ const MegaMenu = ({ activeItem, onMouseEnter, onMouseLeave }: MegaMenuProps) => 
 
         {/* Subcategory Grid – 6 per row, centered if fewer */}
         {activeItem.subcategories.length > 0 ? (
-          <div className="flex flex-wrap justify-center gap-x-6 gap-y-5">
+          <div className="flex flex-wrap justify-center gap-x-8 gap-y-4">
             {activeItem.subcategories.map((sub) => {
               const imgUrl = sub.image_url || categoryImages[sub.id];
               const slug = sub.name.toLowerCase().replace(/\s+/g, '-');
@@ -82,10 +82,10 @@ const MegaMenu = ({ activeItem, onMouseEnter, onMouseLeave }: MegaMenuProps) => 
                 <Link
                   key={sub.id}
                   to={`/category/${slug}`}
-                  className="group w-[calc((100%-5*1.5rem)/6)] min-w-[130px]"
+                  className="group w-[calc((100%-5*2rem)/6)] max-w-[120px]"
                 >
                   {/* Image Card */}
-                  <div className="relative aspect-[4/5] rounded-[13px] overflow-hidden bg-muted shadow-sm">
+                  <div className="relative aspect-square rounded-[10px] overflow-hidden bg-muted shadow-sm">
                     {imgUrl ? (
                       <img
                         src={imgUrl}
@@ -95,19 +95,19 @@ const MegaMenu = ({ activeItem, onMouseEnter, onMouseLeave }: MegaMenuProps) => 
                       />
                     ) : (
                       <div className="w-full h-full bg-foreground/90 flex items-center justify-center">
-                        <span className="text-background/40 text-xs font-bold tracking-widest uppercase">
+                        <span className="text-background/40 text-[10px] font-bold tracking-widest uppercase">
                           {sub.name.slice(0, 2)}
                         </span>
                       </div>
                     )}
                     {/* Subtle dark overlay on hover */}
-                    <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/10 transition-colors duration-200 rounded-[13px]" />
+                    <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/10 transition-colors duration-200 rounded-[10px]" />
                   </div>
 
                   {/* Title */}
-                  <div className="mt-3 text-center">
+                  <div className="mt-2 text-center">
                     <span className={cn(
-                      "text-[11px] font-semibold tracking-[0.12em] uppercase text-foreground",
+                      "text-[10px] font-semibold tracking-[0.1em] uppercase text-foreground",
                       "relative inline-block",
                       "after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-px after:bottom-0 after:left-0 after:bg-foreground after:origin-bottom-right after:transition-transform after:duration-200 group-hover:after:scale-x-100 group-hover:after:origin-bottom-left"
                     )}>

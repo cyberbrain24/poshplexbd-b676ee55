@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,52 +12,54 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import AdminLayout from "./components/admin/AdminLayout";
 import MobileFooterNav from "./components/navigation/MobileFooterNav";
 
-// All pages - direct imports (no lazy loading)
+// Critical pages - direct imports (above the fold / high traffic)
 import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import Category from "./pages/Category";
-import CategoryBrowser from "./pages/CategoryBrowser";
 import ProductDetail from "./pages/ProductDetail";
-import Checkout from "./pages/Checkout";
-import OurStory from "./pages/about/OurStory";
-import Sustainability from "./pages/about/Sustainability";
-import SizeGuide from "./pages/about/SizeGuide";
-import CustomerCare from "./pages/about/CustomerCare";
-import StoreLocator from "./pages/about/StoreLocator";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import TermsOfService from "./pages/TermsOfService";
-import Auth from "./pages/Auth";
-import CustomerAuth from "./pages/CustomerAuth";
-import CustomerAccount from "./pages/CustomerAccount";
-import OrderTracking from "./pages/OrderTracking";
-import MyOrders from "./pages/MyOrders";
-import Membership from "./pages/Membership";
+import Category from "./pages/Category";
 
-// Admin pages - direct imports
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminProducts from "./pages/admin/AdminProducts";
-import AdminColors from "./pages/admin/AdminColors";
-import AdminSizes from "./pages/admin/AdminSizes";
-import AdminMaterials from "./pages/admin/AdminMaterials";
-import AdminSizeGuides from "./pages/admin/AdminSizeGuides";
-import AdminCareInstructions from "./pages/admin/AdminCareInstructions";
-import AdminCategories from "./pages/admin/AdminCategories";
-import AdminBrands from "./pages/admin/AdminBrands";
-import AdminAccounts from "./pages/admin/AdminAccounts";
-import AdminAccountsList from "./pages/admin/AdminAccountsList";
-import AdminIncomeCategories from "./pages/admin/AdminIncomeCategories";
-import AdminExpenseCategories from "./pages/admin/AdminExpenseCategories";
-import AdminCustomers from "./pages/admin/AdminCustomers";
-import AdminDivisions from "./pages/admin/AdminDivisions";
-import AdminThanas from "./pages/admin/AdminThanas";
-import AdminCustomerTypes from "./pages/admin/AdminCustomerTypes";
-import AdminOrders from "./pages/admin/AdminOrders";
-import AdminPaymentMethods from "./pages/admin/AdminPaymentMethods";
-import AdminSEO from "./pages/admin/AdminSEO";
-import AdminSeedData from "./pages/admin/AdminSeedData";
-import AdminReviews from "./pages/admin/AdminReviews";
-import AdminMedia from "./pages/admin/AdminMedia";
-import AdminPromoCodes from "./pages/admin/AdminPromoCodes";
+// Lazy-loaded pages (lower traffic or below initial viewport)
+const NotFound = lazy(() => import("./pages/NotFound"));
+const CategoryBrowser = lazy(() => import("./pages/CategoryBrowser"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const OurStory = lazy(() => import("./pages/about/OurStory"));
+const Sustainability = lazy(() => import("./pages/about/Sustainability"));
+const SizeGuide = lazy(() => import("./pages/about/SizeGuide"));
+const CustomerCare = lazy(() => import("./pages/about/CustomerCare"));
+const StoreLocator = lazy(() => import("./pages/about/StoreLocator"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const Auth = lazy(() => import("./pages/Auth"));
+const CustomerAuth = lazy(() => import("./pages/CustomerAuth"));
+const CustomerAccount = lazy(() => import("./pages/CustomerAccount"));
+const OrderTracking = lazy(() => import("./pages/OrderTracking"));
+const MyOrders = lazy(() => import("./pages/MyOrders"));
+const Membership = lazy(() => import("./pages/Membership"));
+
+// Admin pages - all lazy loaded
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminProducts = lazy(() => import("./pages/admin/AdminProducts"));
+const AdminColors = lazy(() => import("./pages/admin/AdminColors"));
+const AdminSizes = lazy(() => import("./pages/admin/AdminSizes"));
+const AdminMaterials = lazy(() => import("./pages/admin/AdminMaterials"));
+const AdminSizeGuides = lazy(() => import("./pages/admin/AdminSizeGuides"));
+const AdminCareInstructions = lazy(() => import("./pages/admin/AdminCareInstructions"));
+const AdminCategories = lazy(() => import("./pages/admin/AdminCategories"));
+const AdminBrands = lazy(() => import("./pages/admin/AdminBrands"));
+const AdminAccounts = lazy(() => import("./pages/admin/AdminAccounts"));
+const AdminAccountsList = lazy(() => import("./pages/admin/AdminAccountsList"));
+const AdminIncomeCategories = lazy(() => import("./pages/admin/AdminIncomeCategories"));
+const AdminExpenseCategories = lazy(() => import("./pages/admin/AdminExpenseCategories"));
+const AdminCustomers = lazy(() => import("./pages/admin/AdminCustomers"));
+const AdminDivisions = lazy(() => import("./pages/admin/AdminDivisions"));
+const AdminThanas = lazy(() => import("./pages/admin/AdminThanas"));
+const AdminCustomerTypes = lazy(() => import("./pages/admin/AdminCustomerTypes"));
+const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
+const AdminPaymentMethods = lazy(() => import("./pages/admin/AdminPaymentMethods"));
+const AdminSEO = lazy(() => import("./pages/admin/AdminSEO"));
+const AdminSeedData = lazy(() => import("./pages/admin/AdminSeedData"));
+const AdminReviews = lazy(() => import("./pages/admin/AdminReviews"));
+const AdminMedia = lazy(() => import("./pages/admin/AdminMedia"));
+const AdminPromoCodes = lazy(() => import("./pages/admin/AdminPromoCodes"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -65,13 +68,18 @@ const queryClient = new QueryClient({
       gcTime: 1000 * 60 * 30, // 30 minutes (formerly cacheTime)
       refetchOnWindowFocus: false,
       retry: 1,
-      // Prevent showing error state for cancelled queries
       throwOnError: false,
-      // Keep previous data during refetch for smoother UX
       placeholderData: (previousData: unknown) => previousData,
     },
   },
 });
+
+// Minimal loading fallback
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-[50vh]">
+    <div className="w-6 h-6 border-2 border-foreground/20 border-t-foreground rounded-full animate-spin" />
+  </div>
+);
 
 const App = () => (
   <ErrorBoundary>
@@ -88,66 +96,62 @@ const App = () => (
             }}
           >
             <ScrollToTop />
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Index />} />
-              <Route path="/category/:category" element={<Category />} />
-              <Route path="/categories" element={<CategoryBrowser />} />
-              <Route path="/product/:productSlug" element={<ProductDetail />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/order-tracking" element={<OrderTracking />} />
-              <Route path="/my-orders" element={<MyOrders />} />
-              <Route path="/account" element={<CustomerAccount />} />
-              <Route path="/membership" element={<Membership />} />
-              <Route path="/about/our-story" element={<OurStory />} />
-              <Route path="/about/sustainability" element={<Sustainability />} />
-              <Route path="/about/size-guide" element={<SizeGuide />} />
-              <Route path="/about/customer-care" element={<CustomerCare />} />
-              <Route path="/about/store-locator" element={<StoreLocator />} />
-              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-              <Route path="/terms-of-service" element={<TermsOfService />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/login" element={<CustomerAuth />} />
-              
-              {/* Admin Routes - Nested under protected layout */}
-              <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
-                <Route index element={<AdminDashboard />} />
-                <Route path="products" element={<AdminProducts />} />
-                <Route path="reviews" element={<AdminReviews />} />
-                <Route path="media" element={<AdminMedia />} />
-                <Route path="seo" element={<AdminSEO />} />
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                {/* Critical Routes - eagerly loaded */}
+                <Route path="/" element={<Index />} />
+                <Route path="/category/:category" element={<Category />} />
+                <Route path="/product/:productSlug" element={<ProductDetail />} />
                 
-                {/* Product Edits */}
-                <Route path="colors" element={<AdminColors />} />
-                <Route path="sizes" element={<AdminSizes />} />
-                <Route path="materials" element={<AdminMaterials />} />
-                <Route path="size-guides" element={<AdminSizeGuides />} />
-                <Route path="care-instructions" element={<AdminCareInstructions />} />
-                <Route path="categories" element={<AdminCategories />} />
-                <Route path="brands" element={<AdminBrands />} />
+                {/* Lazy-loaded Routes */}
+                <Route path="/categories" element={<CategoryBrowser />} />
+                <Route path="/checkout" element={<Checkout />} />
+                <Route path="/order-tracking" element={<OrderTracking />} />
+                <Route path="/my-orders" element={<MyOrders />} />
+                <Route path="/account" element={<CustomerAccount />} />
+                <Route path="/membership" element={<Membership />} />
+                <Route path="/about/our-story" element={<OurStory />} />
+                <Route path="/about/sustainability" element={<Sustainability />} />
+                <Route path="/about/size-guide" element={<SizeGuide />} />
+                <Route path="/about/customer-care" element={<CustomerCare />} />
+                <Route path="/about/store-locator" element={<StoreLocator />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/terms-of-service" element={<TermsOfService />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/login" element={<CustomerAuth />} />
                 
-                {/* Accounts */}
-                <Route path="accounts" element={<AdminAccounts />} />
-                <Route path="accounts-list" element={<AdminAccountsList />} />
-                <Route path="income-categories" element={<AdminIncomeCategories />} />
-                <Route path="expense-categories" element={<AdminExpenseCategories />} />
+                {/* Admin Routes - all lazy loaded under protected layout */}
+                <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+                  <Route index element={<AdminDashboard />} />
+                  <Route path="products" element={<AdminProducts />} />
+                  <Route path="reviews" element={<AdminReviews />} />
+                  <Route path="media" element={<AdminMedia />} />
+                  <Route path="seo" element={<AdminSEO />} />
+                  <Route path="colors" element={<AdminColors />} />
+                  <Route path="sizes" element={<AdminSizes />} />
+                  <Route path="materials" element={<AdminMaterials />} />
+                  <Route path="size-guides" element={<AdminSizeGuides />} />
+                  <Route path="care-instructions" element={<AdminCareInstructions />} />
+                  <Route path="categories" element={<AdminCategories />} />
+                  <Route path="brands" element={<AdminBrands />} />
+                  <Route path="accounts" element={<AdminAccounts />} />
+                  <Route path="accounts-list" element={<AdminAccountsList />} />
+                  <Route path="income-categories" element={<AdminIncomeCategories />} />
+                  <Route path="expense-categories" element={<AdminExpenseCategories />} />
+                  <Route path="customers" element={<AdminCustomers />} />
+                  <Route path="divisions" element={<AdminDivisions />} />
+                  <Route path="thanas" element={<AdminThanas />} />
+                  <Route path="customer-types" element={<AdminCustomerTypes />} />
+                  <Route path="orders" element={<AdminOrders />} />
+                  <Route path="payment-methods" element={<AdminPaymentMethods />} />
+                  <Route path="promo-codes" element={<AdminPromoCodes />} />
+                  <Route path="seed-data" element={<AdminSeedData />} />
+                </Route>
                 
-                {/* Customers */}
-                <Route path="customers" element={<AdminCustomers />} />
-                <Route path="divisions" element={<AdminDivisions />} />
-                <Route path="thanas" element={<AdminThanas />} />
-                <Route path="customer-types" element={<AdminCustomerTypes />} />
-                
-                {/* Orders */}
-                <Route path="orders" element={<AdminOrders />} />
-                <Route path="payment-methods" element={<AdminPaymentMethods />} />
-                <Route path="promo-codes" element={<AdminPromoCodes />} />
-                <Route path="seed-data" element={<AdminSeedData />} />
-              </Route>
-              
-              {/* 404 Catch-all - MUST be last */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+                {/* 404 Catch-all - MUST be last */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
             <MobileFooterNav />
           </BrowserRouter>
           </TooltipProvider>

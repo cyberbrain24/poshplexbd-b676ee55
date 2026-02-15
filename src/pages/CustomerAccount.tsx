@@ -6,12 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { User, Package, LogOut, Key, Eye, EyeOff, Crown, MessageSquare, Camera, Pencil, ShoppingBag, Hash, Info } from "lucide-react";
+import { User, Package, LogOut, Key, Eye, EyeOff, Crown, MessageSquare, Camera, Pencil, ShoppingBag, Hash, Info, MapPin } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import PoshplexHeader from "@/components/header/PoshplexHeader";
 import PoshplexFooter from "@/components/footer/PoshplexFooter";
 import MyReviews from "@/components/account/MyReviews";
+import AddressManager from "@/components/account/AddressManager";
 import { formatCurrency } from "@/lib/currency";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
@@ -531,6 +532,11 @@ const CustomerAccount = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Saved Addresses */}
+          {accountData?.customer_id && (
+            <AddressManager customerId={accountData.customer_id} />
+          )}
 
           {/* Order History Link */}
           <Card className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => navigate("/my-orders")}>

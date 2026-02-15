@@ -18,6 +18,7 @@ import { getShippingForLocation, ShippingConfig, SHIPPING_OUTSIDE_DHAKA } from "
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/currency";
+import { useCustomerAddresses, useCreateAddress, type CustomerAddress } from "@/hooks/useCustomerAddresses";
 
 const DEFAULT_PASSWORD = "poshplex";
 
@@ -62,6 +63,11 @@ const Checkout = () => {
   // Partial payment state - works for ALL payment methods including COD
   const [partialPaymentAmount, setPartialPaymentAmount] = useState<string>("");
   const [usePartialPayment, setUsePartialPayment] = useState(false);
+
+  // Saved address selection
+  const [loggedInCustomerId, setLoggedInCustomerId] = useState<string | null>(null);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>("");
+  const { data: savedAddresses = [] } = useCustomerAddresses(loggedInCustomerId);
 
   const { data: thanas } = useThanas(customerDetails.divisionId);
 
@@ -131,6 +137,8 @@ const Checkout = () => {
           return;
         }
 
+        setLoggedInCustomerId(customerAccount.customer_id);
+
         // Then fetch the full customer details
         const { data: customer, error: customerError } = await supabase
           .from('customers')
@@ -164,6 +172,42 @@ const Checkout = () => {
 
     loadCustomerData();
   }, []);
+
+  // Auto-select default shipping address when savedAddresses load
+  useEffect(() => {
+    if (savedAddresses.length > 0 && !selectedAddressId) {
+      const defaultShipping = savedAddresses.find(a => a.is_default_shipping);
+      const addr = defaultShipping || savedAddresses[0];
+      setSelectedAddressId(addr.id);
+      // Fill form from selected address
+      setCustomerDetails(prev => ({
+        ...prev,
+        address: addr.address,
+        divisionId: addr.division_id || prev.divisionId,
+        thanaId: addr.thana_id || prev.thanaId,
+        postalCode: addr.postal_code || prev.postalCode,
+      }));
+    }
+  }, [savedAddresses, selectedAddressId]);
+
+  const handleAddressSelect = (addressId: string) => {
+    if (addressId === "new") {
+      setSelectedAddressId("new");
+      setCustomerDetails(prev => ({ ...prev, address: "", divisionId: "", thanaId: "", postalCode: "" }));
+      return;
+    }
+    const addr = savedAddresses.find(a => a.id === addressId);
+    if (addr) {
+      setSelectedAddressId(addr.id);
+      setCustomerDetails(prev => ({
+        ...prev,
+        address: addr.address,
+        divisionId: addr.division_id || "",
+        thanaId: addr.thana_id || "",
+        postalCode: addr.postal_code || "",
+      }));
+    }
+  };
 
   const selectedPaymentMethod = paymentMethods?.find(pm => pm.id === selectedPaymentMethodId);
 
@@ -645,6 +689,26 @@ const Checkout = () => {
                 <h2 className="text-lg font-light text-foreground mb-6">Shipping Information</h2>
                 
                 <div className="space-y-4">
+                  {/* Saved Address Selector */}
+                  {savedAddresses.length > 0 && (
+                    <div>
+                      <Label className="text-sm font-light">Saved Address</Label>
+                      <Select value={selectedAddressId} onValueChange={handleAddressSelect}>
+                        <SelectTrigger className="mt-1.5 rounded-none">
+                          <SelectValue placeholder="Select a saved address" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {savedAddresses.map(addr => (
+                            <SelectItem key={addr.id} value={addr.id}>
+                              {addr.label} — {addr.address.substring(0, 40)}{addr.address.length > 40 ? "..." : ""}
+                              {addr.is_default_shipping ? " ★" : ""}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="new">+ Enter new address</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label className="text-sm font-light">Full Name *</Label>

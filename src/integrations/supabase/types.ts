@@ -189,6 +189,70 @@ export type Database = {
           },
         ]
       }
+      customer_addresses: {
+        Row: {
+          address: string
+          created_at: string
+          customer_id: string
+          division_id: string | null
+          id: string
+          is_default_billing: boolean
+          is_default_shipping: boolean
+          label: string
+          postal_code: string | null
+          thana_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          customer_id: string
+          division_id?: string | null
+          id?: string
+          is_default_billing?: boolean
+          is_default_shipping?: boolean
+          label?: string
+          postal_code?: string | null
+          thana_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          customer_id?: string
+          division_id?: string | null
+          id?: string
+          is_default_billing?: boolean
+          is_default_shipping?: boolean
+          label?: string
+          postal_code?: string | null
+          thana_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_addresses_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_addresses_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_addresses_thana_id_fkey"
+            columns: ["thana_id"]
+            isOneToOne: false
+            referencedRelation: "thanas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_risk_profiles: {
         Row: {
           active_cod_orders: number

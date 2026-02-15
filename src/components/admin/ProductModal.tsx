@@ -127,6 +127,43 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
     }
   }, [product]);
 
+  // Memoize variant type detection to avoid recalculating on every render
+  const { variantTypes, hasVariantTypes } = useMemo(() => {
+    const types: { key: string; label: string; values: { id: string; label: string; hex?: string }[] }[] = [];
+    const colorMap = new Map<string, { id: string; label: string; hex: string }>();
+    const materialMap = new Map<string, { id: string; label: string }>();
+    const sizeMap = new Map<string, { id: string; label: string }>();
+
+    variants.forEach(v => {
+      if (v.color_id) {
+        const c = colors.find(col => col.id === v.color_id);
+        if (c) colorMap.set(c.id, { id: c.id, label: c.name, hex: c.hex_code });
+      }
+      if (v.material_id) {
+        const m = materials.find(mat => mat.id === v.material_id);
+        if (m) materialMap.set(m.id, { id: m.id, label: m.name });
+      }
+      if (v.size_id) {
+        const s = sizes.find(sz => sz.id === v.size_id);
+        if (s) sizeMap.set(s.id, { id: s.id, label: s.label });
+      }
+    });
+
+    if (product?.variants) {
+      product.variants.forEach(v => {
+        if (v.color_id && v.color) colorMap.set(v.color.id, { id: v.color.id, label: v.color.name, hex: v.color.hex_code });
+        if (v.material_id && v.material) materialMap.set(v.material.id, { id: v.material.id, label: v.material.name });
+        if (v.size_id && v.size) sizeMap.set(v.size.id, { id: v.size.id, label: v.size.label });
+      });
+    }
+
+    if (colorMap.size > 0) types.push({ key: "color", label: "Color", values: [...colorMap.values()] });
+    if (materialMap.size > 0) types.push({ key: "material", label: "Material", values: [...materialMap.values()] });
+    if (sizeMap.size > 0) types.push({ key: "size", label: "Size", values: [...sizeMap.values()] });
+
+    return { variantTypes: types, hasVariantTypes: types.length > 0 };
+  }, [variants, product?.variants, colors, materials, sizes]);
+
   const getYouTubeVideoId = (url: string) => {
     const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
     return match ? match[1] : null;
@@ -553,45 +590,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
               </div>
 
               {/* Variation-Specific Images */}
-              {(() => {
-                // Dynamically detect which variation types exist in the product's variants
-                const variantTypes: { key: string; label: string; values: { id: string; label: string; hex?: string }[] }[] = [];
-                
-                const colorMap = new Map<string, { id: string; label: string; hex: string }>();
-                const materialMap = new Map<string, { id: string; label: string }>();
-                const sizeMap = new Map<string, { id: string; label: string }>();
-                
-                variants.forEach(v => {
-                  if (v.color_id) {
-                    const c = colors.find(c => c.id === v.color_id);
-                    if (c) colorMap.set(c.id, { id: c.id, label: c.name, hex: c.hex_code });
-                  }
-                  if (v.material_id) {
-                    const m = materials.find(m => m.id === v.material_id);
-                    if (m) materialMap.set(m.id, { id: m.id, label: m.name });
-                  }
-                  if (v.size_id) {
-                    const s = sizes.find(s => s.id === v.size_id);
-                    if (s) sizeMap.set(s.id, { id: s.id, label: s.label });
-                  }
-                });
-                
-                // Also check existing product variants for edit mode
-                if (product?.variants) {
-                  product.variants.forEach(v => {
-                    if (v.color_id && v.color) colorMap.set(v.color.id, { id: v.color.id, label: v.color.name, hex: v.color.hex_code });
-                    if (v.material_id && v.material) materialMap.set(v.material.id, { id: v.material.id, label: v.material.name });
-                    if (v.size_id && v.size) sizeMap.set(v.size.id, { id: v.size.id, label: v.size.label });
-                  });
-                }
-                
-                if (colorMap.size > 0) variantTypes.push({ key: "color", label: "Color", values: [...colorMap.values()] });
-                if (materialMap.size > 0) variantTypes.push({ key: "material", label: "Material", values: [...materialMap.values()] });
-                if (sizeMap.size > 0) variantTypes.push({ key: "size", label: "Size", values: [...sizeMap.values()] });
-                
-                const hasVariantTypes = variantTypes.length > 0;
-                
-                return (
+              {formData.product_type === "variable" && (
                   <div className="space-y-4 pt-6 border-t border-border">
                     <Label>Variation-Specific Images</Label>
                     <p className="text-sm text-muted-foreground">
@@ -700,8 +699,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                       </div>
                     )}
                   </div>
-                );
-              })()}
+              )}
             </TabsContent>
 
             <TabsContent value="variants" className="mt-6 space-y-6">

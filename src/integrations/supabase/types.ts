@@ -1561,6 +1561,30 @@ export type Database = {
         }
         Relationships: []
       }
+      site_settings: {
+        Row: {
+          created_at: string
+          ga4_enabled: boolean
+          ga4_measurement_id: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ga4_enabled?: boolean
+          ga4_measurement_id?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ga4_enabled?: boolean
+          ga4_measurement_id?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       size_guides: {
         Row: {
           content: string

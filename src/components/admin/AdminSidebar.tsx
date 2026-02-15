@@ -24,6 +24,7 @@ import {
   ShoppingCart,
   ExternalLink,
   Globe,
+  BarChart3,
   Database,
   RefreshCw,
   LucideIcon,
@@ -290,6 +291,9 @@ const AdminSidebar = () => {
 
         {/* SEO Manager */}
         {renderNavLink("/admin/seo", Globe, "SEO Manager")}
+
+        {/* Analytics */}
+        {renderNavLink("/admin/analytics", BarChart3, "Analytics")}
 
         {/* Seed Data */}
         {renderNavLink("/admin/seed-data", Database, "Seed Data")}

@@ -15,6 +15,7 @@ import MobileFooterNav from "./components/navigation/MobileFooterNav";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Category from "./pages/Category";
+import CategoryBrowser from "./pages/CategoryBrowser";
 import ProductDetail from "./pages/ProductDetail";
 import Checkout from "./pages/Checkout";
 import OurStory from "./pages/about/OurStory";
@@ -91,6 +92,7 @@ const App = () => (
               {/* Public Routes */}
               <Route path="/" element={<Index />} />
               <Route path="/category/:category" element={<Category />} />
+              <Route path="/categories" element={<CategoryBrowser />} />
               <Route path="/product/:productSlug" element={<ProductDetail />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/order-tracking" element={<OrderTracking />} />

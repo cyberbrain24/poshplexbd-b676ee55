@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Dynamically injects the Google Analytics 4 script
- * when enabled in site_settings.
+ * when enabled in site_settings. Deferred to avoid blocking initial render.
  */
 const GA4Script = () => {
   const [config, setConfig] = useState<{ enabled: boolean; id: string | null }>({
@@ -37,26 +37,31 @@ const GA4Script = () => {
     // Prevent duplicate injection
     if (document.querySelector(`script[src*="${GA4_ID}"]`)) return;
 
-    // gtag.js loader
-    const script = document.createElement("script");
-    script.async = true;
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${GA4_ID}`;
-    document.head.appendChild(script);
+    // Defer GA4 loading until after page is interactive
+    const loadGA4 = () => {
+      // gtag.js loader
+      const script = document.createElement("script");
+      script.async = true;
+      script.src = `https://www.googletagmanager.com/gtag/js?id=${GA4_ID}`;
+      document.head.appendChild(script);
 
-    // gtag config
-    const inline = document.createElement("script");
-    inline.textContent = `
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', '${GA4_ID}');
-    `;
-    document.head.appendChild(inline);
-
-    return () => {
-      script.remove();
-      inline.remove();
+      // gtag config
+      const inline = document.createElement("script");
+      inline.textContent = `
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', '${GA4_ID}', { send_page_view: true });
+      `;
+      document.head.appendChild(inline);
     };
+
+    // Use requestIdleCallback to load after main thread is free, fallback to setTimeout
+    if ('requestIdleCallback' in window) {
+      (window as any).requestIdleCallback(loadGA4, { timeout: 3000 });
+    } else {
+      setTimeout(loadGA4, 2000);
+    }
   }, [config]);
 
   return null;

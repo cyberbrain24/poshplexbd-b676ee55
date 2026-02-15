@@ -109,7 +109,7 @@ const ProductInfo = ({ product, isLoading, onColorChange }: ProductInfoProps) =>
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Breadcrumb - Show only on desktop */}
       <div className="hidden lg:block">
         <Breadcrumb>
@@ -134,14 +134,14 @@ const ProductInfo = ({ product, isLoading, onColorChange }: ProductInfoProps) =>
       </div>
 
       {/* Product title and price */}
-      <div className="space-y-2">
+      <div className="space-y-1">
         <div className="flex justify-between items-start">
           <div>
             <p className="text-sm font-light text-muted-foreground mb-1">{categoryName}</p>
             <h1 className="text-2xl md:text-3xl font-light text-foreground">{productName}</h1>
           </div>
           <div className="text-right">
-            <p className="text-xl font-light text-foreground">৳{displayPrice.toLocaleString()}</p>
+            <p className="text-2xl font-bold text-foreground">৳{displayPrice.toLocaleString()}</p>
             {selectedVariant && selectedVariant.selling_price !== basePrice && (
               <p className="text-sm font-light text-muted-foreground line-through">
                 ৳{basePrice.toLocaleString()}
@@ -152,13 +152,13 @@ const ProductInfo = ({ product, isLoading, onColorChange }: ProductInfoProps) =>
       </div>
 
       {/* Short description */}
-      <div className="py-4 border-b border-border">
+      <div className="py-2 border-b border-border">
         <p className="text-sm font-light text-muted-foreground">{shortDescription}</p>
       </div>
 
       {/* Variant Selection */}
       {hasVariants && (
-        <div className="py-4 border-b border-border">
+        <div className="py-2 border-b border-border">
           <VariantSelector 
             variants={product!.variants!} 
             onVariantChange={handleVariantChange}
@@ -167,7 +167,7 @@ const ProductInfo = ({ product, isLoading, onColorChange }: ProductInfoProps) =>
       )}
 
       {/* Quantity and Add to Cart */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         <div className="flex items-center gap-4">
           <span className="text-sm font-light text-foreground">Quantity</span>
           <div className="flex items-center border border-border">

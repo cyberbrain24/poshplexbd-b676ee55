@@ -36,7 +36,7 @@ const ProductDetail = () => {
       <ProductSEO product={product} />
       <PoshplexHeader />
       
-      <main className="pt-6">
+      <main className="pt-2 lg:pt-3">
         <section className="w-full px-6">
           {/* Breadcrumb - Show above image on smaller screens */}
           <div className="lg:hidden mb-6">

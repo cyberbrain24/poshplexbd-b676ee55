@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, User, ShoppingBag as ShoppingBagIcon, X } from "lucide-react";
+import { AnimatePresence } from "framer-motion";
 import AnnouncementBar from "./AnnouncementBar";
 import MegaMenu from "./MegaMenu";
 import MobileMenu from "./MobileMenu";
@@ -13,13 +14,16 @@ import { supabase } from "@/integrations/supabase/client";
 const SITE_NAME = "POSHPLEX";
 const SITE_LOGO_URL: string | null = null;
 
+interface SubcategoryItem {
+  id: string;
+  name: string;
+  image_url?: string | null;
+}
+
 interface NavItem {
   name: string;
   href: string;
-  submenu: {
-    categories: string[];
-    featured: { name: string; href: string }[];
-  };
+  subcategories: SubcategoryItem[];
 }
 
 const isExternalLink = (path: string): boolean => {
@@ -70,17 +74,14 @@ const PoshplexHeader = () => {
     const parentCategories = allCategories.filter(c => !c.parent_id);
     
     return parentCategories.map(parent => {
-      const subcategories = allCategories
+      const subcategories: SubcategoryItem[] = allCategories
         .filter(c => c.parent_id === parent.id)
-        .map(c => c.name);
+        .map(c => ({ id: c.id, name: c.name, image_url: c.image_url }));
       
       return {
         name: parent.name.toUpperCase(),
         href: `/category/${parent.name.toLowerCase().replace(/\s+/g, '-')}`,
-        submenu: {
-          categories: subcategories,
-          featured: []
-        }
+        subcategories,
       };
     });
   }, [allCategories]);
@@ -196,13 +197,15 @@ const PoshplexHeader = () => {
       </nav>
 
       {/* Mega Menu */}
-      {activeDropdown && (
-        <MegaMenu 
-          activeItem={navItems.find(item => item.name === activeDropdown)!}
-          onMouseEnter={() => setActiveDropdown(activeDropdown)}
-          onMouseLeave={() => setActiveDropdown(null)}
-        />
-      )}
+      <AnimatePresence>
+        {activeDropdown && navItems.find(item => item.name === activeDropdown) && (
+          <MegaMenu 
+            activeItem={navItems.find(item => item.name === activeDropdown)!}
+            onMouseEnter={() => setActiveDropdown(activeDropdown)}
+            onMouseLeave={() => setActiveDropdown(null)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Search overlay */}
       {isSearchOpen && (

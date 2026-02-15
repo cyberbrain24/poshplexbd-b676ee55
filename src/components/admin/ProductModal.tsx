@@ -44,6 +44,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [showBuilder, setShowBuilder] = useState(false);
   const [parentCategoryId, setParentCategoryId] = useState<string | null>(null);
+  const [imageVariantTypes, setImageVariantTypes] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: categories = [] } = useCategories();
@@ -601,7 +602,10 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                     {images.length > 0 && hasVariantTypes && (
                       <div className="space-y-3">
                         {images.map((image) => {
-                          const currentType = image.color_id ? "color" : image.material_id ? "material" : image.size_id ? "size" : "none";
+                          // Determine type from assigned IDs, or fall back to pending selection
+                          const assignedType = image.color_id ? "color" : image.material_id ? "material" : image.size_id ? "size" : null;
+                          const pendingType = imageVariantTypes[image.id];
+                          const currentType = assignedType || pendingType || "none";
                           const currentValue = image.color_id || image.material_id || image.size_id || "none";
                           const activeType = variantTypes.find(t => t.key === currentType);
 
@@ -612,14 +616,29 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                               {/* Variation Type - dynamic based on product variants */}
                               <Select
                                 value={currentType}
-                                onValueChange={() => {
-                                  setImages(prev => prev.map(img =>
-                                    img.id === image.id
-                                      ? { ...img, color_id: null, material_id: null, size_id: null }
-                                      : img
-                                  ));
-                                  if (product && !image.id.startsWith("temp-")) {
-                                    updateImage.mutate({ id: image.id, colorId: null, materialId: null, sizeId: null });
+                                onValueChange={(type) => {
+                                  if (type === "none") {
+                                    // Clear assignment and pending type
+                                    setImageVariantTypes(prev => { const n = { ...prev }; delete n[image.id]; return n; });
+                                    setImages(prev => prev.map(img =>
+                                      img.id === image.id
+                                        ? { ...img, color_id: null, material_id: null, size_id: null }
+                                        : img
+                                    ));
+                                    if (product && !image.id.startsWith("temp-")) {
+                                      updateImage.mutate({ id: image.id, colorId: null, materialId: null, sizeId: null });
+                                    }
+                                  } else {
+                                    // Set pending type, clear current value
+                                    setImageVariantTypes(prev => ({ ...prev, [image.id]: type }));
+                                    setImages(prev => prev.map(img =>
+                                      img.id === image.id
+                                        ? { ...img, color_id: null, material_id: null, size_id: null }
+                                        : img
+                                    ));
+                                    if (product && !image.id.startsWith("temp-")) {
+                                      updateImage.mutate({ id: image.id, colorId: null, materialId: null, sizeId: null });
+                                    }
                                   }
                                 }}
                               >
@@ -650,6 +669,10 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                                     ));
                                     if (product && !image.id.startsWith("temp-")) {
                                       updateImage.mutate({ id: image.id, colorId: updates.color_id, materialId: updates.material_id, sizeId: updates.size_id });
+                                    }
+                                    // Clear pending type once a value is assigned (or cleared)
+                                    if (newId) {
+                                      setImageVariantTypes(prev => { const n = { ...prev }; delete n[image.id]; return n; });
                                     }
                                   }}
                                 >

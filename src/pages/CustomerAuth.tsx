@@ -81,12 +81,46 @@ const CustomerAuth = () => {
         
         if (error) throw error;
 
-        // Create customer account record
+        // Create customer record in CRM and link account
         if (data.user) {
+          const customerPhone = authMethod === "phone" ? phone : "";
+          
+          // First create (or find) a customers record
+          const { data: existingCustomer } = customerPhone
+            ? await supabase
+                .from("customers")
+                .select("id")
+                .eq("phone", customerPhone)
+                .maybeSingle()
+            : { data: null };
+
+          let customerId: string | null = existingCustomer?.id || null;
+
+          if (!customerId) {
+            const { data: newCustomer, error: customerError } = await supabase
+              .from("customers")
+              .insert({
+                name: name.trim(),
+                phone: customerPhone || `user-${data.user.id.substring(0, 8)}`,
+                email: authMethod === "email" ? email : null,
+                gender: "other" as const,
+              })
+              .select("id")
+              .single();
+
+            if (customerError) {
+              console.error("Failed to create customer record:", customerError);
+            } else {
+              customerId = newCustomer.id;
+            }
+          }
+
+          // Then create customer_accounts linking auth user to customer
           const { error: accountError } = await supabase
             .from("customer_accounts")
             .insert({
               auth_user_id: data.user.id,
+              customer_id: customerId,
               phone: authMethod === "phone" ? phone : null,
               email: authMethod === "email" ? email : null,
             });
@@ -102,9 +136,11 @@ const CustomerAuth = () => {
     } catch (error: any) {
       if (error.message === "Invalid login credentials") {
         toast.error("Invalid credentials. Please check your details.");
-      } else if (error.message?.includes("already registered")) {
+      } else if (error.message?.includes("already registered") || error.message?.includes("already been registered")) {
         toast.error("This account already exists. Please login instead.");
         setIsLogin(true);
+      } else if (error.message?.includes("Unable to validate email")) {
+        toast.error("Please enter a valid phone number.");
       } else {
         toast.error(error.message || "An error occurred");
       }

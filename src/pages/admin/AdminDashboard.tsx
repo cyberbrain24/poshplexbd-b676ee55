@@ -1,4 +1,5 @@
-import { useProducts } from "@/hooks/useProducts";
+import { useProductStats } from "@/hooks/useOptimizedProducts";
+import { useProductsList } from "@/hooks/useProducts";
 import { useColors, useSizes, useMaterials, useCategories, useBrands } from "@/hooks/useMasterData";
 import { Package, Palette, Ruler, Shirt, FolderTree, Building2 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -7,44 +8,42 @@ import { QueryErrorDisplay } from "@/components/admin/AdminErrorBoundary";
 import { formatCurrency } from "@/lib/currency";
 
 const AdminDashboard = () => {
-  const { data: products = [], isLoading: productsLoading, error: productsError, refetch: refetchProducts } = useProducts();
+  // Use lightweight stats query instead of fetching all products
+  const { data: stats, isLoading: statsLoading, error: statsError, refetch: refetchStats } = useProductStats();
+  // Only fetch 5 recent products for the list (slim query)
+  const { data: recentProducts = [], isLoading: recentLoading } = useProductsList(5);
   const { data: colors = [], isLoading: colorsLoading } = useColors();
   const { data: sizes = [], isLoading: sizesLoading } = useSizes();
   const { data: materials = [], isLoading: materialsLoading } = useMaterials();
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
   const { data: brands = [], isLoading: brandsLoading } = useBrands();
 
-  const isLoading = productsLoading || colorsLoading || sizesLoading || materialsLoading || categoriesLoading || brandsLoading;
+  const isLoading = statsLoading || recentLoading || colorsLoading || sizesLoading || materialsLoading || categoriesLoading || brandsLoading;
 
-  // Show skeleton while loading
   if (isLoading) {
     return <AdminDashboardSkeleton />;
   }
 
-  // Show error state if products failed to load
-  if (productsError) {
+  if (statsError) {
     return (
       <div className="space-y-8">
         <div>
           <h1 className="text-2xl font-medium tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground mt-1">Product management overview</p>
         </div>
-        <QueryErrorDisplay error={productsError as Error} onRetry={() => refetchProducts()} />
+        <QueryErrorDisplay error={statsError as Error} onRetry={() => refetchStats()} />
       </div>
     );
   }
 
-  const stats = [
-    { icon: Package, label: "Products", count: products.length, path: "/admin/products" },
+  const statCards = [
+    { icon: Package, label: "Products", count: stats?.totalProducts || 0, path: "/admin/products" },
     { icon: Palette, label: "Colors", count: colors.length, path: "/admin/colors" },
     { icon: Ruler, label: "Sizes", count: sizes.length, path: "/admin/sizes" },
     { icon: Shirt, label: "Materials", count: materials.length, path: "/admin/materials" },
     { icon: FolderTree, label: "Categories", count: categories.length, path: "/admin/categories" },
     { icon: Building2, label: "Brands", count: brands.length, path: "/admin/brands" },
   ];
-
-  const activeProducts = products.filter(p => p.is_active).length;
-  const totalVariants = products.reduce((sum, p) => sum + (p.variants?.length || 0), 0);
 
   return (
     <div className="space-y-8">
@@ -55,7 +54,7 @@ const AdminDashboard = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {stats.map((stat) => (
+        {statCards.map((stat) => (
           <Link
             key={stat.label}
             to={stat.path}
@@ -72,18 +71,18 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="p-6 border border-border">
           <h3 className="text-sm text-muted-foreground mb-1">Active Products</h3>
-          <p className="text-3xl font-medium">{activeProducts}</p>
-          <p className="text-sm text-muted-foreground mt-1">of {products.length} total</p>
+          <p className="text-3xl font-medium">{stats?.activeProducts || 0}</p>
+          <p className="text-sm text-muted-foreground mt-1">of {stats?.totalProducts || 0} total</p>
         </div>
         <div className="p-6 border border-border">
           <h3 className="text-sm text-muted-foreground mb-1">Total Variants</h3>
-          <p className="text-3xl font-medium">{totalVariants}</p>
+          <p className="text-3xl font-medium">{stats?.totalVariants || 0}</p>
           <p className="text-sm text-muted-foreground mt-1">across all products</p>
         </div>
         <div className="p-6 border border-border">
-          <h3 className="text-sm text-muted-foreground mb-1">Variable Products</h3>
-          <p className="text-3xl font-medium">{products.filter(p => p.product_type === 'variable').length}</p>
-          <p className="text-sm text-muted-foreground mt-1">with variants</p>
+          <h3 className="text-sm text-muted-foreground mb-1">Categories</h3>
+          <p className="text-3xl font-medium">{stats?.totalCategories || 0}</p>
+          <p className="text-sm text-muted-foreground mt-1">product categories</p>
         </div>
       </div>
 
@@ -96,7 +95,7 @@ const AdminDashboard = () => {
           </Link>
         </div>
         <div className="divide-y divide-border">
-          {products.slice(0, 5).map((product) => (
+          {recentProducts.slice(0, 5).map((product) => (
             <div key={product.id} className="p-4 flex items-center justify-between">
               <div className="flex items-center gap-4">
                 {product.images?.[0] ? (
@@ -104,6 +103,7 @@ const AdminDashboard = () => {
                     src={product.images[0].image_url}
                     alt={product.name}
                     className="w-12 h-12 object-cover"
+                    loading="lazy"
                   />
                 ) : (
                   <div className="w-12 h-12 bg-muted flex items-center justify-center">
@@ -123,7 +123,7 @@ const AdminDashboard = () => {
               </div>
             </div>
           ))}
-          {products.length === 0 && (
+          {recentProducts.length === 0 && (
             <div className="p-8 text-center text-muted-foreground">
               No products yet. Create your first product to get started.
             </div>

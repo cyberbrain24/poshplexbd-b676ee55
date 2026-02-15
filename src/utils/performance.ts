@@ -196,29 +196,29 @@ export function useStableCallback<T extends (...args: any[]) => any>(
 export const QUERY_CONFIG = {
   // Aggressive caching for reference data (colors, sizes, categories)
   referenceData: {
-    staleTime: 1000 * 60 * 10, // 10 minutes
-    gcTime: 1000 * 60 * 30, // 30 minutes
+    staleTime: 1000 * 60 * 15, // 15 minutes
+    gcTime: 1000 * 60 * 60, // 60 minutes
     refetchOnWindowFocus: false,
     retry: 1,
   },
   // Standard caching for list views
   listView: {
-    staleTime: 1000 * 60 * 2, // 2 minutes
-    gcTime: 1000 * 60 * 10, // 10 minutes
+    staleTime: 1000 * 60 * 3, // 3 minutes
+    gcTime: 1000 * 60 * 15, // 15 minutes
     refetchOnWindowFocus: false,
     retry: 1,
   },
   // Live data for queues and dashboards
   liveData: {
-    staleTime: 1000 * 30, // 30 seconds
+    staleTime: 1000 * 60, // 1 minute
     gcTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: true,
     retry: 1,
   },
   // Single item detail views
   detailView: {
-    staleTime: 1000 * 60 * 2, // 2 minutes
-    gcTime: 1000 * 60 * 15, // 15 minutes
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 20, // 20 minutes
     refetchOnWindowFocus: false,
     retry: 1,
   },

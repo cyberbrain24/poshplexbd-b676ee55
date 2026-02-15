@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
 import PoshplexHeader from "../components/header/PoshplexHeader";
@@ -17,6 +17,7 @@ import {
   BreadcrumbPage, 
   BreadcrumbSeparator 
 } from "@/components/ui/breadcrumb";
+import { trackViewContent } from "@/lib/meta-pixel";
 
 const ProductDetail = () => {
   const { productSlug } = useParams();
@@ -30,6 +31,18 @@ const ProductDetail = () => {
   const productName = product?.name || "Product";
   const categoryName = product?.category?.name || "Apparel";
   const categorySlug = categoryName.toLowerCase().replace(/\s+/g, '-');
+
+  // Track ViewContent for Meta Pixel
+  useEffect(() => {
+    if (product) {
+      trackViewContent({
+        id: product.id,
+        name: product.name,
+        price: product.base_price,
+        category: categoryName,
+      });
+    }
+  }, [product?.id]);
 
   return (
     <div className="min-h-screen bg-background">

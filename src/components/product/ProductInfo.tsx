@@ -15,6 +15,7 @@ import { Product, ProductVariant } from "@/types/product";
 import VariantSelector from "./VariantSelector";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
+import { trackAddToCart } from "@/lib/meta-pixel";
 
 interface ProductInfoProps {
   product?: Product | null;
@@ -73,7 +74,17 @@ const ProductInfo = ({ product, isLoading, onColorChange }: ProductInfoProps) =>
   const handleAddToCart = () => {
     if (!canAddToCart) return;
 
-    addToCart(getCartItem(), quantity);
+    const cartItem = getCartItem();
+    addToCart(cartItem, quantity);
+
+    // Track AddToCart for Meta Pixel
+    trackAddToCart({
+      id: cartItem.productId || cartItem.id,
+      name: cartItem.name,
+      price: cartItem.price,
+      quantity,
+      category: cartItem.category,
+    });
 
     toast(`${productName} added to bag`, {
       description: selectedVariant 

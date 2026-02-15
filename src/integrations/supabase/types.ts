@@ -1567,6 +1567,11 @@ export type Database = {
           ga4_enabled: boolean
           ga4_measurement_id: string | null
           id: string
+          meta_capi_access_token: string | null
+          meta_capi_enabled: boolean
+          meta_ecommerce_events_enabled: boolean
+          meta_pixel_enabled: boolean
+          meta_pixel_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1574,6 +1579,11 @@ export type Database = {
           ga4_enabled?: boolean
           ga4_measurement_id?: string | null
           id?: string
+          meta_capi_access_token?: string | null
+          meta_capi_enabled?: boolean
+          meta_ecommerce_events_enabled?: boolean
+          meta_pixel_enabled?: boolean
+          meta_pixel_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1581,6 +1591,11 @@ export type Database = {
           ga4_enabled?: boolean
           ga4_measurement_id?: string | null
           id?: string
+          meta_capi_access_token?: string | null
+          meta_capi_enabled?: boolean
+          meta_ecommerce_events_enabled?: boolean
+          meta_pixel_enabled?: boolean
+          meta_pixel_id?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -1673,6 +1688,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tracking_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          status?: string
+        }
+        Relationships: []
       }
       transaction_categories: {
         Row: {

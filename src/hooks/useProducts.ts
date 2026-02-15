@@ -317,9 +317,11 @@ export const useUpdateProductImage = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, colorId, isMain }: { id: string; colorId?: string | null; isMain?: boolean }) => {
+    mutationFn: async ({ id, colorId, materialId, sizeId, isMain }: { id: string; colorId?: string | null; materialId?: string | null; sizeId?: string | null; isMain?: boolean }) => {
       const updates: Record<string, any> = {};
       if (colorId !== undefined) updates.color_id = colorId;
+      if (materialId !== undefined) updates.material_id = materialId;
+      if (sizeId !== undefined) updates.size_id = sizeId;
       if (isMain !== undefined) updates.is_main = isMain;
       const { error } = await supabase.from("product_images").update(updates).eq("id", id);
       if (error) throw error;

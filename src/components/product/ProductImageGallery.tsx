@@ -3,40 +3,62 @@ import ImageZoom from "./ImageZoom";
 import { Product } from "@/types/product";
 import { Skeleton } from "@/components/ui/skeleton";
 
+interface VariantSelection {
+  colorId?: string | null;
+  materialId?: string | null;
+  sizeId?: string | null;
+}
+
 interface ProductImageGalleryProps {
   product?: Product | null;
   isLoading?: boolean;
   selectedColorId?: string | null;
+  selectedVariant?: VariantSelection | null;
 }
 
-const ProductImageGallery = ({ product, isLoading, selectedColorId }: ProductImageGalleryProps) => {
+const ProductImageGallery = ({ product, isLoading, selectedColorId, selectedVariant }: ProductImageGalleryProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
   const [zoomInitialIndex, setZoomInitialIndex] = useState(0);
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
 
-  // Filter images based on selected color
+  // Filter images based on selected variant attributes (color, material, size)
   const productImages = useMemo(() => {
     if (!product?.images || product.images.length === 0) return ['/placeholder.svg'];
     
     const sorted = [...product.images].sort((a, b) => a.sort_order - b.sort_order);
     
-    if (selectedColorId) {
-      // Show: main images (no color) + images matching selected color
-      const filtered = sorted.filter(
-        img => !img.color_id || img.color_id === selectedColorId
-      );
+    // Determine active filters from either the new selectedVariant or legacy selectedColorId
+    const activeColorId = selectedVariant?.colorId ?? selectedColorId;
+    const activeMaterialId = selectedVariant?.materialId;
+    const activeSizeId = selectedVariant?.sizeId;
+    
+    const hasActiveFilter = activeColorId || activeMaterialId || activeSizeId;
+    
+    if (hasActiveFilter) {
+      const filtered = sorted.filter(img => {
+        // Image has no variant assignment → always show (generic/main image)
+        const isGeneric = !img.color_id && !img.material_id && !img.size_id;
+        if (isGeneric) return true;
+        
+        // Image matches if its assigned attribute matches the selected one
+        if (img.color_id && activeColorId && img.color_id === activeColorId) return true;
+        if (img.material_id && activeMaterialId && img.material_id === activeMaterialId) return true;
+        if (img.size_id && activeSizeId && img.size_id === activeSizeId) return true;
+        
+        return false;
+      });
       if (filtered.length > 0) return filtered.map(img => img.image_url);
     }
     
     return sorted.map(img => img.image_url);
-  }, [product?.images, selectedColorId]);
+  }, [product?.images, selectedColorId, selectedVariant]);
 
-  // Reset image index when color changes
+  // Reset image index when variant selection changes
   useEffect(() => {
     setCurrentImageIndex(0);
-  }, [selectedColorId]);
+  }, [selectedColorId, selectedVariant]);
 
   // YouTube video handling
   const youtubeUrl = product?.youtube_url;

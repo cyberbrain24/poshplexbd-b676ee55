@@ -423,6 +423,48 @@ export type Database = {
         }
         Relationships: []
       }
+      media_metadata: {
+        Row: {
+          alt_text: string | null
+          bucket_id: string
+          created_at: string
+          display_name: string | null
+          file_path: string
+          id: string
+          keywords: string[] | null
+          meta_description: string | null
+          seo_slug: string | null
+          title_attribute: string | null
+          updated_at: string
+        }
+        Insert: {
+          alt_text?: string | null
+          bucket_id: string
+          created_at?: string
+          display_name?: string | null
+          file_path: string
+          id?: string
+          keywords?: string[] | null
+          meta_description?: string | null
+          seo_slug?: string | null
+          title_attribute?: string | null
+          updated_at?: string
+        }
+        Update: {
+          alt_text?: string | null
+          bucket_id?: string
+          created_at?: string
+          display_name?: string | null
+          file_path?: string
+          id?: string
+          keywords?: string[] | null
+          meta_description?: string | null
+          seo_slug?: string | null
+          title_attribute?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string

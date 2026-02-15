@@ -1,20 +1,27 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Eye, EyeOff, Phone, Mail } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import PoshplexHeader from "@/components/header/PoshplexHeader";
 import PoshplexFooter from "@/components/footer/PoshplexFooter";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+/** Detect whether the input looks like an email or a phone number */
+const detectInputType = (value: string): "email" | "phone" => {
+  if (value.includes("@")) return "email";
+  return "phone";
+};
 
 const CustomerAuth = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const [authMethod, setAuthMethod] = useState<"email" | "phone">("phone");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
+  // Single unified identifier for login
+  const [identifier, setIdentifier] = useState("");
+  // Separate fields for signup
+  const [signupPhone, setSignupPhone] = useState("");
+  const [signupEmail, setSignupEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -23,6 +30,9 @@ const CustomerAuth = () => {
   const location = useLocation();
 
   const redirectPath = (location.state as any)?.from || "/my-orders";
+
+  // Auto-detected type for login input
+  const loginInputType = useMemo(() => detectInputType(identifier), [identifier]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -51,10 +61,14 @@ const CustomerAuth = () => {
     setIsLoading(true);
 
     try {
-      const authEmail = authMethod === "phone" ? phoneToEmail(phone) : email;
-      
       if (isLogin) {
-        // Login
+        // Login — auto-detect phone or email from single input
+        const trimmed = identifier.trim();
+        if (!trimmed) throw new Error("Please enter your phone number or email");
+
+        const type = detectInputType(trimmed);
+        const authEmail = type === "phone" ? phoneToEmail(trimmed) : trimmed;
+
         const { error } = await supabase.auth.signInWithPassword({
           email: authEmail,
           password,
@@ -62,10 +76,11 @@ const CustomerAuth = () => {
         if (error) throw error;
         toast.success("Welcome back!");
       } else {
-        // Signup
-        if (!name.trim()) {
-          throw new Error("Please enter your name");
-        }
+        // Signup — phone is required
+        if (!name.trim()) throw new Error("Please enter your name");
+        if (!signupPhone.trim()) throw new Error("Phone number is required");
+
+        const authEmail = phoneToEmail(signupPhone);
 
         const { data, error } = await supabase.auth.signUp({
           email: authEmail,
@@ -74,7 +89,7 @@ const CustomerAuth = () => {
             emailRedirectTo: `${window.location.origin}/`,
             data: {
               name: name.trim(),
-              phone: authMethod === "phone" ? phone : undefined,
+              phone: signupPhone,
             }
           }
         });
@@ -83,16 +98,14 @@ const CustomerAuth = () => {
 
         // Create customer record in CRM and link account
         if (data.user) {
-          const customerPhone = authMethod === "phone" ? phone : "";
+          const customerPhone = signupPhone.trim();
           
           // First create (or find) a customers record
-          const { data: existingCustomer } = customerPhone
-            ? await supabase
-                .from("customers")
-                .select("id")
-                .eq("phone", customerPhone)
-                .maybeSingle()
-            : { data: null };
+          const { data: existingCustomer } = await supabase
+            .from("customers")
+            .select("id")
+            .eq("phone", customerPhone)
+            .maybeSingle();
 
           let customerId: string | null = existingCustomer?.id || null;
 
@@ -101,8 +114,8 @@ const CustomerAuth = () => {
               .from("customers")
               .insert({
                 name: name.trim(),
-                phone: customerPhone || `user-${data.user.id.substring(0, 8)}`,
-                email: authMethod === "email" ? email : null,
+                phone: customerPhone,
+                email: signupEmail.trim() || null,
                 gender: "other" as const,
               })
               .select("id")
@@ -121,8 +134,8 @@ const CustomerAuth = () => {
             .insert({
               auth_user_id: data.user.id,
               customer_id: customerId,
-              phone: authMethod === "phone" ? phone : null,
-              email: authMethod === "email" ? email : null,
+              phone: customerPhone,
+              email: signupEmail.trim() || null,
             });
           
           if (accountError) {
@@ -132,6 +145,7 @@ const CustomerAuth = () => {
 
         toast.success("Account created! You can now login.");
         setIsLogin(true);
+        setIdentifier(signupPhone); // Pre-fill login with phone
       }
     } catch (error: any) {
       if (error.message === "Invalid login credentials") {
@@ -161,64 +175,66 @@ const CustomerAuth = () => {
             </h1>
             <p className="text-sm text-muted-foreground mt-2">
               {isLogin 
-                ? "Sign in to view your orders" 
+                ? "Sign in with your phone number or email" 
                 : "Sign up to track your orders"}
             </p>
           </div>
 
-          {/* Auth Method Toggle */}
-          <Tabs value={authMethod} onValueChange={(v) => setAuthMethod(v as "email" | "phone")} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="phone" className="gap-2">
-                <Phone className="h-4 w-4" />
-                Phone
-              </TabsTrigger>
-              <TabsTrigger value="email" className="gap-2">
-                <Mail className="h-4 w-4" />
-                Email
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-
           <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
+            {isLogin ? (
+              /* ── LOGIN: Single auto-detecting input ── */
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="identifier">Phone or Email</Label>
                 <Input
-                  id="name"
+                  id="identifier"
                   type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Your name"
-                  required={!isLogin}
-                />
-              </div>
-            )}
-
-            {authMethod === "phone" ? (
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="01XXXXXXXXX"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  placeholder="01XXXXXXXXX or you@example.com"
                   required
                 />
+                {identifier && (
+                  <p className="text-xs text-muted-foreground">
+                    Detected: {loginInputType === "email" ? "Email" : "Phone number"}
+                  </p>
+                )}
               </div>
             ) : (
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  required
-                />
-              </div>
+              /* ── SIGNUP: Name + Phone (required) + Email (optional) ── */
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name *</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Your name"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signupPhone">Phone Number *</Label>
+                  <Input
+                    id="signupPhone"
+                    type="tel"
+                    value={signupPhone}
+                    onChange={(e) => setSignupPhone(e.target.value)}
+                    placeholder="01XXXXXXXXX"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signupEmail">Email (optional)</Label>
+                  <Input
+                    id="signupEmail"
+                    type="email"
+                    value={signupEmail}
+                    onChange={(e) => setSignupEmail(e.target.value)}
+                    placeholder="you@example.com"
+                  />
+                </div>
+              </>
             )}
 
             <div className="space-y-2">

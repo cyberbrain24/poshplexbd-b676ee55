@@ -12,6 +12,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import AdminLayout from "./components/admin/AdminLayout";
 import MobileFooterNav from "./components/navigation/MobileFooterNav";
 import GA4Script from "./components/GA4Script";
+import MetaPixelScript from "./components/MetaPixelScript";
 
 // Critical pages - direct imports (above the fold / high traffic)
 import Index from "./pages/Index";
@@ -62,6 +63,9 @@ const AdminReviews = lazy(() => import("./pages/admin/AdminReviews"));
 const AdminMedia = lazy(() => import("./pages/admin/AdminMedia"));
 const AdminPromoCodes = lazy(() => import("./pages/admin/AdminPromoCodes"));
 const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
+const AdminMetaPixel = lazy(() => import("./pages/admin/AdminMetaPixel"));
+const AdminTrackingDashboard = lazy(() => import("./pages/admin/AdminTrackingDashboard"));
+const AdminEventMonitor = lazy(() => import("./pages/admin/AdminEventMonitor"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -98,6 +102,7 @@ const App = () => (
             }}
           >
             <GA4Script />
+            <MetaPixelScript />
             <ScrollToTop />
             <Suspense fallback={<PageLoader />}>
               <Routes>
@@ -149,6 +154,9 @@ const App = () => (
                   <Route path="payment-methods" element={<AdminPaymentMethods />} />
                   <Route path="promo-codes" element={<AdminPromoCodes />} />
                   <Route path="analytics" element={<AdminAnalytics />} />
+                  <Route path="meta-pixel" element={<AdminMetaPixel />} />
+                  <Route path="tracking-dashboard" element={<AdminTrackingDashboard />} />
+                  <Route path="event-monitor" element={<AdminEventMonitor />} />
                   <Route path="seed-data" element={<AdminSeedData />} />
                 </Route>
                 

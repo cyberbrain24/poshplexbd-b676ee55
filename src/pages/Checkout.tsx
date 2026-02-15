@@ -17,6 +17,7 @@ import { useDivisions, useThanas } from "@/hooks/useLocationData";
 import { getShippingForLocation, ShippingConfig, SHIPPING_OUTSIDE_DHAKA } from "@/config/shippingConfig";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { trackInitiateCheckout, trackAddPaymentInfo, trackPurchase } from "@/lib/meta-pixel";
 import { formatCurrency } from "@/lib/currency";
 import { useCustomerAddresses, useCreateAddress, type CustomerAddress } from "@/hooks/useCustomerAddresses";
 
@@ -218,6 +219,17 @@ const Checkout = () => {
     }
   }, [paymentMethods, selectedPaymentMethodId]);
 
+  // Track InitiateCheckout on load
+  useEffect(() => {
+    if (cartItems.length > 0) {
+      trackInitiateCheckout({
+        ids: cartItems.map(i => i.productId || i.id),
+        value: cartTotal,
+        numItems: cartItems.reduce((s, i) => s + i.quantity, 0),
+      });
+    }
+  }, []); // intentionally fire once on mount
+
   const subtotal = cartTotal;
   const total = subtotal - promoDiscount + shippingCost;
   
@@ -407,6 +419,12 @@ const Checkout = () => {
 
     setIsProcessing(true);
 
+    // Track AddPaymentInfo
+    trackAddPaymentInfo(
+      selectedPaymentMethod?.name || "unknown",
+      total,
+    );
+
     try {
       // Step 1: Find or create customer (silently - don't block order if it fails)
       let customerId: string | null = null;
@@ -447,6 +465,18 @@ const Checkout = () => {
           customerNotes: customerDetails.notes || undefined,
         },
         cartItems,
+      });
+
+      // Track Purchase event (with CAPI if enabled)
+      trackPurchase({
+        orderId: result.orderId || "",
+        orderNumber: result.orderNumber,
+        value: total,
+        items: cartItems.map(i => ({
+          id: i.productId || i.id,
+          quantity: i.quantity,
+          item_price: i.price,
+        })),
       });
 
       // Step 3: Store customer session for "auto-login"

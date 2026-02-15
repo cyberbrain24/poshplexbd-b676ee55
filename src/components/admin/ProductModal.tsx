@@ -205,6 +205,8 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
             sort_order: prev.length,
             is_main: prev.length === 0,
             color_id: null,
+            material_id: null,
+            size_id: null,
             created_at: new Date().toISOString(),
           }]);
         }
@@ -549,56 +551,144 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                 </div>
               </div>
 
-              {/* Color-Specific Images */}
+              {/* Variation-Specific Images */}
               <div className="space-y-4 pt-6 border-t border-border">
-                <Label>Color-Specific Images</Label>
+                <Label>Variation-Specific Images</Label>
                 <p className="text-sm text-muted-foreground">
-                  Assign images to specific colors for variant-based display
+                  Assign images to specific variation values (Color, Material, or Size) for variant-based display
                 </p>
                 {images.length > 0 && (
-                  <div className="space-y-2">
-                    {images.map((image) => (
-                      <div key={image.id} className="flex items-center gap-4 p-2 border border-border">
-                        <img
-                          src={image.image_url}
-                          alt=""
-                          className="w-12 h-12 object-cover"
-                        />
-                        <Select
-                          value={image.color_id || "none"}
-                          onValueChange={(value) => {
-                            const newColorId = value === "none" ? null : value;
-                            setImages(prev => prev.map(img =>
-                              img.id === image.id
-                                ? { ...img, color_id: newColorId }
-                                : img
-                            ));
-                            // Persist for existing images
-                            if (product && !image.id.startsWith("temp-")) {
-                              updateImage.mutate({ id: image.id, colorId: newColorId });
-                            }
-                          }}
-                        >
-                          <SelectTrigger className="w-48">
-                            <SelectValue placeholder="Assign to color" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">All Colors</SelectItem>
-                            {colors.map((color) => (
-                              <SelectItem key={color.id} value={color.id}>
-                                <div className="flex items-center gap-2">
-                                  <div
-                                    className="w-4 h-4 border border-border"
-                                    style={{ backgroundColor: color.hex_code }}
-                                  />
-                                  {color.name}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    ))}
+                  <div className="space-y-3">
+                    {images.map((image) => {
+                      // Determine current assignment type
+                      const currentType = image.color_id ? "color" : image.material_id ? "material" : image.size_id ? "size" : "none";
+                      const currentValue = image.color_id || image.material_id || image.size_id || "none";
+
+                      return (
+                        <div key={image.id} className="flex items-center gap-3 p-2 border border-border">
+                          <img
+                            src={image.image_url}
+                            alt=""
+                            className="w-12 h-12 object-cover flex-shrink-0"
+                          />
+                          {/* Variation Type Selector */}
+                          <Select
+                            value={currentType}
+                            onValueChange={(type) => {
+                              // Clear all variant IDs when type changes
+                              setImages(prev => prev.map(img =>
+                                img.id === image.id
+                                  ? { ...img, color_id: null, material_id: null, size_id: null }
+                                  : img
+                              ));
+                              if (product && !image.id.startsWith("temp-")) {
+                                updateImage.mutate({ id: image.id, colorId: null, materialId: null, sizeId: null });
+                              }
+                            }}
+                          >
+                            <SelectTrigger className="w-32">
+                              <SelectValue placeholder="Type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">All</SelectItem>
+                              <SelectItem value="color">Color</SelectItem>
+                              <SelectItem value="material">Material</SelectItem>
+                              <SelectItem value="size">Size</SelectItem>
+                            </SelectContent>
+                          </Select>
+
+                          {/* Variation Value Selector */}
+                          {currentType === "color" && (
+                            <Select
+                              value={currentValue}
+                              onValueChange={(value) => {
+                                const newId = value === "none" ? null : value;
+                                setImages(prev => prev.map(img =>
+                                  img.id === image.id
+                                    ? { ...img, color_id: newId, material_id: null, size_id: null }
+                                    : img
+                                ));
+                                if (product && !image.id.startsWith("temp-")) {
+                                  updateImage.mutate({ id: image.id, colorId: newId, materialId: null, sizeId: null });
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="w-44">
+                                <SelectValue placeholder="Select color" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">All</SelectItem>
+                                {colors.map((color) => (
+                                  <SelectItem key={color.id} value={color.id}>
+                                    <div className="flex items-center gap-2">
+                                      <div
+                                        className="w-4 h-4 border border-border"
+                                        style={{ backgroundColor: color.hex_code }}
+                                      />
+                                      {color.name}
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+
+                          {currentType === "material" && (
+                            <Select
+                              value={currentValue}
+                              onValueChange={(value) => {
+                                const newId = value === "none" ? null : value;
+                                setImages(prev => prev.map(img =>
+                                  img.id === image.id
+                                    ? { ...img, color_id: null, material_id: newId, size_id: null }
+                                    : img
+                                ));
+                                if (product && !image.id.startsWith("temp-")) {
+                                  updateImage.mutate({ id: image.id, colorId: null, materialId: newId, sizeId: null });
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="w-44">
+                                <SelectValue placeholder="Select material" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">All</SelectItem>
+                                {materials.map((mat) => (
+                                  <SelectItem key={mat.id} value={mat.id}>{mat.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+
+                          {currentType === "size" && (
+                            <Select
+                              value={currentValue}
+                              onValueChange={(value) => {
+                                const newId = value === "none" ? null : value;
+                                setImages(prev => prev.map(img =>
+                                  img.id === image.id
+                                    ? { ...img, color_id: null, material_id: null, size_id: newId }
+                                    : img
+                                ));
+                                if (product && !image.id.startsWith("temp-")) {
+                                  updateImage.mutate({ id: image.id, colorId: null, materialId: null, sizeId: newId });
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="w-44">
+                                <SelectValue placeholder="Select size" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">All</SelectItem>
+                                {sizes.map((size) => (
+                                  <SelectItem key={size.id} value={size.id}>{size.label}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>

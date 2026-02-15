@@ -23,9 +23,14 @@ const ProductDetail = () => {
   const { productSlug } = useParams();
   const { data: product, isLoading } = useProduct(productSlug);
   const [selectedColorId, setSelectedColorId] = useState<string | null>(null);
+  const [selectedVariantAttrs, setSelectedVariantAttrs] = useState<{ colorId: string | null; materialId: string | null; sizeId: string | null } | null>(null);
 
   const handleColorChange = useCallback((colorId: string | null) => {
     setSelectedColorId(colorId);
+  }, []);
+
+  const handleVariantAttrChange = useCallback((attrs: { colorId: string | null; materialId: string | null; sizeId: string | null } | null) => {
+    setSelectedVariantAttrs(attrs);
   }, []);
 
   const productName = product?.name || "Product";
@@ -79,6 +84,7 @@ const ProductDetail = () => {
               product={product} 
               isLoading={isLoading} 
               selectedColorId={selectedColorId}
+              selectedVariant={selectedVariantAttrs}
             />
             
             <div className="lg:pl-12 mt-4 lg:mt-0 lg:sticky lg:top-6 lg:h-fit">
@@ -86,6 +92,7 @@ const ProductDetail = () => {
                 product={product} 
                 isLoading={isLoading} 
                 onColorChange={handleColorChange}
+                onVariantChange={handleVariantAttrChange}
               />
               <ProductDescription product={product} />
             </div>

@@ -956,7 +956,9 @@ export type Database = {
           id: string
           image_url: string
           is_main: boolean
+          material_id: string | null
           product_id: string
+          size_id: string | null
           sort_order: number
         }
         Insert: {
@@ -966,7 +968,9 @@ export type Database = {
           id?: string
           image_url: string
           is_main?: boolean
+          material_id?: string | null
           product_id: string
+          size_id?: string | null
           sort_order?: number
         }
         Update: {
@@ -976,7 +980,9 @@ export type Database = {
           id?: string
           image_url?: string
           is_main?: boolean
+          material_id?: string | null
           product_id?: string
+          size_id?: string | null
           sort_order?: number
         }
         Relationships: [
@@ -988,10 +994,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "product_images_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "product_images_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_images_size_id_fkey"
+            columns: ["size_id"]
+            isOneToOne: false
+            referencedRelation: "sizes"
             referencedColumns: ["id"]
           },
         ]

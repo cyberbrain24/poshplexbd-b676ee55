@@ -13,7 +13,7 @@ import {
 const SITE_NAME = "POSHPLEX";
 const SITE_TAGLINE = "Premium Fashion & Lifestyle";
 const FOOTER_COPYRIGHT = `© ${new Date().getFullYear()} Poshplex. All rights reserved.`;
-const FOOTER_EMAIL = "hello@poshplex.com";
+const FOOTER_EMAIL = "business@poshplexbd.com";
 
 const FOOTER_COLUMNS = [
   {
@@ -143,20 +143,14 @@ const PoshplexFooter = () => {
               {FOOTER_EMAIL}
             </a>
             <p>{FOOTER_COPYRIGHT}</p>
-            <div className="flex gap-6">
-              <Link
-                to="/privacy-policy"
-                className="hover:text-background transition-colors duration-200"
-              >
-                Privacy Policy
-              </Link>
-              <Link
-                to="/terms-of-service"
-                className="hover:text-background transition-colors duration-200"
-              >
-                Terms of Service
-              </Link>
-            </div>
+            <a
+              href="https://cyberbrain.com.bd"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-background transition-colors duration-200"
+            >
+              Design & Developed by CyberBrain.com.bd
+            </a>
           </div>
         </div>
       </div>
@@ -235,20 +229,14 @@ const PoshplexFooter = () => {
             {FOOTER_EMAIL}
           </a>
           <p className="text-[11px] text-background/35">{FOOTER_COPYRIGHT}</p>
-          <div className="flex justify-center gap-5">
-            <Link
-              to="/privacy-policy"
-              className="text-[11px] text-background/35 hover:text-background transition-colors duration-200"
-            >
-              Privacy Policy
-            </Link>
-            <Link
-              to="/terms-of-service"
-              className="text-[11px] text-background/35 hover:text-background transition-colors duration-200"
-            >
-              Terms of Service
-            </Link>
-          </div>
+          <a
+            href="https://cyberbrain.com.bd"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[11px] text-background/35 hover:text-background transition-colors duration-200"
+          >
+            Design & Developed by CyberBrain.com.bd
+          </a>
         </div>
       </div>
     </footer>

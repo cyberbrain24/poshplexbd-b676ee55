@@ -52,7 +52,7 @@ import AdminThanas from "./pages/admin/AdminThanas";
 import AdminCustomerTypes from "./pages/admin/AdminCustomerTypes";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminPaymentMethods from "./pages/admin/AdminPaymentMethods";
-import AdminSEO from "./pages/admin/AdminSEO";
+
 import AdminSeedData from "./pages/admin/AdminSeedData";
 import AdminReviews from "./pages/admin/AdminReviews";
 import AdminMedia from "./pages/admin/AdminMedia";
@@ -116,7 +116,7 @@ const App = () => (
                 <Route path="products" element={<AdminProducts />} />
                 <Route path="reviews" element={<AdminReviews />} />
                 <Route path="media" element={<AdminMedia />} />
-                <Route path="seo" element={<AdminSEO />} />
+                
                 
                 {/* Product Edits */}
                 <Route path="colors" element={<AdminColors />} />

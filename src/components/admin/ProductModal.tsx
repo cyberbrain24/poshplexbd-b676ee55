@@ -13,7 +13,7 @@ import { useCreateProduct, useUpdateProduct, useAddProductImage, useDeleteProduc
 import { Product, ProductFormData, VariantFormData, ProductImage } from "@/types/product";
 import { toast } from "sonner";
 import VariantBuilder from "@/components/admin/VariantBuilder";
-import MediaLibraryPickerModal from "@/components/admin/MediaLibraryPickerModal";
+import ProductImagePickerModal from "@/components/admin/ProductImagePickerModal";
 
 interface ProductModalProps {
   isOpen: boolean;
@@ -220,12 +220,23 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
     }
   };
 
+  // Get set of image URLs assigned to variants for deletion protection
+  const variantAssignedUrls = useMemo(
+    () => new Set(variants.map(v => v.image_url).filter(Boolean) as string[]),
+    [variants]
+  );
+
   const handleDeleteImage = async (imageId: string) => {
+    const img = images.find(i => i.id === imageId);
+    if (img && variantAssignedUrls.has(img.image_url)) {
+      toast.error("This image is currently assigned to a variant. Please remove it from the variant before deleting.");
+      return;
+    }
     if (product && !imageId.startsWith("temp-")) {
       await deleteImage.mutateAsync(imageId);
-      setImages(prev => prev.filter(img => img.id !== imageId));
+      setImages(prev => prev.filter(i => i.id !== imageId));
     } else {
-      setImages(prev => prev.filter(img => img.id !== imageId));
+      setImages(prev => prev.filter(i => i.id !== imageId));
     }
   };
 
@@ -790,8 +801,8 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
         </div>
       </div>
 
-      {/* Media Library Picker for Variant Images */}
-      <MediaLibraryPickerModal
+      {/* Product Image Picker for Variant Images */}
+      <ProductImagePickerModal
         isOpen={mediaPickerIndex !== null}
         onClose={() => setMediaPickerIndex(null)}
         onSelect={(url) => {
@@ -799,6 +810,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
             updateVariantField(mediaPickerIndex, "image_url", url);
           }
         }}
+        images={images}
       />
     </div>
   );

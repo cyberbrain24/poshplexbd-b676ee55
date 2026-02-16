@@ -1,121 +1,35 @@
-import { ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
 import { useSiteBranding } from "@/hooks/useSiteBranding";
-import heroImage from "@/assets/hero-urban.jpg";
 
 const HeroSection = () => {
   const { data: branding } = useSiteBranding();
 
-  // If hero is explicitly disabled via admin, render nothing
-  if (branding && !branding.hero_enabled) {
-    return null;
-  }
+  if (branding && !branding.hero_enabled) return null;
 
   const desktopBanner = branding?.desktop_hero_url;
   const mobileBanner = branding?.mobile_hero_url;
-  const hasCustomBanner = desktopBanner || mobileBanner;
 
-  // If custom banners are uploaded, show full-width banner mode
-  if (hasCustomBanner) {
-    return (
-      <section className="w-full">
-        {/* Desktop banner */}
-        {desktopBanner && (
-          <div className="hidden md:block w-full">
-            <img
-              src={desktopBanner}
-              alt="Hero banner"
-              loading="eager"
-              fetchPriority="high"
-              className="w-full h-auto object-cover"
-            />
-          </div>
-        )}
-        {/* Mobile banner */}
-        {mobileBanner && (
-          <div className="block md:hidden w-full">
-            <img
-              src={mobileBanner}
-              alt="Hero banner mobile"
-              loading="eager"
-              fetchPriority="high"
-              className="w-full h-auto object-cover"
-            />
-          </div>
-        )}
-        {/* Fallback: if only one banner exists, show it on both */}
-        {desktopBanner && !mobileBanner && (
-          <div className="block md:hidden w-full">
-            <img
-              src={desktopBanner}
-              alt="Hero banner"
-              loading="eager"
-              fetchPriority="high"
-              className="w-full h-auto object-cover"
-            />
-          </div>
-        )}
-        {!desktopBanner && mobileBanner && (
-          <div className="hidden md:block w-full">
-            <img
-              src={mobileBanner}
-              alt="Hero banner"
-              loading="eager"
-              fetchPriority="high"
-              className="w-full h-auto object-cover"
-            />
-          </div>
-        )}
-      </section>
-    );
-  }
+  if (!desktopBanner && !mobileBanner) return null;
 
-  // Default fallback hero layout
   return (
     <section className="w-full">
-      <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[70vh]">
-        {/* Left Content */}
-        <div className="flex flex-col justify-center px-6 lg:px-16 py-16 lg:py-0">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-foreground leading-[1.1] mb-6">
-            SHOP THE LATEST<br />
-            STREETCULTURE<br />
-            & APPAREL.
-          </h1>
-          
-          <p className="text-muted-foreground text-base md:text-lg mb-8 max-w-md">
-            Free delivery inside Dhaka. Cash on Delivery available nationwide.
-          </p>
-          
-          <div className="flex flex-wrap gap-4">
-            <Link 
-              to="/category/new-drops"
-              className="inline-flex items-center gap-3 bg-foreground text-background px-8 py-4 text-sm font-medium tracking-wider hover:bg-primary-hover transition-colors"
-            >
-              SHOP NOW
-              <ArrowRight size={18} strokeWidth={1.5} />
-            </Link>
-            
-            <Link 
-              to="/category/sale"
-              className="inline-flex items-center gap-3 bg-background text-foreground border border-foreground px-8 py-4 text-sm font-medium tracking-wider hover:bg-foreground hover:text-background transition-colors"
-            >
-              VIEW OFFERS
-            </Link>
-          </div>
-        </div>
-
-        {/* Right Image */}
-        <div className="relative h-[50vh] lg:h-auto">
-          <img 
-            src={heroImage}
-            alt="Urban architecture"
-            loading="eager"
-            decoding="async"
-            fetchPriority="high"
-            className="w-full h-full object-cover grayscale-filter"
-          />
-        </div>
-      </div>
+      {desktopBanner && (
+        <img
+          src={desktopBanner}
+          alt="Hero banner"
+          loading="eager"
+          fetchPriority="high"
+          className={`w-full h-auto block ${mobileBanner ? 'hidden md:block' : ''}`}
+        />
+      )}
+      {mobileBanner && (
+        <img
+          src={mobileBanner}
+          alt="Hero banner"
+          loading="eager"
+          fetchPriority="high"
+          className={`w-full h-auto block ${desktopBanner ? 'md:hidden' : ''}`}
+        />
+      )}
     </section>
   );
 };

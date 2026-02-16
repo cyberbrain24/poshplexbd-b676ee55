@@ -18,11 +18,13 @@ import { getShippingForLocation, ShippingConfig, SHIPPING_OUTSIDE_DHAKA } from "
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/currency";
+import { useCheckoutPrefetch } from "@/hooks/useStorefrontPrefetch";
 
 const DEFAULT_PASSWORD = "poshplex";
 
 const Checkout = () => {
   const navigate = useNavigate();
+  useCheckoutPrefetch();
   const { cartItems, cartTotal, updateQuantity, removeFromCart, clearCart } = useCart();
   const { data: paymentMethods, isLoading: loadingPaymentMethods } = usePaymentMethods(true);
   const { data: divisions } = useDivisions();

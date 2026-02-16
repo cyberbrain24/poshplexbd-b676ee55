@@ -150,6 +150,15 @@
   .grayscale-filter {
     filter: grayscale(100%) contrast(1.1);
   }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* Announcement Bar - Pure CSS edge-to-edge animation */

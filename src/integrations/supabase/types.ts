@@ -189,6 +189,70 @@ export type Database = {
           },
         ]
       }
+      customer_addresses: {
+        Row: {
+          address: string
+          created_at: string
+          customer_id: string
+          division_id: string | null
+          id: string
+          is_default_billing: boolean
+          is_default_shipping: boolean
+          label: string
+          postal_code: string | null
+          thana_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          customer_id: string
+          division_id?: string | null
+          id?: string
+          is_default_billing?: boolean
+          is_default_shipping?: boolean
+          label?: string
+          postal_code?: string | null
+          thana_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          customer_id?: string
+          division_id?: string | null
+          id?: string
+          is_default_billing?: boolean
+          is_default_shipping?: boolean
+          label?: string
+          postal_code?: string | null
+          thana_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_addresses_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_addresses_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_addresses_thana_id_fkey"
+            columns: ["thana_id"]
+            isOneToOne: false
+            referencedRelation: "thanas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_risk_profiles: {
         Row: {
           active_cod_orders: number
@@ -892,7 +956,9 @@ export type Database = {
           id: string
           image_url: string
           is_main: boolean
+          material_id: string | null
           product_id: string
+          size_id: string | null
           sort_order: number
         }
         Insert: {
@@ -902,7 +968,9 @@ export type Database = {
           id?: string
           image_url: string
           is_main?: boolean
+          material_id?: string | null
           product_id: string
+          size_id?: string | null
           sort_order?: number
         }
         Update: {
@@ -912,7 +980,9 @@ export type Database = {
           id?: string
           image_url?: string
           is_main?: boolean
+          material_id?: string | null
           product_id?: string
+          size_id?: string | null
           sort_order?: number
         }
         Relationships: [
@@ -924,10 +994,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "product_images_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "product_images_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_images_size_id_fkey"
+            columns: ["size_id"]
+            isOneToOne: false
+            referencedRelation: "sizes"
             referencedColumns: ["id"]
           },
         ]
@@ -938,12 +1022,14 @@ export type Database = {
           created_at: string
           id: string
           is_active: boolean
+          low_stock_threshold: number
           material_id: string | null
           product_id: string
           purchase_price: number
           selling_price: number
           size_id: string | null
           sku: string
+          stock_quantity: number
           updated_at: string
         }
         Insert: {
@@ -951,12 +1037,14 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          low_stock_threshold?: number
           material_id?: string | null
           product_id: string
           purchase_price?: number
           selling_price?: number
           size_id?: string | null
           sku: string
+          stock_quantity?: number
           updated_at?: string
         }
         Update: {
@@ -964,12 +1052,14 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          low_stock_threshold?: number
           material_id?: string | null
           product_id?: string
           purchase_price?: number
           selling_price?: number
           size_id?: string | null
           sku?: string
+          stock_quantity?: number
           updated_at?: string
         }
         Relationships: [
@@ -1491,6 +1581,45 @@ export type Database = {
         }
         Relationships: []
       }
+      site_settings: {
+        Row: {
+          created_at: string
+          ga4_enabled: boolean
+          ga4_measurement_id: string | null
+          id: string
+          meta_capi_access_token: string | null
+          meta_capi_enabled: boolean
+          meta_ecommerce_events_enabled: boolean
+          meta_pixel_enabled: boolean
+          meta_pixel_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ga4_enabled?: boolean
+          ga4_measurement_id?: string | null
+          id?: string
+          meta_capi_access_token?: string | null
+          meta_capi_enabled?: boolean
+          meta_ecommerce_events_enabled?: boolean
+          meta_pixel_enabled?: boolean
+          meta_pixel_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ga4_enabled?: boolean
+          ga4_measurement_id?: string | null
+          id?: string
+          meta_capi_access_token?: string | null
+          meta_capi_enabled?: boolean
+          meta_ecommerce_events_enabled?: boolean
+          meta_pixel_enabled?: boolean
+          meta_pixel_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       size_guides: {
         Row: {
           content: string
@@ -1579,6 +1708,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tracking_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          status?: string
+        }
+        Relationships: []
       }
       transaction_categories: {
         Row: {
@@ -1722,6 +1875,18 @@ export type Database = {
         Returns: undefined
       }
       is_admin: { Args: never; Returns: boolean }
+      upsert_checkout_customer: {
+        Args: {
+          p_address?: string
+          p_division_id?: string
+          p_email?: string
+          p_gender?: string
+          p_name: string
+          p_phone: string
+          p_thana_id?: string
+        }
+        Returns: string
+      }
       upsert_seo_path: {
         Args: {
           p_entity_id?: string

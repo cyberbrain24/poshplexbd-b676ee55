@@ -1527,63 +1527,6 @@ export type Database = {
         }
         Relationships: []
       }
-      seo_metadata: {
-        Row: {
-          canonical_url: string | null
-          change_frequency: string | null
-          created_at: string
-          entity_id: string | null
-          entity_type: string | null
-          focus_keywords: string[] | null
-          id: string
-          is_dynamic: boolean
-          json_ld_type: string | null
-          meta_description: string | null
-          meta_title: string | null
-          no_index: boolean
-          og_image: string | null
-          page_path: string
-          priority: number | null
-          updated_at: string
-        }
-        Insert: {
-          canonical_url?: string | null
-          change_frequency?: string | null
-          created_at?: string
-          entity_id?: string | null
-          entity_type?: string | null
-          focus_keywords?: string[] | null
-          id?: string
-          is_dynamic?: boolean
-          json_ld_type?: string | null
-          meta_description?: string | null
-          meta_title?: string | null
-          no_index?: boolean
-          og_image?: string | null
-          page_path: string
-          priority?: number | null
-          updated_at?: string
-        }
-        Update: {
-          canonical_url?: string | null
-          change_frequency?: string | null
-          created_at?: string
-          entity_id?: string | null
-          entity_type?: string | null
-          focus_keywords?: string[] | null
-          id?: string
-          is_dynamic?: boolean
-          json_ld_type?: string | null
-          meta_description?: string | null
-          meta_title?: string | null
-          no_index?: boolean
-          og_image?: string | null
-          page_path?: string
-          priority?: number | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       site_branding: {
         Row: {
           created_at: string
@@ -1923,16 +1866,6 @@ export type Database = {
           p_name: string
           p_phone: string
           p_thana_id?: string
-        }
-        Returns: string
-      }
-      upsert_seo_path: {
-        Args: {
-          p_entity_id?: string
-          p_entity_type?: string
-          p_is_dynamic?: boolean
-          p_json_ld_type?: string
-          p_page_path: string
         }
         Returns: string
       }

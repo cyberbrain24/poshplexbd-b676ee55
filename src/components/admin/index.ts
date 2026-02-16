@@ -45,13 +45,10 @@ export { default as PaymentRecordModal } from "./PaymentRecordModal";
 export { default as ProductModal } from "./ProductModal";
 export { default as PromoUsageModal } from "./PromoUsageModal";
 export { default as PromoUsageHistoryModal } from "./PromoUsageHistoryModal";
-export { default as SEOPathModal } from "./SEOPathModal";
+
 export { default as ThanaModal } from "./ThanaModal";
 export { default as TransactionModal } from "./TransactionModal";
 export { default as TransferModal } from "./TransferModal";
-
-// SEO components
-export { default as SeoPreviewCard } from "./SeoPreviewCard";
 
 // AI components
 export { default as AiGenerateButton } from "./AiGenerateButton";

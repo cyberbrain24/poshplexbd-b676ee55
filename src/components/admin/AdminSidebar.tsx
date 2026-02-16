@@ -23,7 +23,6 @@ import {
   Crown,
   ShoppingCart,
   ExternalLink,
-  Globe,
   Database,
   RefreshCw,
   LucideIcon,
@@ -291,9 +290,6 @@ const AdminSidebar = () => {
 
         {/* Site Settings */}
         {renderNavLink("/admin/site-settings", Settings, "Site Settings")}
-
-        {/* SEO Manager */}
-        {renderNavLink("/admin/seo", Globe, "SEO Manager")}
 
         {/* Seed Data */}
         {renderNavLink("/admin/seed-data", Database, "Seed Data")}

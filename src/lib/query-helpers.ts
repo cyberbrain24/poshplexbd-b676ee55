@@ -83,12 +83,6 @@ export const QUERY_KEYS = {
     steadfastTrackInvoice: (invoice: string) => ["steadfast-track-invoice", invoice] as const,
   },
   
-  // SEO domain
-  seo: {
-    all: ["seo"] as const,
-    paths: ["seo-paths"] as const,
-    path: (path: string) => ["seo-path", path] as const,
-  },
 } as const;
 
 /**

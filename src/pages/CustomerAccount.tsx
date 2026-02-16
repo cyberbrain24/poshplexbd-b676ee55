@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { User, Package, LogOut, Key, Eye, EyeOff, Crown, MessageSquare, Camera, Pencil, ShoppingBag, Hash, Info } from "lucide-react";
+import { User, Package, LogOut, Key, Eye, EyeOff, Crown, MessageSquare, Camera, Pencil, ShoppingBag, Hash, Info, CalendarIcon } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import PoshplexHeader from "@/components/header/PoshplexHeader";
 import PoshplexFooter from "@/components/footer/PoshplexFooter";
 import MyReviews from "@/components/account/MyReviews";
@@ -26,6 +29,7 @@ interface CustomerAccountData {
     email: string | null;
     address: string | null;
     gender: string;
+    birthdate: string | null;
     profile_image_url: string | null;
     division_id: string | null;
     thana_id: string | null;
@@ -70,7 +74,7 @@ const CustomerAccount = () => {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [editForm, setEditForm] = useState({
     name: "", email: "", phone: "", address: "",
-    gender: "", division_id: "", thana_id: "", postal_code: "",
+    gender: "", division_id: "", thana_id: "", postal_code: "", birthdate: "",
   });
   const [divisions, setDivisions] = useState<Division[]>([]);
   const [thanas, setThanas] = useState<Thana[]>([]);
@@ -125,7 +129,7 @@ const CustomerAccount = () => {
       if (data?.customer_id) {
         const { data: customerData } = await supabase
           .from("customers")
-          .select("name, phone, email, address, gender, profile_image_url, division_id, thana_id, postal_code, customer_type_id")
+          .select("name, phone, email, address, gender, birthdate, profile_image_url, division_id, thana_id, postal_code, customer_type_id")
           .eq("id", data.customer_id)
           .maybeSingle();
 
@@ -169,6 +173,7 @@ const CustomerAccount = () => {
             division_id: customerData.division_id || "",
             thana_id: customerData.thana_id || "",
             postal_code: customerData.postal_code || "",
+            birthdate: customerData.birthdate || "",
           });
         }
 
@@ -270,6 +275,7 @@ const CustomerAccount = () => {
           phone: editForm.phone,
           address: editForm.address || null,
           gender: editForm.gender,
+          birthdate: editForm.birthdate || null,
           division_id: editForm.division_id || null,
           thana_id: editForm.thana_id || null,
           postal_code: editForm.postal_code || null,
@@ -298,6 +304,7 @@ const CustomerAccount = () => {
           phone: editForm.phone,
           address: editForm.address || null,
           gender: editForm.gender,
+          birthdate: editForm.birthdate || null,
           division_id: editForm.division_id || null,
           thana_id: editForm.thana_id || null,
           postal_code: editForm.postal_code || null,
@@ -357,7 +364,7 @@ const CustomerAccount = () => {
                 )}
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               {/* Profile Image */}
               <div className="flex items-center gap-4">
                 <div className="relative">
@@ -382,8 +389,8 @@ const CustomerAccount = () => {
               </div>
 
               {isEditingProfile ? (
-                <div className="space-y-3 pt-2">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-2 pt-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
                       <Label className="text-sm">Name *</Label>
                       <Input value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} className="mt-1" />
@@ -433,6 +440,33 @@ const CustomerAccount = () => {
                       <Label className="text-sm">Postal Code *</Label>
                       <Input value={editForm.postal_code} onChange={e => setEditForm(f => ({ ...f, postal_code: e.target.value }))} className="mt-1" placeholder="e.g. 1205" />
                     </div>
+                    <div>
+                      <Label className="text-sm">Date of Birth</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full mt-1 justify-start text-left font-normal",
+                              !editForm.birthdate && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {editForm.birthdate ? format(new Date(editForm.birthdate), "PPP") : "Pick a date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={editForm.birthdate ? new Date(editForm.birthdate) : undefined}
+                            onSelect={(date) => setEditForm(f => ({ ...f, birthdate: date ? format(date, "yyyy-MM-dd") : "" }))}
+                            disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                            initialFocus
+                            className={cn("p-3 pointer-events-auto")}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <Button onClick={handleSaveProfile} disabled={isUpdating} size="sm">
@@ -442,7 +476,7 @@ const CustomerAccount = () => {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <Label className="text-muted-foreground text-sm">Name</Label>
                     <p className="font-medium">{displayName}</p>
@@ -471,9 +505,13 @@ const CustomerAccount = () => {
                     <Label className="text-muted-foreground text-sm">Thana/Upazila</Label>
                     <p className="font-medium">{accountData?.customer?.thana?.name || "Not set"}</p>
                   </div>
-                  <div>
+                   <div>
                     <Label className="text-muted-foreground text-sm">Postal Code</Label>
                     <p className="font-medium">{accountData?.customer?.postal_code || "Not set"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-sm">Date of Birth</Label>
+                    <p className="font-medium">{accountData?.customer?.birthdate ? format(new Date(accountData.customer.birthdate), "PPP") : "Not set"}</p>
                   </div>
                 </div>
               )}

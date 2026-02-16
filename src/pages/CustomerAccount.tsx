@@ -345,16 +345,16 @@ const CustomerAccount = () => {
     <div className="min-h-screen bg-background flex flex-col">
       <PoshplexHeader />
 
-      <div className="flex-1 px-6 py-12 max-w-2xl mx-auto w-full">
-        <h1 className="text-2xl font-medium tracking-tight mb-8">My Account</h1>
+      <div className="flex-1 px-4 py-6 max-w-2xl mx-auto w-full">
+        <h1 className="text-xl font-medium tracking-tight mb-4">My Account</h1>
 
-        <div className="space-y-6">
+        <div className="space-y-3">
           {/* Profile Card */}
           <Card>
-            <CardHeader className="pb-4">
+            <CardHeader className="pb-2 pt-4 px-4">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-medium flex items-center gap-2">
-                  <User className="h-5 w-5" />
+                <CardTitle className="text-base font-medium flex items-center gap-2">
+                  <User className="h-4 w-4" />
                   Profile Information
                 </CardTitle>
                 {!isEditingProfile && (
@@ -364,11 +364,11 @@ const CustomerAccount = () => {
                 )}
               </div>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-2 px-4 pb-4">
               {/* Profile Image */}
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className="h-16 w-16 rounded-full bg-muted overflow-hidden flex items-center justify-center">
+                  <div className="h-14 w-14 rounded-full bg-muted overflow-hidden flex items-center justify-center">
                     {profileImageUrl ? (
                       <img src={profileImageUrl} alt="Profile" className="h-full w-full object-cover" />
                     ) : (
@@ -476,7 +476,7 @@ const CustomerAccount = () => {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
                     <Label className="text-muted-foreground text-sm">Name</Label>
                     <p className="font-medium">{displayName}</p>
@@ -520,15 +520,15 @@ const CustomerAccount = () => {
 
           {/* Membership Card with Stats */}
           <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-medium flex items-center gap-2">
-                <Crown className="h-5 w-5" />
+            <CardHeader className="pb-2 pt-4 px-4">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <Crown className="h-4 w-4" />
                 Membership
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+            <CardContent className="px-4 pb-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                   <Crown className="h-6 w-6 text-primary" />
                 </div>
                 <div className="flex-1">
@@ -551,7 +551,7 @@ const CustomerAccount = () => {
                   <p className="text-sm text-muted-foreground">Member since {new Date(user?.created_at || Date.now()).toLocaleDateString()}</p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4 pt-3 border-t">
+              <div className="grid grid-cols-2 gap-3 pt-2 border-t">
                 <div className="flex items-center gap-2">
                   <ShoppingBag className="h-4 w-4 text-muted-foreground" />
                   <div>
@@ -572,7 +572,7 @@ const CustomerAccount = () => {
 
           {/* Order History Link */}
           <Card className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => navigate("/my-orders")}>
-            <CardContent className="py-4">
+            <CardContent className="py-3 px-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Package className="h-5 w-5" />
@@ -585,26 +585,26 @@ const CustomerAccount = () => {
 
           {/* My Reviews */}
           <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-medium flex items-center gap-2">
-                <MessageSquare className="h-5 w-5" />
+            <CardHeader className="pb-2 pt-4 px-4">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" />
                 My Reviews
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-4 pb-4">
               <MyReviews customerId={accountData?.customer_id || null} />
             </CardContent>
           </Card>
 
           {/* Security */}
           <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-medium flex items-center gap-2">
-                <Key className="h-5 w-5" />
+            <CardHeader className="pb-2 pt-4 px-4">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <Key className="h-4 w-4" />
                 Security
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-4 pb-4">
               {!isChangingPassword ? (
                 <Button variant="outline" onClick={() => setIsChangingPassword(true)} className="w-full sm:w-auto">
                   Change Password

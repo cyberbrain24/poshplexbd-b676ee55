@@ -7,36 +7,45 @@ interface ProductImageGalleryProps {
   product?: Product | null;
   isLoading?: boolean;
   selectedColorId?: string | null;
+  selectedVariantImageUrl?: string | null;
 }
 
-const ProductImageGallery = ({ product, isLoading, selectedColorId }: ProductImageGalleryProps) => {
+const ProductImageGallery = ({ product, isLoading, selectedColorId, selectedVariantImageUrl }: ProductImageGalleryProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
   const [zoomInitialIndex, setZoomInitialIndex] = useState(0);
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
 
-  // Filter images based on selected color
+  // Build image list: if variant has a specific image, show it first
   const productImages = useMemo(() => {
     if (!product?.images || product.images.length === 0) return ['/placeholder.svg'];
     
     const sorted = [...product.images].sort((a, b) => a.sort_order - b.sort_order);
     
+    let baseImages: string[];
     if (selectedColorId) {
-      // Show: main images (no color) + images matching selected color
       const filtered = sorted.filter(
         img => !img.color_id || img.color_id === selectedColorId
       );
-      if (filtered.length > 0) return filtered.map(img => img.image_url);
+      baseImages = filtered.length > 0 ? filtered.map(img => img.image_url) : sorted.map(img => img.image_url);
+    } else {
+      baseImages = sorted.map(img => img.image_url);
     }
     
-    return sorted.map(img => img.image_url);
-  }, [product?.images, selectedColorId]);
+    // If variant has a specific image, prepend it (avoid duplicate)
+    if (selectedVariantImageUrl) {
+      const withoutDup = baseImages.filter(url => url !== selectedVariantImageUrl);
+      return [selectedVariantImageUrl, ...withoutDup];
+    }
+    
+    return baseImages;
+  }, [product?.images, selectedColorId, selectedVariantImageUrl]);
 
   // Reset image index when color changes
   useEffect(() => {
     setCurrentImageIndex(0);
-  }, [selectedColorId]);
+  }, [selectedColorId, selectedVariantImageUrl]);
 
   // YouTube video handling
   const youtubeUrl = product?.youtube_url;

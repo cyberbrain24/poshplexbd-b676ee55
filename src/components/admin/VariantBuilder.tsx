@@ -88,6 +88,7 @@ const VariantBuilder = ({
             purchase_price: useBulkPurchasePrice ? bulkPurchasePrice : 0,
             selling_price: useBulkSellingPrice ? bulkSellingPrice : basePrice,
             is_active: true,
+            image_url: null,
           });
         }
       }

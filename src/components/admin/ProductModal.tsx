@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { X, Plus, Trash2, Upload, GripVertical, Play, ChevronDown, ChevronUp } from "lucide-react";
+import { X, Plus, Trash2, Upload, GripVertical, Play, ChevronDown, ChevronUp, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,7 @@ import { useCreateProduct, useUpdateProduct, useAddProductImage, useDeleteProduc
 import { Product, ProductFormData, VariantFormData, ProductImage } from "@/types/product";
 import { toast } from "sonner";
 import VariantBuilder from "@/components/admin/VariantBuilder";
+import MediaLibraryPickerModal from "@/components/admin/MediaLibraryPickerModal";
 
 interface ProductModalProps {
   isOpen: boolean;
@@ -43,6 +44,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
   const [variants, setVariants] = useState<VariantFormData[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [showBuilder, setShowBuilder] = useState(false);
+  const [mediaPickerIndex, setMediaPickerIndex] = useState<number | null>(null);
   const [parentCategoryId, setParentCategoryId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -122,6 +124,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
         purchase_price: v.purchase_price,
         selling_price: v.selling_price,
         is_active: v.is_active,
+        image_url: v.image_url || null,
       })));
     }
   }, [product]);
@@ -242,6 +245,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
       purchase_price: 0,
       selling_price: formData.base_price,
       is_active: true,
+      image_url: null,
     }]);
   };
 
@@ -549,59 +553,6 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                 </div>
               </div>
 
-              {/* Color-Specific Images */}
-              <div className="space-y-4 pt-6 border-t border-border">
-                <Label>Color-Specific Images</Label>
-                <p className="text-sm text-muted-foreground">
-                  Assign images to specific colors for variant-based display
-                </p>
-                {images.length > 0 && (
-                  <div className="space-y-2">
-                    {images.map((image) => (
-                      <div key={image.id} className="flex items-center gap-4 p-2 border border-border">
-                        <img
-                          src={image.image_url}
-                          alt=""
-                          className="w-12 h-12 object-cover"
-                        />
-                        <Select
-                          value={image.color_id || "none"}
-                          onValueChange={(value) => {
-                            const newColorId = value === "none" ? null : value;
-                            setImages(prev => prev.map(img =>
-                              img.id === image.id
-                                ? { ...img, color_id: newColorId }
-                                : img
-                            ));
-                            // Persist for existing images
-                            if (product && !image.id.startsWith("temp-")) {
-                              updateImage.mutate({ id: image.id, colorId: newColorId });
-                            }
-                          }}
-                        >
-                          <SelectTrigger className="w-48">
-                            <SelectValue placeholder="Assign to color" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">All Colors</SelectItem>
-                            {colors.map((color) => (
-                              <SelectItem key={color.id} value={color.id}>
-                                <div className="flex items-center gap-2">
-                                  <div
-                                    className="w-4 h-4 border border-border"
-                                    style={{ backgroundColor: color.hex_code }}
-                                  />
-                                  {color.name}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
             </TabsContent>
 
             <TabsContent value="variants" className="mt-6 space-y-6">
@@ -638,108 +589,133 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                   )}
 
                   {variants.length > 0 ? (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Color</TableHead>
-                          <TableHead>Size</TableHead>
-                          <TableHead>Material</TableHead>
-                          <TableHead>Purchase Price</TableHead>
-                          <TableHead>Selling Price</TableHead>
-                          <TableHead>SKU</TableHead>
-                          <TableHead className="w-16"></TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {variants.map((variant, index) => (
-                          <TableRow key={index}>
-                            <TableCell>
-                              <Select
-                                value={variant.color_id || "none"}
-                                onValueChange={(value) => updateVariantField(index, "color_id", value === "none" ? null : value)}
-                              >
-                                <SelectTrigger className="w-28">
-                                  <SelectValue placeholder="Color" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="none">-</SelectItem>
-                                  {colors.map((c) => (
-                                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </TableCell>
-                            <TableCell>
-                              <Select
-                                value={variant.size_id || "none"}
-                                onValueChange={(value) => updateVariantField(index, "size_id", value === "none" ? null : value)}
-                              >
-                                <SelectTrigger className="w-24">
-                                  <SelectValue placeholder="Size" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="none">-</SelectItem>
-                                  {sizes.map((s) => (
-                                    <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </TableCell>
-                            <TableCell>
-                              <Select
-                                value={variant.material_id || "none"}
-                                onValueChange={(value) => updateVariantField(index, "material_id", value === "none" ? null : value)}
-                              >
-                                <SelectTrigger className="w-32">
-                                  <SelectValue placeholder="Material" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="none">-</SelectItem>
-                                  {materials.map((m) => (
-                                    <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={variant.purchase_price}
-                                onChange={(e) => updateVariantField(index, "purchase_price", parseFloat(e.target.value) || 0)}
-                                className="w-24"
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={variant.selling_price}
-                                onChange={(e) => updateVariantField(index, "selling_price", parseFloat(e.target.value) || 0)}
-                                className="w-24"
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                value={variant.sku}
-                                onChange={(e) => updateVariantField(index, "sku", e.target.value)}
-                                placeholder="Auto"
-                                className="w-28"
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => removeVariant(index)}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </TableCell>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-20">Image</TableHead>
+                            <TableHead>Color</TableHead>
+                            <TableHead>Size</TableHead>
+                            <TableHead>Material</TableHead>
+                            <TableHead>Cost</TableHead>
+                            <TableHead>Price</TableHead>
+                            <TableHead>SKU</TableHead>
+                            <TableHead className="w-16"></TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {variants.map((variant, index) => (
+                            <TableRow key={index}>
+                              <TableCell>
+                                <button
+                                  type="button"
+                                  onClick={() => setMediaPickerIndex(index)}
+                                  className="w-14 h-14 border border-border flex items-center justify-center overflow-hidden hover:border-foreground/50 transition-colors"
+                                >
+                                  {variant.image_url ? (
+                                    <img src={variant.image_url} alt="" className="w-full h-full object-cover" />
+                                  ) : (
+                                    <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                                  )}
+                                </button>
+                                {variant.image_url && (
+                                  <button
+                                    type="button"
+                                    onClick={() => updateVariantField(index, "image_url", null)}
+                                    className="text-xs text-destructive hover:underline mt-1"
+                                  >
+                                    Remove
+                                  </button>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Select
+                                  value={variant.color_id || "none"}
+                                  onValueChange={(value) => updateVariantField(index, "color_id", value === "none" ? null : value)}
+                                >
+                                  <SelectTrigger className="w-28">
+                                    <SelectValue placeholder="Color" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">-</SelectItem>
+                                    {colors.map((c) => (
+                                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                              <TableCell>
+                                <Select
+                                  value={variant.size_id || "none"}
+                                  onValueChange={(value) => updateVariantField(index, "size_id", value === "none" ? null : value)}
+                                >
+                                  <SelectTrigger className="w-24">
+                                    <SelectValue placeholder="Size" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">-</SelectItem>
+                                    {sizes.map((s) => (
+                                      <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                              <TableCell>
+                                <Select
+                                  value={variant.material_id || "none"}
+                                  onValueChange={(value) => updateVariantField(index, "material_id", value === "none" ? null : value)}
+                                >
+                                  <SelectTrigger className="w-32">
+                                    <SelectValue placeholder="Material" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">-</SelectItem>
+                                    {materials.map((m) => (
+                                      <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={variant.purchase_price}
+                                  onChange={(e) => updateVariantField(index, "purchase_price", parseFloat(e.target.value) || 0)}
+                                  className="w-24"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={variant.selling_price}
+                                  onChange={(e) => updateVariantField(index, "selling_price", parseFloat(e.target.value) || 0)}
+                                  className="w-24"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  value={variant.sku}
+                                  onChange={(e) => updateVariantField(index, "sku", e.target.value)}
+                                  placeholder="Auto"
+                                  className="w-28"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeVariant(index)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
                   ) : (
                     <div className="border border-dashed border-border p-8 text-center text-muted-foreground">
                       <p>No variants added yet</p>
@@ -813,6 +789,17 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
           </Button>
         </div>
       </div>
+
+      {/* Media Library Picker for Variant Images */}
+      <MediaLibraryPickerModal
+        isOpen={mediaPickerIndex !== null}
+        onClose={() => setMediaPickerIndex(null)}
+        onSelect={(url) => {
+          if (mediaPickerIndex !== null) {
+            updateVariantField(mediaPickerIndex, "image_url", url);
+          }
+        }}
+      />
     </div>
   );
 };

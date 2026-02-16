@@ -371,6 +371,7 @@ export const useAddProductVariant = () => {
           purchase_price: variantData.purchase_price,
           selling_price: variantData.selling_price,
           is_active: variantData.is_active,
+          image_url: variantData.image_url || null,
         })
         .select()
         .single();
@@ -391,17 +392,19 @@ export const useUpdateProductVariant = () => {
 
   return useMutation({
     mutationFn: async ({ id, data: variantData }: { id: string; data: Partial<VariantFormData> }) => {
+      const updates: Record<string, any> = {};
+      if (variantData.color_id !== undefined) updates.color_id = variantData.color_id || null;
+      if (variantData.size_id !== undefined) updates.size_id = variantData.size_id || null;
+      if (variantData.material_id !== undefined) updates.material_id = variantData.material_id || null;
+      if (variantData.sku !== undefined) updates.sku = variantData.sku || undefined;
+      if (variantData.purchase_price !== undefined) updates.purchase_price = variantData.purchase_price;
+      if (variantData.selling_price !== undefined) updates.selling_price = variantData.selling_price;
+      if (variantData.is_active !== undefined) updates.is_active = variantData.is_active;
+      if (variantData.image_url !== undefined) updates.image_url = variantData.image_url;
+
       const { data, error } = await supabase
         .from("product_variants")
-        .update({
-          color_id: variantData.color_id || null,
-          size_id: variantData.size_id || null,
-          material_id: variantData.material_id || null,
-          sku: variantData.sku || undefined,
-          purchase_price: variantData.purchase_price,
-          selling_price: variantData.selling_price,
-          is_active: variantData.is_active,
-        })
+        .update(updates)
         .eq("id", id)
         .select()
         .single();

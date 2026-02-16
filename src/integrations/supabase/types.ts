@@ -1021,6 +1021,7 @@ export type Database = {
           color_id: string | null
           created_at: string
           id: string
+          image_url: string | null
           is_active: boolean
           low_stock_threshold: number
           material_id: string | null
@@ -1036,6 +1037,7 @@ export type Database = {
           color_id?: string | null
           created_at?: string
           id?: string
+          image_url?: string | null
           is_active?: boolean
           low_stock_threshold?: number
           material_id?: string | null
@@ -1051,6 +1053,7 @@ export type Database = {
           color_id?: string | null
           created_at?: string
           id?: string
+          image_url?: string | null
           is_active?: boolean
           low_stock_threshold?: number
           material_id?: string | null

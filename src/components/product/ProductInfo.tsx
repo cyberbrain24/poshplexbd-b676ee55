@@ -20,9 +20,10 @@ interface ProductInfoProps {
   product?: Product | null;
   isLoading?: boolean;
   onColorChange?: (colorId: string | null) => void;
+  onVariantImageChange?: (imageUrl: string | null) => void;
 }
 
-const ProductInfo = ({ product, isLoading, onColorChange }: ProductInfoProps) => {
+const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }: ProductInfoProps) => {
   const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
@@ -38,7 +39,9 @@ const ProductInfo = ({ product, isLoading, onColorChange }: ProductInfoProps) =>
     } else if (!variant) {
       onColorChange?.(null);
     }
-  }, [onColorChange]);
+    // Notify parent of variant-specific image
+    onVariantImageChange?.(variant?.image_url || null);
+  }, [onColorChange, onVariantImageChange]);
 
   // Fallback data for static display
   const productName = product?.name || "Product";

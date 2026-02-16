@@ -304,7 +304,8 @@ export async function fetchOrderHistory(orderId: string) {
     .from("order_status_history")
     .select("*")
     .eq("order_id", orderId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(100);
 
   if (error) throw error;
 

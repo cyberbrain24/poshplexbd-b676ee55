@@ -192,6 +192,8 @@ export const PAGINATION = {
   DEFAULT_PAGE_SIZE: 50,
   MAX_PAGE_SIZE: 100,
   MIN_PAGE_SIZE: 10,
+  /** Hard safety cap for all list queries to prevent full-table scans */
+  HARD_CAP: 100,
 } as const;
 
 // ============================================================

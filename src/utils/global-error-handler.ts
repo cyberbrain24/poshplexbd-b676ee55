@@ -37,4 +37,12 @@ export function initGlobalErrorHandler() {
       stack: reason?.stack,
     });
   });
+
+  // Security advisory: leaked password protection
+  if (import.meta.env.PROD) {
+    console.info(
+      "[Security] Ensure leaked password protection (HaveIBeenPwned) is enabled in your backend auth settings. " +
+      "This protects users from signing up with known compromised passwords."
+    );
+  }
 }

@@ -24,10 +24,8 @@ export const useProductsList = (limit?: number) => {
         `)
         .order("created_at", { ascending: false });
       
-      // Apply limit if specified, otherwise use 1000 (Supabase max default)
-      if (limit) {
-        query = query.limit(limit);
-      }
+      // Apply limit with hard cap of 100
+      query = query.limit(Math.min(limit || 100, 100));
 
       const { data, error } = await query;
       if (error) throw error;
@@ -74,7 +72,8 @@ export const useProducts = () => {
             material:materials(*)
           )
         `)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(100);
 
       if (error) throw error;
       return data as Product[];

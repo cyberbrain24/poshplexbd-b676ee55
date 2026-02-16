@@ -11,7 +11,7 @@ const HeroSection = () => {
   if (!desktopBanner && !mobileBanner) return null;
 
   return (
-    <section className="w-full">
+    <section className="w-full leading-[0]">
       {desktopBanner && (
         <img
           src={desktopBanner}

@@ -10,11 +10,10 @@ const StreetEditsGallery = () => {
     .filter(c => !c.parent_id && c.image_url)
     .slice(0, 8);
 
-  // Always render the section container to prevent CLS — show skeleton or empty state
   if (isLoading) {
     return (
       <section className="w-full px-6 py-20">
-        <div className="flex items-baseline gap-4 mb-10 min-h-[4rem]">
+        <div className="flex items-baseline gap-4 mb-10">
           <Skeleton className="w-24 h-16" />
           <Skeleton className="w-48 h-8" />
         </div>
@@ -30,16 +29,16 @@ const StreetEditsGallery = () => {
     );
   }
 
-  // If no categories with images, render a min-height placeholder to avoid CLS
+  // If no categories with images, don't render the section
   if (mainCategories.length === 0) {
-    return <section className="w-full" aria-hidden="true" />;
+    return null;
   }
 
   return (
     <section className="w-full px-6 py-20">
       {/* Section Header */}
-      <div className="flex items-baseline gap-4 mb-10 min-h-[4rem]">
-        <span className="text-6xl md:text-8xl font-black text-muted-foreground/30" aria-hidden="true">
+      <div className="flex items-baseline gap-4 mb-10">
+        <span className="text-6xl md:text-8xl font-black text-muted-foreground/30">
           01
         </span>
         <h2 className="text-2xl md:text-3xl font-black tracking-tight text-foreground">
@@ -62,10 +61,6 @@ const StreetEditsGallery = () => {
                 <img 
                   src={category.image_url!}
                   alt={category.name}
-                  loading="lazy"
-                  decoding="async"
-                  width={200}
-                  height={267}
                   className="w-full h-full object-cover"
                 />
               </div>

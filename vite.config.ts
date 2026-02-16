@@ -22,7 +22,6 @@ export default defineConfig(({ mode }) => ({
     target: "esnext",
     minify: "esbuild",
     cssMinify: true,
-    assetsInlineLimit: 0,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -31,10 +30,6 @@ export default defineConfig(({ mode }) => ({
           query: ["@tanstack/react-query"],
           supabase: ["@supabase/supabase-js"],
         },
-        // Content-hash based filenames for long-term caching
-        assetFileNames: "assets/[name]-[hash][extname]",
-        chunkFileNames: "assets/[name]-[hash].js",
-        entryFileNames: "assets/[name]-[hash].js",
       },
     },
   },

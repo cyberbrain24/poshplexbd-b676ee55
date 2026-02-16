@@ -95,10 +95,10 @@ const VariantSelector = ({ variants, onVariantChange }: VariantSelectorProps) =>
   };
 
   return (
-    <div className="space-y-4 lg:space-y-6">
+    <div className="space-y-6">
       {/* Color Selection */}
       {uniqueColors.length > 0 && (
-        <div className="space-y-2 lg:space-y-3">
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-sm font-light text-foreground">Color</span>
             {selectedColor && (
@@ -141,7 +141,7 @@ const VariantSelector = ({ variants, onVariantChange }: VariantSelectorProps) =>
 
       {/* Size Selection */}
       {uniqueSizes.length > 0 && (
-        <div className="space-y-2 lg:space-y-3">
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-sm font-light text-foreground">Size</span>
             {selectedSize && (
@@ -161,7 +161,7 @@ const VariantSelector = ({ variants, onVariantChange }: VariantSelectorProps) =>
                   onClick={() => setSelectedSize(size.id)}
                   disabled={!isAvailable && selectedColor !== null}
                   className={cn(
-                    "min-w-10 lg:min-w-12 h-8 lg:h-10 px-3 lg:px-4 border text-sm font-light transition-all relative",
+                    "min-w-12 h-10 px-4 border text-sm font-light transition-all relative",
                     isSelected
                       ? "border-foreground bg-foreground text-background"
                       : "border-border hover:border-foreground text-foreground",

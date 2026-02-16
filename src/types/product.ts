@@ -91,12 +91,8 @@ export interface ProductImage {
   sort_order: number;
   is_main: boolean;
   color_id: string | null;
-  material_id: string | null;
-  size_id: string | null;
   created_at: string;
   color?: Color | null;
-  material?: Material | null;
-  size?: Size | null;
 }
 
 export interface ProductVariant {

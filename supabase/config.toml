@@ -11,6 +11,3 @@ verify_jwt = false
 
 [functions.steadfast-courier]
 verify_jwt = false
-
-[functions.meta-capi]
-verify_jwt = false

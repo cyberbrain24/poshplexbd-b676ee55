@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
 import PoshplexHeader from "../components/header/PoshplexHeader";
@@ -17,47 +17,29 @@ import {
   BreadcrumbPage, 
   BreadcrumbSeparator 
 } from "@/components/ui/breadcrumb";
-import { trackViewContent } from "@/lib/meta-pixel";
 
 const ProductDetail = () => {
   const { productSlug } = useParams();
   const { data: product, isLoading } = useProduct(productSlug);
   const [selectedColorId, setSelectedColorId] = useState<string | null>(null);
-  const [selectedVariantAttrs, setSelectedVariantAttrs] = useState<{ colorId: string | null; materialId: string | null; sizeId: string | null } | null>(null);
 
   const handleColorChange = useCallback((colorId: string | null) => {
     setSelectedColorId(colorId);
-  }, []);
-
-  const handleVariantAttrChange = useCallback((attrs: { colorId: string | null; materialId: string | null; sizeId: string | null } | null) => {
-    setSelectedVariantAttrs(attrs);
   }, []);
 
   const productName = product?.name || "Product";
   const categoryName = product?.category?.name || "Apparel";
   const categorySlug = categoryName.toLowerCase().replace(/\s+/g, '-');
 
-  // Track ViewContent for Meta Pixel
-  useEffect(() => {
-    if (product) {
-      trackViewContent({
-        id: product.id,
-        name: product.name,
-        price: product.base_price,
-        category: categoryName,
-      });
-    }
-  }, [product?.id]);
-
   return (
     <div className="min-h-screen bg-background">
       <ProductSEO product={product} />
       <PoshplexHeader />
       
-        <main className="pt-1 lg:pt-3">
-        <section className="w-full px-4 lg:px-6">
+      <main className="pt-6">
+        <section className="w-full px-6">
           {/* Breadcrumb - Show above image on smaller screens */}
-          <div className="lg:hidden mb-3">
+          <div className="lg:hidden mb-6">
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
@@ -84,15 +66,13 @@ const ProductDetail = () => {
               product={product} 
               isLoading={isLoading} 
               selectedColorId={selectedColorId}
-              selectedVariant={selectedVariantAttrs}
             />
             
-            <div className="lg:pl-12 mt-4 lg:mt-0 lg:sticky lg:top-6 lg:h-fit">
+            <div className="lg:pl-12 mt-8 lg:mt-0 lg:sticky lg:top-6 lg:h-fit">
               <ProductInfo 
                 product={product} 
                 isLoading={isLoading} 
                 onColorChange={handleColorChange}
-                onVariantChange={handleVariantAttrChange}
               />
               <ProductDescription product={product} />
             </div>

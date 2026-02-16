@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import PoshplexHeader from "../components/header/PoshplexHeader";
 import PoshplexFooter from "../components/footer/PoshplexFooter";
@@ -7,7 +7,6 @@ import FilterSortBar from "../components/category/FilterSortBar";
 import ProductGrid from "../components/category/ProductGrid";
 import { useOptimizedCategoryProducts } from "@/hooks/useOptimizedProducts";
 import { CategorySEO } from "@/components/seo";
-import { trackViewCategory } from "@/lib/meta-pixel";
 
 const Category = () => {
   const { category } = useParams();
@@ -24,11 +23,6 @@ const Category = () => {
 
   const displayName = formatCategoryName(category);
   const slug = category || "all";
-
-  // Track ViewCategory for Meta Pixel
-  useEffect(() => {
-    trackViewCategory({ name: displayName, slug });
-  }, [slug]);
 
   return (
     <div className="min-h-screen bg-background">

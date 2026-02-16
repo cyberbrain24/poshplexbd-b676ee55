@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, User, ShoppingBag as ShoppingBagIcon, X } from "lucide-react";
-import { AnimatePresence } from "framer-motion";
 import AnnouncementBar from "./AnnouncementBar";
 import MegaMenu from "./MegaMenu";
 import MobileMenu from "./MobileMenu";
@@ -14,16 +13,13 @@ import { supabase } from "@/integrations/supabase/client";
 const SITE_NAME = "POSHPLEX";
 const SITE_LOGO_URL: string | null = null;
 
-interface SubcategoryItem {
-  id: string;
-  name: string;
-  image_url?: string | null;
-}
-
 interface NavItem {
   name: string;
   href: string;
-  subcategories: SubcategoryItem[];
+  submenu: {
+    categories: string[];
+    featured: { name: string; href: string }[];
+  };
 }
 
 const isExternalLink = (path: string): boolean => {
@@ -69,28 +65,23 @@ const PoshplexHeader = () => {
     }
   };
 
-  // Build navigation items from categories with custom display order
-  const NAV_ORDER: string[] = ["UPPER WEAR", "BOTTOM WEAR", "COMBO", "ACCESSORIES", "LIMITED EDITION"];
-
+  // Build navigation items from categories
   const navItems: NavItem[] = useMemo(() => {
     const parentCategories = allCategories.filter(c => !c.parent_id);
     
-    const items = parentCategories.map(parent => {
-      const subcategories: SubcategoryItem[] = allCategories
+    return parentCategories.map(parent => {
+      const subcategories = allCategories
         .filter(c => c.parent_id === parent.id)
-        .map(c => ({ id: c.id, name: c.name, image_url: c.image_url }));
+        .map(c => c.name);
       
       return {
         name: parent.name.toUpperCase(),
         href: `/category/${parent.name.toLowerCase().replace(/\s+/g, '-')}`,
-        subcategories,
+        submenu: {
+          categories: subcategories,
+          featured: []
+        }
       };
-    });
-
-    return items.sort((a, b) => {
-      const ai = NAV_ORDER.indexOf(a.name);
-      const bi = NAV_ORDER.indexOf(b.name);
-      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
     });
   }, [allCategories]);
 
@@ -205,15 +196,13 @@ const PoshplexHeader = () => {
       </nav>
 
       {/* Mega Menu */}
-      <AnimatePresence>
-        {activeDropdown && navItems.find(item => item.name === activeDropdown) && (
-          <MegaMenu 
-            activeItem={navItems.find(item => item.name === activeDropdown)!}
-            onMouseEnter={() => setActiveDropdown(activeDropdown)}
-            onMouseLeave={() => setActiveDropdown(null)}
-          />
-        )}
-      </AnimatePresence>
+      {activeDropdown && (
+        <MegaMenu 
+          activeItem={navItems.find(item => item.name === activeDropdown)!}
+          onMouseEnter={() => setActiveDropdown(activeDropdown)}
+          onMouseLeave={() => setActiveDropdown(null)}
+        />
+      )}
 
       {/* Search overlay */}
       {isSearchOpen && (

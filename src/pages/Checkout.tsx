@@ -17,9 +17,7 @@ import { useDivisions, useThanas } from "@/hooks/useLocationData";
 import { getShippingForLocation, ShippingConfig, SHIPPING_OUTSIDE_DHAKA } from "@/config/shippingConfig";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { trackInitiateCheckout, trackAddPaymentInfo, trackPurchase } from "@/lib/meta-pixel";
 import { formatCurrency } from "@/lib/currency";
-import { useCustomerAddresses, useCreateAddress, type CustomerAddress } from "@/hooks/useCustomerAddresses";
 
 const DEFAULT_PASSWORD = "poshplex";
 
@@ -64,11 +62,6 @@ const Checkout = () => {
   // Partial payment state - works for ALL payment methods including COD
   const [partialPaymentAmount, setPartialPaymentAmount] = useState<string>("");
   const [usePartialPayment, setUsePartialPayment] = useState(false);
-
-  // Saved address selection
-  const [loggedInCustomerId, setLoggedInCustomerId] = useState<string | null>(null);
-  const [selectedAddressId, setSelectedAddressId] = useState<string>("");
-  const { data: savedAddresses = [] } = useCustomerAddresses(loggedInCustomerId);
 
   const { data: thanas } = useThanas(customerDetails.divisionId);
 
@@ -138,8 +131,6 @@ const Checkout = () => {
           return;
         }
 
-        setLoggedInCustomerId(customerAccount.customer_id);
-
         // Then fetch the full customer details
         const { data: customer, error: customerError } = await supabase
           .from('customers')
@@ -174,42 +165,6 @@ const Checkout = () => {
     loadCustomerData();
   }, []);
 
-  // Auto-select default shipping address when savedAddresses load
-  useEffect(() => {
-    if (savedAddresses.length > 0 && !selectedAddressId) {
-      const defaultShipping = savedAddresses.find(a => a.is_default_shipping);
-      const addr = defaultShipping || savedAddresses[0];
-      setSelectedAddressId(addr.id);
-      // Fill form from selected address
-      setCustomerDetails(prev => ({
-        ...prev,
-        address: addr.address,
-        divisionId: addr.division_id || prev.divisionId,
-        thanaId: addr.thana_id || prev.thanaId,
-        postalCode: addr.postal_code || prev.postalCode,
-      }));
-    }
-  }, [savedAddresses, selectedAddressId]);
-
-  const handleAddressSelect = (addressId: string) => {
-    if (addressId === "new") {
-      setSelectedAddressId("new");
-      setCustomerDetails(prev => ({ ...prev, address: "", divisionId: "", thanaId: "", postalCode: "" }));
-      return;
-    }
-    const addr = savedAddresses.find(a => a.id === addressId);
-    if (addr) {
-      setSelectedAddressId(addr.id);
-      setCustomerDetails(prev => ({
-        ...prev,
-        address: addr.address,
-        divisionId: addr.division_id || "",
-        thanaId: addr.thana_id || "",
-        postalCode: addr.postal_code || "",
-      }));
-    }
-  };
-
   const selectedPaymentMethod = paymentMethods?.find(pm => pm.id === selectedPaymentMethodId);
 
   // Set default payment method
@@ -218,17 +173,6 @@ const Checkout = () => {
       setSelectedPaymentMethodId(paymentMethods[0].id);
     }
   }, [paymentMethods, selectedPaymentMethodId]);
-
-  // Track InitiateCheckout on load
-  useEffect(() => {
-    if (cartItems.length > 0) {
-      trackInitiateCheckout({
-        ids: cartItems.map(i => i.productId || i.id),
-        value: cartTotal,
-        numItems: cartItems.reduce((s, i) => s + i.quantity, 0),
-      });
-    }
-  }, []); // intentionally fire once on mount
 
   const subtotal = cartTotal;
   const total = subtotal - promoDiscount + shippingCost;
@@ -376,34 +320,79 @@ const Checkout = () => {
     }
   };
 
-  // Find or create customer by phone using SECURITY DEFINER RPC
+  // Find or create customer by phone, and update their details
   const findOrCreateCustomer = async (): Promise<string | null> => {
     const phone = customerDetails.phone.trim();
     
     try {
-      // Use the secure RPC function that bypasses RLS
-      const { data: customerId, error } = await supabase
-        .rpc('upsert_checkout_customer', {
-          p_name: customerDetails.name,
-          p_phone: phone,
-          p_email: customerDetails.email || null,
-          p_gender: customerDetails.gender || 'other',
-          p_address: customerDetails.address || null,
-          p_division_id: customerDetails.divisionId || null,
-          p_thana_id: customerDetails.thanaId || null,
-        });
+      // Check if customer exists
+      const { data: existingCustomer, error: findError } = await supabase
+        .from('customers')
+        .select('id')
+        .eq('phone', phone)
+        .maybeSingle();
 
-      if (error) {
-        console.error('Error upserting customer:', error);
+      if (findError) {
+        console.error('Error finding customer:', findError);
         return null;
       }
 
-      if (customerId) {
+      if (existingCustomer) {
+        // Customer exists - update their details with latest order info
+        const updateData: Record<string, unknown> = {
+          name: customerDetails.name,
+          updated_at: new Date().toISOString(),
+        };
+        
+        // Only update if values are provided (don't overwrite with empty)
+        if (customerDetails.email) updateData.email = customerDetails.email;
+        if (customerDetails.gender) updateData.gender = customerDetails.gender;
+        if (customerDetails.address) updateData.address = customerDetails.address;
+        if (customerDetails.divisionId) updateData.division_id = customerDetails.divisionId;
+        if (customerDetails.thanaId) updateData.thana_id = customerDetails.thanaId;
+        
+        const { error: updateError } = await supabase
+          .from('customers')
+          .update(updateData)
+          .eq('id', existingCustomer.id);
+        
+        if (updateError) {
+          console.warn('Error updating customer:', updateError);
+        }
+        
         // Ensure customer has an account
-        await createCustomerAccount(customerId, phone, customerDetails.email, customerDetails.name);
+        await createCustomerAccount(existingCustomer.id, phone, customerDetails.email, customerDetails.name);
+        
+        return existingCustomer.id;
       }
 
-      return customerId || null;
+      // Create new customer with all details
+      const { data: newCustomer, error: createError } = await supabase
+        .from('customers')
+        .insert({
+          name: customerDetails.name,
+          phone: phone,
+          email: customerDetails.email || null,
+          gender: customerDetails.gender || 'other',
+          address: customerDetails.address || null,
+          division_id: customerDetails.divisionId || null,
+          thana_id: customerDetails.thanaId || null,
+          is_active: true,
+        })
+        .select('id')
+        .single();
+
+      if (createError) {
+        console.error('Error creating customer:', createError);
+        return null;
+      }
+
+      // Create account for new customer
+      if (newCustomer?.id) {
+        await createCustomerAccount(newCustomer.id, phone, customerDetails.email, customerDetails.name);
+      }
+
+      return newCustomer?.id || null;
     } catch (error) {
       console.error('Error in findOrCreateCustomer:', error);
       return null;
@@ -418,12 +407,6 @@ const Checkout = () => {
     }
 
     setIsProcessing(true);
-
-    // Track AddPaymentInfo
-    trackAddPaymentInfo(
-      selectedPaymentMethod?.name || "unknown",
-      total,
-    );
 
     try {
       // Step 1: Find or create customer (silently - don't block order if it fails)
@@ -465,18 +448,6 @@ const Checkout = () => {
           customerNotes: customerDetails.notes || undefined,
         },
         cartItems,
-      });
-
-      // Track Purchase event (with CAPI if enabled)
-      trackPurchase({
-        orderId: result.orderId || "",
-        orderNumber: result.orderNumber,
-        value: total,
-        items: cartItems.map(i => ({
-          id: i.productId || i.id,
-          quantity: i.quantity,
-          item_price: i.price,
-        })),
       });
 
       // Step 3: Store customer session for "auto-login"
@@ -674,26 +645,6 @@ const Checkout = () => {
                 <h2 className="text-lg font-light text-foreground mb-6">Shipping Information</h2>
                 
                 <div className="space-y-4">
-                  {/* Saved Address Selector */}
-                  {savedAddresses.length > 0 && (
-                    <div>
-                      <Label className="text-sm font-light">Saved Address</Label>
-                      <Select value={selectedAddressId} onValueChange={handleAddressSelect}>
-                        <SelectTrigger className="mt-1.5 rounded-none">
-                          <SelectValue placeholder="Select a saved address" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {savedAddresses.map(addr => (
-                            <SelectItem key={addr.id} value={addr.id}>
-                              {addr.label} — {addr.address.substring(0, 40)}{addr.address.length > 40 ? "..." : ""}
-                              {addr.is_default_shipping ? " ★" : ""}
-                            </SelectItem>
-                          ))}
-                          <SelectItem value="new">+ Enter new address</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label className="text-sm font-light">Full Name *</Label>

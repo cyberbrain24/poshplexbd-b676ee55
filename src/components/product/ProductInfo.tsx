@@ -15,16 +15,14 @@ import { Product, ProductVariant } from "@/types/product";
 import VariantSelector from "./VariantSelector";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
-import { trackAddToCart } from "@/lib/meta-pixel";
 
 interface ProductInfoProps {
   product?: Product | null;
   isLoading?: boolean;
   onColorChange?: (colorId: string | null) => void;
-  onVariantChange?: (variant: { colorId: string | null; materialId: string | null; sizeId: string | null } | null) => void;
 }
 
-const ProductInfo = ({ product, isLoading, onColorChange, onVariantChange }: ProductInfoProps) => {
+const ProductInfo = ({ product, isLoading, onColorChange }: ProductInfoProps) => {
   const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
@@ -34,23 +32,13 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantChange }: Pro
   
   const handleVariantChange = useCallback((variant: ProductVariant | null) => {
     setSelectedVariant(variant);
-    // Notify parent of color change for legacy image filtering
+    // Notify parent of color change for image filtering
     if (variant?.color_id) {
       onColorChange?.(variant.color_id);
     } else if (!variant) {
       onColorChange?.(null);
     }
-    // Notify parent of full variant selection for dynamic image filtering
-    if (variant) {
-      onVariantChange?.({
-        colorId: variant.color_id,
-        materialId: variant.material_id,
-        sizeId: variant.size_id,
-      });
-    } else {
-      onVariantChange?.(null);
-    }
-  }, [onColorChange, onVariantChange]);
+  }, [onColorChange]);
 
   // Fallback data for static display
   const productName = product?.name || "Product";
@@ -85,17 +73,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantChange }: Pro
   const handleAddToCart = () => {
     if (!canAddToCart) return;
 
-    const cartItem = getCartItem();
-    addToCart(cartItem, quantity);
-
-    // Track AddToCart for Meta Pixel
-    trackAddToCart({
-      id: cartItem.productId || cartItem.id,
-      name: cartItem.name,
-      price: cartItem.price,
-      quantity,
-      category: cartItem.category,
-    });
+    addToCart(getCartItem(), quantity);
 
     toast(`${productName} added to bag`, {
       description: selectedVariant 
@@ -131,7 +109,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantChange }: Pro
   }
 
   return (
-    <div className="space-y-2 lg:space-y-3">
+    <div className="space-y-6">
       {/* Breadcrumb - Show only on desktop */}
       <div className="hidden lg:block">
         <Breadcrumb>
@@ -156,14 +134,14 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantChange }: Pro
       </div>
 
       {/* Product title and price */}
-      <div className="space-y-1">
+      <div className="space-y-2">
         <div className="flex justify-between items-start">
           <div>
             <p className="text-sm font-light text-muted-foreground mb-1">{categoryName}</p>
-            <h1 className="text-xl md:text-3xl font-light text-foreground">{productName}</h1>
+            <h1 className="text-2xl md:text-3xl font-light text-foreground">{productName}</h1>
           </div>
           <div className="text-right">
-            <p className="text-2xl font-bold text-foreground">৳{displayPrice.toLocaleString()}</p>
+            <p className="text-xl font-light text-foreground">৳{displayPrice.toLocaleString()}</p>
             {selectedVariant && selectedVariant.selling_price !== basePrice && (
               <p className="text-sm font-light text-muted-foreground line-through">
                 ৳{basePrice.toLocaleString()}
@@ -174,13 +152,13 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantChange }: Pro
       </div>
 
       {/* Short description */}
-      <div className="py-2 border-b border-border">
+      <div className="py-4 border-b border-border">
         <p className="text-sm font-light text-muted-foreground">{shortDescription}</p>
       </div>
 
       {/* Variant Selection */}
       {hasVariants && (
-        <div className="py-2 border-b border-border">
+        <div className="py-4 border-b border-border">
           <VariantSelector 
             variants={product!.variants!} 
             onVariantChange={handleVariantChange}
@@ -189,7 +167,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantChange }: Pro
       )}
 
       {/* Quantity and Add to Cart */}
-      <div className="space-y-2 lg:space-y-3">
+      <div className="space-y-4">
         <div className="flex items-center gap-4">
           <span className="text-sm font-light text-foreground">Quantity</span>
           <div className="flex items-center border border-border">
@@ -197,18 +175,18 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantChange }: Pro
               variant="ghost"
               size="sm"
               onClick={decrementQuantity}
-              className="h-8 lg:h-10 w-8 lg:w-10 p-0 hover:bg-transparent hover:opacity-50 rounded-none border-none"
+              className="h-10 w-10 p-0 hover:bg-transparent hover:opacity-50 rounded-none border-none"
             >
               <Minus className="h-4 w-4" />
             </Button>
-            <span className="h-8 lg:h-10 flex items-center px-3 lg:px-4 text-sm font-light min-w-10 lg:min-w-12 justify-center border-l border-r border-border">
+            <span className="h-10 flex items-center px-4 text-sm font-light min-w-12 justify-center border-l border-r border-border">
               {quantity}
             </span>
             <Button
               variant="ghost"
               size="sm"
               onClick={incrementQuantity}
-              className="h-8 lg:h-10 w-8 lg:w-10 p-0 hover:bg-transparent hover:opacity-50 rounded-none border-none"
+              className="h-10 w-10 p-0 hover:bg-transparent hover:opacity-50 rounded-none border-none"
             >
               <Plus className="h-4 w-4" />
             </Button>
@@ -217,7 +195,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantChange }: Pro
 
         <div className="flex gap-3">
           <Button 
-            className="flex-1 h-10 lg:h-12 bg-foreground text-background hover:bg-foreground/90 font-light rounded-none disabled:opacity-50"
+            className="flex-1 h-12 bg-foreground text-background hover:bg-foreground/90 font-light rounded-none disabled:opacity-50"
             disabled={!canAddToCart}
             onClick={handleAddToCart}
           >
@@ -225,7 +203,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantChange }: Pro
           </Button>
           <Button 
             variant="outline"
-            className="flex-1 h-10 lg:h-12 border-foreground text-foreground hover:bg-foreground hover:text-background font-light rounded-none disabled:opacity-50"
+            className="flex-1 h-12 border-foreground text-foreground hover:bg-foreground hover:text-background font-light rounded-none disabled:opacity-50"
             disabled={!canAddToCart}
             onClick={handleBuyNow}
           >

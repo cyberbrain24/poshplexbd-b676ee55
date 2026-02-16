@@ -24,15 +24,12 @@ import {
   ShoppingCart,
   ExternalLink,
   Globe,
-  BarChart3,
   Database,
   RefreshCw,
   LucideIcon,
   MessageSquare,
   Image,
   Tag,
-  Megaphone,
-  Activity,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -81,12 +78,6 @@ const customerManagementItems: NavItem[] = [
   { icon: MapPin, label: "Districts", path: "/admin/divisions" },
   { icon: Map, label: "Thanas", path: "/admin/thanas" },
   { icon: Crown, label: "Membership Types", path: "/admin/customer-types" },
-];
-
-const marketingTrackingItems: NavItem[] = [
-  { icon: Megaphone, label: "Meta Pixel", path: "/admin/meta-pixel" },
-  { icon: BarChart3, label: "Tracking Dashboard", path: "/admin/tracking-dashboard" },
-  { icon: Activity, label: "Event Monitor", path: "/admin/event-monitor" },
 ];
 
 const AdminSidebar = () => {
@@ -146,16 +137,14 @@ const AdminSidebar = () => {
   const isOrdersActive = orderItems.some(item => location.pathname === item.path);
   const isAccountMgmtActive = accountManagementItems.some(item => location.pathname === item.path);
   const isCustomerMgmtActive = customerManagementItems.some(item => location.pathname === item.path);
-  const isMarketingActive = marketingTrackingItems.some(item => location.pathname === item.path);
 
   // Accordion behavior: only one group open at a time
-  type GroupKey = 'product' | 'orders' | 'account' | 'customer' | 'marketing';
+  type GroupKey = 'product' | 'orders' | 'account' | 'customer';
   const getInitialOpen = (): GroupKey | null => {
     if (isProductMgmtActive) return 'product';
     if (isOrdersActive) return 'orders';
     if (isCustomerMgmtActive) return 'customer';
     if (isAccountMgmtActive) return 'account';
-    if (isMarketingActive) return 'marketing';
     return null;
   };
   const [openGroup, setOpenGroup] = useState<GroupKey | null>(getInitialOpen);
@@ -301,19 +290,6 @@ const AdminSidebar = () => {
 
         {/* SEO Manager */}
         {renderNavLink("/admin/seo", Globe, "SEO Manager")}
-
-        {/* Analytics */}
-        {renderNavLink("/admin/analytics", BarChart3, "Analytics")}
-
-        {/* Marketing Tracking */}
-        {renderCollapsible(
-          Megaphone,
-          "Marketing Tracking",
-          marketingTrackingItems,
-          openGroup === 'marketing',
-          () => toggleGroup('marketing'),
-          isMarketingActive
-        )}
 
         {/* Seed Data */}
         {renderNavLink("/admin/seed-data", Database, "Seed Data")}

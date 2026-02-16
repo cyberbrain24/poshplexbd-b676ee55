@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { X, Plus, Trash2, Upload, ChevronDown, ChevronUp } from "lucide-react";
+import { X, Plus, Trash2, Upload, GripVertical, Play, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -205,8 +205,6 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
             sort_order: prev.length,
             is_main: prev.length === 0,
             color_id: null,
-            material_id: null,
-            size_id: null,
             created_at: new Date().toISOString(),
           }]);
         }
@@ -551,6 +549,59 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                 </div>
               </div>
 
+              {/* Color-Specific Images */}
+              <div className="space-y-4 pt-6 border-t border-border">
+                <Label>Color-Specific Images</Label>
+                <p className="text-sm text-muted-foreground">
+                  Assign images to specific colors for variant-based display
+                </p>
+                {images.length > 0 && (
+                  <div className="space-y-2">
+                    {images.map((image) => (
+                      <div key={image.id} className="flex items-center gap-4 p-2 border border-border">
+                        <img
+                          src={image.image_url}
+                          alt=""
+                          className="w-12 h-12 object-cover"
+                        />
+                        <Select
+                          value={image.color_id || "none"}
+                          onValueChange={(value) => {
+                            const newColorId = value === "none" ? null : value;
+                            setImages(prev => prev.map(img =>
+                              img.id === image.id
+                                ? { ...img, color_id: newColorId }
+                                : img
+                            ));
+                            // Persist for existing images
+                            if (product && !image.id.startsWith("temp-")) {
+                              updateImage.mutate({ id: image.id, colorId: newColorId });
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="w-48">
+                            <SelectValue placeholder="Assign to color" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">All Colors</SelectItem>
+                            {colors.map((color) => (
+                              <SelectItem key={color.id} value={color.id}>
+                                <div className="flex items-center gap-2">
+                                  <div
+                                    className="w-4 h-4 border border-border"
+                                    style={{ backgroundColor: color.hex_code }}
+                                  />
+                                  {color.name}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </TabsContent>
 
             <TabsContent value="variants" className="mt-6 space-y-6">

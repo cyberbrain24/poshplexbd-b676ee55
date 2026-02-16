@@ -1,29 +1,24 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Instagram, Facebook, Youtube, Twitter } from "lucide-react";
-
-// Hardcoded site settings
-const SITE_NAME = "POSHPLEX";
-const SITE_TAGLINE = "Premium Fashion & Lifestyle";
-const FOOTER_COPYRIGHT = `© ${new Date().getFullYear()} Poshplex. All rights reserved.`;
-const FOOTER_EMAIL = "hello@poshplex.com";
+import { ChevronDown } from "lucide-react";
 
 const FOOTER_COLUMNS = [
   {
-    title: "Shop",
+    title: "SHOP",
     links: [
       { label: "All Products", path: "/category/all" },
       { label: "New Arrivals", path: "/category/new-arrivals" },
     ],
   },
   {
-    title: "About",
+    title: "ABOUT",
     links: [
       { label: "Our Story", path: "/about/our-story" },
       { label: "Sustainability", path: "/about/sustainability" },
     ],
   },
   {
-    title: "Support",
+    title: "SUPPORT",
     links: [
       { label: "Size Guide", path: "/about/size-guide" },
       { label: "Customer Care", path: "/about/customer-care" },
@@ -31,7 +26,7 @@ const FOOTER_COLUMNS = [
     ],
   },
   {
-    title: "Legal",
+    title: "LEGAL",
     links: [
       { label: "Privacy Policy", path: "/privacy-policy" },
       { label: "Terms of Service", path: "/terms-of-service" },
@@ -39,88 +34,54 @@ const FOOTER_COLUMNS = [
   },
 ];
 
-const SOCIAL_LINKS = {
-  instagram: "",
-  facebook: "",
-  twitter: "",
-  youtube: "",
-};
-
 const PoshplexFooter = () => {
-  const hasSocialLinks = Object.values(SOCIAL_LINKS).some(url => url && url.length > 0);
+  const [openSection, setOpenSection] = useState<string | null>(null);
+
+  const toggleSection = (title: string) => {
+    setOpenSection(openSection === title ? null : title);
+  };
 
   return (
-    <footer className="w-full bg-foreground text-background mt-20">
-      {/* Main Footer Content */}
-      <div className="px-6 py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-          {/* Brand & Newsletter */}
-          <div className="lg:col-span-5">
-            <span className="text-3xl font-black tracking-tighter block mb-6">
-              {SITE_NAME}
-            </span>
-            <p className="text-background/70 text-sm mb-6 max-w-sm">
-              {SITE_TAGLINE}
-            </p>
-            
-            {/* Newsletter */}
-            <div className="mb-8">
-              <p className="text-xs font-medium tracking-wider mb-3">
-                JOIN THE MOVEMENT
-              </p>
-              <div className="flex">
-                <input 
-                  type="email"
-                  placeholder="Your email"
-                  className="flex-1 bg-transparent border border-background/30 px-4 py-3 text-sm placeholder:text-background/50 focus:outline-none focus:border-background"
-                />
-                <button className="bg-background text-foreground px-6 py-3 text-sm font-medium tracking-wider hover:bg-background/90 transition-colors">
-                  SUBSCRIBE
-                </button>
-              </div>
-            </div>
+    <footer className="w-full mt-20" style={{ background: "linear-gradient(180deg, #3a3a3a 0%, #2f2f2f 100%)" }}>
+      {/* Main Content */}
+      <div className="px-6 lg:px-12 py-12 lg:py-16">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8">
 
-            {/* Social Icons */}
-            {hasSocialLinks && (
-              <div className="flex gap-4">
-                {SOCIAL_LINKS.instagram && (
-                  <a href={SOCIAL_LINKS.instagram} target="_blank" rel="noopener noreferrer" className="p-2 border border-background/30 hover:bg-background hover:text-foreground transition-colors">
-                    <Instagram size={18} strokeWidth={1.5} />
-                  </a>
-                )}
-                {SOCIAL_LINKS.facebook && (
-                  <a href={SOCIAL_LINKS.facebook} target="_blank" rel="noopener noreferrer" className="p-2 border border-background/30 hover:bg-background hover:text-foreground transition-colors">
-                    <Facebook size={18} strokeWidth={1.5} />
-                  </a>
-                )}
-                {SOCIAL_LINKS.twitter && (
-                  <a href={SOCIAL_LINKS.twitter} target="_blank" rel="noopener noreferrer" className="p-2 border border-background/30 hover:bg-background hover:text-foreground transition-colors">
-                    <Twitter size={18} strokeWidth={1.5} />
-                  </a>
-                )}
-                {SOCIAL_LINKS.youtube && (
-                  <a href={SOCIAL_LINKS.youtube} target="_blank" rel="noopener noreferrer" className="p-2 border border-background/30 hover:bg-background hover:text-foreground transition-colors">
-                    <Youtube size={18} strokeWidth={1.5} />
-                  </a>
-                )}
-              </div>
-            )}
+          {/* Brand & Newsletter */}
+          <div className="lg:col-span-4">
+            <span className="text-[28px] font-black tracking-tight text-white block mb-2">
+              POSHPLEX
+            </span>
+            <p className="text-white/60 text-sm mb-8">
+              Premium Fashion &amp; Lifestyle
+            </p>
+
+            <p className="text-[11px] font-semibold tracking-[0.2em] text-white/80 mb-3">
+              JOIN THE MOVEMENT
+            </p>
+            <div className="flex max-w-xs">
+              <input
+                type="email"
+                placeholder="Your email"
+                className="flex-1 bg-transparent border border-white/25 rounded-none px-4 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-white/50"
+              />
+              <button className="bg-white text-[#2f2f2f] px-5 py-2.5 text-xs font-semibold tracking-wider whitespace-nowrap">
+                SUBSCRIBE
+              </button>
+            </div>
           </div>
 
-          {/* Footer Columns */}
-          <div className="lg:col-span-7 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-            {FOOTER_COLUMNS.map((column, index) => (
-              <div key={index}>
-                <h4 className="text-xs font-medium tracking-wider mb-4">
-                  {column.title.toUpperCase()}
+          {/* Desktop Link Columns */}
+          <div className="hidden lg:grid lg:col-span-8 grid-cols-4 gap-6">
+            {FOOTER_COLUMNS.map((col) => (
+              <div key={col.title}>
+                <h4 className="text-xs font-semibold tracking-[0.15em] text-white mb-4">
+                  {col.title}
                 </h4>
-                <ul className="space-y-3">
-                  {column.links.map((link, linkIndex) => (
-                    <li key={linkIndex}>
-                      <Link
-                        to={link.path}
-                        className="text-sm text-background/70 hover:text-background transition-colors"
-                      >
+                <ul className="space-y-2.5">
+                  {col.links.map((link) => (
+                    <li key={link.path}>
+                      <Link to={link.path} className="text-sm text-white/60">
                         {link.label}
                       </Link>
                     </li>
@@ -129,34 +90,51 @@ const PoshplexFooter = () => {
               </div>
             ))}
           </div>
+
+          {/* Mobile Accordion Columns */}
+          <div className="lg:hidden space-y-0 border-t border-white/10">
+            {FOOTER_COLUMNS.map((col) => (
+              <div key={col.title} className="border-b border-white/10">
+                <button
+                  onClick={() => toggleSection(col.title)}
+                  className="w-full flex items-center justify-between py-3.5 text-xs font-semibold tracking-[0.15em] text-white"
+                >
+                  {col.title}
+                  <ChevronDown
+                    size={16}
+                    className={`text-white/50 ${openSection === col.title ? "rotate-180" : ""}`}
+                  />
+                </button>
+                {openSection === col.title && (
+                  <ul className="pb-3 space-y-2.5">
+                    {col.links.map((link) => (
+                      <li key={link.path}>
+                        <Link to={link.path} className="text-sm text-white/60">
+                          {link.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Contact Info */}
-      {FOOTER_EMAIL && (
-        <div className="border-t border-background/20 px-6 py-6">
-          <div className="flex flex-col md:flex-row gap-6 text-sm text-background/70">
-            <a href={`mailto:${FOOTER_EMAIL}`} className="hover:text-background transition-colors">
-              {FOOTER_EMAIL}
-            </a>
-          </div>
-        </div>
-      )}
-
       {/* Bottom Bar */}
-      <div className="border-t border-background/20 px-6 py-4">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-xs text-background/50">
-            {FOOTER_COPYRIGHT}
-          </p>
-          <div className="flex gap-6">
-            <Link to="/privacy-policy" className="text-xs text-background/50 hover:text-background transition-colors">
-              Privacy Policy
-            </Link>
-            <Link to="/terms-of-service" className="text-xs text-background/50 hover:text-background transition-colors">
-              Terms of Service
-            </Link>
-          </div>
+      <div className="border-t border-white/10">
+        <div className="max-w-7xl mx-auto px-6 lg:px-12 py-5 flex flex-col md:flex-row items-center justify-between gap-3 text-[11px] text-white/40">
+          <a href="mailto:business@poshplexbd.com" className="text-white/40">
+            business@poshplexbd.com
+          </a>
+          <span>© 2026 Poshplex. All rights reserved.</span>
+          <span>
+            Design &amp; Developed by{" "}
+            <a href="https://cyberbrain.com.bd" target="_blank" rel="noopener noreferrer" className="text-white/50">
+              CyberBrain.com.bd
+            </a>
+          </span>
         </div>
       </div>
     </footer>

@@ -97,7 +97,7 @@ const PoshplexHeader = () => {
           href={item.href}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-foreground hover:text-nav-hover transition-colors text-sm font-medium tracking-wider py-3 block"
+          className="text-foreground hover:text-nav-hover transition-colors text-sm font-medium tracking-wider py-6 block"
         >
           {item.name}
         </a>
@@ -106,7 +106,7 @@ const PoshplexHeader = () => {
     return (
       <Link
         to={item.href}
-        className="text-foreground hover:text-nav-hover transition-colors text-sm font-medium tracking-wider py-3 block"
+        className="text-foreground hover:text-nav-hover transition-colors text-sm font-medium tracking-wider py-6 block"
       >
         {item.name}
       </Link>
@@ -116,7 +116,7 @@ const PoshplexHeader = () => {
   return (
     <header className="w-full sticky top-0 z-50 bg-background">
       <AnnouncementBar />
-      <nav className="flex items-center justify-between h-12 px-6">
+      <nav className="flex items-center justify-between h-14 px-6 border-b border-border">
         {/* Mobile hamburger */}
         <button
           className="lg:hidden p-2 text-foreground"

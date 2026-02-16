@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, ShoppingBag, User } from "lucide-react";
+import { Home, LayoutGrid, ShoppingBag, User } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +20,11 @@ const MobileFooterNav = () => {
       icon: Home,
       label: "Home",
       path: "/",
+    },
+    {
+      icon: LayoutGrid,
+      label: "Category",
+      path: "/categories",
     },
     {
       icon: ShoppingBag,

@@ -354,7 +354,8 @@ export const useCustomers = (filters?: CustomerFilters) => {
           thana:thanas(*),
           customer_type:customer_types(*)
         `)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(100);
 
       if (filters?.gender) {
         query = query.eq("gender", filters.gender);

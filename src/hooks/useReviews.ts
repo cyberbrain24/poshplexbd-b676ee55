@@ -39,7 +39,8 @@ export const useCustomerReviews = (customerId: string | null) => {
           )
         `)
         .eq("customer_id", customerId)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(100);
 
       if (error) throw error;
       return data as Review[];
@@ -60,7 +61,8 @@ export const useProductReviews = (productId: string | null) => {
         .select("*")
         .eq("product_id", productId)
         .eq("is_approved", true)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(100);
 
       if (error) throw error;
       return data as Review[];

@@ -140,7 +140,8 @@ export const useOrders = (filters?: {
           payment_method:payment_methods(id, name, type),
           items:order_items(*)
         `)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(100);
 
       if (filters?.status) {
         query = query.eq("order_status", filters.status);

@@ -227,7 +227,8 @@ export const useTransactions = (filters?: TransactionFilters) => {
           category:transaction_categories(*),
           order_payments(id, order_id, amount, order:orders(id, order_number, total_amount))
         `)
-        .order("date", { ascending: false });
+        .order("date", { ascending: false })
+        .limit(100);
 
       if (filters?.accountId) {
         query = query.eq("account_id", filters.accountId);

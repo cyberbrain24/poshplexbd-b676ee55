@@ -181,7 +181,8 @@ export async function fetchCustomerOrders(customerId: string) {
       items:order_items(id, product_name, quantity, line_total)
     `)
     .eq("customer_id", customerId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(100);
 
   if (error) throw error;
 

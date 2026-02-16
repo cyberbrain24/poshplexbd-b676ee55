@@ -105,6 +105,7 @@ export interface ProductVariant {
   purchase_price: number;
   selling_price: number;
   is_active: boolean;
+  image_url: string | null;
   created_at: string;
   updated_at: string;
   // Joined data
@@ -139,4 +140,5 @@ export interface VariantFormData {
   purchase_price: number;
   selling_price: number;
   is_active: boolean;
+  image_url: string | null;
 }

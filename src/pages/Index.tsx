@@ -15,7 +15,7 @@ const Index = () => {
       <HomeSEO />
       <PoshplexHeader />
       
-      <main className="-mt-[1px]">
+      <main>
         <HeroSection />
         <FeaturesBar />
         <StreetEditsGallery />

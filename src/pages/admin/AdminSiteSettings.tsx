@@ -193,7 +193,7 @@ const AdminSiteSettings = () => {
             </div>
             {branding.desktop_hero_url ? (
               <div className="space-y-2">
-                <div className="border border-border overflow-hidden aspect-[21/9] bg-muted/30">
+                <div className="border border-border overflow-hidden bg-muted/30">
                   <img src={branding.desktop_hero_url} alt="Desktop hero" className="w-full h-full object-cover" />
                 </div>
                 <div className="flex gap-2">
@@ -209,11 +209,10 @@ const AdminSiteSettings = () => {
               <button
                 onClick={() => desktopHeroRef.current?.click()}
                 disabled={isUploading}
-                className="border-2 border-dashed border-border p-8 w-full flex flex-col items-center gap-2 text-muted-foreground hover:border-foreground/40 aspect-[21/9]"
+                className="border-2 border-dashed border-border p-8 w-full flex flex-col items-center gap-2 text-muted-foreground hover:border-foreground/40"
               >
                 <ImageIcon className="h-6 w-6" />
                 <span className="text-xs">Upload Desktop Banner</span>
-                <span className="text-[10px] text-muted-foreground/60">Recommended: 1920×600</span>
               </button>
             )}
             <input
@@ -237,7 +236,7 @@ const AdminSiteSettings = () => {
             </div>
             {branding.mobile_hero_url ? (
               <div className="space-y-2">
-                <div className="border border-border overflow-hidden aspect-[9/16] max-h-[200px] bg-muted/30">
+                <div className="border border-border overflow-hidden max-h-[200px] bg-muted/30">
                   <img src={branding.mobile_hero_url} alt="Mobile hero" className="w-full h-full object-cover" />
                 </div>
                 <div className="flex gap-2">
@@ -253,11 +252,10 @@ const AdminSiteSettings = () => {
               <button
                 onClick={() => mobileHeroRef.current?.click()}
                 disabled={isUploading}
-                className="border-2 border-dashed border-border p-8 w-full flex flex-col items-center gap-2 text-muted-foreground hover:border-foreground/40 aspect-[9/16] max-h-[200px]"
+                className="border-2 border-dashed border-border p-8 w-full flex flex-col items-center gap-2 text-muted-foreground hover:border-foreground/40"
               >
                 <ImageIcon className="h-6 w-6" />
                 <span className="text-xs">Upload Mobile Banner</span>
-                <span className="text-[10px] text-muted-foreground/60">Recommended: 750×1200</span>
               </button>
             )}
             <input

@@ -1,21 +1,25 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
+import { checkRateLimit, getClientIP, rateLimitResponse } from "../_shared/rate-limiter.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
 
-serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return handleCorsOptions(req);
+  }
+
+  // Rate limiting
+  const ip = getClientIP(req);
+  const { allowed, retryAfter } = checkRateLimit(ip);
+  if (!allowed) {
+    return rateLimitResponse(corsHeaders, retryAfter);
   }
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     
-    // Verify the caller is authenticated
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -24,12 +28,10 @@ serve(async (req) => {
       });
     }
 
-    // Create admin client
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { autoRefreshToken: false, persistSession: false }
     });
 
-    // Verify caller is admin using their token
     const callerClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authHeader } },
       auth: { autoRefreshToken: false, persistSession: false }
@@ -43,7 +45,6 @@ serve(async (req) => {
       });
     }
 
-    // Check if caller is admin
     const { data: roleData } = await supabaseAdmin
       .from("user_roles")
       .select("role")
@@ -66,7 +67,6 @@ serve(async (req) => {
       });
     }
 
-    // Find the customer account
     const { data: customerAccount, error: accountError } = await supabaseAdmin
       .from("customer_accounts")
       .select("auth_user_id, phone, email")
@@ -80,7 +80,6 @@ serve(async (req) => {
       });
     }
 
-    // Get the user's email from auth
     const { data: { user: targetUser }, error: userError } = await supabaseAdmin.auth.admin.getUserById(
       customerAccount.auth_user_id
     );
@@ -92,7 +91,6 @@ serve(async (req) => {
       });
     }
 
-    // Generate a magic link for the user
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
       type: "magiclink",
       email: targetUser.email!,
@@ -109,12 +107,10 @@ serve(async (req) => {
       });
     }
 
-    // Extract the token from the link and build direct login URL
     const url = new URL(linkData.properties.action_link);
     const token = url.searchParams.get("token");
     const type = url.searchParams.get("type");
     
-    // Build the verification URL that will auto-login
     const loginUrl = `${supabaseUrl}/auth/v1/verify?token=${token}&type=${type}&redirect_to=${encodeURIComponent(`${req.headers.get("origin")}/my-orders`)}`;
 
     return new Response(JSON.stringify({ loginUrl }), {

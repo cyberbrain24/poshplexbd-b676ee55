@@ -1,10 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Content-Type": "application/xml; charset=utf-8",
-};
+import { getCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
+import { checkRateLimit, getClientIP, rateLimitResponse } from "../_shared/rate-limiter.ts";
 
 const SITE_URL = "https://poshplexbd.lovable.app";
 
@@ -45,8 +41,17 @@ function formatDate(dateString: string | null): string {
 }
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return handleCorsOptions(req);
+  }
+
+  // Rate limiting
+  const ip = getClientIP(req);
+  const { allowed, retryAfter } = checkRateLimit(ip);
+  if (!allowed) {
+    return rateLimitResponse(corsHeaders, retryAfter);
   }
 
   try {
@@ -56,7 +61,6 @@ Deno.serve(async (req) => {
 
     const entries: SitemapEntry[] = [];
 
-    // Static pages
     const staticPages = [
       { path: "/", priority: 1.0, changefreq: "daily" as const },
       { path: "/category/all", priority: 0.9, changefreq: "daily" as const },
@@ -78,7 +82,6 @@ Deno.serve(async (req) => {
       });
     });
 
-    // Fetch active products
     const { data: products, error: productsError } = await supabase
       .from("products")
       .select("id, updated_at")
@@ -97,7 +100,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Fetch categories
     const { data: categories, error: categoriesError } = await supabase
       .from("categories")
       .select("name, updated_at")
@@ -118,7 +120,10 @@ Deno.serve(async (req) => {
     console.log(`Generating sitemap with ${entries.length} URLs`);
     const xml = generateSitemapXML(entries);
 
-    return new Response(xml, { status: 200, headers: corsHeaders });
+    return new Response(xml, { 
+      status: 200, 
+      headers: { ...corsHeaders, "Content-Type": "application/xml; charset=utf-8" } 
+    });
   } catch (error) {
     console.error("Sitemap generation error:", error);
     return new Response(
@@ -129,7 +134,7 @@ Deno.serve(async (req) => {
     <priority>1.0</priority>
   </url>
 </urlset>`,
-      { status: 200, headers: corsHeaders }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/xml; charset=utf-8" } }
     );
   }
 });

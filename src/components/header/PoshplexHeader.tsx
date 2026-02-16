@@ -97,7 +97,7 @@ const PoshplexHeader = () => {
           href={item.href}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-foreground hover:text-nav-hover transition-colors text-sm font-medium tracking-wider py-6 block"
+          className="text-foreground hover:text-nav-hover transition-colors text-sm font-medium tracking-wider py-3 block"
         >
           {item.name}
         </a>
@@ -106,7 +106,7 @@ const PoshplexHeader = () => {
     return (
       <Link
         to={item.href}
-        className="text-foreground hover:text-nav-hover transition-colors text-sm font-medium tracking-wider py-6 block"
+        className="text-foreground hover:text-nav-hover transition-colors text-sm font-medium tracking-wider py-3 block"
       >
         {item.name}
       </Link>

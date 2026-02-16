@@ -25,7 +25,6 @@ export type {
   Division,
   Thana,
   CustomerType,
-  PromoUsage,
   CustomerAccount,
   Customer,
   CustomerFilters,

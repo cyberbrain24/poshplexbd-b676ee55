@@ -23,9 +23,8 @@ import {
   Crown,
   ShoppingCart,
   ExternalLink,
-  Database,
-  RefreshCw,
   LucideIcon,
+  RefreshCw,
   MessageSquare,
   Image,
   Tag,
@@ -290,9 +289,6 @@ const AdminSidebar = () => {
 
         {/* Site Settings */}
         {renderNavLink("/admin/site-settings", Settings, "Site Settings")}
-
-        {/* Seed Data */}
-        {renderNavLink("/admin/seed-data", Database, "Seed Data")}
       </nav>
 
       <div className="p-4 border-t border-border space-y-2">

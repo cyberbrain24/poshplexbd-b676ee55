@@ -32,17 +32,6 @@ export interface CustomerType {
   updated_at: string;
 }
 
-export interface PromoUsage {
-  id: string;
-  customer_id: string;
-  promo_code: string;
-  benefit_type: string | null;
-  benefit_amount: number | null;
-  used_at: string;
-  notes: string | null;
-  created_at: string;
-}
-
 export interface CustomerAccount {
   id: string;
   auth_user_id: string;
@@ -69,7 +58,6 @@ export interface Customer {
   division?: Division;
   thana?: Thana;
   customer_type?: CustomerType;
-  promo_usages?: PromoUsage[];
   promo_usage_count?: number;
   customer_account?: CustomerAccount | null;
   has_account?: boolean;

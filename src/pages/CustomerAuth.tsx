@@ -5,16 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Eye, EyeOff, Phone, Mail } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import PoshplexHeader from "@/components/header/PoshplexHeader";
 import PoshplexFooter from "@/components/footer/PoshplexFooter";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+const isEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+const isPhone = (value: string) => /^(\+?880|0)?1[3-9]\d{8}$/.test(value.replace(/\D/g, ""));
 
 const CustomerAuth = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const [authMethod, setAuthMethod] = useState<"email" | "phone">("phone");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -26,24 +26,24 @@ const CustomerAuth = () => {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        navigate(redirectPath, { replace: true });
-      }
+      if (session?.user) navigate(redirectPath, { replace: true });
     });
-
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        navigate(redirectPath, { replace: true });
-      }
+      if (session?.user) navigate(redirectPath, { replace: true });
     });
-
     return () => subscription.unsubscribe();
   }, [navigate, redirectPath]);
 
-  // Format phone to email format for Supabase auth (phone as username)
-  const phoneToEmail = (phoneNum: string) => {
-    const cleaned = phoneNum.replace(/\D/g, '');
+  const phoneToEmail = (phone: string) => {
+    const cleaned = phone.replace(/\D/g, "");
     return `${cleaned}@phone.local`;
+  };
+
+  const resolveAuthEmail = (input: string): { authEmail: string; type: "email" | "phone" } | null => {
+    const trimmed = input.trim();
+    if (isEmail(trimmed)) return { authEmail: trimmed, type: "email" };
+    if (isPhone(trimmed)) return { authEmail: phoneToEmail(trimmed), type: "phone" };
+    return null;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -51,49 +51,43 @@ const CustomerAuth = () => {
     setIsLoading(true);
 
     try {
-      const authEmail = authMethod === "phone" ? phoneToEmail(phone) : email;
-      
+      const resolved = resolveAuthEmail(identifier);
+      if (!resolved) {
+        throw new Error("Please enter a valid phone number or email address");
+      }
+
       if (isLogin) {
-        // Login
         const { error } = await supabase.auth.signInWithPassword({
-          email: authEmail,
+          email: resolved.authEmail,
           password,
         });
         if (error) throw error;
         toast.success("Welcome back!");
       } else {
-        // Signup
-        if (!name.trim()) {
-          throw new Error("Please enter your name");
-        }
+        if (!name.trim()) throw new Error("Please enter your name");
 
         const { data, error } = await supabase.auth.signUp({
-          email: authEmail,
+          email: resolved.authEmail,
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/`,
             data: {
               name: name.trim(),
-              phone: authMethod === "phone" ? phone : undefined,
-            }
-          }
+              phone: resolved.type === "phone" ? identifier.trim() : undefined,
+            },
+          },
         });
-        
         if (error) throw error;
 
-        // Create customer account record
         if (data.user) {
           const { error: accountError } = await supabase
             .from("customer_accounts")
             .insert({
               auth_user_id: data.user.id,
-              phone: authMethod === "phone" ? phone : null,
-              email: authMethod === "email" ? email : null,
+              phone: resolved.type === "phone" ? identifier.trim() : null,
+              email: resolved.type === "email" ? identifier.trim() : null,
             });
-          
-          if (accountError) {
-            console.error("Failed to create customer account:", accountError);
-          }
+          if (accountError) console.error("Failed to create customer account:", accountError);
         }
 
         toast.success("Account created! You can now login.");
@@ -124,25 +118,11 @@ const CustomerAuth = () => {
               {isLogin ? "Welcome Back" : "Create Account"}
             </h1>
             <p className="text-sm text-muted-foreground mt-2">
-              {isLogin 
-                ? "Sign in to view your orders" 
+              {isLogin
+                ? "Sign in to view your orders"
                 : "Sign up to track your orders"}
             </p>
           </div>
-
-          {/* Auth Method Toggle */}
-          <Tabs value={authMethod} onValueChange={(v) => setAuthMethod(v as "email" | "phone")} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="phone" className="gap-2">
-                <Phone className="h-4 w-4" />
-                Phone
-              </TabsTrigger>
-              <TabsTrigger value="email" className="gap-2">
-                <Mail className="h-4 w-4" />
-                Email
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
@@ -159,31 +139,17 @@ const CustomerAuth = () => {
               </div>
             )}
 
-            {authMethod === "phone" ? (
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="01XXXXXXXXX"
-                  required
-                />
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  required
-                />
-              </div>
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="identifier">Phone or Email</Label>
+              <Input
+                id="identifier"
+                type="text"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                placeholder="Enter phone number or email"
+                required
+              />
+            </div>
 
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
@@ -204,11 +170,7 @@ const CustomerAuth = () => {
                   className="absolute right-0 top-0"
                   onClick={() => setShowPassword(!showPassword)}
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
             </div>
@@ -224,11 +186,10 @@ const CustomerAuth = () => {
               onClick={() => setIsLogin(!isLogin)}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              {isLogin 
-                ? "Don't have an account? Sign up" 
+              {isLogin
+                ? "Don't have an account? Sign up"
                 : "Already have an account? Sign in"}
             </button>
-
             <div className="text-sm text-muted-foreground">
               <Link to="/order-tracking" className="hover:text-foreground transition-colors">
                 Track order without account →

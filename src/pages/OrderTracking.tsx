@@ -77,42 +77,35 @@ const OrderTracking = () => {
   const [searchParams] = useSearchParams();
   const trackOrderMutation = useTrackOrder();
   
-  const [orderNumber, setOrderNumber] = useState(searchParams.get('orderNumber') || '');
-  const [phone, setPhone] = useState(searchParams.get('phone') || '');
-  const [email, setEmail] = useState(searchParams.get('email') || '');
+  const [query, setQuery] = useState(searchParams.get('orderNumber') || searchParams.get('phone') || searchParams.get('email') || '');
   const [orders, setOrders] = useState<any[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [hasSearched, setHasSearched] = useState(false);
 
-  // Auto-search if params provided
+  const detectType = (input: string): { orderNumber?: string; phone?: string; email?: string } => {
+    const trimmed = input.trim();
+    if (/^PO-/i.test(trimmed)) return { orderNumber: trimmed };
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return { email: trimmed };
+    if (/^[\d+\-() ]{7,15}$/.test(trimmed)) return { phone: trimmed };
+    // fallback: treat as order number
+    return { orderNumber: trimmed };
+  };
+
   useEffect(() => {
-    const urlOrderNumber = searchParams.get('orderNumber');
-    const urlPhone = searchParams.get('phone');
-    const urlEmail = searchParams.get('email');
-    if (urlOrderNumber || urlPhone || urlEmail) {
-      handleTrackOrder(urlOrderNumber || undefined, urlPhone || undefined, urlEmail || undefined);
-    }
+    const initial = searchParams.get('orderNumber') || searchParams.get('phone') || searchParams.get('email');
+    if (initial) handleTrackOrder(initial);
   }, []);
 
-  const handleTrackOrder = async (orderNum?: string, phoneNum?: string, emailVal?: string) => {
-    const searchOrderNumber = orderNum ?? orderNumber;
-    const searchPhone = phoneNum ?? phone;
-    const searchEmail = emailVal ?? email;
-    
-    // Need at least one field
-    if (!searchOrderNumber.trim() && !searchPhone.trim() && !searchEmail.trim()) {
-      return;
-    }
+  const handleTrackOrder = async (input?: string) => {
+    const searchInput = (input ?? query).trim();
+    if (!searchInput) return;
 
     setHasSearched(true);
     setSelectedOrder(null);
     
     try {
-      const result = await trackOrderMutation.mutateAsync({
-        orderNumber: searchOrderNumber.trim() || undefined,
-        phone: searchPhone.trim() || undefined,
-        email: searchEmail.trim() || undefined,
-      });
+      const params = detectType(searchInput);
+      const result = await trackOrderMutation.mutateAsync(params);
       
       // Handle single or multiple results
       if (Array.isArray(result)) {
@@ -144,41 +137,21 @@ const OrderTracking = () => {
           {/* Search Form - Any single field works */}
           <div className="bg-muted/20 p-6 rounded-none mb-8">
             <p className="text-sm text-muted-foreground mb-4 text-center">
-              Enter any one of the following to find your order(s)
+              Enter your order number, phone number, or email to find your order(s)
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div>
-                <Label className="text-sm font-light">Order Number</Label>
-                <Input
-                  value={orderNumber}
-                  onChange={(e) => setOrderNumber(e.target.value)}
-                  placeholder="PO-XXXXXXXX-XXXX"
-                  className="mt-1.5 rounded-none"
-                />
-              </div>
-              <div>
-                <Label className="text-sm font-light">Phone Number</Label>
-                <Input
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="01XXXXXXXXX"
-                  className="mt-1.5 rounded-none"
-                />
-              </div>
-              <div>
-                <Label className="text-sm font-light">Email Address</Label>
-                <Input
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your@email.com"
-                  className="mt-1.5 rounded-none"
-                  type="email"
-                />
-              </div>
+            <div className="mb-4">
+              <Label className="text-sm font-light">Order Number / Phone / Email</Label>
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Enter order number, phone number, or email"
+                className="mt-1.5 rounded-none"
+                onKeyDown={(e) => e.key === 'Enter' && handleTrackOrder()}
+              />
             </div>
             <Button 
               onClick={() => handleTrackOrder()}
-              disabled={trackOrderMutation.isPending || (!orderNumber.trim() && !phone.trim() && !email.trim())}
+              disabled={trackOrderMutation.isPending || !query.trim()}
               className="w-full rounded-none"
             >
               {trackOrderMutation.isPending ? (

@@ -1,7 +1,7 @@
 /**
  * Storefront Data Prefetching
- * Only prefetches categories on initial load (needed for nav).
- * Payment methods & divisions are deferred until checkout is visited.
+ * Prefetches commonly accessed storefront data on public page load
+ * Non-disruptive: only populates cache, no effect on existing hooks
  */
 
 import { useEffect } from "react";
@@ -17,7 +17,7 @@ export function useStorefrontPrefetch() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    // Only prefetch categories (needed for mega menu nav)
+    // Prefetch categories (used in nav, filters, product pages)
     queryClient.prefetchQuery({
       queryKey: ["categories"],
       queryFn: async () => {
@@ -30,16 +30,8 @@ export function useStorefrontPrefetch() {
       },
       ...STOREFRONT_CACHE,
     });
-  }, [queryClient]);
-}
 
-/**
- * Checkout-specific prefetch — call only on checkout page
- */
-export function useCheckoutPrefetch() {
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
+    // Prefetch active payment methods (used in checkout)
     queryClient.prefetchQuery({
       queryKey: ["payment_methods"],
       queryFn: async () => {
@@ -54,6 +46,7 @@ export function useCheckoutPrefetch() {
       ...STOREFRONT_CACHE,
     });
 
+    // Prefetch active divisions (used in checkout address form)
     queryClient.prefetchQuery({
       queryKey: ["divisions-public"],
       queryFn: async () => {

@@ -13,7 +13,7 @@ const ProtectedRoute = ({ children, requireAdmin = true }: ProtectedRouteProps) 
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [mfaRequired, setMfaRequired] = useState(false);
+  const [mfaRequired, setMfaRequired] = useState(false); // Set to true to enforce MFA for admins
   const navigate = useNavigate();
 
   const checkAdminRole = useCallback(async (userId: string): Promise<boolean> => {
@@ -102,19 +102,10 @@ const ProtectedRoute = ({ children, requireAdmin = true }: ProtectedRouteProps) 
             toast.error("Access denied: Admin privileges required");
             navigate("/", { replace: true });
           } else {
-            // Admin MFA enforcement: check MFA status
-            const mfaStatus = await checkMfaStatus();
-            if (!isMounted) return;
-
-            if (!mfaStatus.enrolled) {
-              // Admin needs to enroll in MFA
-              setMfaRequired(true);
-              console.warn("[Security] Admin user without MFA enrollment detected. MFA enrollment recommended.");
-            } else if (!mfaStatus.verified) {
-              // Admin has MFA but hasn't verified this session
-              setMfaRequired(true);
-              console.warn("[Security] Admin MFA not verified for this session.");
-            }
+            // MFA enforcement disabled — enable when ready
+            // To re-enable, uncomment the MFA check below:
+            // const mfaStatus = await checkMfaStatus();
+            // if (!mfaStatus.enrolled || !mfaStatus.verified) setMfaRequired(true);
           }
         } else {
           setIsAdmin(true);

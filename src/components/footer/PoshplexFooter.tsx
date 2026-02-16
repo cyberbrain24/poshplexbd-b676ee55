@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
+import { useSiteBranding } from "@/hooks/useSiteBranding";
 
 const FOOTER_COLUMNS = [
   {
@@ -36,6 +37,7 @@ const FOOTER_COLUMNS = [
 
 const PoshplexFooter = () => {
   const [openSection, setOpenSection] = useState<string | null>(null);
+  const { data: branding } = useSiteBranding();
 
   const toggleSection = (title: string) => {
     setOpenSection(openSection === title ? null : title);
@@ -49,11 +51,15 @@ const PoshplexFooter = () => {
 
           {/* Brand & Newsletter */}
           <div className="lg:col-span-4">
-            <span className="text-[28px] font-black tracking-tight text-white block mb-2">
-              POSHPLEX
-            </span>
+            {branding?.logo_url ? (
+              <img src={branding.logo_url} alt={branding?.site_name || "POSHPLEX"} className="h-10 object-contain mb-2" />
+            ) : (
+              <span className="text-[28px] font-black tracking-tight text-white block mb-2">
+                {branding?.site_name || "POSHPLEX"}
+              </span>
+            )}
             <p className="text-white/60 text-sm mb-8">
-              Premium Fashion &amp; Lifestyle
+              {branding?.slogan || "BE POSH WITH POSHPLEX"}
             </p>
 
             <p className="text-[11px] font-semibold tracking-[0.2em] text-white/80 mb-3">

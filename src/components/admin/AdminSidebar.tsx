@@ -30,6 +30,7 @@ import {
   MessageSquare,
   Image,
   Tag,
+  Settings,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -287,6 +288,9 @@ const AdminSidebar = () => {
 
         {/* Media Library */}
         {renderNavLink("/admin/media", Image, "Media")}
+
+        {/* Site Settings */}
+        {renderNavLink("/admin/site-settings", Settings, "Site Settings")}
 
         {/* SEO Manager */}
         {renderNavLink("/admin/seo", Globe, "SEO Manager")}

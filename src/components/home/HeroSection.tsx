@@ -1,8 +1,76 @@
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useSiteBranding } from "@/hooks/useSiteBranding";
 import heroImage from "@/assets/hero-urban.jpg";
 
 const HeroSection = () => {
+  const { data: branding } = useSiteBranding();
+
+  // If hero is explicitly disabled via admin, render nothing
+  if (branding && !branding.hero_enabled) {
+    return null;
+  }
+
+  const desktopBanner = branding?.desktop_hero_url;
+  const mobileBanner = branding?.mobile_hero_url;
+  const hasCustomBanner = desktopBanner || mobileBanner;
+
+  // If custom banners are uploaded, show full-width banner mode
+  if (hasCustomBanner) {
+    return (
+      <section className="w-full">
+        {/* Desktop banner */}
+        {desktopBanner && (
+          <div className="hidden md:block w-full">
+            <img
+              src={desktopBanner}
+              alt="Hero banner"
+              loading="eager"
+              fetchPriority="high"
+              className="w-full h-auto object-cover"
+            />
+          </div>
+        )}
+        {/* Mobile banner */}
+        {mobileBanner && (
+          <div className="block md:hidden w-full">
+            <img
+              src={mobileBanner}
+              alt="Hero banner mobile"
+              loading="eager"
+              fetchPriority="high"
+              className="w-full h-auto object-cover"
+            />
+          </div>
+        )}
+        {/* Fallback: if only one banner exists, show it on both */}
+        {desktopBanner && !mobileBanner && (
+          <div className="block md:hidden w-full">
+            <img
+              src={desktopBanner}
+              alt="Hero banner"
+              loading="eager"
+              fetchPriority="high"
+              className="w-full h-auto object-cover"
+            />
+          </div>
+        )}
+        {!desktopBanner && mobileBanner && (
+          <div className="hidden md:block w-full">
+            <img
+              src={mobileBanner}
+              alt="Hero banner"
+              loading="eager"
+              fetchPriority="high"
+              className="w-full h-auto object-cover"
+            />
+          </div>
+        )}
+      </section>
+    );
+  }
+
+  // Default fallback hero layout
   return (
     <section className="w-full">
       <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[70vh]">

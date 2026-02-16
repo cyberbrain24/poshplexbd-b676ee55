@@ -1584,6 +1584,42 @@ export type Database = {
         }
         Relationships: []
       }
+      site_branding: {
+        Row: {
+          created_at: string
+          desktop_hero_url: string | null
+          hero_enabled: boolean
+          id: string
+          logo_url: string | null
+          mobile_hero_url: string | null
+          site_name: string
+          slogan: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          desktop_hero_url?: string | null
+          hero_enabled?: boolean
+          id?: string
+          logo_url?: string | null
+          mobile_hero_url?: string | null
+          site_name?: string
+          slogan?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          desktop_hero_url?: string | null
+          hero_enabled?: boolean
+          id?: string
+          logo_url?: string | null
+          mobile_hero_url?: string | null
+          site_name?: string
+          slogan?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       site_settings: {
         Row: {
           created_at: string

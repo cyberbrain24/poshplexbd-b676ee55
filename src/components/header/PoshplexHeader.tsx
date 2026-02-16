@@ -8,10 +8,7 @@ import ShoppingBag from "./ShoppingBag";
 import { useCategories } from "@/hooks/useMasterData";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
-
-// Hardcoded site settings
-const SITE_NAME = "POSHPLEX";
-const SITE_LOGO_URL: string | null = null;
+import { useSiteBranding } from "@/hooks/useSiteBranding";
 
 interface NavItem {
   name: string;
@@ -36,6 +33,10 @@ const PoshplexHeader = () => {
   const navigate = useNavigate();
   const { data: allCategories = [] } = useCategories();
   const { cartItems, updateQuantity, cartCount } = useCart();
+  const { data: branding } = useSiteBranding();
+
+  const SITE_NAME = branding?.site_name || "POSHPLEX";
+  const SITE_LOGO_URL = branding?.logo_url || null;
 
   // Listen for open-shopping-bag event from Add to Bag button
   useEffect(() => {

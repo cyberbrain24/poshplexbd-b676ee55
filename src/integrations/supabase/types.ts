@@ -1308,47 +1308,6 @@ export type Database = {
           },
         ]
       }
-      promo_usages: {
-        Row: {
-          benefit_amount: number | null
-          benefit_type: string | null
-          created_at: string
-          customer_id: string
-          id: string
-          notes: string | null
-          promo_code: string
-          used_at: string
-        }
-        Insert: {
-          benefit_amount?: number | null
-          benefit_type?: string | null
-          created_at?: string
-          customer_id: string
-          id?: string
-          notes?: string | null
-          promo_code: string
-          used_at?: string
-        }
-        Update: {
-          benefit_amount?: number | null
-          benefit_type?: string | null
-          created_at?: string
-          customer_id?: string
-          id?: string
-          notes?: string | null
-          promo_code?: string
-          used_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "promo_usages_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       return_requests: {
         Row: {
           admin_notes: string | null
@@ -1481,51 +1440,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      seed_jobs: {
-        Row: {
-          completed_at: string | null
-          created_at: string
-          current_batch: number
-          error_message: string | null
-          id: string
-          images_created: number
-          products_created: number
-          started_at: string | null
-          status: string
-          total_batches: number
-          total_products: number
-          variants_created: number
-        }
-        Insert: {
-          completed_at?: string | null
-          created_at?: string
-          current_batch?: number
-          error_message?: string | null
-          id?: string
-          images_created?: number
-          products_created?: number
-          started_at?: string | null
-          status?: string
-          total_batches?: number
-          total_products?: number
-          variants_created?: number
-        }
-        Update: {
-          completed_at?: string | null
-          created_at?: string
-          current_batch?: number
-          error_message?: string | null
-          id?: string
-          images_created?: number
-          products_created?: number
-          started_at?: string | null
-          status?: string
-          total_batches?: number
-          total_products?: number
-          variants_created?: number
-        }
-        Relationships: []
       }
       site_branding: {
         Row: {
@@ -1690,30 +1604,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      tracking_events: {
-        Row: {
-          created_at: string
-          event_type: string
-          id: string
-          metadata: Json | null
-          status: string
-        }
-        Insert: {
-          created_at?: string
-          event_type: string
-          id?: string
-          metadata?: Json | null
-          status?: string
-        }
-        Update: {
-          created_at?: string
-          event_type?: string
-          id?: string
-          metadata?: Json | null
-          status?: string
-        }
-        Relationships: []
       }
       transaction_categories: {
         Row: {

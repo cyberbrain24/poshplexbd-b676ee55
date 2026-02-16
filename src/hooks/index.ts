@@ -71,9 +71,6 @@ export {
   useCreateCustomerType,
   useUpdateCustomerType,
   useDeleteCustomerType,
-  usePromoUsages,
-  useCreatePromoUsage,
-  useDeletePromoUsage,
 } from './useCustomers';
 
 // Account & Transaction hooks

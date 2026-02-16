@@ -53,7 +53,7 @@ import AdminCustomerTypes from "./pages/admin/AdminCustomerTypes";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminPaymentMethods from "./pages/admin/AdminPaymentMethods";
 
-import AdminSeedData from "./pages/admin/AdminSeedData";
+
 import AdminReviews from "./pages/admin/AdminReviews";
 import AdminMedia from "./pages/admin/AdminMedia";
 import AdminPromoCodes from "./pages/admin/AdminPromoCodes";
@@ -144,7 +144,6 @@ const App = () => (
                 <Route path="payment-methods" element={<AdminPaymentMethods />} />
                 <Route path="promo-codes" element={<AdminPromoCodes />} />
                 <Route path="site-settings" element={<AdminSiteSettings />} />
-                <Route path="seed-data" element={<AdminSeedData />} />
               </Route>
               
               {/* 404 Catch-all - MUST be last */}

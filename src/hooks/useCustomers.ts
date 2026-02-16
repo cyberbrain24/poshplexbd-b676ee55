@@ -32,16 +32,6 @@ export interface CustomerType {
   updated_at: string;
 }
 
-export interface PromoUsage {
-  id: string;
-  customer_id: string;
-  promo_code: string;
-  benefit_type: string | null;
-  benefit_amount: number | null;
-  used_at: string;
-  notes: string | null;
-  created_at: string;
-}
 
 export interface CustomerAccount {
   id: string;
@@ -73,7 +63,6 @@ export interface Customer {
   division?: Division;
   thana?: Thana;
   customer_type?: CustomerType;
-  promo_usages?: PromoUsage[];
   promo_usage_count?: number;
   customer_account?: CustomerAccount | null;
   has_account?: boolean;
@@ -386,10 +375,10 @@ export const useCustomers = (filters?: CustomerFilters) => {
       const { data, error } = await query;
       if (error) throw error;
 
-      // Fetch promo usage counts for each customer
+      // Fetch promo usage counts for each customer (from promo_code_usages)
       const customerIds = data.map(c => c.id);
       const { data: promoData, error: promoError } = await supabase
-        .from("promo_usages")
+        .from("promo_code_usages")
         .select("customer_id")
         .in("customer_id", customerIds);
 
@@ -463,7 +452,7 @@ export const useCreateCustomer = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (customer: Omit<Customer, "id" | "created_at" | "updated_at" | "division" | "thana" | "customer_type" | "promo_usages" | "promo_usage_count" | "profile_image_url" | "postal_code">) => {
+    mutationFn: async (customer: Omit<Customer, "id" | "created_at" | "updated_at" | "division" | "thana" | "customer_type" | "promo_usage_count" | "profile_image_url" | "postal_code">) => {
       const { data, error } = await supabase
         .from("customers")
         .insert(customer)
@@ -488,7 +477,7 @@ export const useUpdateCustomer = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...customer }: Partial<Customer> & { id: string }) => {
-      const { division, thana, customer_type, promo_usages, promo_usage_count, profile_image_url, postal_code, ...customerData } = customer;
+      const { division, thana, customer_type, promo_usage_count, profile_image_url, postal_code, ...customerData } = customer;
       const { data, error } = await supabase
         .from("customers")
         .update(customerData)
@@ -523,99 +512,6 @@ export const useDeleteCustomer = () => {
     },
     onError: (error: Error) => {
       toast({ title: "Failed to delete customer", description: error.message, variant: "destructive" });
-    },
-  });
-};
-
-// Promo Usages hooks
-export const usePromoUsages = (customerId?: string) => {
-  return useQuery({
-    queryKey: ["promoUsages", customerId],
-    queryFn: async () => {
-      let query = supabase
-        .from("promo_usages")
-        .select("*")
-        .order("used_at", { ascending: false });
-
-      if (customerId) {
-        query = query.eq("customer_id", customerId);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data as PromoUsage[];
-    },
-    enabled: !!customerId,
-  });
-};
-
-export const useCreatePromoUsage = () => {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-
-  return useMutation({
-    mutationFn: async (promoUsage: Omit<PromoUsage, "id" | "created_at">) => {
-      const { data, error } = await supabase
-        .from("promo_usages")
-        .insert(promoUsage)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["promoUsages"] });
-      queryClient.invalidateQueries({ queryKey: ["customers"] });
-      toast({ title: "Promo usage recorded successfully" });
-    },
-    onError: (error: Error) => {
-      toast({ title: "Failed to record promo usage", description: error.message, variant: "destructive" });
-    },
-  });
-};
-
-export const useUpdatePromoUsage = () => {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-
-  return useMutation({
-    mutationFn: async ({ id, ...promoUsage }: Partial<PromoUsage> & { id: string }) => {
-      const { data, error } = await supabase
-        .from("promo_usages")
-        .update(promoUsage)
-        .eq("id", id)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["promoUsages"] });
-      queryClient.invalidateQueries({ queryKey: ["customers"] });
-      toast({ title: "Promo usage updated successfully" });
-    },
-    onError: (error: Error) => {
-      toast({ title: "Failed to update promo usage", description: error.message, variant: "destructive" });
-    },
-  });
-};
-
-export const useDeletePromoUsage = () => {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("promo_usages").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["promoUsages"] });
-      queryClient.invalidateQueries({ queryKey: ["customers"] });
-      toast({ title: "Promo usage deleted successfully" });
-    },
-    onError: (error: Error) => {
-      toast({ title: "Failed to delete promo usage", description: error.message, variant: "destructive" });
     },
   });
 };

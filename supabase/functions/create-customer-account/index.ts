@@ -1,14 +1,19 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
+import { checkRateLimit, getClientIP, rateLimitResponse } from "../_shared/rate-limiter.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
 
-serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return handleCorsOptions(req);
+  }
+
+  // Rate limiting
+  const ip = getClientIP(req);
+  const { allowed, retryAfter } = checkRateLimit(ip);
+  if (!allowed) {
+    return rateLimitResponse(corsHeaders, retryAfter);
   }
 
   try {
@@ -42,7 +47,7 @@ serve(async (req) => {
       );
     }
 
-    // Also check if there's an account with this phone number
+    // Check if there's an account with this phone number
     const { data: existingPhoneAccount } = await supabase
       .from("customer_accounts")
       .select("id, customer_id")
@@ -50,7 +55,6 @@ serve(async (req) => {
       .maybeSingle();
 
     if (existingPhoneAccount) {
-      // Link existing account to this customer if not already linked
       if (!existingPhoneAccount.customer_id) {
         await supabase
           .from("customer_accounts")
@@ -70,18 +74,16 @@ serve(async (req) => {
     const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
       email: phoneEmail,
       password: defaultPassword,
-      email_confirm: true, // Auto-confirm since it's phone-based
+      email_confirm: true,
       user_metadata: { name, phone }
     });
 
     if (authError) {
-      // If user already exists with this email, try to find and link
       if (authError.message.includes("already been registered")) {
         const { data: existingUsers } = await supabase.auth.admin.listUsers();
         const existingUser = existingUsers?.users?.find(u => u.email === phoneEmail);
         
         if (existingUser) {
-          // Create customer_accounts record linking existing user
           const { data: newAccount, error: accountError } = await supabase
             .from("customer_accounts")
             .insert({

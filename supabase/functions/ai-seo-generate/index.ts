@@ -1,10 +1,6 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { getCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
+import { checkRateLimit, getClientIP, rateLimitResponse } from "../_shared/rate-limiter.ts";
 
 interface GenerateRequest {
   type: 'product_description' | 'blog_content' | 'meta_tags' | 'blog_excerpt';
@@ -18,7 +14,6 @@ interface GenerateRequest {
   };
 }
 
-// Input validation configuration
 const MAX_LENGTHS: Record<string, number> = {
   name: 200,
   title: 200,
@@ -28,7 +23,6 @@ const MAX_LENGTHS: Record<string, number> = {
   content: 2000,
 };
 
-// Suspicious patterns that indicate prompt injection attempts
 const SUSPICIOUS_PATTERNS = [
   /ignore\s+(previous|all|above|prior)\s+(instructions?|prompts?|rules?)/i,
   /you\s+are\s+now/i,
@@ -42,7 +36,6 @@ const SUSPICIOUS_PATTERNS = [
   /<<\s*SYS\s*>>/i,
 ];
 
-// Validate and sanitize AI input
 function validateAndSanitizeInput(context: GenerateRequest['context']): Record<string, string> {
   const sanitized: Record<string, string> = {};
 
@@ -56,13 +49,11 @@ function validateAndSanitizeInput(context: GenerateRequest['context']): Record<s
       throw new Error(`Invalid input type for ${key}`);
     }
 
-    // Check length limits
     const maxLength = MAX_LENGTHS[key] || 500;
     if (value.length > maxLength) {
       throw new Error(`${key} exceeds maximum length of ${maxLength} characters`);
     }
 
-    // Check for suspicious patterns
     for (const pattern of SUSPICIOUS_PATTERNS) {
       if (pattern.test(value)) {
         console.warn(`Suspicious pattern detected in ${key}: ${pattern}`);
@@ -70,24 +61,31 @@ function validateAndSanitizeInput(context: GenerateRequest['context']): Record<s
       }
     }
 
-    // Sanitize the input
     sanitized[key] = value
-      .replace(/[\n\r]+/g, ' ')  // Remove newlines to prevent prompt structure manipulation
-      .replace(/\s+/g, ' ')      // Normalize whitespace
+      .replace(/[\n\r]+/g, ' ')
+      .replace(/\s+/g, ' ')
       .trim()
-      .substring(0, maxLength);  // Enforce max length
+      .substring(0, maxLength);
   }
 
   return sanitized;
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return handleCorsOptions(req);
+  }
+
+  // Rate limiting
+  const ip = getClientIP(req);
+  const { allowed, retryAfter } = checkRateLimit(ip);
+  if (!allowed) {
+    return rateLimitResponse(corsHeaders, retryAfter);
   }
 
   try {
-    // Authentication check
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return new Response(
@@ -103,7 +101,6 @@ serve(async (req) => {
       global: { headers: { Authorization: authHeader } }
     });
 
-    // Validate the JWT token
     const token = authHeader.replace('Bearer ', '');
     const { data: claimsData, error: claimsError } = await supabase.auth.getUser(token);
     
@@ -116,7 +113,6 @@ serve(async (req) => {
 
     const userId = claimsData.user.id;
 
-    // Check if user has admin role
     const { data: roleData, error: roleError } = await supabase
       .from("user_roles")
       .select("role")
@@ -133,7 +129,6 @@ serve(async (req) => {
 
     const { type, context } = await req.json() as GenerateRequest;
 
-    // Validate generation type
     const validTypes = ['product_description', 'blog_content', 'meta_tags', 'blog_excerpt'];
     if (!validTypes.includes(type)) {
       return new Response(
@@ -142,7 +137,6 @@ serve(async (req) => {
       );
     }
 
-    // Validate and sanitize all inputs
     const sanitizedContext = validateAndSanitizeInput(context);
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -251,11 +245,9 @@ Output only the excerpt text.`;
 
     console.log(`AI SEO Generate: Successfully generated ${type} content for user ${userId}`);
 
-    // Parse JSON response for meta_tags type
     let result = generatedText;
     if (type === 'meta_tags') {
       try {
-        // Extract JSON from potential markdown code blocks
         const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           result = JSON.parse(jsonMatch[0]);

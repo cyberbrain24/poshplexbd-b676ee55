@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,10 +9,9 @@ import ScrollToTop from "./components/ScrollToTop";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { CartProvider } from "./contexts/CartContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import AdminLayout from "./components/admin/AdminLayout";
 import MobileFooterNav from "./components/navigation/MobileFooterNav";
 
-// All pages - direct imports (no lazy loading)
+// Storefront pages - direct imports (critical path)
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Category from "./pages/Category";
@@ -32,32 +32,31 @@ import OrderTracking from "./pages/OrderTracking";
 import MyOrders from "./pages/MyOrders";
 import Membership from "./pages/Membership";
 
-// Admin pages - direct imports
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminProducts from "./pages/admin/AdminProducts";
-import AdminColors from "./pages/admin/AdminColors";
-import AdminSizes from "./pages/admin/AdminSizes";
-import AdminMaterials from "./pages/admin/AdminMaterials";
-import AdminSizeGuides from "./pages/admin/AdminSizeGuides";
-import AdminCareInstructions from "./pages/admin/AdminCareInstructions";
-import AdminCategories from "./pages/admin/AdminCategories";
-import AdminBrands from "./pages/admin/AdminBrands";
-import AdminAccounts from "./pages/admin/AdminAccounts";
-import AdminAccountsList from "./pages/admin/AdminAccountsList";
-import AdminIncomeCategories from "./pages/admin/AdminIncomeCategories";
-import AdminExpenseCategories from "./pages/admin/AdminExpenseCategories";
-import AdminCustomers from "./pages/admin/AdminCustomers";
-import AdminDivisions from "./pages/admin/AdminDivisions";
-import AdminThanas from "./pages/admin/AdminThanas";
-import AdminCustomerTypes from "./pages/admin/AdminCustomerTypes";
-import AdminOrders from "./pages/admin/AdminOrders";
-import AdminPaymentMethods from "./pages/admin/AdminPaymentMethods";
-
-
-import AdminReviews from "./pages/admin/AdminReviews";
-import AdminMedia from "./pages/admin/AdminMedia";
-import AdminPromoCodes from "./pages/admin/AdminPromoCodes";
-import AdminSiteSettings from "./pages/admin/AdminSiteSettings";
+// Admin pages - lazy loaded (separate chunk, never downloaded by storefront users)
+const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminProducts = lazy(() => import("./pages/admin/AdminProducts"));
+const AdminColors = lazy(() => import("./pages/admin/AdminColors"));
+const AdminSizes = lazy(() => import("./pages/admin/AdminSizes"));
+const AdminMaterials = lazy(() => import("./pages/admin/AdminMaterials"));
+const AdminSizeGuides = lazy(() => import("./pages/admin/AdminSizeGuides"));
+const AdminCareInstructions = lazy(() => import("./pages/admin/AdminCareInstructions"));
+const AdminCategories = lazy(() => import("./pages/admin/AdminCategories"));
+const AdminBrands = lazy(() => import("./pages/admin/AdminBrands"));
+const AdminAccounts = lazy(() => import("./pages/admin/AdminAccounts"));
+const AdminAccountsList = lazy(() => import("./pages/admin/AdminAccountsList"));
+const AdminIncomeCategories = lazy(() => import("./pages/admin/AdminIncomeCategories"));
+const AdminExpenseCategories = lazy(() => import("./pages/admin/AdminExpenseCategories"));
+const AdminCustomers = lazy(() => import("./pages/admin/AdminCustomers"));
+const AdminDivisions = lazy(() => import("./pages/admin/AdminDivisions"));
+const AdminThanas = lazy(() => import("./pages/admin/AdminThanas"));
+const AdminCustomerTypes = lazy(() => import("./pages/admin/AdminCustomerTypes"));
+const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
+const AdminPaymentMethods = lazy(() => import("./pages/admin/AdminPaymentMethods"));
+const AdminReviews = lazy(() => import("./pages/admin/AdminReviews"));
+const AdminMedia = lazy(() => import("./pages/admin/AdminMedia"));
+const AdminPromoCodes = lazy(() => import("./pages/admin/AdminPromoCodes"));
+const AdminSiteSettings = lazy(() => import("./pages/admin/AdminSiteSettings"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -73,6 +72,13 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+// Admin loading fallback
+const AdminLoadingFallback = () => (
+  <div className="flex min-h-screen items-center justify-center bg-background">
+    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+  </div>
+);
 
 const App = () => (
   <ErrorBoundary>
@@ -110,13 +116,18 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/login" element={<CustomerAuth />} />
               
-              {/* Admin Routes - Nested under protected layout */}
-              <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+              {/* Admin Routes - Lazy loaded, nested under protected layout */}
+              <Route path="/admin" element={
+                <ProtectedRoute>
+                  <Suspense fallback={<AdminLoadingFallback />}>
+                    <AdminLayout />
+                  </Suspense>
+                </ProtectedRoute>
+              }>
                 <Route index element={<AdminDashboard />} />
                 <Route path="products" element={<AdminProducts />} />
                 <Route path="reviews" element={<AdminReviews />} />
                 <Route path="media" element={<AdminMedia />} />
-                
                 
                 {/* Product Edits */}
                 <Route path="colors" element={<AdminColors />} />

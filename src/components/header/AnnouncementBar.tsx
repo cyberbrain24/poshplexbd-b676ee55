@@ -7,7 +7,7 @@
 const AnnouncementBar = () => {
   return (
     <div className="announcement-bar bg-foreground text-background overflow-hidden">
-      <div className="announcement-text py-2 text-xs font-medium tracking-widest whitespace-nowrap">
+      <div className="announcement-text py-1 text-xs font-medium tracking-widest whitespace-nowrap">
         BE POSH WITH POSHPLEX
       </div>
     </div>

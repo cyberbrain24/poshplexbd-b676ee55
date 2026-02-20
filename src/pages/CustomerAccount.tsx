@@ -268,7 +268,10 @@ const CustomerAccount = () => {
   };
 
   const handleSaveProfile = async () => {
-    if (!accountData?.customer_id) return;
+    if (!accountData?.customer_id) {
+      toast.error("No customer record linked to your account. Please contact support.");
+      return;
+    }
     if (!editForm.name.trim()) { toast.error("Name is required"); return; }
     if (!editForm.phone.trim()) { toast.error("Phone is required"); return; }
 
@@ -277,52 +280,61 @@ const CustomerAccount = () => {
       const { error } = await supabase
         .from("customers")
         .update({
-          name: editForm.name,
-          email: editForm.email || null,
-          phone: editForm.phone,
-          address: editForm.address || null,
-          gender: editForm.gender || null,
+          name: editForm.name.trim(),
+          email: editForm.email.trim() || null,
+          phone: editForm.phone.trim(),
+          address: editForm.address.trim() || null,
+          gender: editForm.gender || "other",
           birthdate: editForm.birthdate || null,
           division_id: editForm.division_id || null,
           thana_id: editForm.thana_id || null,
-          postal_code: editForm.postal_code || null,
+          postal_code: editForm.postal_code.trim() || null,
         })
         .eq("id", accountData.customer_id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Customer update error:", error);
+        throw error;
+      }
 
-      await supabase
-        .from("customer_accounts")
-        .update({ phone: editForm.phone, email: editForm.email || null })
-        .eq("customer_id", accountData.customer_id);
+      // Update customer_accounts using auth_user_id (matches RLS policy)
+      if (user?.id) {
+        const { error: acctError } = await supabase
+          .from("customer_accounts")
+          .update({ phone: editForm.phone.trim(), email: editForm.email.trim() || null })
+          .eq("auth_user_id", user.id);
+        if (acctError) console.warn("customer_accounts update warning:", acctError);
+      }
 
       // Update local state with division/thana names
       const selectedDiv = divisions.find(d => d.id === editForm.division_id);
+      // Look in thanas state, or if missing (thanas not loaded yet for existing division), keep previous
       const selectedThana = thanas.find(t => t.id === editForm.thana_id);
 
       setAccountData(prev => prev ? {
         ...prev,
-        phone: editForm.phone,
-        email: editForm.email,
+        phone: editForm.phone.trim(),
+        email: editForm.email.trim() || null,
         customer: prev.customer ? {
           ...prev.customer,
-          name: editForm.name,
-          email: editForm.email || null,
-          phone: editForm.phone,
-          address: editForm.address || null,
-          gender: editForm.gender,
+          name: editForm.name.trim(),
+          email: editForm.email.trim() || null,
+          phone: editForm.phone.trim(),
+          address: editForm.address.trim() || null,
+          gender: editForm.gender || "other",
           birthdate: editForm.birthdate || null,
           division_id: editForm.division_id || null,
           thana_id: editForm.thana_id || null,
-          postal_code: editForm.postal_code || null,
-          division: selectedDiv ? { id: selectedDiv.id, name: selectedDiv.name } : prev.customer.division,
-          thana: selectedThana ? { id: selectedThana.id, name: selectedThana.name } : prev.customer.thana,
+          postal_code: editForm.postal_code.trim() || null,
+          division: selectedDiv ? { id: selectedDiv.id, name: selectedDiv.name } : (editForm.division_id ? prev.customer.division : null),
+          thana: selectedThana ? { id: selectedThana.id, name: selectedThana.name } : (editForm.thana_id ? prev.customer.thana : null),
         } : prev.customer,
       } : prev);
 
       toast.success("Profile updated successfully");
       setIsEditingProfile(false);
     } catch (error: any) {
+      console.error("Profile save error:", error);
       toast.error(error.message || "Failed to update profile");
     } finally {
       setIsUpdating(false);
@@ -332,17 +344,24 @@ const CustomerAccount = () => {
   const openEditProfile = () => {
     // Re-sync form with latest accountData before opening
     const c = accountData?.customer;
+    const divisionId = c?.division_id || "";
     setEditForm({
       name: c?.name || "",
       email: c?.email || accountData?.email || "",
       phone: c?.phone || accountData?.phone || "",
       address: c?.address || "",
-      gender: c?.gender || "",
-      division_id: c?.division_id || "",
+      gender: c?.gender || "other",
+      division_id: divisionId,
       thana_id: c?.thana_id || "",
       postal_code: c?.postal_code || "",
       birthdate: c?.birthdate || "",
     });
+    // Pre-load thanas for existing division so the dropdown is populated immediately
+    if (divisionId) {
+      supabase.from("thanas").select("id, name, division_id")
+        .eq("division_id", divisionId).eq("is_active", true).order("name")
+        .then(({ data }) => setThanas(data || []));
+    }
     setIsEditingProfile(true);
   };
 

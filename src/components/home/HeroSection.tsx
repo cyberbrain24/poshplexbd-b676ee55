@@ -1,21 +1,10 @@
 import { Helmet } from "react-helmet-async";
 import { useSiteBranding } from "@/hooks/useSiteBranding";
 
-// Convert Supabase storage object URL to WebP via Supabase image transform API
-const toWebP = (url: string | null | undefined, width?: number): string | null => {
+// Use original URL directly — Supabase image transform API requires paid plan
+const toWebP = (url: string | null | undefined, _width?: number): string | null => {
   if (!url) return null;
-  try {
-    // Transform: /storage/v1/object/public/ → /storage/v1/render/image/public/
-    const transformed = url.replace(
-      '/storage/v1/object/public/',
-      '/storage/v1/render/image/public/'
-    );
-    const params = new URLSearchParams({ format: 'webp', quality: '80' });
-    if (width) params.set('width', String(width));
-    return `${transformed}?${params.toString()}`;
-  } catch {
-    return url;
-  }
+  return url;
 };
 
 const HeroSection = () => {

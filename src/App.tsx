@@ -11,26 +11,28 @@ import { CartProvider } from "./contexts/CartContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import MobileFooterNav from "./components/navigation/MobileFooterNav";
 
-// Storefront pages - direct imports (critical path)
+// Storefront pages - only homepage and 404 on critical path
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import Category from "./pages/Category";
-import CategoryBrowser from "./pages/CategoryBrowser";
-import ProductDetail from "./pages/ProductDetail";
-import Checkout from "./pages/Checkout";
-import OurStory from "./pages/about/OurStory";
-import Sustainability from "./pages/about/Sustainability";
-import SizeGuide from "./pages/about/SizeGuide";
-import CustomerCare from "./pages/about/CustomerCare";
-import StoreLocator from "./pages/about/StoreLocator";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import TermsOfService from "./pages/TermsOfService";
-import Auth from "./pages/Auth";
-import CustomerAuth from "./pages/CustomerAuth";
-import CustomerAccount from "./pages/CustomerAccount";
-import OrderTracking from "./pages/OrderTracking";
-import MyOrders from "./pages/MyOrders";
-import Membership from "./pages/Membership";
+
+// Storefront pages - lazy loaded (deferred until navigation)
+const Category = lazy(() => import("./pages/Category"));
+const CategoryBrowser = lazy(() => import("./pages/CategoryBrowser"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const OurStory = lazy(() => import("./pages/about/OurStory"));
+const Sustainability = lazy(() => import("./pages/about/Sustainability"));
+const SizeGuide = lazy(() => import("./pages/about/SizeGuide"));
+const CustomerCare = lazy(() => import("./pages/about/CustomerCare"));
+const StoreLocator = lazy(() => import("./pages/about/StoreLocator"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const Auth = lazy(() => import("./pages/Auth"));
+const CustomerAuth = lazy(() => import("./pages/CustomerAuth"));
+const CustomerAccount = lazy(() => import("./pages/CustomerAccount"));
+const OrderTracking = lazy(() => import("./pages/OrderTracking"));
+const MyOrders = lazy(() => import("./pages/MyOrders"));
+const Membership = lazy(() => import("./pages/Membership"));
 
 // Admin pages - lazy loaded (separate chunk, never downloaded by storefront users)
 const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
@@ -73,8 +75,8 @@ const queryClient = new QueryClient({
   },
 });
 
-// Admin loading fallback
-const AdminLoadingFallback = () => (
+// Shared loading fallback for lazy routes
+const LoadingFallback = () => (
   <div className="flex min-h-screen items-center justify-center bg-background">
     <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
   </div>
@@ -96,30 +98,32 @@ const App = () => (
           >
             <ScrollToTop />
             <Routes>
-              {/* Public Routes */}
+              {/* Homepage - on critical path, no Suspense needed */}
               <Route path="/" element={<Index />} />
-              <Route path="/categories" element={<CategoryBrowser />} />
-              <Route path="/category/:category" element={<Category />} />
-              <Route path="/product/:productSlug" element={<ProductDetail />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/order-tracking" element={<OrderTracking />} />
-              <Route path="/my-orders" element={<MyOrders />} />
-              <Route path="/account" element={<CustomerAccount />} />
-              <Route path="/membership" element={<Membership />} />
-              <Route path="/about/our-story" element={<OurStory />} />
-              <Route path="/about/sustainability" element={<Sustainability />} />
-              <Route path="/about/size-guide" element={<SizeGuide />} />
-              <Route path="/about/customer-care" element={<CustomerCare />} />
-              <Route path="/about/store-locator" element={<StoreLocator />} />
-              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-              <Route path="/terms-of-service" element={<TermsOfService />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/login" element={<CustomerAuth />} />
+
+              {/* Storefront Routes - lazy loaded */}
+              <Route path="/categories" element={<Suspense fallback={<LoadingFallback />}><CategoryBrowser /></Suspense>} />
+              <Route path="/category/:category" element={<Suspense fallback={<LoadingFallback />}><Category /></Suspense>} />
+              <Route path="/product/:productSlug" element={<Suspense fallback={<LoadingFallback />}><ProductDetail /></Suspense>} />
+              <Route path="/checkout" element={<Suspense fallback={<LoadingFallback />}><Checkout /></Suspense>} />
+              <Route path="/order-tracking" element={<Suspense fallback={<LoadingFallback />}><OrderTracking /></Suspense>} />
+              <Route path="/my-orders" element={<Suspense fallback={<LoadingFallback />}><MyOrders /></Suspense>} />
+              <Route path="/account" element={<Suspense fallback={<LoadingFallback />}><CustomerAccount /></Suspense>} />
+              <Route path="/membership" element={<Suspense fallback={<LoadingFallback />}><Membership /></Suspense>} />
+              <Route path="/about/our-story" element={<Suspense fallback={<LoadingFallback />}><OurStory /></Suspense>} />
+              <Route path="/about/sustainability" element={<Suspense fallback={<LoadingFallback />}><Sustainability /></Suspense>} />
+              <Route path="/about/size-guide" element={<Suspense fallback={<LoadingFallback />}><SizeGuide /></Suspense>} />
+              <Route path="/about/customer-care" element={<Suspense fallback={<LoadingFallback />}><CustomerCare /></Suspense>} />
+              <Route path="/about/store-locator" element={<Suspense fallback={<LoadingFallback />}><StoreLocator /></Suspense>} />
+              <Route path="/privacy-policy" element={<Suspense fallback={<LoadingFallback />}><PrivacyPolicy /></Suspense>} />
+              <Route path="/terms-of-service" element={<Suspense fallback={<LoadingFallback />}><TermsOfService /></Suspense>} />
+              <Route path="/auth" element={<Suspense fallback={<LoadingFallback />}><Auth /></Suspense>} />
+              <Route path="/login" element={<Suspense fallback={<LoadingFallback />}><CustomerAuth /></Suspense>} />
               
               {/* Admin Routes - Lazy loaded, nested under protected layout */}
               <Route path="/admin" element={
                 <ProtectedRoute>
-                  <Suspense fallback={<AdminLoadingFallback />}>
+                  <Suspense fallback={<LoadingFallback />}>
                     <AdminLayout />
                   </Suspense>
                 </ProtectedRoute>

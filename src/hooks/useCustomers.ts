@@ -378,6 +378,12 @@ export const useCustomers = (filters?: CustomerFilters) => {
 
       // Fetch promo usage counts for each customer (from promo_code_usages)
       const customerIds = data.map(c => c.id);
+
+      // Guard against empty list — Supabase .in() with empty array returns an error
+      if (customerIds.length === 0) {
+        return [] as Customer[];
+      }
+
       const { data: promoData, error: promoError } = await supabase
         .from("promo_code_usages")
         .select("customer_id")
@@ -478,7 +484,8 @@ export const useUpdateCustomer = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...customer }: Partial<Customer> & { id: string }) => {
-      const { division, thana, customer_type, promo_usage_count, profile_image_url, postal_code, ...customerData } = customer;
+      // Strip computed/relational fields but KEEP postal_code and profile_image_url as they are real DB columns
+      const { division, thana, customer_type, promo_usage_count, has_account, order_count, total_spent, ...customerData } = customer as any;
       const { data, error } = await supabase
         .from("customers")
         .update(customerData)

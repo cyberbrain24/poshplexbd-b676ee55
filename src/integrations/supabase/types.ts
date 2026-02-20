@@ -1735,6 +1735,7 @@ export type Database = {
         Returns: Json
       }
       find_product_by_short_id: { Args: { short_id: string }; Returns: string }
+      get_my_customer_id: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1758,6 +1759,10 @@ export type Database = {
           p_thana_id?: string
         }
         Returns: string
+      }
+      user_has_customer_type: {
+        Args: { _customer_type_id: string }
+        Returns: boolean
       }
     }
     Enums: {

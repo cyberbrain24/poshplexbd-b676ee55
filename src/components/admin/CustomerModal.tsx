@@ -43,9 +43,12 @@ import {
 } from "@/hooks/useCustomers";
 
 const customerSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  phone: z.string().min(1, "Phone is required"),
-  email: z.string().email().optional().or(z.literal("")),
+  name: z.string().min(1, "Name is required").max(100),
+  phone: z
+    .string()
+    .min(1, "Phone is required")
+    .regex(/^(\+?880|0)?1[3-9]\d{8}$/, "Enter a valid Bangladeshi phone number (e.g. 01XXXXXXXXX)"),
+  email: z.string().email("Invalid email address").optional().or(z.literal("")),
   division_id: z.string().optional(),
   thana_id: z.string().optional(),
   address: z.string().optional(),

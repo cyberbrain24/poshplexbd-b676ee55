@@ -54,9 +54,9 @@ const CustomerAuth = () => {
       const resolved = resolveAuthEmail(identifier);
 
       if (!isLogin) {
-        // Registration: phone only
+        // Registration: phone only, strict BD format
         if (!isPhone(identifier.trim())) {
-          throw new Error("Please enter a valid Bangladeshi phone number (e.g. 01XXXXXXXXX)");
+          throw new Error("Enter a valid Bangladeshi phone number (e.g. 01XXXXXXXXX)");
         }
       } else {
         if (!resolved) {

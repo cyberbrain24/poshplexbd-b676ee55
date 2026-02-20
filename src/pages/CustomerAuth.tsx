@@ -80,12 +80,51 @@ const CustomerAuth = () => {
         if (error) throw error;
 
         if (data.user) {
+          // First, create the CRM customer record so they appear in admin list
+          const phone = resolved.type === "phone" ? identifier.trim() : null;
+          const email = resolved.type === "email" ? identifier.trim() : null;
+
+          let customerId: string | null = null;
+
+          // Check if a customer already exists with this phone/email
+          if (phone) {
+            const { data: existing } = await supabase
+              .from("customers")
+              .select("id")
+              .eq("phone", phone)
+              .maybeSingle();
+            customerId = existing?.id ?? null;
+          }
+
+          if (!customerId) {
+            // Create a new customer record in the CRM
+            const { data: newCustomer, error: customerError } = await supabase
+              .from("customers")
+              .insert({
+                name: name.trim(),
+                phone: phone || `user_${data.user.id.slice(0, 8)}`,
+                email: email ?? null,
+                gender: "other",
+                is_active: true,
+              })
+              .select("id")
+              .single();
+
+            if (customerError) {
+              console.error("Failed to create customer record:", customerError);
+            } else {
+              customerId = newCustomer?.id ?? null;
+            }
+          }
+
+          // Create the customer_accounts link record
           const { error: accountError } = await supabase
             .from("customer_accounts")
             .insert({
               auth_user_id: data.user.id,
-              phone: resolved.type === "phone" ? identifier.trim() : null,
-              email: resolved.type === "email" ? identifier.trim() : null,
+              customer_id: customerId,
+              phone: phone,
+              email: email,
             });
           if (accountError) console.error("Failed to create customer account:", accountError);
         }

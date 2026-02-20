@@ -22,45 +22,5 @@ export default defineConfig(({ mode }) => ({
     target: "esnext",
     minify: "esbuild",
     cssMinify: true,
-    rollupOptions: {
-      output: {
-        manualChunks: (id) => {
-          // Core React runtime + router bundled together to prevent
-          // "createContext is undefined" race condition between chunks
-          if (
-            id.includes("node_modules/react/") ||
-            id.includes("node_modules/react-dom/") ||
-            id.includes("node_modules/react-router-dom/") ||
-            id.includes("node_modules/@remix-run/")
-          ) {
-            return "react-core";
-          }
-          // Supabase - split from main so it can load in parallel
-          if (id.includes("node_modules/@supabase/")) {
-            return "supabase";
-          }
-          // React Query
-          if (id.includes("node_modules/@tanstack/")) {
-            return "query";
-          }
-          // Radix UI primitives
-          if (id.includes("node_modules/@radix-ui/")) {
-            return "ui";
-          }
-          // Heavy chart/carousel libraries - defer
-          if (id.includes("node_modules/recharts") || id.includes("node_modules/embla-carousel")) {
-            return "charts";
-          }
-          // Date utilities
-          if (id.includes("node_modules/date-fns") || id.includes("node_modules/react-day-picker")) {
-            return "dates";
-          }
-          // Other node_modules go into vendor
-          if (id.includes("node_modules/")) {
-            return "vendor";
-          }
-        },
-      },
-    },
   },
 }));

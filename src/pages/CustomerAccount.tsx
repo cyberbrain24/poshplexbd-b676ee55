@@ -359,7 +359,21 @@ const CustomerAccount = () => {
                   Profile Information
                 </CardTitle>
                 {!isEditingProfile && (
-                  <Button variant="ghost" size="sm" onClick={() => setIsEditingProfile(true)}>
+                  <Button variant="ghost" size="sm" onClick={() => {
+                    const c = accountData?.customer;
+                    setEditForm({
+                      name: c?.name || "",
+                      email: c?.email || accountData?.email || "",
+                      phone: c?.phone || accountData?.phone || "",
+                      address: c?.address || "",
+                      gender: c?.gender || "",
+                      division_id: c?.division_id || "",
+                      thana_id: c?.thana_id || "",
+                      postal_code: c?.postal_code || "",
+                      birthdate: c?.birthdate || "",
+                    });
+                    setIsEditingProfile(true);
+                  }}>
                     <Pencil className="h-4 w-4 mr-1" /> Edit
                   </Button>
                 )}

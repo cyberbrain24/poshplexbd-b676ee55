@@ -25,13 +25,15 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // Core React runtime - smallest possible critical chunk
-          if (id.includes("node_modules/react/") || id.includes("node_modules/react-dom/")) {
+          // Core React runtime + router bundled together to prevent
+          // "createContext is undefined" race condition between chunks
+          if (
+            id.includes("node_modules/react/") ||
+            id.includes("node_modules/react-dom/") ||
+            id.includes("node_modules/react-router-dom/") ||
+            id.includes("node_modules/@remix-run/")
+          ) {
             return "react-core";
-          }
-          // Router - needed for first render
-          if (id.includes("node_modules/react-router-dom/") || id.includes("node_modules/@remix-run/")) {
-            return "router";
           }
           // Supabase - split from main so it can load in parallel
           if (id.includes("node_modules/@supabase/")) {

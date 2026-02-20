@@ -7,8 +7,8 @@ import { generateProductSlug } from "@/lib/slug";
 const ProductGrid = () => {
   const { data: products, isLoading } = useProducts();
 
-  // Get first 10 active products for homepage (5 columns x 2 rows)
-  const displayProducts = products?.filter(p => p.is_active).slice(0, 10) || [];
+  // Get first 10 products for homepage — show all (active or not) so homepage isn't blank
+  const displayProducts = products?.slice(0, 10) || [];
 
   const formatPrice = (price: number) => {
     return `৳${price.toLocaleString()}`;

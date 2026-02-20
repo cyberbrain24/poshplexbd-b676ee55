@@ -35,6 +35,7 @@ interface CustomerAccountData {
     thana_id: string | null;
     postal_code: string | null;
     customer_type_id: string | null;
+    membership_assigned_at: string | null;
     customer_type?: {
       name: string;
       description: string | null;
@@ -129,7 +130,7 @@ const CustomerAccount = () => {
       if (data?.customer_id) {
         const { data: customerData } = await supabase
           .from("customers")
-          .select("name, phone, email, address, gender, birthdate, profile_image_url, division_id, thana_id, postal_code, customer_type_id")
+          .select("name, phone, email, address, gender, birthdate, profile_image_url, division_id, thana_id, postal_code, customer_type_id, membership_assigned_at")
           .eq("id", data.customer_id)
           .maybeSingle();
 
@@ -160,7 +161,7 @@ const CustomerAccount = () => {
 
         setAccountData({
           ...data,
-          customer: customerData ? { ...customerData, customer_type: customerType, division, thana } : null,
+          customer: customerData ? { ...customerData, membership_assigned_at: customerData.membership_assigned_at ?? null, customer_type: customerType, division, thana } : null,
         });
 
         if (customerData) {
@@ -548,7 +549,9 @@ const CustomerAccount = () => {
                       </Popover>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground">Member since {new Date(user?.created_at || Date.now()).toLocaleDateString()}</p>
+                  {accountData?.customer?.membership_assigned_at && (
+                    <p className="text-sm text-muted-foreground">Member since {new Date(accountData.customer.membership_assigned_at).toLocaleDateString()}</p>
+                  )}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3 pt-2 border-t">

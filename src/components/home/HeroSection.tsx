@@ -1,5 +1,22 @@
 import { useSiteBranding } from "@/hooks/useSiteBranding";
 
+// Convert Supabase storage object URL to WebP via Supabase image transform API
+const toWebP = (url: string | null | undefined, width?: number): string | null => {
+  if (!url) return null;
+  try {
+    // Transform: /storage/v1/object/public/ → /storage/v1/render/image/public/
+    const transformed = url.replace(
+      '/storage/v1/object/public/',
+      '/storage/v1/render/image/public/'
+    );
+    const params = new URLSearchParams({ format: 'webp', quality: '80' });
+    if (width) params.set('width', String(width));
+    return `${transformed}?${params.toString()}`;
+  } catch {
+    return url;
+  }
+};
+
 const HeroSection = () => {
   const { data: branding } = useSiteBranding();
 
@@ -9,7 +26,6 @@ const HeroSection = () => {
   const mobileBanner = branding?.mobile_hero_url;
 
   // Reserve space even while branding is loading to prevent CLS
-  // Use a 3:1 aspect ratio placeholder (typical banner ratio)
   const hasBanner = desktopBanner || mobileBanner;
 
   if (branding && !hasBanner) return null;
@@ -22,7 +38,7 @@ const HeroSection = () => {
       )}
       {desktopBanner && (
         <img
-          src={desktopBanner}
+          src={toWebP(desktopBanner, 1335) || desktopBanner}
           alt="Hero banner"
           loading="eager"
           fetchPriority="high"
@@ -33,7 +49,7 @@ const HeroSection = () => {
       )}
       {mobileBanner && (
         <img
-          src={mobileBanner}
+          src={toWebP(mobileBanner, 390) || mobileBanner}
           alt="Hero banner"
           loading="eager"
           fetchPriority="high"

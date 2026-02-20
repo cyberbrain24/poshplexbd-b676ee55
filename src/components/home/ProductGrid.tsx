@@ -68,8 +68,8 @@ const ProductGrid = () => {
 
   return (
     <section className="w-full px-4 md:px-8 py-12 md:py-16 bg-background relative overflow-hidden min-h-[600px]">
-      {/* Street culture background element */}
-      <div className="absolute inset-0 pointer-events-none">
+      {/* Street culture background element - aria-hidden to exclude from accessibility tree, contain layout to prevent CLS */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true" style={{ contain: 'layout' }}>
         <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-muted/30 to-transparent" />
         <div className="absolute bottom-0 left-0 text-[200px] md:text-[300px] font-black text-foreground/[0.015] leading-none select-none -translate-x-1/4 translate-y-1/4">
           STREET

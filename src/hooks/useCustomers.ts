@@ -513,12 +513,44 @@ export const useDeleteCustomer = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      // 1. Find linked auth user(s) before deleting DB records
+      const { data: accountData } = await supabase
+        .from("customer_accounts")
+        .select("auth_user_id")
+        .eq("customer_id", id);
+
+      const authUserIds = (accountData || []).map((a) => a.auth_user_id).filter(Boolean);
+
+      // 2. Cascade-delete all child records in correct order
+      // promo_code_usages
+      await supabase.from("promo_code_usages").delete().eq("customer_id", id);
+      // reviews
+      await supabase.from("reviews").delete().eq("customer_id", id);
+      // customer_addresses
+      await supabase.from("customer_addresses").delete().eq("customer_id", id);
+      // customer_risk_profiles
+      await supabase.from("customer_risk_profiles").delete().eq("customer_id", id);
+      // return_requests
+      await supabase.from("return_requests").delete().eq("customer_id", id);
+      // Unlink orders (set customer_id to null to preserve order history)
+      await supabase.from("orders").update({ customer_id: null }).eq("customer_id", id);
+      // customer_accounts (DB row)
+      await supabase.from("customer_accounts").delete().eq("customer_id", id);
+
+      // 3. Delete the customer record itself
       const { error } = await supabase.from("customers").delete().eq("id", id);
       if (error) throw error;
+
+      // 4. Delete auth users via edge function (requires service role)
+      if (authUserIds.length > 0) {
+        await supabase.functions.invoke("delete-auth-users", {
+          body: { userIds: authUserIds },
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
-      toast({ title: "Customer deleted successfully" });
+      toast({ title: "Customer deleted successfully", description: "All associated data and accounts have been removed." });
     },
     onError: (error: Error) => {
       toast({ title: "Failed to delete customer", description: error.message, variant: "destructive" });

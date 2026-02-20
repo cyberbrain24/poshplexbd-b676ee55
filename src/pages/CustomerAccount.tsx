@@ -106,7 +106,7 @@ const CustomerAccount = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  // Fetch thanas when division changes
+  // Fetch thanas when division changes in edit form
   useEffect(() => {
     if (editForm.division_id) {
       supabase.from("thanas").select("id, name, division_id")
@@ -159,16 +159,19 @@ const CustomerAccount = () => {
           thana = thanaData;
         }
 
-        setAccountData({
+        const fullAccountData = {
           ...data,
           customer: customerData ? { ...customerData, membership_assigned_at: customerData.membership_assigned_at ?? null, customer_type: customerType, division, thana } : null,
-        });
+        };
 
+        setAccountData(fullAccountData);
+
+        // Pre-populate edit form
         if (customerData) {
           setEditForm({
             name: customerData.name || "",
             email: customerData.email || "",
-            phone: customerData.phone || "",
+            phone: customerData.phone || data.phone || "",
             address: customerData.address || "",
             gender: customerData.gender || "",
             division_id: customerData.division_id || "",
@@ -193,6 +196,14 @@ const CustomerAccount = () => {
         }
       } else {
         setAccountData(data);
+        // Pre-populate phone/email from account if no customer linked
+        if (data) {
+          setEditForm(f => ({
+            ...f,
+            phone: data.phone || "",
+            email: data.email || "",
+          }));
+        }
       }
     } catch (error) {
       console.error("Error fetching account data:", error);
@@ -260,11 +271,6 @@ const CustomerAccount = () => {
     if (!accountData?.customer_id) return;
     if (!editForm.name.trim()) { toast.error("Name is required"); return; }
     if (!editForm.phone.trim()) { toast.error("Phone is required"); return; }
-    if (!editForm.gender) { toast.error("Gender is required"); return; }
-    if (!editForm.address?.trim()) { toast.error("Address is required"); return; }
-    if (!editForm.division_id) { toast.error("District is required"); return; }
-    if (!editForm.thana_id) { toast.error("Thana/Upazila is required"); return; }
-    if (!editForm.postal_code?.trim()) { toast.error("Postal code is required"); return; }
 
     setIsUpdating(true);
     try {
@@ -275,7 +281,7 @@ const CustomerAccount = () => {
           email: editForm.email || null,
           phone: editForm.phone,
           address: editForm.address || null,
-          gender: editForm.gender,
+          gender: editForm.gender || null,
           birthdate: editForm.birthdate || null,
           division_id: editForm.division_id || null,
           thana_id: editForm.thana_id || null,
@@ -309,8 +315,8 @@ const CustomerAccount = () => {
           division_id: editForm.division_id || null,
           thana_id: editForm.thana_id || null,
           postal_code: editForm.postal_code || null,
-          division: selectedDiv ? { id: selectedDiv.id, name: selectedDiv.name } : null,
-          thana: selectedThana ? { id: selectedThana.id, name: selectedThana.name } : null,
+          division: selectedDiv ? { id: selectedDiv.id, name: selectedDiv.name } : prev.customer.division,
+          thana: selectedThana ? { id: selectedThana.id, name: selectedThana.name } : prev.customer.thana,
         } : prev.customer,
       } : prev);
 
@@ -323,9 +329,26 @@ const CustomerAccount = () => {
     }
   };
 
-  const displayName = editForm.name || user?.user_metadata?.name || accountData?.customer?.name || "Customer";
-  const displayPhone = accountData?.phone || user?.phone || "Not set";
-  const displayEmail = accountData?.email || (user?.email?.includes("@phone.local") ? "Not set" : user?.email) || "Not set";
+  const openEditProfile = () => {
+    // Re-sync form with latest accountData before opening
+    const c = accountData?.customer;
+    setEditForm({
+      name: c?.name || "",
+      email: c?.email || accountData?.email || "",
+      phone: c?.phone || accountData?.phone || "",
+      address: c?.address || "",
+      gender: c?.gender || "",
+      division_id: c?.division_id || "",
+      thana_id: c?.thana_id || "",
+      postal_code: c?.postal_code || "",
+      birthdate: c?.birthdate || "",
+    });
+    setIsEditingProfile(true);
+  };
+
+  const displayName = accountData?.customer?.name || user?.user_metadata?.name || "Customer";
+  const displayPhone = accountData?.customer?.phone || accountData?.phone || user?.phone || "Not set";
+  const displayEmail = accountData?.customer?.email || accountData?.email || (user?.email?.includes("@phone.local") ? "Not set" : user?.email) || "Not set";
   const membershipType = accountData?.customer?.customer_type?.name || "Standard";
   const membershipDescription = accountData?.customer?.customer_type?.description || null;
   const profileImageUrl = accountData?.customer?.profile_image_url;
@@ -359,21 +382,7 @@ const CustomerAccount = () => {
                   Profile Information
                 </CardTitle>
                 {!isEditingProfile && (
-                  <Button variant="ghost" size="sm" onClick={() => {
-                    const c = accountData?.customer;
-                    setEditForm({
-                      name: c?.name || "",
-                      email: c?.email || accountData?.email || "",
-                      phone: c?.phone || accountData?.phone || "",
-                      address: c?.address || "",
-                      gender: c?.gender || "",
-                      division_id: c?.division_id || "",
-                      thana_id: c?.thana_id || "",
-                      postal_code: c?.postal_code || "",
-                      birthdate: c?.birthdate || "",
-                    });
-                    setIsEditingProfile(true);
-                  }}>
+                  <Button variant="ghost" size="sm" onClick={openEditProfile}>
                     <Pencil className="h-4 w-4 mr-1" /> Edit
                   </Button>
                 )}
@@ -408,18 +417,18 @@ const CustomerAccount = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
                       <Label className="text-sm">Name *</Label>
-                      <Input value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} className="mt-1" />
+                      <Input value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} className="mt-1" placeholder="Your full name" />
                     </div>
                     <div>
                       <Label className="text-sm">Phone *</Label>
-                      <Input value={editForm.phone} onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))} className="mt-1" />
+                      <Input value={editForm.phone} onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))} className="mt-1" placeholder="01XXXXXXXXX" />
                     </div>
                     <div>
                       <Label className="text-sm">Email</Label>
-                      <Input value={editForm.email} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} className="mt-1" />
+                      <Input value={editForm.email} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} className="mt-1" placeholder="your@email.com" />
                     </div>
                     <div>
-                      <Label className="text-sm">Gender *</Label>
+                      <Label className="text-sm">Gender</Label>
                       <Select value={editForm.gender} onValueChange={v => setEditForm(f => ({ ...f, gender: v }))}>
                         <SelectTrigger className="mt-1"><SelectValue placeholder="Select gender" /></SelectTrigger>
                         <SelectContent>
@@ -430,11 +439,11 @@ const CustomerAccount = () => {
                       </Select>
                     </div>
                     <div className="sm:col-span-2">
-                      <Label className="text-sm">Address *</Label>
-                      <Input value={editForm.address} onChange={e => setEditForm(f => ({ ...f, address: e.target.value }))} className="mt-1" />
+                      <Label className="text-sm">Address</Label>
+                      <Input value={editForm.address} onChange={e => setEditForm(f => ({ ...f, address: e.target.value }))} className="mt-1" placeholder="Your full address" />
                     </div>
                     <div>
-                      <Label className="text-sm">District *</Label>
+                      <Label className="text-sm">District</Label>
                       <Select value={editForm.division_id} onValueChange={v => setEditForm(f => ({ ...f, division_id: v, thana_id: "" }))}>
                         <SelectTrigger className="mt-1"><SelectValue placeholder="Select district" /></SelectTrigger>
                         <SelectContent>
@@ -443,17 +452,28 @@ const CustomerAccount = () => {
                       </Select>
                     </div>
                     <div>
-                      <Label className="text-sm">Thana/Upazila *</Label>
-                      <Select value={editForm.thana_id} onValueChange={v => setEditForm(f => ({ ...f, thana_id: v }))} disabled={!editForm.division_id}>
-                        <SelectTrigger className="mt-1"><SelectValue placeholder={editForm.division_id ? "Select thana" : "Select district first"} /></SelectTrigger>
+                      <Label className="text-sm">Thana/Upazila</Label>
+                      <Select
+                        value={editForm.thana_id}
+                        onValueChange={v => setEditForm(f => ({ ...f, thana_id: v }))}
+                        disabled={!editForm.division_id}
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder={editForm.division_id ? "Select thana" : "Select district first"} />
+                        </SelectTrigger>
                         <SelectContent>
                           {thanas.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
                     <div>
-                      <Label className="text-sm">Postal Code *</Label>
-                      <Input value={editForm.postal_code} onChange={e => setEditForm(f => ({ ...f, postal_code: e.target.value }))} className="mt-1" placeholder="e.g. 1205" />
+                      <Label className="text-sm">Postal Code</Label>
+                      <Input
+                        value={editForm.postal_code}
+                        onChange={e => setEditForm(f => ({ ...f, postal_code: e.target.value }))}
+                        className="mt-1"
+                        placeholder="e.g. 1205"
+                      />
                     </div>
                     <div>
                       <Label className="text-sm">Date of Birth</Label>
@@ -461,10 +481,7 @@ const CustomerAccount = () => {
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
-                            className={cn(
-                              "w-full mt-1 justify-start text-left font-normal",
-                              !editForm.birthdate && "text-muted-foreground"
-                            )}
+                            className={cn("w-full mt-1 justify-start text-left font-normal", !editForm.birthdate && "text-muted-foreground")}
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
                             {editForm.birthdate ? format(new Date(editForm.birthdate), "PPP") : "Pick a date"}
@@ -477,13 +494,12 @@ const CustomerAccount = () => {
                             onSelect={(date) => setEditForm(f => ({ ...f, birthdate: date ? format(date, "yyyy-MM-dd") : "" }))}
                             disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                             initialFocus
-                            className={cn("p-3 pointer-events-auto")}
                           />
                         </PopoverContent>
                       </Popover>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 pt-1">
                     <Button onClick={handleSaveProfile} disabled={isUpdating} size="sm">
                       {isUpdating ? "Saving..." : "Save Changes"}
                     </Button>
@@ -491,7 +507,7 @@ const CustomerAccount = () => {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 pt-1">
                   <div>
                     <Label className="text-muted-foreground text-sm">Name</Label>
                     <p className="font-medium">{displayName}</p>
@@ -506,9 +522,9 @@ const CustomerAccount = () => {
                   </div>
                   <div>
                     <Label className="text-muted-foreground text-sm">Gender</Label>
-                    <p className="font-medium capitalize">{accountData?.customer?.gender || "Not set"}</p>
+                    <p className="font-medium capitalize">{accountData?.customer?.gender || "Not Set"}</p>
                   </div>
-                  <div className="sm:col-span-2">
+                  <div className="col-span-2">
                     <Label className="text-muted-foreground text-sm">Address</Label>
                     <p className="font-medium">{accountData?.customer?.address || "Not set"}</p>
                   </div>
@@ -520,20 +536,22 @@ const CustomerAccount = () => {
                     <Label className="text-muted-foreground text-sm">Thana/Upazila</Label>
                     <p className="font-medium">{accountData?.customer?.thana?.name || "Not set"}</p>
                   </div>
-                   <div>
+                  <div>
                     <Label className="text-muted-foreground text-sm">Postal Code</Label>
                     <p className="font-medium">{accountData?.customer?.postal_code || "Not set"}</p>
                   </div>
                   <div>
                     <Label className="text-muted-foreground text-sm">Date of Birth</Label>
-                    <p className="font-medium">{accountData?.customer?.birthdate ? format(new Date(accountData.customer.birthdate), "PPP") : "Not set"}</p>
+                    <p className="font-medium">
+                      {accountData?.customer?.birthdate ? format(new Date(accountData.customer.birthdate), "PPP") : "Not set"}
+                    </p>
                   </div>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Membership Card with Stats */}
+          {/* Membership Card */}
           <Card>
             <CardHeader className="pb-2 pt-4 px-4">
               <CardTitle className="text-base font-medium flex items-center gap-2">
@@ -542,124 +560,124 @@ const CustomerAccount = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4">
-              <div className="flex items-center gap-3 mb-3">
+              <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Crown className="h-6 w-6 text-primary" />
+                  <Crown className="h-5 w-5 text-primary" />
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium">{membershipType}</p>
-                    {membershipDescription && (
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-5 w-5">
-                            <Info className="h-3.5 w-3.5 text-muted-foreground" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-72 text-sm">
-                          <p className="font-medium mb-1">{membershipType}</p>
-                          <p className="text-muted-foreground">{membershipDescription}</p>
-                        </PopoverContent>
-                      </Popover>
-                    )}
-                  </div>
+                <div>
+                  <p className="font-medium">{membershipType}</p>
+                  {membershipDescription && <p className="text-sm text-muted-foreground">{membershipDescription}</p>}
                   {accountData?.customer?.membership_assigned_at && (
-                    <p className="text-sm text-muted-foreground">Member since {new Date(accountData.customer.membership_assigned_at).toLocaleDateString()}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Member since {format(new Date(accountData.customer.membership_assigned_at), "MMMM yyyy")}
+                    </p>
                   )}
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3 pt-2 border-t">
-                <div className="flex items-center gap-2">
-                  <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Spent</p>
-                    <p className="font-semibold">{formatCurrency(customerStats.total_spent)}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Hash className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Orders</p>
-                    <p className="font-semibold">{customerStats.order_count}</p>
-                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
+
+          {/* Stats */}
+          <div className="grid grid-cols-2 gap-3">
+            <Card>
+              <CardContent className="py-3 px-4">
+                <div className="flex items-center gap-2">
+                  <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Orders</p>
+                    <p className="font-semibold">{customerStats.order_count}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="py-3 px-4">
+                <div className="flex items-center gap-2">
+                  <Hash className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Total Spent</p>
+                    <p className="font-semibold">{formatCurrency(customerStats.total_spent)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Order History Link */}
           <Card className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => navigate("/my-orders")}>
             <CardContent className="py-3 px-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Package className="h-5 w-5" />
-                  <span className="font-medium">Order History</span>
+                <div className="flex items-center gap-2">
+                  <Package className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">My Orders</span>
                 </div>
-                <span className="text-muted-foreground">→</span>
+                <span className="text-muted-foreground text-sm">→</span>
               </div>
             </CardContent>
           </Card>
 
-          {/* My Reviews */}
-          <Card>
-            <CardHeader className="pb-2 pt-4 px-4">
-              <CardTitle className="text-base font-medium flex items-center gap-2">
-                <MessageSquare className="h-4 w-4" />
-                My Reviews
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              <MyReviews customerId={accountData?.customer_id || null} />
-            </CardContent>
-          </Card>
+          {/* Reviews */}
+          {accountData?.customer_id && <MyReviews customerId={accountData.customer_id} />}
 
-          {/* Security */}
+          {/* Change Password */}
           <Card>
             <CardHeader className="pb-2 pt-4 px-4">
-              <CardTitle className="text-base font-medium flex items-center gap-2">
-                <Key className="h-4 w-4" />
-                Security
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-medium flex items-center gap-2">
+                  <Key className="h-4 w-4" />
+                  Security
+                </CardTitle>
+                {!isChangingPassword && (
+                  <Button variant="ghost" size="sm" onClick={() => setIsChangingPassword(true)}>
+                    Change Password
+                  </Button>
+                )}
+              </div>
             </CardHeader>
-            <CardContent className="px-4 pb-4">
-              {!isChangingPassword ? (
-                <Button variant="outline" onClick={() => setIsChangingPassword(true)} className="w-full sm:w-auto">
-                  Change Password
-                </Button>
-              ) : (
-                <form onSubmit={handleChangePassword} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="newPassword">New Password</Label>
-                    <div className="relative">
+            {isChangingPassword && (
+              <CardContent className="px-4 pb-4">
+                <form onSubmit={handleChangePassword} className="space-y-2">
+                  <div>
+                    <Label className="text-sm">New Password</Label>
+                    <div className="relative mt-1">
                       <Input
-                        id="newPassword"
                         type={showNewPassword ? "text" : "password"}
                         value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="Enter new password"
-                        required
-                        minLength={6}
+                        onChange={e => setNewPassword(e.target.value)}
+                        placeholder="New password"
                       />
-                      <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0" onClick={() => setShowNewPassword(!showNewPassword)}>
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                        onClick={() => setShowNewPassword(s => !s)}
+                      >
                         {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
+                      </button>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                    <Input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password" required minLength={6} />
+                  <div>
+                    <Label className="text-sm">Confirm Password</Label>
+                    <Input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={e => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm new password"
+                      className="mt-1"
+                    />
                   </div>
-                  <div className="flex gap-2">
-                    <Button type="submit" disabled={isUpdating}>{isUpdating ? "Updating..." : "Update Password"}</Button>
-                    <Button type="button" variant="outline" onClick={() => { setIsChangingPassword(false); setNewPassword(""); setConfirmPassword(""); }}>Cancel</Button>
+                  <div className="flex gap-2 pt-1">
+                    <Button type="submit" disabled={isUpdating} size="sm">
+                      {isUpdating ? "Updating..." : "Update Password"}
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => setIsChangingPassword(false)}>Cancel</Button>
                   </div>
                 </form>
-              )}
-            </CardContent>
+              </CardContent>
+            )}
           </Card>
 
           {/* Logout */}
-          <Button variant="outline" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10" onClick={handleLogout}>
+          <Button variant="outline" className="w-full" onClick={handleLogout}>
             <LogOut className="h-4 w-4 mr-2" />
             Logout
           </Button>

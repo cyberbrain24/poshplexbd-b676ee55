@@ -52,8 +52,16 @@ const CustomerAuth = () => {
 
     try {
       const resolved = resolveAuthEmail(identifier);
-      if (!resolved) {
-        throw new Error("Please enter a valid phone number or email address");
+
+      if (!isLogin) {
+        // Registration: phone only
+        if (!isPhone(identifier.trim())) {
+          throw new Error("Please enter a valid Bangladeshi phone number (e.g. 01XXXXXXXXX)");
+        }
+      } else {
+        if (!resolved) {
+          throw new Error("Please enter a valid phone number or email address");
+        }
       }
 
       if (isLogin) {
@@ -179,13 +187,13 @@ const CustomerAuth = () => {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="identifier">Phone or Email</Label>
+              <Label htmlFor="identifier">{isLogin ? "Phone or Email" : "Phone Number"}</Label>
               <Input
                 id="identifier"
-                type="text"
+                type={isLogin ? "text" : "tel"}
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="Enter phone number or email"
+                placeholder={isLogin ? "Enter phone number or email" : "01XXXXXXXXX"}
                 required
               />
             </div>

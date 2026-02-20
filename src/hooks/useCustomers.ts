@@ -66,6 +66,8 @@ export interface Customer {
   promo_usage_count?: number;
   customer_account?: CustomerAccount | null;
   has_account?: boolean;
+  order_count?: number;
+  total_spent?: number;
 }
 
 export interface CustomerFilters {
@@ -355,7 +357,7 @@ export const useCustomers = (filters?: CustomerFilters) => {
           customer_type:customer_types(*)
         `)
         .order("created_at", { ascending: false })
-        .limit(100);
+        .limit(1000);
 
       if (filters?.gender) {
         query = query.eq("gender", filters.gender);

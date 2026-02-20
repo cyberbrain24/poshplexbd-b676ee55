@@ -135,11 +135,11 @@ const CustomerModal = ({ open, onOpenChange, customer }: CustomerModalProps) => 
       name: values.name,
       phone: values.phone,
       email: values.email || null,
-      division_id: values.division_id || null,
-      thana_id: values.thana_id || null,
+      division_id: (values.division_id && values.division_id !== "none") ? values.division_id : null,
+      thana_id: (values.thana_id && values.thana_id !== "none") ? values.thana_id : null,
       address: values.address || null,
       gender: values.gender as 'male' | 'female' | 'other',
-      customer_type_id: values.customer_type_id || null,
+      customer_type_id: (values.customer_type_id && values.customer_type_id !== "none") ? values.customer_type_id : null,
       notes: values.notes || null,
       is_active: values.is_active,
       birthdate: values.birthdate ? format(values.birthdate, "yyyy-MM-dd") : null,
@@ -147,9 +147,10 @@ const CustomerModal = ({ open, onOpenChange, customer }: CustomerModalProps) => 
     };
 
     // Track membership assignment date when membership type changes
-    if (customer && values.customer_type_id && values.customer_type_id !== customer.customer_type_id) {
+    const newTypeId = (values.customer_type_id && values.customer_type_id !== "none") ? values.customer_type_id : null;
+    if (customer && newTypeId && newTypeId !== customer.customer_type_id) {
       customerData.membership_assigned_at = new Date().toISOString();
-    } else if (!customer && values.customer_type_id) {
+    } else if (!customer && newTypeId) {
       customerData.membership_assigned_at = new Date().toISOString();
     }
 
@@ -162,8 +163,9 @@ const CustomerModal = ({ open, onOpenChange, customer }: CustomerModalProps) => 
   };
 
   const handleDivisionChange = (divisionId: string) => {
-    setSelectedDivisionId(divisionId || undefined);
-    form.setValue("division_id", divisionId);
+    const realId = divisionId === "none" ? "" : divisionId;
+    setSelectedDivisionId(realId || undefined);
+    form.setValue("division_id", realId);
     form.setValue("thana_id", ""); // Reset thana when division changes
   };
 
@@ -266,6 +268,7 @@ const CustomerModal = ({ open, onOpenChange, customer }: CustomerModalProps) => 
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
+                        <SelectItem value="none">— None —</SelectItem>
                         {divisions?.filter(d => d.is_active).map((division) => (
                           <SelectItem key={division.id} value={division.id}>
                             {division.name}
@@ -304,6 +307,7 @@ const CustomerModal = ({ open, onOpenChange, customer }: CustomerModalProps) => 
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
+                        <SelectItem value="none">— None —</SelectItem>
                         {thanas?.filter(t => t.is_active).map((thana) => (
                           <SelectItem key={thana.id} value={thana.id}>
                             {thana.name}
@@ -330,6 +334,7 @@ const CustomerModal = ({ open, onOpenChange, customer }: CustomerModalProps) => 
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      <SelectItem value="none">— None —</SelectItem>
                       {customerTypes?.filter(ct => ct.is_active).map((type) => (
                         <SelectItem key={type.id} value={type.id}>
                           {type.name}

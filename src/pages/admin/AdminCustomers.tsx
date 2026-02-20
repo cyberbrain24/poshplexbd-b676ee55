@@ -325,11 +325,11 @@ const AdminCustomers = () => {
               <TableBody>
                 {customers.map((customer) => (
                   <TableRow key={customer.id}>
-                    <TableCell>
+                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div className="h-8 w-8 rounded-full bg-muted overflow-hidden flex-shrink-0">
-                          {(customer as any).profile_image_url ? (
-                            <img src={(customer as any).profile_image_url} alt={customer.name} className="h-full w-full object-cover" />
+                          {customer.profile_image_url ? (
+                            <img src={customer.profile_image_url} alt={customer.name} className="h-full w-full object-cover" />
                           ) : (
                             <div className="h-full w-full flex items-center justify-center text-xs text-muted-foreground font-medium">
                               {customer.name.charAt(0).toUpperCase()}
@@ -356,10 +356,10 @@ const AdminCustomers = () => {
                       {customer.customer_type?.name || "-"}
                     </TableCell>
                     <TableCell className="text-center">
-                      {(customer as any).order_count ?? 0}
+                      {customer.order_count ?? 0}
                     </TableCell>
                     <TableCell className="font-medium">
-                      {formatCurrency((customer as any).total_spent ?? 0)}
+                      {formatCurrency(customer.total_spent ?? 0)}
                     </TableCell>
                     <TableCell>
                       <Button
@@ -423,7 +423,7 @@ const AdminCustomers = () => {
         />
       )}
 
-      <AlertDialog open={!!deleteId} onOpenChange={() => { setDeleteId(null); setDeleteBlocked(null); }}>
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => { if (!open) { setDeleteId(null); setDeleteBlocked(null); setCheckingDelete(false); } }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">

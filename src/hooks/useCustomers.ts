@@ -526,8 +526,6 @@ export const useDeleteCustomer = () => {
       await supabase.from("promo_code_usages").delete().eq("customer_id", id);
       // reviews
       await supabase.from("reviews").delete().eq("customer_id", id);
-      // customer_addresses
-      await supabase.from("customer_addresses").delete().eq("customer_id", id);
       // customer_risk_profiles
       await supabase.from("customer_risk_profiles").delete().eq("customer_id", id);
       // return_requests

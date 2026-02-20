@@ -21,7 +21,7 @@ const ProductGrid = () => {
 
   if (isLoading) {
     return (
-      <section className="w-full px-4 md:px-8 py-12 md:py-16 bg-background relative overflow-hidden">
+      <section className="w-full px-4 md:px-8 py-12 md:py-16 bg-background relative overflow-hidden min-h-[600px]">
         <div className="flex items-end justify-between mb-8 md:mb-12">
           <div className="relative">
             <span className="absolute -left-2 -top-8 text-[80px] md:text-[120px] font-black text-foreground/[0.03] leading-none select-none">
@@ -49,7 +49,7 @@ const ProductGrid = () => {
 
   if (displayProducts.length === 0) {
     return (
-      <section className="w-full px-4 md:px-8 py-12 md:py-16 bg-background">
+      <section className="w-full px-4 md:px-8 py-12 md:py-16 bg-background min-h-[600px]">
         <div className="flex items-end justify-between mb-8 md:mb-12">
           <div className="relative">
             <span className="absolute -left-2 -top-8 text-[80px] md:text-[120px] font-black text-foreground/[0.03] leading-none select-none">

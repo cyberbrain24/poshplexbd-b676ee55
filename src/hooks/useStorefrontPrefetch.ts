@@ -17,6 +17,21 @@ export function useStorefrontPrefetch() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    // Prefetch site branding FIRST — unblocks the LCP hero image URL
+    queryClient.prefetchQuery({
+      queryKey: ["site-branding"],
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from("site_branding")
+          .select("*")
+          .single();
+        if (error) throw error;
+        return data;
+      },
+      staleTime: 1000 * 60 * 10, // match useSiteBranding staleTime
+      gcTime: 1000 * 60 * 60,
+    });
+
     // Prefetch categories (used in nav, filters, product pages)
     queryClient.prefetchQuery({
       queryKey: ["categories"],

@@ -153,6 +153,7 @@ const Checkout = () => {
           address: customer.address || prev.address,
           divisionId: customer.division_id || prev.divisionId,
           thanaId: customer.thana_id || prev.thanaId,
+          postalCode: customer.postal_code || prev.postalCode,
         }));
 
       } catch (error) {

@@ -351,7 +351,7 @@ export const useTrackOrder = () => {
           payment_method:payment_methods(id, name, type),
           status_history:order_status_history(*)
         `)
-        .order("created_at", { referencedTable: "status_history", ascending: false });
+      .order("created_at", { referencedTable: "status_history", ascending: false });
 
       // Apply filters based on what's provided
       const filters: string[] = [];
@@ -372,11 +372,14 @@ export const useTrackOrder = () => {
         throw new Error("Please provide at least one search field");
       }
 
-      // Use OR to match any of the provided fields
+      // Use OR to match any of the provided filters
       query = query.or(filters.join(','));
 
       const { data, error } = await query;
 
+      // RLS may block results for authenticated customers searching by phone/email
+      // if they have a customer_id linked — the policy allows customer_id-based access.
+      // The error from RLS returns an empty array, not an error code.
       if (error) throw new Error("Order not found");
       if (!data || data.length === 0) throw new Error("Order not found");
       

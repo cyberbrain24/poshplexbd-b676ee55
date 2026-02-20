@@ -140,7 +140,7 @@ export const generateBlogSchema = (data: BlogSchemaData): object => ({
     name: SITE_CONFIG.siteName,
     logo: {
       "@type": "ImageObject",
-      url: `${SITE_CONFIG.siteUrl}/LINEA_JEWELRY_INC.svg`,
+      url: `${SITE_CONFIG.siteUrl}/favicon.ico`,
     },
   },
   datePublished: data.publishedAt,
@@ -172,7 +172,7 @@ export const generateOrganizationSchema = (): object => ({
   "@type": "Organization",
   name: SITE_CONFIG.siteName,
   url: SITE_CONFIG.siteUrl,
-  logo: `${SITE_CONFIG.siteUrl}/LINEA_JEWELRY_INC.svg`,
+  logo: `${SITE_CONFIG.siteUrl}/favicon.ico`,
   sameAs: [
     // Add social media URLs here
   ],

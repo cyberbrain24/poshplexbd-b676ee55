@@ -9,37 +9,20 @@ interface Store {
 
 const stores: Store[] = [
   {
-    name: "LINEA Madison Avenue",
-    address: "789 Madison Avenue, New York, NY 10065",
-    phone: "+1 (212) 555-0123",
-    hours: "Mon-Sat: 10AM-8PM, Sun: 12PM-6PM",
-    lat: 40.7614,
-    lng: -73.9776
-  },
-  {
-    name: "LINEA Beverly Hills", 
-    address: "456 Rodeo Drive, Beverly Hills, CA 90210",
-    phone: "+1 (310) 555-0456",
-    hours: "Mon-Sat: 10AM-8PM, Sun: 12PM-6PM",
-    lat: 34.0696,
-    lng: -118.4014
-  },
-  {
-    name: "LINEA SoHo",
-    address: "123 Spring Street, New York, NY 10012", 
-    phone: "+1 (212) 555-0789",
-    hours: "Mon-Sat: 11AM-8PM, Sun: 12PM-7PM",
-    lat: 40.7253,
-    lng: -74.0022
+    name: "POSHPLEX Dhaka",
+    address: "Dhaka, Bangladesh",
+    phone: "+880 1XXXXXXXXX",
+    hours: "Sat-Thu: 10AM-8PM, Fri: 2PM-8PM",
+    lat: 23.8103,
+    lng: 90.4125
   }
 ];
 
 const StoreMap = () => {
   return (
     <div className="w-full h-96 rounded-lg overflow-hidden border border-border bg-muted/10 relative">
-      {/* Static Map using Google Maps Embed API */}
       <iframe
-        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d12063.046788464958!2d-74.0059413!3d40.7489054!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c259a9b3117469%3A0xd134e199a405a163!2sNew%20York%2C%20NY%2C%20USA!5e0!3m2!1sen!2sus!4v1641234567890!5m2!1sen!2sus"
+        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d233667.8203025919!2d90.27923698046875!3d23.780573399999998!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3755b8b087026b81%3A0x8fa563bbdd5904c2!2sDhaka%2C%20Bangladesh!5e0!3m2!1sen!2sbd!4v1641234567890!5m2!1sen!2sbd"
         width="100%"
         height="100%"
         style={{ border: 0 }}
@@ -48,8 +31,7 @@ const StoreMap = () => {
         referrerPolicy="no-referrer-when-downgrade"
         className="w-full h-full"
       />
-      
-      {/* Overlay with store markers */}
+
       <div className="absolute top-4 left-4 bg-background/90 backdrop-blur-sm rounded-lg p-4 max-w-xs">
         <h4 className="text-sm font-medium text-foreground mb-3">Our Locations</h4>
         <div className="space-y-2">

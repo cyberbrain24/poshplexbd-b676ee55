@@ -67,7 +67,7 @@ const ProductGrid = () => {
   }
 
   return (
-    <section className="w-full px-4 md:px-8 py-12 md:py-16 bg-background relative overflow-hidden">
+    <section className="w-full px-4 md:px-8 py-12 md:py-16 bg-background relative overflow-hidden min-h-[600px]">
       {/* Street culture background element */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-muted/30 to-transparent" />

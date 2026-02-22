@@ -1,135 +1,181 @@
-import { useProducts } from "@/hooks/useProducts";
-import { useColors, useSizes, useMaterials, useCategories, useBrands } from "@/hooks/useMasterData";
-import { Package, Palette, Ruler, Shirt, FolderTree, Building2 } from "lucide-react";
-import { Link } from "react-router-dom";
-import { AdminDashboardSkeleton } from "@/components/admin/AdminLoadingState";
-import { QueryErrorDisplay } from "@/components/admin/AdminErrorBoundary";
+import { useDashboard } from "@/hooks/useDashboard";
 import { formatCurrency } from "@/lib/currency";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  KPICard, SectionTitle, OrderPeriodCard, StatusCard,
+  TopItemsTable, StockByCategoryTable,
+} from "@/components/admin/dashboard/DashboardWidgets";
+import {
+  RevenueLast7DaysChart, RevenueLast12MonthsChart, OrdersLast7DaysChart,
+} from "@/components/admin/dashboard/DashboardCharts";
 
-const AdminDashboard = () => {
-  const { data: products = [], isLoading: productsLoading, error: productsError, refetch: refetchProducts } = useProducts();
-  const { data: colors = [], isLoading: colorsLoading } = useColors();
-  const { data: sizes = [], isLoading: sizesLoading } = useSizes();
-  const { data: materials = [], isLoading: materialsLoading } = useMaterials();
-  const { data: categories = [], isLoading: categoriesLoading } = useCategories();
-  const { data: brands = [], isLoading: brandsLoading } = useBrands();
+const STATUS_LABELS: Record<string, string> = {
+  pending: "Pending",
+  processing: "Processing",
+  shipped: "Shipped",
+  delivered: "Delivered",
+  cancelled: "Cancelled",
+  returned: "Returned",
+  partially_delivered: "Partial Delivery",
+};
 
-  const isLoading = productsLoading || colorsLoading || sizesLoading || materialsLoading || categoriesLoading || brandsLoading;
+const PERIOD_LABELS: Record<string, string> = {
+  today: "📅 Today",
+  yesterday: "📅 Yesterday",
+  dayBeforeYesterday: "📅 Day Before Yesterday",
+  last7Days: "📅 Last 7 Days",
+  last30Days: "📅 Last 30 Days",
+  thisMonth: "📅 This Month",
+  thisYear: "📅 This Year",
+};
 
-  // Show skeleton while loading
-  if (isLoading) {
-    return <AdminDashboardSkeleton />;
-  }
+const METHOD_LABELS: Record<string, string> = {
+  cod: "COD",
+  mobile_banking: "Mobile Banking",
+  bank_transfer: "Bank Transfer",
+  card: "Card",
+  online_gateway: "Online Gateway",
+  other: "Other",
+};
 
-  // Show error state if products failed to load
-  if (productsError) {
-    return (
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-2xl font-medium tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Product management overview</p>
-        </div>
-        <QueryErrorDisplay error={productsError as Error} onRetry={() => refetchProducts()} />
-      </div>
-    );
-  }
-
-  const stats = [
-    { icon: Package, label: "Products", count: products.length, path: "/admin/products" },
-    { icon: Palette, label: "Colors", count: colors.length, path: "/admin/colors" },
-    { icon: Ruler, label: "Sizes", count: sizes.length, path: "/admin/sizes" },
-    { icon: Shirt, label: "Materials", count: materials.length, path: "/admin/materials" },
-    { icon: FolderTree, label: "Categories", count: categories.length, path: "/admin/categories" },
-    { icon: Building2, label: "Brands", count: brands.length, path: "/admin/brands" },
-  ];
-
-  const activeProducts = products.filter(p => p.is_active).length;
-  const totalVariants = products.reduce((sum, p) => sum + (p.variants?.length || 0), 0);
-
+function DashboardSkeleton() {
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-medium tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">Product management overview</p>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {stats.map((stat) => (
-          <Link
-            key={stat.label}
-            to={stat.path}
-            className="p-4 border border-border hover:border-foreground transition-colors"
-          >
-            <stat.icon className="h-5 w-5 text-muted-foreground mb-2" />
-            <p className="text-2xl font-medium">{stat.count}</p>
-            <p className="text-sm text-muted-foreground">{stat.label}</p>
-          </Link>
+    <div className="space-y-6">
+      <Skeleton className="h-8 w-48" />
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-20" />
         ))}
       </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-24" />
+        ))}
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <Skeleton key={i} className="h-36" />
+        ))}
+      </div>
+    </div>
+  );
+}
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="p-6 border border-border">
-          <h3 className="text-sm text-muted-foreground mb-1">Active Products</h3>
-          <p className="text-3xl font-medium">{activeProducts}</p>
-          <p className="text-sm text-muted-foreground mt-1">of {products.length} total</p>
-        </div>
-        <div className="p-6 border border-border">
-          <h3 className="text-sm text-muted-foreground mb-1">Total Variants</h3>
-          <p className="text-3xl font-medium">{totalVariants}</p>
-          <p className="text-sm text-muted-foreground mt-1">across all products</p>
-        </div>
-        <div className="p-6 border border-border">
-          <h3 className="text-sm text-muted-foreground mb-1">Variable Products</h3>
-          <p className="text-3xl font-medium">{products.filter(p => p.product_type === 'variable').length}</p>
-          <p className="text-sm text-muted-foreground mt-1">with variants</p>
-        </div>
+const AdminDashboard = () => {
+  const { analytics, isLoading } = useDashboard();
+
+  if (isLoading || !analytics) return <DashboardSkeleton />;
+
+  const { product, stock, stockByCategory, periods, statusCounts, payment, sales, charts } = analytics;
+
+  return (
+    <div className="space-y-8 pb-12">
+      <div>
+        <h1 className="text-2xl font-medium tracking-tight">Dashboard</h1>
+        <p className="text-muted-foreground text-sm mt-1">Business intelligence overview</p>
       </div>
 
-      {/* Recent Products */}
-      <div className="border border-border">
-        <div className="p-4 border-b border-border flex items-center justify-between">
-          <h2 className="font-medium">Recent Products</h2>
-          <Link to="/admin/products" className="text-sm text-muted-foreground hover:text-foreground">
-            View all →
-          </Link>
+      {/* ═══ 1. PRODUCT & STOCK OVERVIEW ═══ */}
+      <section className="space-y-4">
+        <SectionTitle icon="📦">Product Summary</SectionTitle>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <KPICard label="Total Products" value={product.totalProducts} />
+          <KPICard label="Product Variants" value={product.totalVariants} />
+          <KPICard label="Categories" value={product.totalCategories} />
+          <KPICard label="Brands" value={product.totalBrands} />
+          <KPICard label="Active Products" value={product.activeProducts} />
+          <KPICard label="Inactive Products" value={product.inactiveProducts} />
         </div>
-        <div className="divide-y divide-border">
-          {products.slice(0, 5).map((product) => (
-            <div key={product.id} className="p-4 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                {product.images?.[0] ? (
-                  <img
-                    src={product.images[0].image_url}
-                    alt={product.name}
-                    className="w-12 h-12 object-cover"
-                  />
-                ) : (
-                  <div className="w-12 h-12 bg-muted flex items-center justify-center">
-                    <Package className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                )}
-                <div>
-                  <p className="font-medium">{product.name}</p>
-                  <p className="text-sm text-muted-foreground">{product.sku}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="font-medium">{formatCurrency(product.base_price)}</p>
-                <p className="text-sm text-muted-foreground">
-                  {product.is_active ? "Active" : "Inactive"}
-                </p>
-              </div>
-            </div>
+
+        <SectionTitle icon="📊">Stock Summary</SectionTitle>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          <KPICard label="Total Stock Qty" value={stock.totalStock.toLocaleString()} />
+          <KPICard label="Stock Value (Cost)" value={formatCurrency(stock.stockValuePurchase)} />
+          <KPICard label="Stock Value (Retail)" value={formatCurrency(stock.stockValueSelling)} />
+          <KPICard label="Low Stock" value={stock.lowStockCount} sub="Below threshold" />
+          <KPICard label="Out of Stock" value={stock.outOfStockCount} />
+        </div>
+
+        <StockByCategoryTable data={stockByCategory} />
+      </section>
+
+      {/* ═══ 2. ORDER ANALYTICS ═══ */}
+      <section className="space-y-4">
+        <SectionTitle icon="📈">Order Analytics</SectionTitle>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          {Object.entries(PERIOD_LABELS).map(([key, label]) => (
+            <OrderPeriodCard key={key} title={label} data={periods[key]} />
           ))}
-          {products.length === 0 && (
-            <div className="p-8 text-center text-muted-foreground">
-              No products yet. Create your first product to get started.
-            </div>
-          )}
         </div>
-      </div>
+      </section>
+
+      {/* ═══ 3. ORDER STATUS OVERVIEW ═══ */}
+      <section className="space-y-4">
+        <SectionTitle icon="🔄">Order Status Overview</SectionTitle>
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+          {Object.entries(STATUS_LABELS).map(([key, label]) => (
+            <StatusCard key={key} label={label} count={statusCounts[key] || 0} />
+          ))}
+        </div>
+      </section>
+
+      {/* ═══ 4. PAYMENT ANALYTICS ═══ */}
+      <section className="space-y-4">
+        <SectionTitle icon="💳">Payment Analytics</SectionTitle>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <KPICard label="COD Orders" value={payment.codCount} />
+          <KPICard label="Mobile Banking" value={payment.mobileBankingCount} />
+          <KPICard label="Bank Transfer" value={payment.bankTransferCount} />
+          <KPICard label="COD Pending Collection" value={formatCurrency(payment.codPendingAmount)} />
+        </div>
+
+        {Object.keys(payment.methodRevenue).length > 0 && (
+          <div className="border border-border bg-card p-4">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+              Payment Method Wise Revenue
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+              {Object.entries(payment.methodRevenue).map(([method, revenue]) => (
+                <div key={method} className="flex justify-between border-b border-border pb-1">
+                  <span className="text-muted-foreground">{METHOD_LABELS[method] || method}</span>
+                  <span className="font-medium">{formatCurrency(revenue)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* ═══ 5. SALES INTELLIGENCE ═══ */}
+      <section className="space-y-4">
+        <SectionTitle icon="🏆">Sales Intelligence</SectionTitle>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <TopItemsTable title="Top Selling Products (Last 30 Days)" items={sales.topProducts} />
+          <TopItemsTable title="Top Categories (Last 30 Days)" items={sales.topCategories} />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <KPICard
+            label="Best Selling Size (Today)"
+            value={sales.bestSize ? sales.bestSize.name : "—"}
+            sub={sales.bestSize ? `${sales.bestSize.qty} units sold` : "No sales today"}
+          />
+          <KPICard
+            label="Best Selling Color (Today)"
+            value={sales.bestColor ? sales.bestColor.name : "—"}
+            sub={sales.bestColor ? `${sales.bestColor.qty} units sold` : "No sales today"}
+          />
+        </div>
+      </section>
+
+      {/* ═══ 6. VISUAL CHARTS ═══ */}
+      <section className="space-y-4">
+        <SectionTitle icon="📉">Trends</SectionTitle>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <RevenueLast7DaysChart data={charts.revenueLast7Days} />
+          <OrdersLast7DaysChart data={charts.revenueLast7Days} />
+        </div>
+        <RevenueLast12MonthsChart data={charts.revenueLast12Months} />
+      </section>
     </div>
   );
 };

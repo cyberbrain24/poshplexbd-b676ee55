@@ -82,6 +82,8 @@ const injectScript = () => {
 // Inject on first user interaction OR after 3s delay
 export const setupLazyLoading = () => {
   if (_interactionBound || _scriptInjected) return;
+  // Early-return if pixel is disabled or missing — don't attach listeners
+  if (!_config?.isEnabled || !_config?.pixelId) return;
   _interactionBound = true;
 
   const trigger = () => {

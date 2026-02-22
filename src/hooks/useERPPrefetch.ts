@@ -18,10 +18,11 @@ const CACHE_CONFIG = {
  * Prefetch core ERP reference data on admin panel mount
  * This populates the cache so modules load instantly
  */
-export function useERPDataPrefetch() {
+export function useERPDataPrefetch(enabled = true) {
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    if (!enabled) return;
     const prefetchReferenceData = async () => {
       // High priority - used across many modules
       await Promise.allSettled([

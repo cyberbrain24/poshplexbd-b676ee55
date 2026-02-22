@@ -17,7 +17,7 @@ export function useStorefrontPrefetch() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    // Prefetch site branding FIRST — unblocks the LCP hero image URL
+    // Only prefetch branding globally — it unblocks the LCP hero image URL
     queryClient.prefetchQuery({
       queryKey: ["site-branding"],
       queryFn: async () => {
@@ -28,11 +28,11 @@ export function useStorefrontPrefetch() {
         if (error) throw error;
         return data;
       },
-      staleTime: 1000 * 60 * 10, // match useSiteBranding staleTime
+      staleTime: 1000 * 60 * 10,
       gcTime: 1000 * 60 * 60,
     });
 
-    // Prefetch categories (used in nav, filters, product pages)
+    // Categories are used in nav, so still prefetch globally
     queryClient.prefetchQuery({
       queryKey: ["categories"],
       queryFn: async () => {
@@ -46,34 +46,6 @@ export function useStorefrontPrefetch() {
       ...STOREFRONT_CACHE,
     });
 
-    // Prefetch active payment methods (used in checkout)
-    queryClient.prefetchQuery({
-      queryKey: ["payment_methods"],
-      queryFn: async () => {
-        const { data, error } = await supabase
-          .from("payment_methods")
-          .select("id, name, type, instructions, account_details, sort_order")
-          .eq("is_active", true)
-          .order("sort_order");
-        if (error) throw error;
-        return data;
-      },
-      ...STOREFRONT_CACHE,
-    });
-
-    // Prefetch active divisions (used in checkout address form)
-    queryClient.prefetchQuery({
-      queryKey: ["divisions-public"],
-      queryFn: async () => {
-        const { data, error } = await supabase
-          .from("divisions")
-          .select("id, name")
-          .eq("is_active", true)
-          .order("name");
-        if (error) throw error;
-        return data;
-      },
-      ...STOREFRONT_CACHE,
-    });
+    // Payment methods & divisions moved to Checkout page only
   }, [queryClient]);
 }

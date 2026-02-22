@@ -14,7 +14,7 @@ const EditorialSection = () => {
             POSHPLEX was born from a passion for street culture and authentic self-expression. 
             We believe that what you wear tells your story — bold, unapologetic, and uniquely yours.
           </p>
-          <Link to="/about/our-story" className="inline-flex items-center gap-1 text-sm font-light text-foreground hover:text-foreground/80 transition-colors duration-200">
+          <Link to="/pages/our-story" className="inline-flex items-center gap-1 text-sm font-light text-foreground hover:text-foreground/80 transition-colors duration-200">
             <span>Read our full story</span>
             <ArrowRight size={12} />
           </Link>

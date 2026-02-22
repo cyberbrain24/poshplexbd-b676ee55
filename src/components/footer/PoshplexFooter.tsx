@@ -14,16 +14,16 @@ const FOOTER_COLUMNS = [
   {
     title: "ABOUT",
     links: [
-      { label: "Our Story", path: "/about/our-story" },
-      { label: "Find Us", path: "/about/store-locator" },
+      { label: "Our Story", path: "/pages/our-story" },
+      { label: "Find Us", path: "/pages/store-locator" },
     ],
   },
   {
     title: "LEGAL",
     links: [
-      { label: "Privacy Policy", path: "/about/privacy-policy" },
-      { label: "Terms & Conditions", path: "/about/terms-conditions" },
-      { label: "Shipping & Delivery", path: "/about/shipping-delivery" },
+      { label: "Privacy Policy", path: "/pages/privacy-policy" },
+      { label: "Terms & Conditions", path: "/pages/terms-conditions" },
+      { label: "Shipping & Delivery", path: "/pages/shipping-delivery" },
     ],
   },
 ];

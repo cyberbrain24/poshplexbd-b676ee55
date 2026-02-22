@@ -94,14 +94,6 @@ const VariantRow = memo(({
     <TableCell>
       <Input
         type="number"
-        value={variant.purchase_price}
-        onChange={(e) => onUpdateField("purchase_price", Number(e.target.value))}
-        className="w-20"
-      />
-    </TableCell>
-    <TableCell>
-      <Input
-        type="number"
         value={variant.selling_price}
         onChange={(e) => onUpdateField("selling_price", Number(e.target.value))}
         className="w-20"
@@ -164,7 +156,6 @@ const VariantTable = memo(({
             <TableHead>Size</TableHead>
             <TableHead>Material</TableHead>
             <TableHead>SKU</TableHead>
-            <TableHead>Cost</TableHead>
             <TableHead>Price</TableHead>
             <TableHead>Active</TableHead>
             <TableHead></TableHead>

@@ -251,8 +251,8 @@ const AdminSidebar = () => {
       </div>
       
       <nav className="flex-1 p-4 space-y-1">
-        {/* Dashboard */}
-        {renderNavLink("/admin", LayoutDashboard, "Dashboard")}
+        {/* Business Intelligence */}
+        {renderNavLink("/admin", LayoutDashboard, "Business Intelligence")}
 
         {/* Product Management */}
         {renderCollapsible(

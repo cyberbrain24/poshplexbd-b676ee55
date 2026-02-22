@@ -71,7 +71,7 @@ const PoshplexFooter = () => {
           </div>
 
           {/* Desktop Link Columns */}
-          <div className="hidden lg:grid lg:col-span-8 grid-cols-4 gap-6">
+          <div className="hidden lg:grid lg:col-span-8 grid-cols-3 gap-6">
             {FOOTER_COLUMNS.map((col) => (
               <div key={col.title}>
                 <h4 className="text-xs font-semibold tracking-[0.15em] text-white mb-4">

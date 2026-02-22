@@ -29,6 +29,9 @@ import {
   Image,
   Tag,
   Settings,
+  Boxes,
+  ArrowDownToLine,
+  ArrowUpFromLine,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -69,6 +72,11 @@ const accountManagementItems: NavItem[] = [
   { icon: CreditCard, label: "Accounts List", path: "/admin/accounts-list" },
   { icon: TrendingUp, label: "Income Categories", path: "/admin/income-categories" },
   { icon: TrendingDown, label: "Expense Categories", path: "/admin/expense-categories" },
+];
+
+const inventoryItems: NavItem[] = [
+  { icon: ArrowDownToLine, label: "Inventory In", path: "/admin/inventory-in" },
+  { icon: ArrowUpFromLine, label: "Inventory Out", path: "/admin/inventory-out" },
 ];
 
 const customerManagementItems: NavItem[] = [
@@ -134,14 +142,16 @@ const AdminSidebar = () => {
 
   const isProductMgmtActive = productManagementItems.some(item => location.pathname === item.path);
   const isOrdersActive = orderItems.some(item => location.pathname === item.path);
+  const isInventoryActive = inventoryItems.some(item => location.pathname === item.path);
   const isAccountMgmtActive = accountManagementItems.some(item => location.pathname === item.path);
   const isCustomerMgmtActive = customerManagementItems.some(item => location.pathname === item.path);
 
   // Accordion behavior: only one group open at a time
-  type GroupKey = 'product' | 'orders' | 'account' | 'customer';
+  type GroupKey = 'product' | 'orders' | 'inventory' | 'account' | 'customer';
   const getInitialOpen = (): GroupKey | null => {
     if (isProductMgmtActive) return 'product';
     if (isOrdersActive) return 'orders';
+    if (isInventoryActive) return 'inventory';
     if (isCustomerMgmtActive) return 'customer';
     if (isAccountMgmtActive) return 'account';
     return null;
@@ -262,6 +272,16 @@ const AdminSidebar = () => {
           openGroup === 'orders',
           () => toggleGroup('orders'),
           isOrdersActive
+        )}
+
+        {/* Inventory Management */}
+        {renderCollapsible(
+          Boxes,
+          "Inventory Management",
+          inventoryItems,
+          openGroup === 'inventory',
+          () => toggleGroup('inventory'),
+          isInventoryActive
         )}
 
         {/* Customer Management */}

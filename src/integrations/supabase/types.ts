@@ -396,6 +396,109 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_entries: {
+        Row: {
+          account_id: string | null
+          category_id: string | null
+          created_at: string
+          created_by: string | null
+          date: string
+          id: string
+          notes: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          account_id?: string | null
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          id?: string
+          notes?: string | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string | null
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          id?: string
+          notes?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_entries_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_entries_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "transaction_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_entry_items: {
+        Row: {
+          created_at: string
+          entry_id: string
+          id: string
+          product_id: string
+          purchase_price: number | null
+          quantity: number
+          variant_id: string
+        }
+        Insert: {
+          created_at?: string
+          entry_id: string
+          id?: string
+          product_id: string
+          purchase_price?: number | null
+          quantity?: number
+          variant_id: string
+        }
+        Update: {
+          created_at?: string
+          entry_id?: string
+          id?: string
+          product_id?: string
+          purchase_price?: number | null
+          quantity?: number
+          variant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_entry_items_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_entry_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_entry_items_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       materials: {
         Row: {
           created_at: string

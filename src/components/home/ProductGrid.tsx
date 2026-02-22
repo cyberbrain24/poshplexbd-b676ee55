@@ -65,10 +65,10 @@ const ProductGrid = () => {
 
   return (
     <section className="w-full px-4 md:px-8 py-12 md:py-16 bg-background relative overflow-hidden" style={{ minHeight: 600, contain: 'layout style' }}>
-      {/* Street culture background element */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true" style={{ contain: 'strict' }}>
+      {/* Street culture background element — hidden on mobile to save GPU paint */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden hidden md:block" aria-hidden="true" style={{ contain: 'strict' }}>
         <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-muted/30 to-transparent" />
-        <div className="absolute bottom-0 left-0 text-[200px] md:text-[300px] font-black text-foreground/[0.015] leading-none select-none -translate-x-1/4 translate-y-1/4">
+        <div className="absolute bottom-0 left-0 text-[300px] font-black text-foreground/[0.015] leading-none select-none -translate-x-1/4 translate-y-1/4">
           STREET
         </div>
       </div>
@@ -107,10 +107,10 @@ const ProductGrid = () => {
                 width={300}
                 height={400}
                 loading={index < 4 ? "eager" : "lazy"}
-                className="w-full h-full object-cover object-center transition-all duration-500 group-hover:scale-105"
+                className="w-full h-full object-cover object-center md:transition-all md:duration-500 md:group-hover:scale-105"
               />
               
-              <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/10 transition-colors duration-300" />
+              <div className="absolute inset-0 bg-foreground/0 md:group-hover:bg-foreground/10 md:transition-colors md:duration-300" />
               
               <span className="absolute bottom-2 right-2 text-[10px] font-mono text-foreground/40 tracking-wider">
                 {String(index + 1).padStart(2, '0')}
@@ -123,7 +123,7 @@ const ProductGrid = () => {
               </div>
 
               <button 
-                className="absolute bottom-3 left-3 right-3 py-2.5 bg-background/95 backdrop-blur-sm text-foreground text-[10px] font-bold tracking-[0.1em] uppercase opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 flex items-center justify-center gap-2 hover:bg-foreground hover:text-background"
+                className="absolute bottom-3 left-3 right-3 py-2.5 bg-background/95 md:backdrop-blur-sm text-foreground text-[10px] font-bold tracking-[0.1em] uppercase hidden md:flex opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 items-center justify-center gap-2 hover:bg-foreground hover:text-background"
                 aria-label="Add to cart"
               >
                 <ShoppingBag size={12} strokeWidth={2} />

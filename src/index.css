@@ -173,6 +173,16 @@
   will-change: transform;
 }
 
+/* Disable animation on mobile for performance */
+@media (max-width: 767px) {
+  .announcement-text {
+    animation: none;
+    will-change: auto;
+    text-align: center;
+    width: 100%;
+  }
+}
+
 @keyframes announcement-slide {
   0% {
     transform: translateX(0);

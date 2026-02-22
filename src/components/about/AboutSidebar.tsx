@@ -1,18 +1,18 @@
 import { NavLink } from 'react-router-dom';
 
 const aboutPages = [
-  { name: 'Our Story', path: '/about/our-story' },
-  { name: 'Find Us', path: '/about/store-locator' },
-  { name: 'Privacy Policy', path: '/about/privacy-policy' },
-  { name: 'Terms & Conditions', path: '/about/terms-conditions' },
-  { name: 'Shipping & Delivery', path: '/about/shipping-delivery' }
+  { name: 'Our Story', path: '/pages/our-story' },
+  { name: 'Find Us', path: '/pages/store-locator' },
+  { name: 'Privacy Policy', path: '/pages/privacy-policy' },
+  { name: 'Terms & Conditions', path: '/pages/terms-conditions' },
+  { name: 'Shipping & Delivery', path: '/pages/shipping-delivery' }
 ];
 
 const AboutSidebar = () => {
   return (
     <aside className="hidden md:block w-64 sticky top-32 h-fit px-6">
       <nav className="space-y-1">
-        <h3 className="text-lg font-light text-foreground mb-6">About</h3>
+        <h3 className="text-lg font-light text-foreground mb-6">Pages</h3>
         {aboutPages.map((page) => (
           <NavLink
             key={page.path}

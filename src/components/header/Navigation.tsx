@@ -63,7 +63,7 @@ const Navigation = () => {
     { name: "SHOP", href: "/category/all", hasMegaMenu: true },
     { name: "NEW ARRIVALS", href: "/category/new-arrivals", hasMegaMenu: false },
     { name: "BLOG", href: "/blog", hasMegaMenu: false },
-    { name: "ABOUT", href: "/about/our-story", hasMegaMenu: false },
+    { name: "ABOUT", href: "/pages/our-story", hasMegaMenu: false },
   ];
 
   return (
@@ -338,7 +338,7 @@ const Navigation = () => {
                 BLOG
               </Link>
               <Link
-                to="/about/our-story"
+                to="/pages/our-story"
                 className="block text-foreground text-sm font-medium tracking-wider py-2"
                 onClick={() => setIsMobileMenuOpen(false)}
               >

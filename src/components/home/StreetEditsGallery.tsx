@@ -5,20 +5,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 const StreetEditsGallery = () => {
   const { data: categories = [], isLoading } = useCategories();
   
-  // Get main categories (no parent) that have images, limit to 8
   const mainCategories = categories
     .filter(c => !c.parent_id && c.image_url)
     .slice(0, 8);
 
   if (isLoading) {
     return (
-      <section className="w-full px-6 py-20">
+      <section className="w-full px-6 py-20" style={{ minHeight: 400 }}>
         <div className="flex items-baseline gap-4 mb-10">
           <Skeleton className="w-24 h-16" />
           <Skeleton className="w-48 h-8" />
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+          {Array.from({ length: 8 }, (_, i) => (
             <div key={i} className="space-y-3">
               <Skeleton className="aspect-[3/4] w-full" />
               <Skeleton className="h-5 w-24" />
@@ -29,28 +28,18 @@ const StreetEditsGallery = () => {
     );
   }
 
-  // If no categories with images, don't render the section
-  if (mainCategories.length === 0) {
-    return null;
-  }
+  if (mainCategories.length === 0) return null;
 
   return (
-    <section className="w-full px-6 py-20">
-      {/* Section Header */}
+    <section className="w-full px-6 py-20" style={{ minHeight: 400 }}>
       <div className="flex items-baseline gap-4 mb-10">
-        <span className="text-6xl md:text-8xl font-black text-muted-foreground/30">
-          01
-        </span>
-        <h2 className="text-2xl md:text-3xl font-black tracking-tight text-foreground">
-          STREET EDITS
-        </h2>
+        <span className="text-6xl md:text-8xl font-black text-muted-foreground/30">01</span>
+        <h2 className="text-2xl md:text-3xl font-black tracking-tight text-foreground">STREET EDITS</h2>
       </div>
 
-      {/* Category Grid - 8 columns, centered if less than 8 */}
       <div className="flex flex-wrap justify-center gap-4">
-        {mainCategories.map((category) => {
+        {mainCategories.map((category, index) => {
           const categorySlug = category.name.toLowerCase().replace(/\s+/g, '-');
-          
           return (
             <Link 
               key={category.id}
@@ -61,6 +50,9 @@ const StreetEditsGallery = () => {
                 <img 
                   src={category.image_url!}
                   alt={category.name}
+                  width={200}
+                  height={267}
+                  loading={index < 4 ? "eager" : "lazy"}
                   className="w-full h-full object-cover"
                 />
               </div>

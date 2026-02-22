@@ -11,26 +11,24 @@ import { CartProvider } from "./contexts/CartContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import MobileFooterNav from "./components/navigation/MobileFooterNav";
 
-// Storefront pages - only homepage and 404 on critical path
+// Storefront pages - eagerly loaded
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-
-// Storefront pages - lazy loaded (deferred until navigation)
-const Category = lazy(() => import("./pages/Category"));
-const CategoryBrowser = lazy(() => import("./pages/CategoryBrowser"));
-const ProductDetail = lazy(() => import("./pages/ProductDetail"));
-const Checkout = lazy(() => import("./pages/Checkout"));
-const OurStory = lazy(() => import("./pages/about/OurStory"));
-const StoreLocator = lazy(() => import("./pages/about/StoreLocator"));
-const PrivacyPolicy = lazy(() => import("./pages/about/PrivacyPolicy"));
-const TermsConditions = lazy(() => import("./pages/about/TermsConditions"));
-const ShippingDelivery = lazy(() => import("./pages/about/ShippingDelivery"));
-const Auth = lazy(() => import("./pages/Auth"));
-const CustomerAuth = lazy(() => import("./pages/CustomerAuth"));
-const CustomerAccount = lazy(() => import("./pages/CustomerAccount"));
-const OrderTracking = lazy(() => import("./pages/OrderTracking"));
-const MyOrders = lazy(() => import("./pages/MyOrders"));
-const Membership = lazy(() => import("./pages/Membership"));
+import Category from "./pages/Category";
+import CategoryBrowser from "./pages/CategoryBrowser";
+import ProductDetail from "./pages/ProductDetail";
+import Checkout from "./pages/Checkout";
+import OurStory from "./pages/about/OurStory";
+import StoreLocator from "./pages/about/StoreLocator";
+import PrivacyPolicy from "./pages/about/PrivacyPolicy";
+import TermsConditions from "./pages/about/TermsConditions";
+import ShippingDelivery from "./pages/about/ShippingDelivery";
+import Auth from "./pages/Auth";
+import CustomerAuth from "./pages/CustomerAuth";
+import CustomerAccount from "./pages/CustomerAccount";
+import OrderTracking from "./pages/OrderTracking";
+import MyOrders from "./pages/MyOrders";
+import Membership from "./pages/Membership";
 
 // Admin pages - lazy loaded (separate chunk, never downloaded by storefront users)
 const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
@@ -61,19 +59,17 @@ const AdminSiteSettings = lazy(() => import("./pages/admin/AdminSiteSettings"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      gcTime: 1000 * 60 * 30, // 30 minutes (formerly cacheTime)
+      staleTime: 1000 * 60 * 5,
+      gcTime: 1000 * 60 * 30,
       refetchOnWindowFocus: false,
       retry: 1,
-      // Prevent showing error state for cancelled queries
       throwOnError: false,
-      // Keep previous data during refetch for smoother UX
       placeholderData: (previousData: unknown) => previousData,
     },
   },
 });
 
-// Shared loading fallback for lazy routes
+// Shared loading fallback for lazy admin routes
 const LoadingFallback = () => (
   <div className="flex min-h-screen items-center justify-center bg-background">
     <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -96,32 +92,28 @@ const App = () => (
           >
             <ScrollToTop />
             <Routes>
-              {/* Homepage - on critical path, no Suspense needed */}
               <Route path="/" element={<Index />} />
-
-              {/* Storefront Routes - lazy loaded */}
-              <Route path="/categories" element={<Suspense fallback={<LoadingFallback />}><CategoryBrowser /></Suspense>} />
-              <Route path="/category/:category" element={<Suspense fallback={<LoadingFallback />}><Category /></Suspense>} />
-              <Route path="/product/:productSlug" element={<Suspense fallback={<LoadingFallback />}><ProductDetail /></Suspense>} />
-              <Route path="/checkout" element={<Suspense fallback={<LoadingFallback />}><Checkout /></Suspense>} />
-              <Route path="/order-tracking" element={<Suspense fallback={<LoadingFallback />}><OrderTracking /></Suspense>} />
-              <Route path="/my-orders" element={<Suspense fallback={<LoadingFallback />}><MyOrders /></Suspense>} />
-              <Route path="/account" element={<Suspense fallback={<LoadingFallback />}><CustomerAccount /></Suspense>} />
-              <Route path="/membership" element={<Suspense fallback={<LoadingFallback />}><Membership /></Suspense>} />
-              <Route path="/pages/our-story" element={<Suspense fallback={<LoadingFallback />}><OurStory /></Suspense>} />
-              <Route path="/pages/store-locator" element={<Suspense fallback={<LoadingFallback />}><StoreLocator /></Suspense>} />
-              <Route path="/pages/privacy-policy" element={<Suspense fallback={<LoadingFallback />}><PrivacyPolicy /></Suspense>} />
-              <Route path="/pages/terms-conditions" element={<Suspense fallback={<LoadingFallback />}><TermsConditions /></Suspense>} />
-              <Route path="/pages/shipping-delivery" element={<Suspense fallback={<LoadingFallback />}><ShippingDelivery /></Suspense>} />
-              {/* Redirects for old URLs */}
-              <Route path="/about/*" element={<Suspense fallback={<LoadingFallback />}><OurStory /></Suspense>} />
-              <Route path="/privacy-policy" element={<Suspense fallback={<LoadingFallback />}><PrivacyPolicy /></Suspense>} />
-              <Route path="/terms-of-service" element={<Suspense fallback={<LoadingFallback />}><TermsConditions /></Suspense>} />
-              <Route path="/shipping-delivery" element={<Suspense fallback={<LoadingFallback />}><ShippingDelivery /></Suspense>} />
-              <Route path="/auth" element={<Suspense fallback={<LoadingFallback />}><Auth /></Suspense>} />
-              <Route path="/login" element={<Suspense fallback={<LoadingFallback />}><CustomerAuth /></Suspense>} />
+              <Route path="/categories" element={<CategoryBrowser />} />
+              <Route path="/category/:category" element={<Category />} />
+              <Route path="/product/:productSlug" element={<ProductDetail />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/order-tracking" element={<OrderTracking />} />
+              <Route path="/my-orders" element={<MyOrders />} />
+              <Route path="/account" element={<CustomerAccount />} />
+              <Route path="/membership" element={<Membership />} />
+              <Route path="/pages/our-story" element={<OurStory />} />
+              <Route path="/pages/store-locator" element={<StoreLocator />} />
+              <Route path="/pages/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/pages/terms-conditions" element={<TermsConditions />} />
+              <Route path="/pages/shipping-delivery" element={<ShippingDelivery />} />
+              <Route path="/about/*" element={<OurStory />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/terms-of-service" element={<TermsConditions />} />
+              <Route path="/shipping-delivery" element={<ShippingDelivery />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/login" element={<CustomerAuth />} />
               
-              {/* Admin Routes - Lazy loaded, nested under protected layout */}
+              {/* Admin Routes - Lazy loaded */}
               <Route path="/admin" element={
                 <ProtectedRoute>
                   <Suspense fallback={<LoadingFallback />}>
@@ -133,8 +125,6 @@ const App = () => (
                 <Route path="products" element={<AdminProducts />} />
                 <Route path="reviews" element={<AdminReviews />} />
                 <Route path="media" element={<AdminMedia />} />
-                
-                {/* Product Edits */}
                 <Route path="colors" element={<AdminColors />} />
                 <Route path="sizes" element={<AdminSizes />} />
                 <Route path="materials" element={<AdminMaterials />} />
@@ -142,27 +132,20 @@ const App = () => (
                 <Route path="care-instructions" element={<AdminCareInstructions />} />
                 <Route path="categories" element={<AdminCategories />} />
                 <Route path="brands" element={<AdminBrands />} />
-                
-                {/* Accounts */}
                 <Route path="accounts" element={<AdminAccounts />} />
                 <Route path="accounts-list" element={<AdminAccountsList />} />
                 <Route path="income-categories" element={<AdminIncomeCategories />} />
                 <Route path="expense-categories" element={<AdminExpenseCategories />} />
-                
-                {/* Customers */}
                 <Route path="customers" element={<AdminCustomers />} />
                 <Route path="divisions" element={<AdminDivisions />} />
                 <Route path="thanas" element={<AdminThanas />} />
                 <Route path="customer-types" element={<AdminCustomerTypes />} />
-                
-                {/* Orders */}
                 <Route path="orders" element={<AdminOrders />} />
                 <Route path="payment-methods" element={<AdminPaymentMethods />} />
                 <Route path="promo-codes" element={<AdminPromoCodes />} />
                 <Route path="site-settings" element={<AdminSiteSettings />} />
               </Route>
               
-              {/* 404 Catch-all - MUST be last */}
               <Route path="*" element={<NotFound />} />
             </Routes>
             <MobileFooterNav />

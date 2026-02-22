@@ -30,7 +30,8 @@ const FOOTER_COLUMNS = [
     title: "LEGAL",
     links: [
       { label: "Privacy Policy", path: "/privacy-policy" },
-      { label: "Terms of Service", path: "/terms-of-service" },
+      { label: "Terms & Conditions", path: "/terms-of-service" },
+      { label: "Shipping & Delivery", path: "/shipping-delivery" },
     ],
   },
 ];

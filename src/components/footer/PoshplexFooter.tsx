@@ -23,7 +23,7 @@ const FOOTER_COLUMNS = [
     links: [
       { label: "Size Guide", path: "/about/size-guide" },
       { label: "Customer Care", path: "/about/customer-care" },
-      { label: "Store Locator", path: "/about/store-locator" },
+      { label: "Find Us", path: "/about/store-locator" },
     ],
   },
   {

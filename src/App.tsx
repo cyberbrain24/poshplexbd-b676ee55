@@ -12,24 +12,26 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import MobileFooterNav from "./components/navigation/MobileFooterNav";
 import FacebookPixelTracker from "./components/tracking/FacebookPixelTracker";
 
-// Storefront pages - eagerly loaded
+// Storefront pages - eagerly loaded (critical path)
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import Category from "./pages/Category";
-import CategoryBrowser from "./pages/CategoryBrowser";
-import ProductDetail from "./pages/ProductDetail";
-import Checkout from "./pages/Checkout";
-import OurStory from "./pages/about/OurStory";
-import StoreLocator from "./pages/about/StoreLocator";
-import PrivacyPolicy from "./pages/about/PrivacyPolicy";
-import TermsConditions from "./pages/about/TermsConditions";
-import ShippingDelivery from "./pages/about/ShippingDelivery";
-import Auth from "./pages/Auth";
-import CustomerAuth from "./pages/CustomerAuth";
-import CustomerAccount from "./pages/CustomerAccount";
-import OrderTracking from "./pages/OrderTracking";
-import MyOrders from "./pages/MyOrders";
-import Membership from "./pages/Membership";
+
+// Storefront pages - lazy loaded (non-critical)
+const Category = lazy(() => import("./pages/Category"));
+const CategoryBrowser = lazy(() => import("./pages/CategoryBrowser"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const OurStory = lazy(() => import("./pages/about/OurStory"));
+const StoreLocator = lazy(() => import("./pages/about/StoreLocator"));
+const PrivacyPolicy = lazy(() => import("./pages/about/PrivacyPolicy"));
+const TermsConditions = lazy(() => import("./pages/about/TermsConditions"));
+const ShippingDelivery = lazy(() => import("./pages/about/ShippingDelivery"));
+const Auth = lazy(() => import("./pages/Auth"));
+const CustomerAuth = lazy(() => import("./pages/CustomerAuth"));
+const CustomerAccount = lazy(() => import("./pages/CustomerAccount"));
+const OrderTracking = lazy(() => import("./pages/OrderTracking"));
+const MyOrders = lazy(() => import("./pages/MyOrders"));
+const Membership = lazy(() => import("./pages/Membership"));
 
 // Admin pages - lazy loaded (separate chunk, never downloaded by storefront users)
 const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
@@ -67,7 +69,7 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       retry: 1,
       throwOnError: false,
-      placeholderData: (previousData: unknown) => previousData,
+      // placeholderData removed globally — apply per-query where needed
     },
   },
 });
@@ -97,25 +99,25 @@ const App = () => (
             <FacebookPixelTracker />
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/categories" element={<CategoryBrowser />} />
-              <Route path="/category/:category" element={<Category />} />
-              <Route path="/product/:productSlug" element={<ProductDetail />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/order-tracking" element={<OrderTracking />} />
-              <Route path="/my-orders" element={<MyOrders />} />
-              <Route path="/account" element={<CustomerAccount />} />
-              <Route path="/membership" element={<Membership />} />
-              <Route path="/pages/our-story" element={<OurStory />} />
-              <Route path="/pages/store-locator" element={<StoreLocator />} />
-              <Route path="/pages/privacy-policy" element={<PrivacyPolicy />} />
-              <Route path="/pages/terms-conditions" element={<TermsConditions />} />
-              <Route path="/pages/shipping-delivery" element={<ShippingDelivery />} />
-              <Route path="/about/*" element={<OurStory />} />
-              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-              <Route path="/terms-of-service" element={<TermsConditions />} />
-              <Route path="/shipping-delivery" element={<ShippingDelivery />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/login" element={<CustomerAuth />} />
+              <Route path="/categories" element={<Suspense fallback={<LoadingFallback />}><CategoryBrowser /></Suspense>} />
+              <Route path="/category/:category" element={<Suspense fallback={<LoadingFallback />}><Category /></Suspense>} />
+              <Route path="/product/:productSlug" element={<Suspense fallback={<LoadingFallback />}><ProductDetail /></Suspense>} />
+              <Route path="/checkout" element={<Suspense fallback={<LoadingFallback />}><Checkout /></Suspense>} />
+              <Route path="/order-tracking" element={<Suspense fallback={<LoadingFallback />}><OrderTracking /></Suspense>} />
+              <Route path="/my-orders" element={<Suspense fallback={<LoadingFallback />}><MyOrders /></Suspense>} />
+              <Route path="/account" element={<Suspense fallback={<LoadingFallback />}><CustomerAccount /></Suspense>} />
+              <Route path="/membership" element={<Suspense fallback={<LoadingFallback />}><Membership /></Suspense>} />
+              <Route path="/pages/our-story" element={<Suspense fallback={<LoadingFallback />}><OurStory /></Suspense>} />
+              <Route path="/pages/store-locator" element={<Suspense fallback={<LoadingFallback />}><StoreLocator /></Suspense>} />
+              <Route path="/pages/privacy-policy" element={<Suspense fallback={<LoadingFallback />}><PrivacyPolicy /></Suspense>} />
+              <Route path="/pages/terms-conditions" element={<Suspense fallback={<LoadingFallback />}><TermsConditions /></Suspense>} />
+              <Route path="/pages/shipping-delivery" element={<Suspense fallback={<LoadingFallback />}><ShippingDelivery /></Suspense>} />
+              <Route path="/about/*" element={<Suspense fallback={<LoadingFallback />}><OurStory /></Suspense>} />
+              <Route path="/privacy-policy" element={<Suspense fallback={<LoadingFallback />}><PrivacyPolicy /></Suspense>} />
+              <Route path="/terms-of-service" element={<Suspense fallback={<LoadingFallback />}><TermsConditions /></Suspense>} />
+              <Route path="/shipping-delivery" element={<Suspense fallback={<LoadingFallback />}><ShippingDelivery /></Suspense>} />
+              <Route path="/auth" element={<Suspense fallback={<LoadingFallback />}><Auth /></Suspense>} />
+              <Route path="/login" element={<Suspense fallback={<LoadingFallback />}><CustomerAuth /></Suspense>} />
               
               {/* Admin Routes - Lazy loaded */}
               <Route path="/admin" element={

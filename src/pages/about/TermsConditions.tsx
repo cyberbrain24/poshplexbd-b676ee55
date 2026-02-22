@@ -1,8 +1,9 @@
 import { useEffect } from "react";
-import PoshplexHeader from "../components/header/PoshplexHeader";
-import PoshplexFooter from "../components/footer/PoshplexFooter";
+import PoshplexHeader from "../../components/header/PoshplexHeader";
+import PoshplexFooter from "../../components/footer/PoshplexFooter";
+import AboutSidebar from "../../components/about/AboutSidebar";
 
-const TermsOfService = () => {
+const TermsConditions = () => {
   useEffect(() => {
     document.title = "Terms & Conditions - Poshplex";
   }, []);
@@ -11,17 +12,22 @@ const TermsOfService = () => {
     <div className="min-h-screen bg-background">
       <PoshplexHeader />
       
-      <main className="pt-6">
-        <div className="max-w-3xl mx-auto px-6 py-12">
-          <h1 className="text-3xl font-bold tracking-tight uppercase text-foreground mb-2">
-            Terms & Conditions
-          </h1>
-          <p className="text-sm text-muted-foreground mb-10">
-            Welcome to Poshplex. By placing an order with us, you agree to the following terms and conditions. Please read them carefully before shopping.
-          </p>
+      <div className="flex">
+        <div className="hidden lg:block">
+          <AboutSidebar />
+        </div>
+        
+        <main className="w-full lg:w-[70vw] lg:ml-auto px-6">
+          <header className="pr-6 py-16 border-b border-border">
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight uppercase text-foreground mb-2">
+              Terms & Conditions
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Welcome to Poshplex. By placing an order with us, you agree to the following terms and conditions. Please read them carefully before shopping.
+            </p>
+          </header>
 
-          <div className="space-y-10 text-[15px]">
-            {/* Orders */}
+          <div className="py-12 space-y-10 text-[15px] max-w-2xl">
             <section>
               <h2 className="text-lg font-bold uppercase tracking-tight text-foreground mb-3 border-b border-border pb-2">Orders</h2>
               <ul className="list-disc list-inside text-muted-foreground space-y-1.5">
@@ -30,7 +36,6 @@ const TermsOfService = () => {
               </ul>
             </section>
 
-            {/* Pricing & Payment */}
             <section>
               <h2 className="text-lg font-bold uppercase tracking-tight text-foreground mb-3 border-b border-border pb-2">Pricing & Payment</h2>
               <ul className="list-disc list-inside text-muted-foreground space-y-1.5">
@@ -47,7 +52,6 @@ const TermsOfService = () => {
               </ul>
             </section>
 
-            {/* Shipping & Delivery */}
             <section>
               <h2 className="text-lg font-bold uppercase tracking-tight text-foreground mb-3 border-b border-border pb-2">Shipping & Delivery</h2>
               <ul className="list-disc list-inside text-muted-foreground space-y-1.5">
@@ -58,7 +62,6 @@ const TermsOfService = () => {
               </ul>
             </section>
 
-            {/* Exchanges & Returns */}
             <section>
               <h2 className="text-lg font-bold uppercase tracking-tight text-foreground mb-3 border-b border-border pb-2">Exchanges & Returns</h2>
               <ul className="list-disc list-inside text-muted-foreground space-y-1.5">
@@ -70,7 +73,6 @@ const TermsOfService = () => {
               </ul>
             </section>
 
-            {/* Use of Our Content */}
             <section>
               <h2 className="text-lg font-bold uppercase tracking-tight text-foreground mb-3 border-b border-border pb-2">Use of Our Content</h2>
               <ul className="list-disc list-inside text-muted-foreground space-y-1.5">
@@ -79,7 +81,6 @@ const TermsOfService = () => {
               </ul>
             </section>
 
-            {/* Limitation of Liability */}
             <section>
               <h2 className="text-lg font-bold uppercase tracking-tight text-foreground mb-3 border-b border-border pb-2">Limitation of Liability</h2>
               <ul className="list-disc list-inside text-muted-foreground space-y-1.5">
@@ -88,7 +89,6 @@ const TermsOfService = () => {
               </ul>
             </section>
 
-            {/* Changes to Terms */}
             <section>
               <h2 className="text-lg font-bold uppercase tracking-tight text-foreground mb-3 border-b border-border pb-2">Changes to Terms</h2>
               <p className="text-muted-foreground">
@@ -96,7 +96,6 @@ const TermsOfService = () => {
               </p>
             </section>
 
-            {/* Contact Us */}
             <section>
               <h2 className="text-lg font-bold uppercase tracking-tight text-foreground mb-3 border-b border-border pb-2">Contact Us</h2>
               <p className="text-muted-foreground mb-2">For questions or concerns, reach us at:</p>
@@ -106,12 +105,12 @@ const TermsOfService = () => {
               </div>
             </section>
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
       
       <PoshplexFooter />
     </div>
   );
 };
 
-export default TermsOfService;
+export default TermsConditions;

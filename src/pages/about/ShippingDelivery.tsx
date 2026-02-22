@@ -1,6 +1,7 @@
 import { useEffect } from "react";
-import PoshplexHeader from "../components/header/PoshplexHeader";
-import PoshplexFooter from "../components/footer/PoshplexFooter";
+import PoshplexHeader from "../../components/header/PoshplexHeader";
+import PoshplexFooter from "../../components/footer/PoshplexFooter";
+import AboutSidebar from "../../components/about/AboutSidebar";
 
 const ShippingDelivery = () => {
   useEffect(() => {
@@ -11,17 +12,22 @@ const ShippingDelivery = () => {
     <div className="min-h-screen bg-background">
       <PoshplexHeader />
       
-      <main className="pt-6">
-        <div className="max-w-3xl mx-auto px-6 py-12">
-          <h1 className="text-3xl font-bold tracking-tight uppercase text-foreground mb-2">
-            Shipping & Delivery
-          </h1>
-          <p className="text-sm text-muted-foreground mb-10">
-            At Poshplex, we believe in clear, hassle-free delivery. No hidden talk — here's everything you need to know about how your orders reach you:
-          </p>
+      <div className="flex">
+        <div className="hidden lg:block">
+          <AboutSidebar />
+        </div>
+        
+        <main className="w-full lg:w-[70vw] lg:ml-auto px-6">
+          <header className="pr-6 py-16 border-b border-border">
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight uppercase text-foreground mb-2">
+              Shipping & Delivery
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              At Poshplex, we believe in clear, hassle-free delivery. No hidden talk — here's everything you need to know about how your orders reach you:
+            </p>
+          </header>
 
-          <div className="space-y-10 text-[15px]">
-            {/* Inside Dhaka */}
+          <div className="py-12 space-y-10 text-[15px] max-w-2xl">
             <section>
               <h2 className="text-lg font-bold uppercase tracking-tight text-foreground mb-3 border-b border-border pb-2">Inside Dhaka City</h2>
               <ul className="list-disc list-inside text-muted-foreground space-y-1.5">
@@ -32,7 +38,6 @@ const ShippingDelivery = () => {
               </ul>
             </section>
 
-            {/* Sub-Urban */}
             <section>
               <h2 className="text-lg font-bold uppercase tracking-tight text-foreground mb-3 border-b border-border pb-2">Sub-Urban Areas (Near Dhaka)</h2>
               <ul className="list-disc list-inside text-muted-foreground space-y-1.5">
@@ -43,7 +48,6 @@ const ShippingDelivery = () => {
               </ul>
             </section>
 
-            {/* Outside Dhaka */}
             <section>
               <h2 className="text-lg font-bold uppercase tracking-tight text-foreground mb-3 border-b border-border pb-2">Outside Dhaka</h2>
               <ul className="list-disc list-inside text-muted-foreground space-y-1.5">
@@ -55,7 +59,6 @@ const ShippingDelivery = () => {
               </ul>
             </section>
 
-            {/* Important Notes */}
             <section>
               <h2 className="text-lg font-bold uppercase tracking-tight text-foreground mb-3 border-b border-border pb-2">Important Notes</h2>
               <ul className="list-disc list-inside text-muted-foreground space-y-1.5">
@@ -67,7 +70,6 @@ const ShippingDelivery = () => {
               </ul>
             </section>
 
-            {/* Tracking & Support */}
             <section>
               <h2 className="text-lg font-bold uppercase tracking-tight text-foreground mb-3 border-b border-border pb-2">Tracking & Support</h2>
               <p className="text-muted-foreground mb-2">For order updates or delivery issues, you can always reach us:</p>
@@ -78,8 +80,8 @@ const ShippingDelivery = () => {
               <p className="text-muted-foreground mt-3">We always aim to deliver your order fast, safe, and on point 🖤</p>
             </section>
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
       
       <PoshplexFooter />
     </div>

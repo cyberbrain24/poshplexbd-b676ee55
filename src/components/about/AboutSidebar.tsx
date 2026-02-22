@@ -2,7 +2,10 @@ import { NavLink } from 'react-router-dom';
 
 const aboutPages = [
   { name: 'Our Story', path: '/about/our-story' },
-  { name: 'Find Us', path: '/about/store-locator' }
+  { name: 'Find Us', path: '/about/store-locator' },
+  { name: 'Privacy Policy', path: '/about/privacy-policy' },
+  { name: 'Terms & Conditions', path: '/about/terms-conditions' },
+  { name: 'Shipping & Delivery', path: '/about/shipping-delivery' }
 ];
 
 const AboutSidebar = () => {

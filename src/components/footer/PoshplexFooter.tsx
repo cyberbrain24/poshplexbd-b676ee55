@@ -15,14 +15,6 @@ const FOOTER_COLUMNS = [
     title: "ABOUT",
     links: [
       { label: "Our Story", path: "/about/our-story" },
-      { label: "Sustainability", path: "/about/sustainability" },
-    ],
-  },
-  {
-    title: "SUPPORT",
-    links: [
-      { label: "Size Guide", path: "/about/size-guide" },
-      { label: "Customer Care", path: "/about/customer-care" },
       { label: "Find Us", path: "/about/store-locator" },
     ],
   },

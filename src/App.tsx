@@ -27,6 +27,7 @@ const CustomerCare = lazy(() => import("./pages/about/CustomerCare"));
 const StoreLocator = lazy(() => import("./pages/about/StoreLocator"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const ShippingDelivery = lazy(() => import("./pages/ShippingDelivery"));
 const Auth = lazy(() => import("./pages/Auth"));
 const CustomerAuth = lazy(() => import("./pages/CustomerAuth"));
 const CustomerAccount = lazy(() => import("./pages/CustomerAccount"));
@@ -117,6 +118,7 @@ const App = () => (
               <Route path="/about/store-locator" element={<Suspense fallback={<LoadingFallback />}><StoreLocator /></Suspense>} />
               <Route path="/privacy-policy" element={<Suspense fallback={<LoadingFallback />}><PrivacyPolicy /></Suspense>} />
               <Route path="/terms-of-service" element={<Suspense fallback={<LoadingFallback />}><TermsOfService /></Suspense>} />
+              <Route path="/shipping-delivery" element={<Suspense fallback={<LoadingFallback />}><ShippingDelivery /></Suspense>} />
               <Route path="/auth" element={<Suspense fallback={<LoadingFallback />}><Auth /></Suspense>} />
               <Route path="/login" element={<Suspense fallback={<LoadingFallback />}><CustomerAuth /></Suspense>} />
               

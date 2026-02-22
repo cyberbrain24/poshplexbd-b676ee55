@@ -8,6 +8,10 @@ import {
 import {
   RevenueLast7DaysChart, RevenueLast12MonthsChart, OrdersLast7DaysChart,
 } from "@/components/admin/dashboard/DashboardCharts";
+import {
+  SmartAlertsBar, ComparisonCard, PerformanceTable,
+  PaymentRatioChart, InventoryHealthSection,
+} from "@/components/admin/dashboard/DashboardAdvanced";
 
 const STATUS_LABELS: Record<string, string> = {
   pending: "Pending",
@@ -42,20 +46,14 @@ function DashboardSkeleton() {
   return (
     <div className="space-y-6">
       <Skeleton className="h-8 w-48" />
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="h-20" />
-        ))}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-16" />)}
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+        {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-20" />)}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-24" />
-        ))}
-      </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <Skeleton key={i} className="h-36" />
-        ))}
+        {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24" />)}
       </div>
     </div>
   );
@@ -66,32 +64,50 @@ const AdminDashboard = () => {
 
   if (isLoading || !analytics) return <DashboardSkeleton />;
 
-  const { product, stock, stockByCategory, periods, statusCounts, payment, sales, charts } = analytics;
+  const {
+    product, stock, stockByCategory, periods, statusCounts,
+    payment, sales, charts, comparisons, performance,
+    paymentRatio, inventoryHealth, smartAlerts,
+  } = analytics;
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-6 pb-12">
       <div>
         <h1 className="text-2xl font-medium tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground text-sm mt-1">Business intelligence overview</p>
       </div>
 
+      {/* ═══ 0. SMART ALERTS ═══ */}
+      <SmartAlertsBar alerts={smartAlerts} />
+
+      {/* ═══ 0.5 TODAY'S COMPARISON ═══ */}
+      <section className="space-y-3">
+        <SectionTitle icon="📊">Today's Performance</SectionTitle>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+          <ComparisonCard label="Revenue" value={formatCurrency(periods.today.revenue)} indicators={comparisons.revenue} />
+          <ComparisonCard label="Orders" value={String(periods.today.totalOrders)} indicators={comparisons.orders} />
+          <ComparisonCard label="Qty Sold" value={String(periods.today.totalQtySold)} indicators={comparisons.qtySold} />
+          <ComparisonCard label="Profit" value={formatCurrency(periods.today.profit)} indicators={comparisons.profit} />
+        </div>
+      </section>
+
       {/* ═══ 1. PRODUCT & STOCK OVERVIEW ═══ */}
-      <section className="space-y-4">
+      <section className="space-y-3">
         <SectionTitle icon="📦">Product Summary</SectionTitle>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
           <KPICard label="Total Products" value={product.totalProducts} />
-          <KPICard label="Product Variants" value={product.totalVariants} />
+          <KPICard label="Variants" value={product.totalVariants} />
           <KPICard label="Categories" value={product.totalCategories} />
           <KPICard label="Brands" value={product.totalBrands} />
-          <KPICard label="Active Products" value={product.activeProducts} />
-          <KPICard label="Inactive Products" value={product.inactiveProducts} />
+          <KPICard label="Active" value={product.activeProducts} />
+          <KPICard label="Inactive" value={product.inactiveProducts} />
         </div>
 
         <SectionTitle icon="📊">Stock Summary</SectionTitle>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          <KPICard label="Total Stock Qty" value={stock.totalStock.toLocaleString()} />
-          <KPICard label="Stock Value (Cost)" value={formatCurrency(stock.stockValuePurchase)} />
-          <KPICard label="Stock Value (Retail)" value={formatCurrency(stock.stockValueSelling)} />
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+          <KPICard label="Total Stock" value={stock.totalStock.toLocaleString()} />
+          <KPICard label="Value (Cost)" value={formatCurrency(stock.stockValuePurchase)} />
+          <KPICard label="Value (Retail)" value={formatCurrency(stock.stockValueSelling)} />
           <KPICard label="Low Stock" value={stock.lowStockCount} sub="Below threshold" />
           <KPICard label="Out of Stock" value={stock.outOfStockCount} />
         </div>
@@ -100,60 +116,74 @@ const AdminDashboard = () => {
       </section>
 
       {/* ═══ 2. ORDER ANALYTICS ═══ */}
-      <section className="space-y-4">
+      <section className="space-y-3">
         <SectionTitle icon="📈">Order Analytics</SectionTitle>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
           {Object.entries(PERIOD_LABELS).map(([key, label]) => (
             <OrderPeriodCard key={key} title={label} data={periods[key]} />
           ))}
         </div>
       </section>
 
-      {/* ═══ 3. ORDER STATUS OVERVIEW ═══ */}
-      <section className="space-y-4">
+      {/* ═══ 3. ORDER STATUS ═══ */}
+      <section className="space-y-3">
         <SectionTitle icon="🔄">Order Status Overview</SectionTitle>
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+        <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
           {Object.entries(STATUS_LABELS).map(([key, label]) => (
             <StatusCard key={key} label={label} count={statusCounts[key] || 0} />
           ))}
         </div>
       </section>
 
-      {/* ═══ 4. PAYMENT ANALYTICS ═══ */}
-      <section className="space-y-4">
+      {/* ═══ 4. PAYMENT ANALYTICS + RATIO ═══ */}
+      <section className="space-y-3">
         <SectionTitle icon="💳">Payment Analytics</SectionTitle>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <KPICard label="COD Orders" value={payment.codCount} />
-          <KPICard label="Mobile Banking" value={payment.mobileBankingCount} />
-          <KPICard label="Bank Transfer" value={payment.bankTransferCount} />
-          <KPICard label="COD Pending Collection" value={formatCurrency(payment.codPendingAmount)} />
-        </div>
-
-        {Object.keys(payment.methodRevenue).length > 0 && (
-          <div className="border border-border bg-card p-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-              Payment Method Wise Revenue
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-              {Object.entries(payment.methodRevenue).map(([method, revenue]) => (
-                <div key={method} className="flex justify-between border-b border-border pb-1">
-                  <span className="text-muted-foreground">{METHOD_LABELS[method] || method}</span>
-                  <span className="font-medium">{formatCurrency(revenue)}</span>
-                </div>
-              ))}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-2">
+              <KPICard label="COD Orders" value={payment.codCount} />
+              <KPICard label="Mobile Banking" value={payment.mobileBankingCount} />
+              <KPICard label="Bank Transfer" value={payment.bankTransferCount} />
+              <KPICard label="COD Pending" value={formatCurrency(payment.codPendingAmount)} />
             </div>
+            {Object.keys(payment.methodRevenue).length > 0 && (
+              <div className="border border-border bg-card p-3">
+                <h3 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                  Method Wise Revenue
+                </h3>
+                <div className="grid grid-cols-2 gap-1.5 text-xs">
+                  {Object.entries(payment.methodRevenue).map(([method, revenue]) => (
+                    <div key={method} className="flex justify-between border-b border-border pb-1">
+                      <span className="text-muted-foreground">{METHOD_LABELS[method] || method}</span>
+                      <span className="font-medium">{formatCurrency(revenue)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        )}
+          <PaymentRatioChart data={paymentRatio} />
+        </div>
       </section>
 
-      {/* ═══ 5. SALES INTELLIGENCE ═══ */}
-      <section className="space-y-4">
+      {/* ═══ 5. PERFORMANCE INTELLIGENCE ═══ */}
+      <section className="space-y-3">
+        <SectionTitle icon="🏆">Performance Intelligence</SectionTitle>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+          <PerformanceTable title="Fast Moving Category" icon="📦" periods={performance.fastCategory} />
+          <PerformanceTable title="Top Product" icon="🥇" periods={performance.topProduct} showProfit />
+          <PerformanceTable title="Top Category (Revenue)" icon="🥈" periods={performance.topCategory} showOrders />
+        </div>
+      </section>
+
+      {/* ═══ 6. SALES INTELLIGENCE ═══ */}
+      <section className="space-y-3">
         <SectionTitle icon="🏆">Sales Intelligence</SectionTitle>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           <TopItemsTable title="Top Selling Products (Last 30 Days)" items={sales.topProducts} />
           <TopItemsTable title="Top Categories (Last 30 Days)" items={sales.topCategories} />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <KPICard
             label="Best Selling Size (Today)"
             value={sales.bestSize ? sales.bestSize.name : "—"}
@@ -167,10 +197,17 @@ const AdminDashboard = () => {
         </div>
       </section>
 
-      {/* ═══ 6. VISUAL CHARTS ═══ */}
-      <section className="space-y-4">
+      {/* ═══ 7. INVENTORY HEALTH ═══ */}
+      <InventoryHealthSection
+        deadStock={inventoryHealth.deadStock}
+        slowMoving={inventoryHealth.slowMoving}
+        fastMoving={inventoryHealth.fastMoving}
+      />
+
+      {/* ═══ 8. VISUAL CHARTS ═══ */}
+      <section className="space-y-3">
         <SectionTitle icon="📉">Trends</SectionTitle>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           <RevenueLast7DaysChart data={charts.revenueLast7Days} />
           <OrdersLast7DaysChart data={charts.revenueLast7Days} />
         </div>

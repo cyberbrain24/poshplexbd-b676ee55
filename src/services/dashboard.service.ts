@@ -66,6 +66,8 @@ export async function fetchDashboardOrders() {
   const twelveMonthsAgo = new Date();
   twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
 
+  // Also need 60-day-ago boundary for comparison analytics (previous 60 days)
+  // 12 months covers everything we need
   const { data, error } = await supabase
     .from("orders")
     .select(`

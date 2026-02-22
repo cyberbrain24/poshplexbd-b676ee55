@@ -36,8 +36,8 @@ export const useFacebookPixel = () => {
         setPixelConfig({
           pixelId: data.meta_pixel_id || "",
           isEnabled: data.meta_pixel_enabled ?? false,
-          testMode: (data as any).meta_test_mode ?? false,
-          advancedMatching: (data as any).meta_advanced_matching ?? true,
+          testMode: data.meta_test_mode ?? false,
+          advancedMatching: data.meta_advanced_matching ?? true,
         });
 
         setupLazyLoading();

@@ -87,8 +87,8 @@ const Checkout = () => {
 
   // Get shipping config based on thana's shipping_cost or fallback to division-based logic
   const shippingConfig: ShippingConfig = useMemo(() => {
-    if (selectedThana && (selectedThana as any).shipping_cost !== undefined) {
-      const cost = Number((selectedThana as any).shipping_cost);
+    if (selectedThana && selectedThana.shipping_cost !== undefined) {
+      const cost = Number(selectedThana.shipping_cost);
       const isDhaka = cost <= 60;
       return {
         method: isDhaka ? 'inside_dhaka' : 'outside_dhaka',
@@ -467,10 +467,7 @@ const Checkout = () => {
       localStorage.setItem('poshplex_customer_phone', customerDetails.phone);
       localStorage.setItem('poshplex_customer_name', customerDetails.name);
 
-      // Step 4: Clear cart and redirect directly to orders page
-      clearCart();
-
-      // Fire Purchase pixel event
+      // Fire Purchase pixel event (before cart is cleared by mutation onSuccess)
       trackPurchase({
         contentIds: cartItems.map(i => i.productId || i.id),
         value: total,
@@ -478,9 +475,8 @@ const Checkout = () => {
         orderId: result.orderNumber,
       });
 
-      toast.success(`Order ${result.orderNumber} placed successfully!`);
-      
-      // Direct redirect to orders page - no success screen
+      // Direct redirect to orders page
+      // Note: clearCart() and success toast are handled by useCreateOrder's onSuccess
       navigate('/my-orders');
       
     } catch (error) {

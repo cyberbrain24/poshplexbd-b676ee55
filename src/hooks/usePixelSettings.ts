@@ -22,7 +22,7 @@ export const usePixelSettings = () => {
         .maybeSingle();
 
       if (error) throw error;
-      return data as unknown as PixelSettings;
+      return data as PixelSettings | null;
     },
   });
 };
@@ -35,7 +35,7 @@ export const useUpdatePixelSettings = () => {
       const { id, ...rest } = updates;
       const { error } = await supabase
         .from("site_settings")
-        .update(rest as any)
+        .update(rest)
         .eq("id", id);
       if (error) throw error;
     },

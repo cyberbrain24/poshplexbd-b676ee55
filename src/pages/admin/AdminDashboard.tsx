@@ -73,8 +73,8 @@ const AdminDashboard = () => {
   return (
     <div className="space-y-6 pb-12">
       <div>
-        <h1 className="text-2xl font-medium tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground text-sm mt-1">Business intelligence overview</p>
+        <h1 className="text-2xl font-medium tracking-tight">Business Intelligence</h1>
+        <p className="text-muted-foreground text-sm mt-1">Real-time ecommerce analytics & insights</p>
       </div>
 
       {/* ═══ 0. SMART ALERTS ═══ */}

@@ -21,9 +21,9 @@ const FOOTER_COLUMNS = [
   {
     title: "LEGAL",
     links: [
-      { label: "Privacy Policy", path: "/privacy-policy" },
-      { label: "Terms & Conditions", path: "/terms-of-service" },
-      { label: "Shipping & Delivery", path: "/shipping-delivery" },
+      { label: "Privacy Policy", path: "/about/privacy-policy" },
+      { label: "Terms & Conditions", path: "/about/terms-conditions" },
+      { label: "Shipping & Delivery", path: "/about/shipping-delivery" },
     ],
   },
 ];

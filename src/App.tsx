@@ -22,9 +22,9 @@ const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const OurStory = lazy(() => import("./pages/about/OurStory"));
 const StoreLocator = lazy(() => import("./pages/about/StoreLocator"));
-const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
-const TermsOfService = lazy(() => import("./pages/TermsOfService"));
-const ShippingDelivery = lazy(() => import("./pages/ShippingDelivery"));
+const PrivacyPolicy = lazy(() => import("./pages/about/PrivacyPolicy"));
+const TermsConditions = lazy(() => import("./pages/about/TermsConditions"));
+const ShippingDelivery = lazy(() => import("./pages/about/ShippingDelivery"));
 const Auth = lazy(() => import("./pages/Auth"));
 const CustomerAuth = lazy(() => import("./pages/CustomerAuth"));
 const CustomerAccount = lazy(() => import("./pages/CustomerAccount"));
@@ -110,8 +110,12 @@ const App = () => (
               <Route path="/membership" element={<Suspense fallback={<LoadingFallback />}><Membership /></Suspense>} />
               <Route path="/about/our-story" element={<Suspense fallback={<LoadingFallback />}><OurStory /></Suspense>} />
               <Route path="/about/store-locator" element={<Suspense fallback={<LoadingFallback />}><StoreLocator /></Suspense>} />
+              <Route path="/about/privacy-policy" element={<Suspense fallback={<LoadingFallback />}><PrivacyPolicy /></Suspense>} />
+              <Route path="/about/terms-conditions" element={<Suspense fallback={<LoadingFallback />}><TermsConditions /></Suspense>} />
+              <Route path="/about/shipping-delivery" element={<Suspense fallback={<LoadingFallback />}><ShippingDelivery /></Suspense>} />
+              {/* Redirects for old URLs */}
               <Route path="/privacy-policy" element={<Suspense fallback={<LoadingFallback />}><PrivacyPolicy /></Suspense>} />
-              <Route path="/terms-of-service" element={<Suspense fallback={<LoadingFallback />}><TermsOfService /></Suspense>} />
+              <Route path="/terms-of-service" element={<Suspense fallback={<LoadingFallback />}><TermsConditions /></Suspense>} />
               <Route path="/shipping-delivery" element={<Suspense fallback={<LoadingFallback />}><ShippingDelivery /></Suspense>} />
               <Route path="/auth" element={<Suspense fallback={<LoadingFallback />}><Auth /></Suspense>} />
               <Route path="/login" element={<Suspense fallback={<LoadingFallback />}><CustomerAuth /></Suspense>} />

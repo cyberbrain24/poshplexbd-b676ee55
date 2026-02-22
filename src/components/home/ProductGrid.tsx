@@ -1,18 +1,15 @@
 import { Link } from "react-router-dom";
 import { ShoppingBag, ArrowRight } from "lucide-react";
-import { useProducts } from "@/hooks/useProducts";
+import { useHomepageProducts } from "@/hooks/useHomepageProducts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { generateProductSlug } from "@/lib/slug";
 
 const ProductGrid = () => {
-  const { data: products, isLoading } = useProducts();
+  const { data: products, isLoading } = useHomepageProducts();
 
-  // Get first 10 products for homepage — show all (active or not) so homepage isn't blank
   const displayProducts = products?.slice(0, 10) || [];
 
-  const formatPrice = (price: number) => {
-    return `৳${price.toLocaleString()}`;
-  };
+  const formatPrice = (price: number) => `৳${price.toLocaleString()}`;
 
   const getMainImage = (product: typeof displayProducts[0]) => {
     const mainImage = product.images?.find(img => img.is_main);
@@ -21,7 +18,7 @@ const ProductGrid = () => {
 
   if (isLoading) {
     return (
-      <section className="w-full px-4 md:px-8 py-12 md:py-16 bg-background relative overflow-hidden min-h-[600px]">
+      <section className="w-full px-4 md:px-8 py-12 md:py-16 bg-background relative overflow-hidden" style={{ minHeight: 600 }}>
         <div className="flex items-end justify-between mb-8 md:mb-12">
           <div className="relative">
             <span className="absolute -left-2 -top-8 text-[80px] md:text-[120px] font-black text-foreground/[0.03] leading-none select-none">
@@ -34,7 +31,7 @@ const ProductGrid = () => {
           </div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
+          {Array.from({ length: 10 }, (_, i) => (
             <div key={i} className="space-y-3">
               <Skeleton className="aspect-[3/4] w-full" />
               <Skeleton className="h-3 w-16" />
@@ -49,7 +46,7 @@ const ProductGrid = () => {
 
   if (displayProducts.length === 0) {
     return (
-      <section className="w-full px-4 md:px-8 py-12 md:py-16 bg-background min-h-[600px]">
+      <section className="w-full px-4 md:px-8 py-12 md:py-16 bg-background" style={{ minHeight: 600 }}>
         <div className="flex items-end justify-between mb-8 md:mb-12">
           <div className="relative">
             <span className="absolute -left-2 -top-8 text-[80px] md:text-[120px] font-black text-foreground/[0.03] leading-none select-none">
@@ -67,16 +64,16 @@ const ProductGrid = () => {
   }
 
   return (
-    <section className="w-full px-4 md:px-8 py-12 md:py-16 bg-background relative overflow-hidden min-h-[600px]">
-      {/* Street culture background element - aria-hidden to exclude from accessibility tree, contain layout to prevent CLS */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true" style={{ contain: 'layout' }}>
+    <section className="w-full px-4 md:px-8 py-12 md:py-16 bg-background relative overflow-hidden" style={{ minHeight: 600, contain: 'layout style' }}>
+      {/* Street culture background element */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true" style={{ contain: 'strict' }}>
         <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-muted/30 to-transparent" />
         <div className="absolute bottom-0 left-0 text-[200px] md:text-[300px] font-black text-foreground/[0.015] leading-none select-none -translate-x-1/4 translate-y-1/4">
           STREET
         </div>
       </div>
 
-      {/* Section Header - Urban style */}
+      {/* Section Header */}
       <div className="flex items-end justify-between mb-8 md:mb-12 relative z-10">
         <div className="relative">
           <span className="absolute -left-2 -top-8 text-[80px] md:text-[120px] font-black text-foreground/[0.03] leading-none select-none">
@@ -96,41 +93,35 @@ const ProductGrid = () => {
         </Link>
       </div>
 
-      {/* 5-Column Product Grid */}
+      {/* Product Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 relative z-10">
         {displayProducts.map((product, index) => (
-          <div 
-            key={product.id} 
-            className="group relative"
-          >
-            {/* Product Image Container */}
+          <div key={product.id} className="group relative">
             <Link 
               to={`/product/${generateProductSlug(product.name, product.id)}`}
               className="block relative aspect-[3/4] overflow-hidden bg-muted mb-3"
             >
-              {/* Image */}
               <img 
                 src={getMainImage(product)}
                 alt={product.name}
+                width={300}
+                height={400}
+                loading={index < 4 ? "eager" : "lazy"}
                 className="w-full h-full object-cover object-center transition-all duration-500 group-hover:scale-105"
               />
               
-              {/* Overlay on hover */}
               <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/10 transition-colors duration-300" />
               
-              {/* Index number - street style */}
               <span className="absolute bottom-2 right-2 text-[10px] font-mono text-foreground/40 tracking-wider">
                 {String(index + 1).padStart(2, '0')}
               </span>
               
-              {/* Badge */}
               <div className="absolute top-0 left-0">
                 <span className="inline-block bg-foreground text-background px-2 py-1 text-[9px] font-bold tracking-[0.15em] uppercase">
                   New
                 </span>
               </div>
 
-              {/* Quick add button - appears on hover */}
               <button 
                 className="absolute bottom-3 left-3 right-3 py-2.5 bg-background/95 backdrop-blur-sm text-foreground text-[10px] font-bold tracking-[0.1em] uppercase opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 flex items-center justify-center gap-2 hover:bg-foreground hover:text-background"
                 aria-label="Add to cart"
@@ -140,7 +131,6 @@ const ProductGrid = () => {
               </button>
             </Link>
 
-            {/* Product Info */}
             <div className="space-y-1">
               <p className="text-[10px] text-muted-foreground tracking-[0.1em] uppercase">
                 {product.category?.name || 'Streetwear'}
@@ -159,7 +149,7 @@ const ProductGrid = () => {
         ))}
       </div>
 
-      {/* Mobile View All Button */}
+      {/* Mobile View All */}
       <div className="flex justify-center mt-10 md:hidden relative z-10">
         <Link 
           to="/category/all"
@@ -170,7 +160,7 @@ const ProductGrid = () => {
         </Link>
       </div>
 
-      {/* Desktop View All Button */}
+      {/* Desktop View All */}
       <div className="hidden md:flex justify-center mt-12 relative z-10">
         <Link 
           to="/category/all"

@@ -23,7 +23,7 @@ const OurStorySection = () => {
   ];
 
   return (
-    <section className="pt-12 md:pt-16 pb-0 bg-background text-foreground">
+    <section className="pt-12 md:pt-16 pb-0 bg-background text-foreground" style={{ minHeight: 200, contain: 'layout style' }}>
       <div className="container mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-12">
           {sections.map((section) => (

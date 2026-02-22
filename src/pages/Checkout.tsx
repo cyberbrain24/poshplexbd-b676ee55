@@ -18,6 +18,7 @@ import { getShippingForLocation, ShippingConfig, SHIPPING_OUTSIDE_DHAKA } from "
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/currency";
+import { trackInitiateCheckout, trackPurchase } from "@/services/facebook-pixel.service";
 
 const DEFAULT_PASSWORD = "poshplex";
 
@@ -165,6 +166,17 @@ const Checkout = () => {
 
     loadCustomerData();
   }, []);
+
+  // Fire InitiateCheckout pixel event
+  useEffect(() => {
+    if (cartItems.length > 0) {
+      trackInitiateCheckout({
+        contentIds: cartItems.map(i => i.productId || i.id),
+        value: cartTotal,
+        numItems: cartItems.reduce((s, i) => s + i.quantity, 0),
+      });
+    }
+  }, []); // Only on mount
 
   const selectedPaymentMethod = paymentMethods?.find(pm => pm.id === selectedPaymentMethodId);
 
@@ -457,6 +469,15 @@ const Checkout = () => {
 
       // Step 4: Clear cart and redirect directly to orders page
       clearCart();
+
+      // Fire Purchase pixel event
+      trackPurchase({
+        contentIds: cartItems.map(i => i.productId || i.id),
+        value: total,
+        numItems: cartItems.reduce((s, i) => s + i.quantity, 0),
+        orderId: result.orderNumber,
+      });
+
       toast.success(`Order ${result.orderNumber} placed successfully!`);
       
       // Direct redirect to orders page - no success screen

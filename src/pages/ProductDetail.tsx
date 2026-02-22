@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
 import PoshplexHeader from "../components/header/PoshplexHeader";
@@ -17,6 +17,7 @@ import {
   BreadcrumbPage, 
   BreadcrumbSeparator 
 } from "@/components/ui/breadcrumb";
+import { trackViewContent } from "@/services/facebook-pixel.service";
 
 const ProductDetail = () => {
   const { productSlug } = useParams();
@@ -35,6 +36,17 @@ const ProductDetail = () => {
   const productName = product?.name || "Product";
   const categoryName = product?.category?.name || "Apparel";
   const categorySlug = categoryName.toLowerCase().replace(/\s+/g, '-');
+
+  // Track ViewContent when product loads
+  useEffect(() => {
+    if (product?.id) {
+      trackViewContent({
+        contentName: product.name,
+        contentIds: [product.id],
+        value: product.base_price || 0,
+      });
+    }
+  }, [product?.id]);
 
   return (
     <div className="min-h-screen bg-background">

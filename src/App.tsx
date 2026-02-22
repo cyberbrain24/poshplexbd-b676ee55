@@ -10,6 +10,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { CartProvider } from "./contexts/CartContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import MobileFooterNav from "./components/navigation/MobileFooterNav";
+import FacebookPixelTracker from "./components/tracking/FacebookPixelTracker";
 
 // Storefront pages - eagerly loaded
 import Index from "./pages/Index";
@@ -93,6 +94,7 @@ const App = () => (
             }}
           >
             <ScrollToTop />
+            <FacebookPixelTracker />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/categories" element={<CategoryBrowser />} />

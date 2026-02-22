@@ -1,10 +1,12 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useSiteBranding, useUpdateSiteBranding, useUploadBrandingAsset } from "@/hooks/useSiteBranding";
+import { usePixelSettings, useUpdatePixelSettings } from "@/hooks/usePixelSettings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Upload, X, Image as ImageIcon, Monitor, Smartphone } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Upload, X, Image as ImageIcon, Monitor, Smartphone, Activity } from "lucide-react";
 import { toast } from "sonner";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
@@ -13,10 +15,20 @@ const AdminSiteSettings = () => {
   const { data: branding, isLoading } = useSiteBranding();
   const updateMutation = useUpdateSiteBranding();
   const uploadMutation = useUploadBrandingAsset();
+  const { data: pixelSettings, isLoading: loadingPixel } = usePixelSettings();
+  const updatePixelMutation = useUpdatePixelSettings();
 
   const [siteName, setSiteName] = useState("");
   const [slogan, setSlogan] = useState("");
   const [initialized, setInitialized] = useState(false);
+
+  // Pixel form state
+  const [pixelId, setPixelId] = useState("");
+  const [pixelEnabled, setPixelEnabled] = useState(false);
+  const [testMode, setTestMode] = useState(false);
+  const [advancedMatching, setAdvancedMatching] = useState(true);
+  const [ecommerceEvents, setEcommerceEvents] = useState(false);
+  const [pixelInitialized, setPixelInitialized] = useState(false);
 
   const logoRef = useRef<HTMLInputElement>(null);
   const desktopHeroRef = useRef<HTMLInputElement>(null);
@@ -28,6 +40,30 @@ const AdminSiteSettings = () => {
     setSlogan(branding.slogan);
     setInitialized(true);
   }
+
+  // Initialize pixel form
+  useEffect(() => {
+    if (pixelSettings && !pixelInitialized) {
+      setPixelId(pixelSettings.meta_pixel_id || "");
+      setPixelEnabled(pixelSettings.meta_pixel_enabled);
+      setTestMode(pixelSettings.meta_test_mode);
+      setAdvancedMatching(pixelSettings.meta_advanced_matching);
+      setEcommerceEvents(pixelSettings.meta_ecommerce_events_enabled);
+      setPixelInitialized(true);
+    }
+  }, [pixelSettings, pixelInitialized]);
+
+  const handleSavePixel = async () => {
+    if (!pixelSettings) return;
+    await updatePixelMutation.mutateAsync({
+      id: pixelSettings.id,
+      meta_pixel_id: pixelId.trim() || null,
+      meta_pixel_enabled: pixelEnabled,
+      meta_test_mode: testMode,
+      meta_advanced_matching: advancedMatching,
+      meta_ecommerce_events_enabled: ecommerceEvents,
+    });
+  };
 
   const handleUpload = async (
     file: File,
@@ -271,6 +307,81 @@ const AdminSiteSettings = () => {
             />
           </div>
         </div>
+      </section>
+
+      {/* ── Tracking & Marketing ───────────────────────────── */}
+      <section className="border border-border p-6 mb-8">
+        <div className="flex items-center gap-2 mb-1">
+          <Activity className="h-5 w-5 text-muted-foreground" />
+          <h2 className="text-base font-medium">Tracking & Marketing</h2>
+        </div>
+        <p className="text-xs text-muted-foreground mb-6">Configure Facebook Pixel for conversion tracking across your store.</p>
+
+        {loadingPixel ? (
+          <div className="space-y-3">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-6 w-48" />
+          </div>
+        ) : !pixelSettings ? (
+          <p className="text-sm text-muted-foreground">No settings row found. Please contact support.</p>
+        ) : (
+          <div className="space-y-5">
+            {/* Pixel ID */}
+            <div>
+              <Label className="text-sm">Facebook Pixel ID</Label>
+              <Input
+                value={pixelId}
+                onChange={(e) => setPixelId(e.target.value)}
+                className="mt-1 rounded-none max-w-sm font-mono"
+                placeholder="e.g. 123456789012345"
+              />
+            </div>
+
+            {/* Toggles */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex items-center justify-between border border-border p-3">
+                <div>
+                  <p className="text-sm font-medium">Enable Pixel</p>
+                  <p className="text-xs text-muted-foreground">Activate tracking on your storefront</p>
+                </div>
+                <Switch checked={pixelEnabled} onCheckedChange={setPixelEnabled} />
+              </div>
+
+              <div className="flex items-center justify-between border border-border p-3">
+                <div>
+                  <p className="text-sm font-medium">Test Mode</p>
+                  <p className="text-xs text-muted-foreground">Log events to console for debugging</p>
+                </div>
+                <Switch checked={testMode} onCheckedChange={setTestMode} />
+              </div>
+
+              <div className="flex items-center justify-between border border-border p-3">
+                <div>
+                  <p className="text-sm font-medium">Advanced Matching</p>
+                  <p className="text-xs text-muted-foreground">Send hashed user data for better attribution</p>
+                </div>
+                <Switch checked={advancedMatching} onCheckedChange={setAdvancedMatching} />
+              </div>
+
+              <div className="flex items-center justify-between border border-border p-3">
+                <div>
+                  <p className="text-sm font-medium">E-Commerce Events</p>
+                  <p className="text-xs text-muted-foreground">ViewContent, AddToCart, Purchase, etc.</p>
+                </div>
+                <Switch checked={ecommerceEvents} onCheckedChange={setEcommerceEvents} />
+              </div>
+            </div>
+
+            <Button
+              onClick={handleSavePixel}
+              disabled={updatePixelMutation.isPending}
+              className="rounded-none"
+              size="sm"
+            >
+              {updatePixelMutation.isPending ? "Saving…" : "Save Pixel Settings"}
+            </Button>
+          </div>
+        )}
       </section>
     </div>
   );

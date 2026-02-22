@@ -15,6 +15,7 @@ import { Product, ProductVariant } from "@/types/product";
 import VariantSelector from "./VariantSelector";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
+import { trackAddToCart } from "@/services/facebook-pixel.service";
 
 interface ProductInfoProps {
   product?: Product | null;
@@ -76,7 +77,16 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
   const handleAddToCart = () => {
     if (!canAddToCart) return;
 
-    addToCart(getCartItem(), quantity);
+    const cartItem = getCartItem();
+    addToCart(cartItem, quantity);
+
+    // Fire FB Pixel AddToCart
+    trackAddToCart({
+      contentName: productName,
+      contentIds: [product?.id || 'unknown'],
+      value: displayPrice * quantity,
+      quantity,
+    });
 
     toast(`${productName} added to bag`, {
       description: selectedVariant 

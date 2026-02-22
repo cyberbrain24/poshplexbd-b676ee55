@@ -143,21 +143,21 @@ function VirtualizedTableInner<T>({
       </div>
 
       {/* Virtualized body using react-window v2 List */}
-      <List<RowProps<T>>
-        rowCount={data.length}
-        rowHeight={rowHeight}
-        rowComponent={VirtualizedRow as any}
-        rowProps={{
+      {React.createElement(List, {
+        rowCount: data.length,
+        rowHeight,
+        rowComponent: VirtualizedRow as any,
+        rowProps: {
           items: data,
           columns,
           onRowClick,
-        }}
-        style={{
+        },
+        style: {
           height: visibleHeight,
           minWidth: totalWidth,
           overflowX: "auto",
-        }}
-      />
+        },
+      } as any)}
     </div>
   );
 }

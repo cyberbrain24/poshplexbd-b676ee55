@@ -21,9 +21,6 @@ const CategoryBrowser = lazy(() => import("./pages/CategoryBrowser"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const OurStory = lazy(() => import("./pages/about/OurStory"));
-const Sustainability = lazy(() => import("./pages/about/Sustainability"));
-const SizeGuide = lazy(() => import("./pages/about/SizeGuide"));
-const CustomerCare = lazy(() => import("./pages/about/CustomerCare"));
 const StoreLocator = lazy(() => import("./pages/about/StoreLocator"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
@@ -112,9 +109,6 @@ const App = () => (
               <Route path="/account" element={<Suspense fallback={<LoadingFallback />}><CustomerAccount /></Suspense>} />
               <Route path="/membership" element={<Suspense fallback={<LoadingFallback />}><Membership /></Suspense>} />
               <Route path="/about/our-story" element={<Suspense fallback={<LoadingFallback />}><OurStory /></Suspense>} />
-              <Route path="/about/sustainability" element={<Suspense fallback={<LoadingFallback />}><Sustainability /></Suspense>} />
-              <Route path="/about/size-guide" element={<Suspense fallback={<LoadingFallback />}><SizeGuide /></Suspense>} />
-              <Route path="/about/customer-care" element={<Suspense fallback={<LoadingFallback />}><CustomerCare /></Suspense>} />
               <Route path="/about/store-locator" element={<Suspense fallback={<LoadingFallback />}><StoreLocator /></Suspense>} />
               <Route path="/privacy-policy" element={<Suspense fallback={<LoadingFallback />}><PrivacyPolicy /></Suspense>} />
               <Route path="/terms-of-service" element={<Suspense fallback={<LoadingFallback />}><TermsOfService /></Suspense>} />

@@ -608,8 +608,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                             <TableHead>Color</TableHead>
                             <TableHead>Size</TableHead>
                             <TableHead>Material</TableHead>
-                            <TableHead>Cost</TableHead>
-                            <TableHead>Price</TableHead>
+                             <TableHead>Price</TableHead>
                             <TableHead>SKU</TableHead>
                             <TableHead className="w-16"></TableHead>
                           </TableRow>
@@ -686,15 +685,6 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                                     ))}
                                   </SelectContent>
                                 </Select>
-                              </TableCell>
-                              <TableCell>
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  value={variant.purchase_price}
-                                  onChange={(e) => updateVariantField(index, "purchase_price", parseFloat(e.target.value) || 0)}
-                                  className="w-24"
-                                />
                               </TableCell>
                               <TableCell>
                                 <Input

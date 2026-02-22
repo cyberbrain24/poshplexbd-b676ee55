@@ -236,27 +236,6 @@ const VariantBuilder = ({
             )}
           </div>
 
-          {/* Bulk Purchase Price */}
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2">
-              <Switch
-                id="bulk-purchase"
-                checked={useBulkPurchasePrice}
-                onCheckedChange={setUseBulkPurchasePrice}
-              />
-              <Label htmlFor="bulk-purchase" className="text-xs">Same Cost</Label>
-            </div>
-            {useBulkPurchasePrice && (
-              <Input
-                type="number"
-                step="0.01"
-                value={bulkPurchasePrice}
-                onChange={(e) => setBulkPurchasePrice(parseFloat(e.target.value) || 0)}
-                className="h-8 text-xs"
-                placeholder="0.00"
-              />
-            )}
-          </div>
 
           {/* Bulk Selling Price */}
           <div className="space-y-1.5">

@@ -35,7 +35,8 @@ const Category = () => {
       
       <main className="pt-6">
         <CategoryHeader 
-          category={formatCategoryName(category)} 
+          category={formatCategoryName(category)}
+          categorySlug={slug}
         />
         
         <FilterSortBar 

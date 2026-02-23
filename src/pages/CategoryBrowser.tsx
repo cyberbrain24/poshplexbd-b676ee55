@@ -66,10 +66,10 @@ const CategoryBrowser = () => {
                   id={`cat-card-${cat.id}`}
                   onClick={() => handleSelect(cat.id)}
                   className={cn(
-                    "relative shrink-0 snap-center rounded-[14px] overflow-hidden transition-all duration-200",
-                    "w-36 h-[88px]",
+                    "relative shrink-0 snap-center rounded-2xl overflow-hidden transition-all duration-200",
+                    "w-20 h-20",
                     isActive
-                      ? "scale-105 shadow-lg ring-1 ring-foreground/20"
+                      ? "scale-105 shadow-lg ring-2 ring-foreground/20"
                       : "opacity-90 scale-100"
                   )}
                 >

@@ -507,43 +507,6 @@ const CustomerAccount = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="sm:col-span-2">
-                      <Label className="text-sm">Address</Label>
-                      <Input value={editForm.address} onChange={e => setEditForm(f => ({ ...f, address: e.target.value }))} className="mt-1" placeholder="Your full address" />
-                    </div>
-                    <div>
-                      <Label className="text-sm">District</Label>
-                      <Select value={editForm.division_id} onValueChange={v => setEditForm(f => ({ ...f, division_id: v, thana_id: "" }))}>
-                        <SelectTrigger className="mt-1"><SelectValue placeholder="Select district" /></SelectTrigger>
-                        <SelectContent>
-                          {divisions.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label className="text-sm">Thana/Upazila</Label>
-                      <Select
-                        value={editForm.thana_id}
-                        onValueChange={v => setEditForm(f => ({ ...f, thana_id: v }))}
-                        disabled={!editForm.division_id}
-                      >
-                        <SelectTrigger className="mt-1">
-                          <SelectValue placeholder={editForm.division_id ? "Select thana" : "Select district first"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {thanas.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label className="text-sm">Postal Code</Label>
-                      <Input
-                        value={editForm.postal_code}
-                        onChange={e => setEditForm(f => ({ ...f, postal_code: e.target.value }))}
-                        className="mt-1"
-                        placeholder="e.g. 1205"
-                      />
-                    </div>
                     <div>
                       <Label className="text-sm">Date of Birth</Label>
                       <Popover>
@@ -568,6 +531,51 @@ const CustomerAccount = () => {
                       </Popover>
                     </div>
                   </div>
+
+                  {/* Address Section */}
+                  <div className="border-t border-border pt-3 mt-3">
+                    <p className="text-sm font-medium mb-2">Address</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div className="sm:col-span-2">
+                        <Label className="text-sm">Address</Label>
+                        <Input value={editForm.address} onChange={e => setEditForm(f => ({ ...f, address: e.target.value }))} className="mt-1" placeholder="Your full address" />
+                      </div>
+                      <div>
+                        <Label className="text-sm">District</Label>
+                        <Select value={editForm.division_id} onValueChange={v => setEditForm(f => ({ ...f, division_id: v, thana_id: "" }))}>
+                          <SelectTrigger className="mt-1"><SelectValue placeholder="Select district" /></SelectTrigger>
+                          <SelectContent>
+                            {divisions.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-sm">Thana/Upazila</Label>
+                        <Select
+                          value={editForm.thana_id}
+                          onValueChange={v => setEditForm(f => ({ ...f, thana_id: v }))}
+                          disabled={!editForm.division_id}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder={editForm.division_id ? "Select thana" : "Select district first"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {thanas.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-sm">Postal Code</Label>
+                        <Input
+                          value={editForm.postal_code}
+                          onChange={e => setEditForm(f => ({ ...f, postal_code: e.target.value }))}
+                          className="mt-1"
+                          placeholder="e.g. 1205"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="flex gap-2 pt-1">
                     <Button onClick={handleSaveProfile} disabled={isUpdating} size="sm">
                       {isUpdating ? "Saving..." : "Save Changes"}
@@ -576,44 +584,54 @@ const CustomerAccount = () => {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2 pt-1">
-                  <div>
-                    <Label className="text-muted-foreground text-sm">Name</Label>
-                    <p className="font-medium">{displayName}</p>
+                <div className="space-y-3 pt-1">
+                  {/* Profile Info Display */}
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                    <div>
+                      <Label className="text-muted-foreground text-sm">Name</Label>
+                      <p className="font-medium">{displayName}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-sm">Phone</Label>
+                      <p className="font-medium">{displayPhone}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-sm">Email</Label>
+                      <p className="font-medium">{displayEmail}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-sm">Gender</Label>
+                      <p className="font-medium capitalize">{accountData?.customer?.gender || "Not Set"}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-sm">Date of Birth</Label>
+                      <p className="font-medium">
+                        {accountData?.customer?.birthdate ? format(new Date(accountData.customer.birthdate), "PPP") : "Not set"}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <Label className="text-muted-foreground text-sm">Phone</Label>
-                    <p className="font-medium">{displayPhone}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground text-sm">Email</Label>
-                    <p className="font-medium">{displayEmail}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground text-sm">Gender</Label>
-                    <p className="font-medium capitalize">{accountData?.customer?.gender || "Not Set"}</p>
-                  </div>
-                  <div className="col-span-2">
-                    <Label className="text-muted-foreground text-sm">Address</Label>
-                    <p className="font-medium">{accountData?.customer?.address || "Not set"}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground text-sm">District</Label>
-                    <p className="font-medium">{accountData?.customer?.division?.name || "Not set"}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground text-sm">Thana/Upazila</Label>
-                    <p className="font-medium">{accountData?.customer?.thana?.name || "Not set"}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground text-sm">Postal Code</Label>
-                    <p className="font-medium">{accountData?.customer?.postal_code || "Not set"}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground text-sm">Date of Birth</Label>
-                    <p className="font-medium">
-                      {accountData?.customer?.birthdate ? format(new Date(accountData.customer.birthdate), "PPP") : "Not set"}
-                    </p>
+
+                  {/* Address Display */}
+                  <div className="border-t border-border pt-3">
+                    <p className="text-sm font-medium text-muted-foreground mb-2">Address</p>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                      <div className="col-span-2">
+                        <Label className="text-muted-foreground text-sm">Address</Label>
+                        <p className="font-medium">{accountData?.customer?.address || "Not set"}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground text-sm">District</Label>
+                        <p className="font-medium">{accountData?.customer?.division?.name || "Not set"}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground text-sm">Thana/Upazila</Label>
+                        <p className="font-medium">{accountData?.customer?.thana?.name || "Not set"}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground text-sm">Postal Code</Label>
+                        <p className="font-medium">{accountData?.customer?.postal_code || "Not set"}</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}

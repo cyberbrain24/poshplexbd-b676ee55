@@ -658,9 +658,9 @@ const Checkout = () => {
             {/* Left Column - Forms */}
             <div className="lg:col-span-2 lg:order-1 space-y-4">
               
-              {/* Customer & Shipping Details */}
+              {/* Section 1: Profile Information */}
               <div className="bg-muted/20 p-4 rounded-none">
-                <h2 className="text-base font-light text-foreground mb-3">Shipping Information</h2>
+                <h2 className="text-base font-light text-foreground mb-3">Profile Information</h2>
                 
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -743,7 +743,14 @@ const Checkout = () => {
                       Default: poshplex (you can change it or leave as is)
                     </p>
                   </div>
+                </div>
+              </div>
 
+              {/* Section 2: Address */}
+              <div className="bg-muted/20 p-4 rounded-none">
+                <h2 className="text-base font-light text-foreground mb-3">Address</h2>
+                
+                <div className="space-y-3">
                   <div>
                     <Label className="text-xs font-light">Address *</Label>
                     <Input

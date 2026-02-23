@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, User, ShoppingBag as ShoppingBagIcon, X } from "lucide-react";
+import { Search, User, ShoppingBag as ShoppingBagIcon } from "lucide-react";
 import AnnouncementBar from "./AnnouncementBar";
 import MegaMenu from "./MegaMenu";
 import MobileMenu from "./MobileMenu";
 import ShoppingBag from "./ShoppingBag";
+import SearchOverlay from "./SearchOverlay";
 import { useCategories } from "@/hooks/useMasterData";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -216,37 +217,7 @@ const PoshplexHeader = () => {
       )}
 
       {/* Search overlay */}
-      {isSearchOpen && (
-        <div className="absolute top-full left-0 right-0 bg-background border-b border-border z-50">
-          <div className="px-6 py-8 max-w-2xl mx-auto">
-            <div className="flex items-center border-b border-foreground pb-2">
-              <Search size={20} className="text-foreground mr-3" strokeWidth={1.5} />
-              <input
-                type="text"
-                placeholder="SEARCH..."
-                className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground outline-none text-sm font-medium tracking-wider uppercase"
-                autoFocus
-              />
-              <button onClick={() => setIsSearchOpen(false)}>
-                <X size={20} className="text-foreground" strokeWidth={1.5} />
-              </button>
-            </div>
-            <div className="mt-6">
-              <p className="text-xs font-medium tracking-wider text-muted-foreground mb-3">POPULAR SEARCHES</p>
-              <div className="flex flex-wrap gap-2">
-                {["Oversized Hoodies", "Cargo Pants", "Black Tees", "Bomber Jackets"].map((term) => (
-                  <button
-                    key={term}
-                    className="px-4 py-2 border border-border text-sm font-medium tracking-wide hover:bg-foreground hover:text-background transition-colors"
-                  >
-                    {term}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {isSearchOpen && <SearchOverlay onClose={() => setIsSearchOpen(false)} />}
 
       {/* Mobile menu */}
       {isMobileMenuOpen && (

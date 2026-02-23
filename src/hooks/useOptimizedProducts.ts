@@ -8,6 +8,7 @@ import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useDebounce, QUERY_CONFIG } from "@/utils/performance";
 import type { Product } from "@/types/product";
+import type { ProductFilters } from "@/components/category/FilterSortBar";
 
 interface PaginationResult {
   page: number;
@@ -37,7 +38,6 @@ export const useOptimizedProducts = (
   const pageSize = 50;
   const debouncedSearch = useDebounce(search, 300);
   
-  // Reset page when search changes
   useEffect(() => {
     setPage(1);
   }, [debouncedSearch, categoryId, activeOnly]);
@@ -56,7 +56,6 @@ export const useOptimizedProducts = (
   const { data, isLoading, error } = useQuery({
     queryKey,
     queryFn: async () => {
-      // Slim query - only essential fields for list view
       let query = supabase
         .from("products")
         .select(`
@@ -141,13 +140,29 @@ export const useOptimizedProducts = (
   };
 };
 
+// Parse price range string like "500-1000" or "2000-"
+function parsePriceRange(range: string): { min: number; max: number | null } {
+  const [minStr, maxStr] = range.split("-");
+  return {
+    min: parseInt(minStr, 10) || 0,
+    max: maxStr === "" || maxStr === undefined ? null : parseInt(maxStr, 10),
+  };
+}
+
 // Optimized category products for storefront with "Load More" pattern
 export const useOptimizedCategoryProducts = (
   categorySlug?: string,
-  sortBy: "newest" | "price_asc" | "price_desc" = "newest"
+  sortBy: string = "newest",
+  filters?: ProductFilters
 ) => {
   const PAGE_SIZE = 12;
   const categoryIdRef = useRef<string | null>(null);
+  // Reset category ref when slug changes
+  const prevSlug = useRef(categorySlug);
+  if (prevSlug.current !== categorySlug) {
+    categoryIdRef.current = null;
+    prevSlug.current = categorySlug;
+  }
 
   const {
     data,
@@ -157,10 +172,73 @@ export const useOptimizedCategoryProducts = (
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery({
-    queryKey: ["category-products-infinite", categorySlug, sortBy],
+    queryKey: ["category-products-infinite", categorySlug, sortBy, filters],
     queryFn: async ({ pageParam = 0 }) => {
       const offset = pageParam * PAGE_SIZE;
       
+      // Determine which category IDs to filter by
+      let categoryIds: string[] = [];
+
+      if (categorySlug && categorySlug !== "all") {
+        // Look up the parent category
+        if (!categoryIdRef.current) {
+          const { data: categoryData } = await supabase
+            .from("categories")
+            .select("id")
+            .ilike("name", categorySlug.replace(/-/g, " "))
+            .single();
+          categoryIdRef.current = categoryData?.id || null;
+        }
+
+        if (categoryIdRef.current) {
+          // If subcategory filters are active, use those; otherwise use parent
+          if (filters?.subcategoryIds && filters.subcategoryIds.length > 0) {
+            categoryIds = filters.subcategoryIds;
+          } else {
+            // Include the parent category AND its subcategories
+            const { data: subCats } = await supabase
+              .from("categories")
+              .select("id")
+              .eq("parent_id", categoryIdRef.current);
+            const subIds = subCats?.map((s) => s.id) || [];
+            categoryIds = [categoryIdRef.current, ...subIds];
+          }
+        }
+      } else if (filters?.subcategoryIds && filters.subcategoryIds.length > 0) {
+        categoryIds = filters.subcategoryIds;
+      }
+
+      // If color or size filters are active, we need to find matching product IDs via variants
+      let variantFilteredProductIds: string[] | null = null;
+
+      if (
+        (filters?.colorIds && filters.colorIds.length > 0) ||
+        (filters?.sizeIds && filters.sizeIds.length > 0)
+      ) {
+        let variantQuery = supabase
+          .from("product_variants")
+          .select("product_id")
+          .eq("is_active", true);
+
+        if (filters?.colorIds && filters.colorIds.length > 0) {
+          variantQuery = variantQuery.in("color_id", filters.colorIds);
+        }
+        if (filters?.sizeIds && filters.sizeIds.length > 0) {
+          variantQuery = variantQuery.in("size_id", filters.sizeIds);
+        }
+
+        const { data: variantData } = await variantQuery;
+        variantFilteredProductIds = [
+          ...new Set((variantData || []).map((v) => v.product_id)),
+        ];
+
+        // No matching products → return empty
+        if (variantFilteredProductIds.length === 0) {
+          return { products: [], totalCount: 0, nextPage: pageParam + 1 };
+        }
+      }
+
+      // Build the main query
       let query = supabase
         .from("products")
         .select(`
@@ -179,21 +257,26 @@ export const useOptimizedCategoryProducts = (
         .select("id", { count: "exact", head: true })
         .eq("is_active", true);
 
-      // Filter by category if not "all"
-      if (categorySlug && categorySlug !== "all") {
-        // Cache category ID lookup
-        if (!categoryIdRef.current) {
-          const { data: categoryData } = await supabase
-            .from("categories")
-            .select("id")
-            .ilike("name", categorySlug.replace(/-/g, " "))
-            .single();
-          categoryIdRef.current = categoryData?.id || null;
-        }
+      // Apply category filter
+      if (categoryIds.length > 0) {
+        query = query.in("category_id", categoryIds);
+        countQuery = countQuery.in("category_id", categoryIds);
+      }
 
-        if (categoryIdRef.current) {
-          query = query.eq("category_id", categoryIdRef.current);
-          countQuery = countQuery.eq("category_id", categoryIdRef.current);
+      // Apply variant-based product filter
+      if (variantFilteredProductIds) {
+        query = query.in("id", variantFilteredProductIds);
+        countQuery = countQuery.in("id", variantFilteredProductIds);
+      }
+
+      // Apply price range filter
+      if (filters?.priceRange) {
+        const { min, max } = parsePriceRange(filters.priceRange);
+        query = query.gte("base_price", min);
+        countQuery = countQuery.gte("base_price", min);
+        if (max !== null) {
+          query = query.lte("base_price", max);
+          countQuery = countQuery.lte("base_price", max);
         }
       }
 
@@ -204,6 +287,9 @@ export const useOptimizedCategoryProducts = (
           break;
         case "price_desc":
           query = query.order("base_price", { ascending: false });
+          break;
+        case "name_asc":
+          query = query.order("name", { ascending: true });
           break;
         default:
           query = query.order("created_at", { ascending: false });
@@ -233,7 +319,6 @@ export const useOptimizedCategoryProducts = (
     gcTime: 1000 * 60 * 5,
   });
 
-  // Flatten all pages into single products array
   const products = data?.pages.flatMap(page => page.products) || [];
   const totalCount = data?.pages[0]?.totalCount || 0;
 
@@ -251,7 +336,7 @@ export const useOptimizedCategoryProducts = (
     totalCount,
     hasMore: hasNextPage ?? false,
     loadMore,
-    // Keep pagination for backwards compatibility
+    parentCategoryId: categoryIdRef.current,
     pagination: {
       page: data?.pages.length || 1,
       pageSize: PAGE_SIZE,

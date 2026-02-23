@@ -5,10 +5,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { generateProductSlug } from "@/lib/slug";
+import type { SortOption, ProductFilters } from "./FilterSortBar";
 
-const ProductGrid = () => {
+interface ProductGridProps {
+  sortBy?: SortOption;
+  filters?: ProductFilters;
+}
+
+const ProductGrid = ({ sortBy = "newest", filters }: ProductGridProps) => {
   const { category } = useParams();
-  const { products, isLoading, isLoadingMore, totalCount, hasMore, loadMore } = useOptimizedCategoryProducts(category);
+  const { products, isLoading, isLoadingMore, totalCount, hasMore, loadMore } = useOptimizedCategoryProducts(category, sortBy, filters);
 
   const formatPrice = (price: number) => {
     return `৳${price.toLocaleString()}`;
@@ -84,7 +90,6 @@ const ProductGrid = () => {
                       />
                     )}
                     <div className="absolute inset-0 bg-black/[0.03]"></div>
-                    {/* Check if product was created in last 7 days */}
                     {new Date(product.created_at).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000 && (
                       <div className="absolute top-2 left-2 px-2 py-1 text-xs font-medium text-black">
                         NEW
@@ -111,7 +116,6 @@ const ProductGrid = () => {
         })}
       </div>
       
-      {/* Load More Button */}
       {hasMore && (
         <div className="flex justify-center mt-10">
           <Button
@@ -133,7 +137,6 @@ const ProductGrid = () => {
         </div>
       )}
       
-      {/* Show count when all loaded */}
       {!hasMore && products.length > 0 && (
         <p className="text-center text-sm text-muted-foreground mt-8">
           Showing all {totalCount} products

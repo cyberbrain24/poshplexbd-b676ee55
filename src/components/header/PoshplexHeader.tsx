@@ -10,11 +10,17 @@ import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useSiteBranding } from "@/hooks/useSiteBranding";
 
+interface SubcategoryItem {
+  name: string;
+  href: string;
+  image_url: string | null;
+}
+
 interface NavItem {
   name: string;
   href: string;
   submenu: {
-    categories: string[];
+    subcategories: SubcategoryItem[];
     featured: { name: string; href: string }[];
   };
 }
@@ -73,13 +79,17 @@ const PoshplexHeader = () => {
     return parentCategories.map(parent => {
       const subcategories = allCategories
         .filter(c => c.parent_id === parent.id)
-        .map(c => c.name);
+        .map(c => ({
+          name: c.name,
+          href: `/category/${c.name.toLowerCase().replace(/\s+/g, '-')}`,
+          image_url: c.image_url || null,
+        }));
       
       return {
         name: parent.name.toUpperCase(),
         href: `/category/${parent.name.toLowerCase().replace(/\s+/g, '-')}`,
         submenu: {
-          categories: subcategories,
+          subcategories,
           featured: []
         }
       };

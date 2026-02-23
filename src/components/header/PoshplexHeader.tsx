@@ -193,7 +193,7 @@ const PoshplexHeader = () => {
           </button>
           <button
             onClick={() => setIsCartOpen(true)}
-            className="p-2 text-foreground hover:text-nav-hover transition-colors relative"
+            className="hidden lg:block p-2 text-foreground hover:text-nav-hover transition-colors relative"
             aria-label="Shopping cart"
           >
             <ShoppingBagIcon size={20} strokeWidth={1.5} />

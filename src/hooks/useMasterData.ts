@@ -319,7 +319,7 @@ export const useCategories = () => {
       const { data, error } = await supabase
         .from("categories")
         .select("*")
-        .order("name");
+        .order("sort_order");
       if (error) throw error;
       return data as Category[];
     },
@@ -367,6 +367,22 @@ export const useDeleteCategory = () => {
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("categories").delete().eq("id", id);
       if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["categories"] }),
+  });
+};
+
+export const useReorderCategories = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (updates: { id: string; sort_order: number }[]) => {
+      for (const u of updates) {
+        const { error } = await supabase
+          .from("categories")
+          .update({ sort_order: u.sort_order })
+          .eq("id", u.id);
+        if (error) throw error;
+      }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["categories"] }),
   });

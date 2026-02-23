@@ -166,8 +166,8 @@ const CustomerAuth = () => {
             </h1>
             <p className="text-sm text-muted-foreground mt-2">
               {isLogin
-                ? "Sign in to view your orders"
-                : "Sign up to track your orders"}
+                ? "Log in to view your orders"
+                : "Create an account to track your orders"}
             </p>
           </div>
 
@@ -223,7 +223,7 @@ const CustomerAuth = () => {
             </div>
 
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Loading..." : isLogin ? "Sign In" : "Create Account"}
+              {isLoading ? "Loading..." : isLogin ? "Log In" : "Create Account"}
             </Button>
           </form>
 
@@ -231,11 +231,14 @@ const CustomerAuth = () => {
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className={isLogin
+                ? "text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+                : "text-sm text-muted-foreground hover:text-foreground transition-colors"
+              }
             >
               {isLogin
-                ? "Don't have an account? Sign up"
-                : "Already have an account? Sign in"}
+                ? "Don't have an account? Create Account"
+                : "Already have an account? Log in"}
             </button>
             <div className="text-sm text-muted-foreground">
               <Link to="/order-tracking" className="hover:text-foreground transition-colors">

@@ -45,7 +45,7 @@ const MobileFooterNav = () => {
       <div className="h-16 lg:hidden" />
       
       {/* Fixed footer navigation - only visible on mobile/tablet */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border lg:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden" style={{ backgroundColor: '#2f2f2f' }}>
         <div className="flex items-center justify-around h-16 px-4">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
@@ -56,16 +56,16 @@ const MobileFooterNav = () => {
                 key={item.path}
                 to={item.path}
                 className={cn(
-                  "flex flex-col items-center justify-center flex-1 h-full py-2 transition-colors",
+                  "flex flex-col items-center justify-center flex-1 h-full py-2 transition-colors text-white",
                   isActive
-                    ? "text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "opacity-100"
+                    : "opacity-70 hover:opacity-100"
                 )}
               >
                 <div className="relative">
                   <Icon className="h-5 w-5" strokeWidth={1.5} />
                   {item.badge && (
-                    <span className="absolute -top-1.5 -right-2 bg-foreground text-background text-[10px] font-medium rounded-full h-4 min-w-4 flex items-center justify-center px-1">
+                    <span className="absolute -top-1.5 -right-2 bg-white text-[#2f2f2f] text-[10px] font-medium rounded-full h-4 min-w-4 flex items-center justify-center px-1">
                       {item.badge > 99 ? "99+" : item.badge}
                     </span>
                   )}
@@ -76,7 +76,7 @@ const MobileFooterNav = () => {
           })}
         </div>
         {/* Safe area for devices with home indicator */}
-        <div className="h-safe-area-inset-bottom bg-background" />
+        <div className="h-safe-area-inset-bottom" style={{ backgroundColor: '#2f2f2f' }} />
       </nav>
     </>
   );

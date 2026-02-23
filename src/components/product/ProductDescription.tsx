@@ -62,7 +62,7 @@ XL: Chest 42-44"`;
         <Button
           variant="ghost"
           onClick={() => setIsDescriptionOpen(!isDescriptionOpen)}
-          className="w-full h-14 px-0 justify-between hover:bg-transparent font-light rounded-none"
+          className="w-full h-10 lg:h-14 px-0 justify-between hover:bg-transparent font-light rounded-none"
         >
           <span>Description</span>
           {isDescriptionOpen ? (
@@ -87,7 +87,7 @@ XL: Chest 42-44"`;
         <Button
           variant="ghost"
           onClick={() => setIsSizeGuideOpen(!isSizeGuideOpen)}
-          className="w-full h-14 px-0 justify-between hover:bg-transparent font-light rounded-none"
+          className="w-full h-10 lg:h-14 px-0 justify-between hover:bg-transparent font-light rounded-none"
         >
           <span>Size Guide</span>
           {isSizeGuideOpen ? (
@@ -126,7 +126,7 @@ XL: Chest 42-44"`;
         <Button
           variant="ghost"
           onClick={() => setIsCareOpen(!isCareOpen)}
-          className="w-full h-14 px-0 justify-between hover:bg-transparent font-light rounded-none"
+          className="w-full h-10 lg:h-14 px-0 justify-between hover:bg-transparent font-light rounded-none"
         >
           <span>Care & Cleaning</span>
           {isCareOpen ? (
@@ -154,7 +154,7 @@ XL: Chest 42-44"`;
         <Button
           variant="ghost"
           onClick={() => setIsReviewsOpen(!isReviewsOpen)}
-          className="w-full h-14 px-0 justify-between hover:bg-transparent font-light rounded-none"
+          className="w-full h-10 lg:h-14 px-0 justify-between hover:bg-transparent font-light rounded-none"
         >
           <div className="flex items-center gap-3">
             <span>Customer Reviews</span>

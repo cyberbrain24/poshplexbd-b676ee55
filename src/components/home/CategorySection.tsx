@@ -66,14 +66,14 @@ const CategorySection = () => {
   // Desktop: single row, all items visible
   return (
     <section className="w-full px-6 py-12">
-      <div className="flex justify-center gap-4">
+      <div className="flex justify-center gap-6">
         {mainCategories.map((category) => {
           const slug = category.name.toLowerCase().replace(/\s+/g, "-");
           return (
             <Link
               key={category.id}
               to={`/category/${slug}`}
-              className="block w-[100px] text-center group"
+              className="block w-[140px] text-center group"
             >
               <div className="aspect-square overflow-hidden rounded-xl bg-muted mx-auto shadow-md">
                 <img

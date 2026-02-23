@@ -643,20 +643,23 @@ const CustomerAccount = () => {
           </Card>
 
           {/* Membership Card */}
-          <Card>
+          <Card className={accountData?.customer?.customer_type ? "border-primary/30 bg-primary/5" : ""}>
             <CardHeader className="pb-2 pt-4 px-4">
               <CardTitle className="text-base font-medium flex items-center gap-2">
-                <Crown className="h-4 w-4" />
+                <Crown className={cn("h-4 w-4", accountData?.customer?.customer_type ? "text-primary" : "text-muted-foreground")} />
                 Membership
               </CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Crown className="h-5 w-5 text-primary" />
+                <div className={cn(
+                  "h-10 w-10 rounded-full flex items-center justify-center",
+                  accountData?.customer?.customer_type ? "bg-primary text-primary-foreground" : "bg-muted"
+                )}>
+                  <Crown className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="font-medium">{membershipType}</p>
+                  <p className={cn("font-semibold", accountData?.customer?.customer_type && "text-primary")}>{membershipType}</p>
                   {membershipDescription && <p className="text-sm text-muted-foreground">{membershipDescription}</p>}
                   {accountData?.customer?.membership_assigned_at && (
                     <p className="text-xs text-muted-foreground">

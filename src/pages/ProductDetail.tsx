@@ -53,10 +53,10 @@ const ProductDetail = () => {
       <ProductSEO product={product} />
       <PoshplexHeader />
       
-      <main className="pt-2">
+      <main className="pt-1">
         <section className="w-full px-6">
           {/* Breadcrumb - Show above image on smaller screens */}
-          <div className="lg:hidden mb-3">
+          <div className="lg:hidden mb-2">
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
@@ -86,7 +86,7 @@ const ProductDetail = () => {
               selectedVariantImageUrl={selectedVariantImageUrl}
             />
             
-            <div className="lg:pl-12 mt-4 lg:mt-0 lg:sticky lg:top-6 lg:h-fit">
+            <div className="lg:pl-12 mt-3 lg:mt-0 lg:sticky lg:top-6 lg:h-fit">
               <ProductInfo 
                 product={product} 
                 isLoading={isLoading} 

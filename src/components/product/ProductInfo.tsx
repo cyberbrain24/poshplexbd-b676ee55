@@ -122,7 +122,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Breadcrumb - Show only on desktop */}
       <div className="hidden lg:block">
         <Breadcrumb>
@@ -147,7 +147,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
       </div>
 
       {/* Product title and price */}
-      <div className="space-y-2">
+      <div className="space-y-1">
         <div className="flex justify-between items-start">
           <div>
             <p className="text-sm font-light text-muted-foreground mb-1">{categoryName}</p>

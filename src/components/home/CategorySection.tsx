@@ -12,7 +12,7 @@ const CategorySection = () => {
   const { data: categories = [], isLoading } = useCategories();
   const isMobile = useIsMobile();
 
-  const mainCategories = categories.filter(c => !c.parent_id && c.image_url);
+  const mainCategories = categories.filter(c => !c.parent_id);
 
   if (isLoading) {
     return (

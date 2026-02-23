@@ -122,7 +122,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Breadcrumb - Show only on desktop */}
       <div className="hidden lg:block">
         <Breadcrumb>
@@ -151,7 +151,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
         <div className="flex justify-between items-start">
           <div>
             <p className="text-sm font-light text-muted-foreground mb-1">{categoryName}</p>
-            <h1 className="text-2xl md:text-3xl font-light text-foreground">{productName}</h1>
+            <h1 className="text-lg md:text-2xl font-light text-foreground">{productName}</h1>
           </div>
           <div className="text-right">
             <p className="text-xl font-light text-foreground">৳{displayPrice.toLocaleString()}</p>
@@ -165,7 +165,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
       </div>
 
       {/* Short description */}
-      <div className="py-4 border-b border-border">
+      <div className="py-2 border-b border-border">
         <p className="text-sm font-light text-muted-foreground">{shortDescription}</p>
       </div>
 

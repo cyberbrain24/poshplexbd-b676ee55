@@ -86,7 +86,7 @@ const ProductDetail = () => {
               selectedVariantImageUrl={selectedVariantImageUrl}
             />
             
-            <div className="lg:pl-12 mt-3 lg:mt-0 lg:sticky lg:top-6 lg:h-fit">
+            <div className="lg:pl-12 mt-1.5 lg:mt-0 lg:sticky lg:top-6 lg:h-fit">
               <ProductInfo 
                 product={product} 
                 isLoading={isLoading} 

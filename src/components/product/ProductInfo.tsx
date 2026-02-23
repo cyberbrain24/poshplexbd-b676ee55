@@ -171,7 +171,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
 
       {/* Variant Selection */}
       {hasVariants && (
-        <div className="py-2 border-b border-border">
+        <div className="py-2 lg:border-b lg:border-border">
           <VariantSelector 
             variants={product!.variants!} 
             onVariantChange={handleVariantChange}

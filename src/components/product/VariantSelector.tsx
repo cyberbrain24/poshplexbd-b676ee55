@@ -99,7 +99,7 @@ const VariantSelector = ({ variants, onVariantChange }: VariantSelectorProps) =>
       {/* Color Selection */}
       {uniqueColors.length > 0 && (
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-center lg:justify-between">
             <span className="text-sm font-light text-foreground">Color</span>
             {selectedColor && (
               <span className="text-sm font-light text-muted-foreground">
@@ -107,7 +107,7 @@ const VariantSelector = ({ variants, onVariantChange }: VariantSelectorProps) =>
               </span>
             )}
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
             {uniqueColors.map((color) => {
               const isAvailable = isColorAvailable(color.id);
               const isSelected = selectedColor === color.id;
@@ -142,7 +142,7 @@ const VariantSelector = ({ variants, onVariantChange }: VariantSelectorProps) =>
       {/* Size Selection */}
       {uniqueSizes.length > 0 && (
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-center lg:justify-between">
             <span className="text-sm font-light text-foreground">Size</span>
             {selectedSize && (
               <span className="text-sm font-light text-muted-foreground">
@@ -150,7 +150,7 @@ const VariantSelector = ({ variants, onVariantChange }: VariantSelectorProps) =>
               </span>
             )}
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
             {uniqueSizes.map((size) => {
               const isAvailable = isSizeAvailable(size.id);
               const isSelected = selectedSize === size.id;

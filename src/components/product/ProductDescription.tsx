@@ -56,7 +56,7 @@ XL: Chest 42-44"`;
 • Iron on low heat if needed`;
 
   return (
-    <div className="space-y-0 mt-8 border-t border-border">
+    <div className="space-y-0 mt-4 border-t border-border">
       {/* Description */}
       <div className="border-b border-border">
         <Button

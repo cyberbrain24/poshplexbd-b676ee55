@@ -67,7 +67,7 @@ const CategoryBrowser = () => {
                   onClick={() => handleSelect(cat.id)}
                   className={cn(
                     "relative shrink-0 snap-center rounded-2xl overflow-hidden transition-all duration-200",
-                    "w-20 h-20",
+                    "w-24 h-24",
                     isActive
                       ? "scale-105 shadow-lg ring-2 ring-foreground/20"
                       : "opacity-90 scale-100"
@@ -83,7 +83,7 @@ const CategoryBrowser = () => {
                     <div className="absolute inset-0 bg-muted" />
                   )}
                   <div className="absolute inset-0 bg-black/50" />
-                  <span className="relative z-10 flex items-center justify-center h-full text-white text-xs font-semibold uppercase tracking-wider px-2 text-center">
+                  <span className="relative z-10 flex items-center justify-center h-full text-white text-[10px] font-semibold uppercase tracking-wider px-2 text-center">
                     {cat.name}
                   </span>
                   {isActive && (

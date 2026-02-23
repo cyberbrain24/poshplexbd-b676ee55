@@ -149,7 +149,7 @@ const ProductImageGallery = ({ product, isLoading, selectedColorId, selectedVari
       <div className="lg:hidden">
         <div className="relative">
           <div 
-            className="w-full aspect-square overflow-hidden cursor-pointer group touch-pan-y"
+            className="w-full aspect-[4/3.5] overflow-hidden cursor-pointer group touch-pan-y"
             onClick={() => handleImageClick(currentImageIndex)}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
@@ -163,7 +163,7 @@ const ProductImageGallery = ({ product, isLoading, selectedColorId, selectedVari
           </div>
           
           {/* Dots indicator */}
-          <div className="flex justify-center mt-4 gap-2">
+          <div className="flex justify-center mt-2 gap-1.5">
             {productImages.map((_, index) => (
               <button
                 key={index}

@@ -188,18 +188,18 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
               variant="ghost"
               size="sm"
               onClick={decrementQuantity}
-              className="h-10 w-10 p-0 hover:bg-transparent hover:opacity-50 rounded-none border-none"
+              className="h-8 w-8 p-0 hover:bg-transparent hover:opacity-50 rounded-none border-none"
             >
               <Minus className="h-4 w-4" />
             </Button>
-            <span className="h-10 flex items-center px-4 text-sm font-light min-w-12 justify-center border-l border-r border-border">
+            <span className="h-8 flex items-center px-3 text-sm font-light min-w-10 justify-center border-l border-r border-border">
               {quantity}
             </span>
             <Button
               variant="ghost"
               size="sm"
               onClick={incrementQuantity}
-              className="h-10 w-10 p-0 hover:bg-transparent hover:opacity-50 rounded-none border-none"
+              className="h-8 w-8 p-0 hover:bg-transparent hover:opacity-50 rounded-none border-none"
             >
               <Plus className="h-4 w-4" />
             </Button>
@@ -208,7 +208,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
 
         <div className="flex gap-3">
           <Button 
-            className="flex-1 h-12 bg-foreground text-background hover:bg-foreground/90 font-light rounded-none disabled:opacity-50"
+            className="flex-1 h-10 bg-foreground text-background hover:bg-foreground/90 font-light rounded-none disabled:opacity-50"
             disabled={!canAddToCart}
             onClick={handleAddToCart}
           >
@@ -216,7 +216,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
           </Button>
           <Button 
             variant="outline"
-            className="flex-1 h-12 border-foreground text-foreground hover:bg-foreground hover:text-background font-light rounded-none disabled:opacity-50"
+            className="flex-1 h-10 border-foreground text-foreground hover:bg-foreground hover:text-background font-light rounded-none disabled:opacity-50"
             disabled={!canAddToCart}
             onClick={handleBuyNow}
           >

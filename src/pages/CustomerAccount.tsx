@@ -383,6 +383,10 @@ const CustomerAccount = () => {
 
       toast.success("Profile updated successfully");
       setIsEditingProfile(false);
+      // Re-fetch full data from DB to ensure display is in sync
+      if (user?.id) {
+        fetchAccountData(user.id);
+      }
     } catch (error: any) {
       console.error("Profile save error:", error);
       toast.error(error.message || "Failed to update profile");

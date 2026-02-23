@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import AnnouncementBar from "./AnnouncementBar";
 
 const SITE_NAME = "POSHPLEX";
@@ -7,10 +8,10 @@ const CheckoutHeader = () => {
     <header className="w-full sticky top-0 z-50 bg-background">
       <AnnouncementBar />
       <nav className="flex flex-col sm:flex-row items-center justify-between h-auto sm:h-14 px-6 py-3 sm:py-0 border-b border-border gap-1 sm:gap-0">
-        {/* Logo - no link */}
-        <span className="text-2xl font-black tracking-tighter text-foreground">
+        {/* Logo with homepage link */}
+        <Link to="/" className="text-2xl font-black tracking-tighter text-foreground hover:opacity-80 transition-opacity">
           {SITE_NAME}
-        </span>
+        </Link>
 
         {/* Center message */}
         <span className="text-xs sm:text-sm font-medium tracking-wider text-muted-foreground uppercase">

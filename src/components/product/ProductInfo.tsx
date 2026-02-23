@@ -88,7 +88,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
       quantity,
     });
 
-    toast(`${productName} added to bag`, {
+    toast(`${productName} added to cart`, {
       description: selectedVariant 
         ? `${selectedVariant.color?.name || ''} ${selectedVariant.size?.label || ''} × ${quantity}`
         : `× ${quantity}`,
@@ -212,7 +212,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
             disabled={!canAddToCart}
             onClick={handleAddToCart}
           >
-            {isVariableProduct && !selectedVariant ? "Select Options" : "Add to Bag"}
+            {isVariableProduct && !selectedVariant ? "Select Options" : "Add to Cart"}
           </Button>
           <Button 
             variant="outline"
@@ -225,7 +225,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
         </div>
         {isVariableProduct && !selectedVariant && (
           <p className="text-xs text-muted-foreground text-center">
-            Please select color and size to add to bag
+            Please select color and size to add to cart
           </p>
         )}
       </div>
@@ -238,7 +238,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
             disabled={!canAddToCart}
             onClick={handleAddToCart}
           >
-            {isVariableProduct && !selectedVariant ? "Select Options" : "Add to Bag"}
+            {isVariableProduct && !selectedVariant ? "Select Options" : "Add to Cart"}
           </Button>
           <Button 
             variant="outline"

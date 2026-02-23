@@ -6,6 +6,7 @@ import FeaturesBar from "../components/home/FeaturesBar";
 import { useStorefrontPrefetch } from "@/hooks/useStorefrontPrefetch";
 
 // Lazy-load below-fold sections to reduce initial bundle
+const CategorySection = lazy(() => import("../components/home/CategorySection"));
 const StreetEditsGallery = lazy(() => import("../components/home/StreetEditsGallery"));
 const ProductGrid = lazy(() => import("../components/home/ProductGrid"));
 const OurStorySection = lazy(() => import("../components/home/OurStorySection"));
@@ -34,6 +35,9 @@ const Index = () => {
       <main className="-mt-[1px]">
         <HeroSection />
         <FeaturesBar />
+        <Suspense fallback={<GalleryFallback />}>
+          <CategorySection />
+        </Suspense>
         <Suspense fallback={<GalleryFallback />}>
           <StreetEditsGallery />
         </Suspense>

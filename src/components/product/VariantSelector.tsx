@@ -98,7 +98,7 @@ const VariantSelector = ({ variants, onVariantChange }: VariantSelectorProps) =>
     <div className="space-y-3">
       {/* Color Selection */}
       {uniqueColors.length > 0 && (
-        <div className="flex items-center gap-3 lg:block lg:space-y-1.5">
+        <div className="flex items-center justify-center gap-3 lg:block lg:space-y-1.5">
           <div className="flex items-center shrink-0 lg:justify-between">
             <span className="text-sm font-light text-foreground">Color</span>
             {selectedColor && (
@@ -141,7 +141,7 @@ const VariantSelector = ({ variants, onVariantChange }: VariantSelectorProps) =>
 
       {/* Size Selection */}
       {uniqueSizes.length > 0 && (
-        <div className="flex items-center gap-3 lg:block lg:space-y-1.5">
+        <div className="flex items-center justify-center gap-3 lg:block lg:space-y-1.5">
           <div className="flex items-center shrink-0 lg:justify-between">
             <span className="text-sm font-light text-foreground">Size</span>
             {selectedSize && (

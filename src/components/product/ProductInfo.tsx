@@ -122,7 +122,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {/* Breadcrumb - Show only on desktop */}
       <div className="hidden lg:block">
         <Breadcrumb>
@@ -171,7 +171,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
 
       {/* Variant Selection */}
       {hasVariants && (
-        <div className="py-4 border-b border-border">
+        <div className="py-2 border-b border-border">
           <VariantSelector 
             variants={product!.variants!} 
             onVariantChange={handleVariantChange}
@@ -180,7 +180,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
       )}
 
       {/* Quantity and Add to Cart */}
-      <div className="space-y-4">
+      <div className="space-y-2">
         <div className="flex items-center gap-4">
           <span className="text-sm font-light text-foreground">Quantity</span>
           <div className="flex items-center border border-border">

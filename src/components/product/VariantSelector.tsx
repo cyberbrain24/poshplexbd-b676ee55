@@ -95,7 +95,7 @@ const VariantSelector = ({ variants, onVariantChange }: VariantSelectorProps) =>
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4 lg:space-y-3">
       {/* Color Selection */}
       {uniqueColors.length > 0 && (
         <div className="flex items-center justify-center gap-3 lg:block lg:space-y-1.5">

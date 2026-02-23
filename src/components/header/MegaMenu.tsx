@@ -32,14 +32,12 @@ const MegaMenu = ({ activeItem, onMouseEnter, onMouseLeave }: MegaMenuProps) => 
       <div className="px-6 py-8 max-w-5xl mx-auto">
         {subcategories.length > 0 ? (
           <div className="flex flex-col items-center">
-            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-4 justify-items-center w-full max-w-5xl"
-              style={{ gridTemplateColumns: subcategories.length < 8 ? `repeat(${subcategories.length}, minmax(0, 1fr))` : undefined }}
-            >
+            <div className="flex flex-wrap justify-center gap-4 w-full max-w-5xl">
               {subcategories.map((sub) => (
                 <Link
                   key={sub.name}
                   to={sub.href}
-                  className="group flex flex-col items-center gap-2 w-full"
+                  className="group flex flex-col items-center gap-2 w-[100px]"
                 >
                   <div className="w-full aspect-square rounded-[10px] overflow-hidden bg-muted">
                     {sub.image_url ? (

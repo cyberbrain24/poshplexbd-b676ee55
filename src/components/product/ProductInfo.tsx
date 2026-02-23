@@ -181,7 +181,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
 
       {/* Quantity and Add to Cart */}
       <div className="space-y-2">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 justify-center lg:justify-start">
           <span className="text-sm font-light text-foreground">Quantity</span>
           <div className="flex items-center border border-border">
             <Button

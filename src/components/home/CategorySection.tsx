@@ -67,7 +67,7 @@ const CategorySection = () => {
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    <p className="text-xs font-medium tracking-wide text-foreground uppercase mt-2 truncate">
+                    <p className="text-[9px] font-medium tracking-wide text-foreground uppercase mt-1.5 leading-tight text-center">
                       {category.name}
                     </p>
                   </Link>

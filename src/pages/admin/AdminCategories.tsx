@@ -113,13 +113,15 @@ const AdminCategories = () => {
     return idx >= 0 && idx < siblings.length - 1;
   };
 
-  const handleSave = async (data: { name: string; parent_id?: string }) => {
+  const handleSave = async (data: any) => {
     try {
+      // Strip UI-only fields before sending to database
+      const { isChild, parentName, ...dbData } = data;
       if (selectedItem) {
-        await updateMutation.mutateAsync({ id: selectedItem.id, data });
+        await updateMutation.mutateAsync({ id: selectedItem.id, data: dbData as { name: string; parent_id?: string; image_url?: string } });
         toast.success("Category updated");
       } else {
-        await createMutation.mutateAsync(data);
+        await createMutation.mutateAsync(dbData as { name: string; parent_id?: string; image_url?: string });
         toast.success("Category created");
       }
     } catch (error) {

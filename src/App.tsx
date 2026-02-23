@@ -20,7 +20,7 @@ import NotFound from "./pages/NotFound";
 const Category = lazy(() => import("./pages/Category"));
 const CategoryBrowser = lazy(() => import("./pages/CategoryBrowser"));
 import ProductDetail from "./pages/ProductDetail";
-const Checkout = lazy(() => import("./pages/Checkout"));
+import Checkout from "./pages/Checkout";
 const OurStory = lazy(() => import("./pages/about/OurStory"));
 const StoreLocator = lazy(() => import("./pages/about/StoreLocator"));
 const PrivacyPolicy = lazy(() => import("./pages/about/PrivacyPolicy"));
@@ -102,7 +102,7 @@ const App = () => (
               <Route path="/categories" element={<Suspense fallback={<LoadingFallback />}><CategoryBrowser /></Suspense>} />
               <Route path="/category/:category" element={<Suspense fallback={<LoadingFallback />}><Category /></Suspense>} />
               <Route path="/product/:productSlug" element={<ProductDetail />} />
-              <Route path="/checkout" element={<Suspense fallback={<LoadingFallback />}><Checkout /></Suspense>} />
+              <Route path="/checkout" element={<Checkout />} />
               <Route path="/order-tracking" element={<Suspense fallback={<LoadingFallback />}><OrderTracking /></Suspense>} />
               <Route path="/my-orders" element={<Suspense fallback={<LoadingFallback />}><MyOrders /></Suspense>} />
               <Route path="/account" element={<Suspense fallback={<LoadingFallback />}><CustomerAccount /></Suspense>} />

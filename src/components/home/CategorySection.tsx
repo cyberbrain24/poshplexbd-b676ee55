@@ -42,9 +42,9 @@ const CategorySection = () => {
               return (
                 <CarouselItem key={category.id} className="basis-1/4 pl-2">
                   <Link to={`/category/${slug}`} className="block text-center">
-                    <div className="aspect-[3/4] overflow-hidden rounded-lg bg-muted">
+                    <div className="aspect-square overflow-hidden rounded-full bg-muted mx-auto">
                       <img
-                        src={category.image_url!}
+                        src={category.image_url || "/placeholder.svg"}
                         alt={category.name}
                         loading="lazy"
                         className="w-full h-full object-cover"
@@ -75,9 +75,9 @@ const CategorySection = () => {
               to={`/category/${slug}`}
               className="block w-[100px] text-center group"
             >
-              <div className="aspect-[3/4] overflow-hidden rounded-lg bg-muted">
+              <div className="aspect-square overflow-hidden rounded-full bg-muted mx-auto">
                 <img
-                  src={category.image_url!}
+                  src={category.image_url || "/placeholder.svg"}
                   alt={category.name}
                   loading="lazy"
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"

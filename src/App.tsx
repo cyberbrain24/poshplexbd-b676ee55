@@ -19,7 +19,7 @@ import NotFound from "./pages/NotFound";
 // Storefront pages - lazy loaded (non-critical)
 const Category = lazy(() => import("./pages/Category"));
 const CategoryBrowser = lazy(() => import("./pages/CategoryBrowser"));
-const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+import ProductDetail from "./pages/ProductDetail";
 const Checkout = lazy(() => import("./pages/Checkout"));
 const OurStory = lazy(() => import("./pages/about/OurStory"));
 const StoreLocator = lazy(() => import("./pages/about/StoreLocator"));
@@ -101,7 +101,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/categories" element={<Suspense fallback={<LoadingFallback />}><CategoryBrowser /></Suspense>} />
               <Route path="/category/:category" element={<Suspense fallback={<LoadingFallback />}><Category /></Suspense>} />
-              <Route path="/product/:productSlug" element={<Suspense fallback={<LoadingFallback />}><ProductDetail /></Suspense>} />
+              <Route path="/product/:productSlug" element={<ProductDetail />} />
               <Route path="/checkout" element={<Suspense fallback={<LoadingFallback />}><Checkout /></Suspense>} />
               <Route path="/order-tracking" element={<Suspense fallback={<LoadingFallback />}><OrderTracking /></Suspense>} />
               <Route path="/my-orders" element={<Suspense fallback={<LoadingFallback />}><MyOrders /></Suspense>} />

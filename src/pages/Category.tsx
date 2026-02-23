@@ -3,17 +3,26 @@ import { useParams } from "react-router-dom";
 import PoshplexHeader from "../components/header/PoshplexHeader";
 import PoshplexFooter from "../components/footer/PoshplexFooter";
 import CategoryHeader from "../components/category/CategoryHeader";
-import FilterSortBar from "../components/category/FilterSortBar";
+import FilterSortBar, { type SortOption, type ProductFilters } from "../components/category/FilterSortBar";
 import ProductGrid from "../components/category/ProductGrid";
 import { useOptimizedCategoryProducts } from "@/hooks/useOptimizedProducts";
 import { CategorySEO } from "@/components/seo";
 
+const DEFAULT_FILTERS: ProductFilters = {
+  colorIds: [],
+  sizeIds: [],
+  subcategoryIds: [],
+  priceRange: null,
+};
+
 const Category = () => {
   const { category } = useParams();
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const { totalCount } = useOptimizedCategoryProducts(category);
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
+  const [filters, setFilters] = useState<ProductFilters>(DEFAULT_FILTERS);
 
-  // Format category name for display
+  const { totalCount, parentCategoryId } = useOptimizedCategoryProducts(category, sortBy, filters);
+
   const formatCategoryName = (cat: string | undefined) => {
     if (!cat || cat === 'all') return 'All Products';
     return cat.split('-').map(word => 
@@ -43,9 +52,14 @@ const Category = () => {
           filtersOpen={filtersOpen}
           setFiltersOpen={setFiltersOpen}
           itemCount={totalCount}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          filters={filters}
+          onFiltersChange={setFilters}
+          parentCategoryId={parentCategoryId}
         />
         
-        <ProductGrid />
+        <ProductGrid sortBy={sortBy} filters={filters} />
       </main>
       
       <PoshplexFooter />

@@ -2,12 +2,18 @@ import { Link } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 
+interface SubcategoryItem {
+  name: string;
+  href: string;
+  image_url: string | null;
+}
+
 interface MobileMenuProps {
   navItems: {
     name: string;
     href: string;
     submenu: {
-      categories: string[];
+      subcategories: SubcategoryItem[];
       featured: { name: string; href: string }[];
     };
   }[];
@@ -37,14 +43,14 @@ const MobileMenu = ({ navItems, onClose }: MobileMenuProps) => {
               
               {expandedItem === item.name && (
                 <div className="mt-4 pl-4 space-y-3">
-                  {item.submenu.categories.map((category) => (
+                  {item.submenu.subcategories.map((sub) => (
                     <Link
-                      key={category}
-                      to={`/category/${category.toLowerCase().replace(/\s+/g, '-')}`}
+                      key={sub.name}
+                      to={sub.href}
                       className="block text-muted-foreground hover:text-foreground text-sm tracking-wide"
                       onClick={onClose}
                     >
-                      {category}
+                      {sub.name}
                     </Link>
                   ))}
                 </div>

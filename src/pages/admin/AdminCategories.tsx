@@ -1,10 +1,10 @@
 import { useState, useMemo } from "react";
-import { Plus, Pencil, Trash2, Search, ChevronRight, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, ChevronRight, AlertTriangle, ArrowUp, ArrowDown } from "lucide-react";
 import MasterDataModal from "@/components/admin/MasterDataModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from "@/hooks/useMasterData";
+import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, useReorderCategories } from "@/hooks/useMasterData";
 import { Category } from "@/types/product";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -32,21 +32,26 @@ const AdminCategories = () => {
   const createMutation = useCreateCategory();
   const updateMutation = useUpdateCategory();
   const deleteMutation = useDeleteCategory();
+  const reorderMutation = useReorderCategories();
 
-  // Organize categories into hierarchy
+  // Organize categories into hierarchy sorted by sort_order
   const organizedCategories = useMemo(() => {
-    const parentCategories = items.filter(item => !item.parent_id);
+    const parentCategories = items
+      .filter(item => !item.parent_id)
+      .sort((a, b) => a.sort_order - b.sort_order);
     const result: (Category & { isChild?: boolean; parentName?: string })[] = [];
     
     parentCategories.forEach(parent => {
       result.push(parent);
-      const children = items.filter(item => item.parent_id === parent.id);
+      const children = items
+        .filter(item => item.parent_id === parent.id)
+        .sort((a, b) => a.sort_order - b.sort_order);
       children.forEach(child => {
         result.push({ ...child, isChild: true, parentName: parent.name });
       });
     });
     
-    // Add any orphaned subcategories (parent was deleted)
+    // Add orphaned subcategories
     const orphans = items.filter(item => item.parent_id && !items.find(p => p.id === item.parent_id));
     orphans.forEach(orphan => {
       result.push({ ...orphan, isChild: true, parentName: 'Unknown' });
@@ -61,6 +66,51 @@ const AdminCategories = () => {
 
   const getSubcategoryCount = (parentId: string) => {
     return items.filter(item => item.parent_id === parentId).length;
+  };
+
+  const handleMoveUp = (item: Category & { isChild?: boolean }) => {
+    const siblings = item.isChild
+      ? items.filter(c => c.parent_id === item.parent_id).sort((a, b) => a.sort_order - b.sort_order)
+      : items.filter(c => !c.parent_id).sort((a, b) => a.sort_order - b.sort_order);
+    
+    const idx = siblings.findIndex(s => s.id === item.id);
+    if (idx <= 0) return;
+
+    const updates = [
+      { id: siblings[idx].id, sort_order: siblings[idx - 1].sort_order },
+      { id: siblings[idx - 1].id, sort_order: siblings[idx].sort_order },
+    ];
+    reorderMutation.mutate(updates);
+  };
+
+  const handleMoveDown = (item: Category & { isChild?: boolean }) => {
+    const siblings = item.isChild
+      ? items.filter(c => c.parent_id === item.parent_id).sort((a, b) => a.sort_order - b.sort_order)
+      : items.filter(c => !c.parent_id).sort((a, b) => a.sort_order - b.sort_order);
+    
+    const idx = siblings.findIndex(s => s.id === item.id);
+    if (idx < 0 || idx >= siblings.length - 1) return;
+
+    const updates = [
+      { id: siblings[idx].id, sort_order: siblings[idx + 1].sort_order },
+      { id: siblings[idx + 1].id, sort_order: siblings[idx].sort_order },
+    ];
+    reorderMutation.mutate(updates);
+  };
+
+  const canMoveUp = (item: Category & { isChild?: boolean }) => {
+    const siblings = item.isChild
+      ? items.filter(c => c.parent_id === item.parent_id).sort((a, b) => a.sort_order - b.sort_order)
+      : items.filter(c => !c.parent_id).sort((a, b) => a.sort_order - b.sort_order);
+    return siblings.findIndex(s => s.id === item.id) > 0;
+  };
+
+  const canMoveDown = (item: Category & { isChild?: boolean }) => {
+    const siblings = item.isChild
+      ? items.filter(c => c.parent_id === item.parent_id).sort((a, b) => a.sort_order - b.sort_order)
+      : items.filter(c => !c.parent_id).sort((a, b) => a.sort_order - b.sort_order);
+    const idx = siblings.findIndex(s => s.id === item.id);
+    return idx >= 0 && idx < siblings.length - 1;
   };
 
   const handleSave = async (data: { name: string; parent_id?: string }) => {
@@ -82,7 +132,6 @@ const AdminCategories = () => {
     setDeleteBlocked(null);
     setDeleteItem(item);
 
-    // Check for products assigned to this category (or subcategories)
     const categoryIds = [item.id, ...items.filter(c => c.parent_id === item.id).map(c => c.id)];
     const { data: products, count } = await supabase
       .from("products")
@@ -116,7 +165,7 @@ const AdminCategories = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-medium tracking-tight">Categories</h1>
-          <p className="text-muted-foreground mt-1">Manage product categories</p>
+          <p className="text-muted-foreground mt-1">Manage product categories &amp; display order</p>
         </div>
         <Button onClick={() => { setSelectedItem(null); setIsModalOpen(true); }}>
           <Plus className="h-4 w-4 mr-2" />
@@ -138,6 +187,7 @@ const AdminCategories = () => {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-20">Order</TableHead>
               <TableHead className="w-16">Image</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Type</TableHead>
@@ -149,11 +199,11 @@ const AdminCategories = () => {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">Loading...</TableCell>
+                <TableCell colSpan={7} className="text-center py-8">Loading...</TableCell>
               </TableRow>
             ) : filteredItems.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   No categories found
                 </TableCell>
               </TableRow>
@@ -161,13 +211,31 @@ const AdminCategories = () => {
               filteredItems.map((item) => (
                 <TableRow key={item.id} className={item.isChild ? "bg-muted/30" : ""}>
                   <TableCell>
+                    <div className="flex items-center gap-0.5">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        disabled={!canMoveUp(item) || reorderMutation.isPending}
+                        onClick={() => handleMoveUp(item)}
+                      >
+                        <ArrowUp className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        disabled={!canMoveDown(item) || reorderMutation.isPending}
+                        onClick={() => handleMoveDown(item)}
+                      >
+                        <ArrowDown className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                  <TableCell>
                     {item.image_url ? (
                       <div className="w-12 h-12 overflow-hidden bg-muted">
-                        <img 
-                          src={item.image_url} 
-                          alt={item.name}
-                          className="w-full h-full object-cover"
-                        />
+                        <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
                       </div>
                     ) : (
                       <div className="w-12 h-12 bg-muted flex items-center justify-center text-xs text-muted-foreground">
@@ -177,21 +245,15 @@ const AdminCategories = () => {
                   </TableCell>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
-                      {item.isChild && (
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                      )}
+                      {item.isChild && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
                       {item.name}
                     </div>
                   </TableCell>
                   <TableCell>
                     {item.isChild ? (
-                      <Badge variant="outline" className="text-xs">
-                        Sub of {item.parentName}
-                      </Badge>
+                      <Badge variant="outline" className="text-xs">Sub of {item.parentName}</Badge>
                     ) : (
-                      <Badge variant="secondary" className="text-xs">
-                        Main Category
-                      </Badge>
+                      <Badge variant="secondary" className="text-xs">Main Category</Badge>
                     )}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
@@ -202,18 +264,10 @@ const AdminCategories = () => {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => { setSelectedItem(item); setIsModalOpen(true); }}
-                      >
+                      <Button variant="ghost" size="icon" onClick={() => { setSelectedItem(item); setIsModalOpen(true); }}>
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteClick(item)}
-                      >
+                      <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(item)}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
@@ -247,7 +301,7 @@ const AdminCategories = () => {
                   <p>Checking references...</p>
                 ) : deleteBlocked ? (
                   <>
-                    <p>Cannot delete "<strong>{deleteItem?.name}</strong>" because it contains <strong>{deleteBlocked.count}</strong> product{deleteBlocked.count > 1 ? "s" : ""}. Remove or reassign those products first.</p>
+                    <p>Cannot delete "<strong>{deleteItem?.name}</strong>" because it contains <strong>{deleteBlocked.count}</strong> product{deleteBlocked.count > 1 ? "s" : ""}.</p>
                     <div className="bg-muted p-3 rounded text-sm space-y-1 mt-2">
                       <p className="font-medium text-foreground">Referenced products:</p>
                       <ul className="list-disc list-inside text-muted-foreground">

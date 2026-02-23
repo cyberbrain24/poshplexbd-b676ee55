@@ -656,53 +656,53 @@ const Checkout = () => {
             </div>
 
             {/* Left Column - Forms */}
-            <div className="lg:col-span-2 lg:order-1 space-y-6">
+            <div className="lg:col-span-2 lg:order-1 space-y-4">
               
               {/* Customer & Shipping Details */}
-              <div className="bg-muted/20 p-6 rounded-none">
-                <h2 className="text-lg font-light text-foreground mb-6">Shipping Information</h2>
+              <div className="bg-muted/20 p-4 rounded-none">
+                <h2 className="text-base font-light text-foreground mb-3">Shipping Information</h2>
                 
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                      <Label className="text-sm font-light">Full Name *</Label>
+                      <Label className="text-xs font-light">Full Name *</Label>
                       <Input
                         value={customerDetails.name}
                         onChange={(e) => handleCustomerChange("name", e.target.value)}
-                        className="mt-1.5 rounded-none"
+                        className="mt-1 rounded-none h-9 text-sm"
                         placeholder="Enter your full name"
                       />
                     </div>
                     <div>
-                      <Label className="text-sm font-light">Phone Number *</Label>
+                      <Label className="text-xs font-light">Phone Number *</Label>
                       <Input
                         type="tel"
                         value={customerDetails.phone}
                         onChange={(e) => handleCustomerChange("phone", e.target.value)}
-                        className="mt-1.5 rounded-none"
+                        className="mt-1 rounded-none h-9 text-sm"
                         placeholder="01XXXXXXXXX"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                      <Label className="text-sm font-light">Email (Optional)</Label>
+                      <Label className="text-xs font-light">Email (Optional)</Label>
                       <Input
                         type="email"
                         value={customerDetails.email}
                         onChange={(e) => handleCustomerChange("email", e.target.value)}
-                        className="mt-1.5 rounded-none"
+                        className="mt-1 rounded-none h-9 text-sm"
                         placeholder="your@email.com"
                       />
                     </div>
                     <div>
-                      <Label className="text-sm font-light">Gender *</Label>
+                      <Label className="text-xs font-light">Gender *</Label>
                       <Select
                         value={customerDetails.gender}
                         onValueChange={(value) => handleCustomerChange("gender", value)}
                       >
-                        <SelectTrigger className="mt-1.5 rounded-none">
+                        <SelectTrigger className="mt-1 rounded-none h-9 text-sm">
                           <SelectValue placeholder="Select gender" />
                         </SelectTrigger>
                         <SelectContent>
@@ -716,13 +716,13 @@ const Checkout = () => {
 
                   {/* Password Field with default value */}
                   <div>
-                    <Label className="text-sm font-light">Password (for your account)</Label>
-                    <div className="relative mt-1.5">
+                    <Label className="text-xs font-light">Password (for your account)</Label>
+                    <div className="relative mt-1">
                       <Input
                         type={showPassword ? "text" : "password"}
                         value={customerDetails.password}
                         onChange={(e) => handleCustomerChange("password", e.target.value)}
-                        className="rounded-none pr-10"
+                        className="rounded-none pr-10 h-9 text-sm"
                         placeholder="Create a password"
                       />
                       <Button
@@ -745,23 +745,23 @@ const Checkout = () => {
                   </div>
 
                   <div>
-                    <Label className="text-sm font-light">Address *</Label>
+                    <Label className="text-xs font-light">Address *</Label>
                     <Input
                       value={customerDetails.address}
                       onChange={(e) => handleCustomerChange("address", e.target.value)}
-                      className="mt-1.5 rounded-none"
+                      className="mt-1 rounded-none h-9 text-sm"
                       placeholder="House no, Road no, Area"
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                      <Label className="text-sm font-light">District *</Label>
+                      <Label className="text-xs font-light">District *</Label>
                       <Select
                         value={customerDetails.divisionId}
                         onValueChange={(value) => handleCustomerChange("divisionId", value)}
                       >
-                        <SelectTrigger className="mt-1.5 rounded-none">
+                        <SelectTrigger className="mt-1 rounded-none h-9 text-sm">
                           <SelectValue placeholder="Select district" />
                         </SelectTrigger>
                         <SelectContent>
@@ -774,13 +774,13 @@ const Checkout = () => {
                       </Select>
                     </div>
                     <div>
-                      <Label className="text-sm font-light">Thana/Upazila *</Label>
+                      <Label className="text-xs font-light">Thana/Upazila *</Label>
                       <Select
                         value={customerDetails.thanaId}
                         onValueChange={(value) => handleCustomerChange("thanaId", value)}
                         disabled={!customerDetails.divisionId}
                       >
-                        <SelectTrigger className="mt-1.5 rounded-none">
+                        <SelectTrigger className="mt-1 rounded-none h-9 text-sm">
                           <SelectValue placeholder="Select thana" />
                         </SelectTrigger>
                         <SelectContent>
@@ -810,21 +810,21 @@ const Checkout = () => {
                   )}
 
                   <div>
-                    <Label className="text-sm font-light">Postal Code</Label>
+                    <Label className="text-xs font-light">Postal Code</Label>
                     <Input
                       value={customerDetails.postalCode}
                       onChange={(e) => handleCustomerChange("postalCode", e.target.value)}
-                      className="mt-1.5 rounded-none"
+                      className="mt-1 rounded-none h-9 text-sm"
                       placeholder="1234"
                     />
                   </div>
 
                   <div>
-                    <Label className="text-sm font-light">Order Notes (Optional)</Label>
+                    <Label className="text-xs font-light">Order Notes (Optional)</Label>
                     <Textarea
                       value={customerDetails.notes}
                       onChange={(e) => handleCustomerChange("notes", e.target.value)}
-                      className="mt-1.5 rounded-none"
+                      className="mt-1 rounded-none text-sm"
                       placeholder="Special instructions for delivery..."
                       rows={2}
                     />
@@ -833,8 +833,8 @@ const Checkout = () => {
               </div>
 
               {/* Payment Section */}
-              <div className="bg-muted/20 p-6 rounded-none">
-                <h2 className="text-lg font-light text-foreground mb-4">Payment Method</h2>
+              <div className="bg-muted/20 p-4 rounded-none">
+                <h2 className="text-base font-light text-foreground mb-3">Payment Method</h2>
                 
                 {loadingPaymentMethods ? (
                   <div className="space-y-3">
@@ -854,22 +854,29 @@ const Checkout = () => {
                         setPartialPaymentAmount("");
                       }
                     }}
-                    className="space-y-3"
+                    className="grid grid-cols-2 md:grid-cols-3 gap-2"
                   >
                     {paymentMethods?.map((method) => (
                       <div 
                         key={method.id} 
-                        className={`p-4 border rounded-none transition-colors ${
+                        className={`p-3 border rounded-none transition-colors cursor-pointer ${
                           selectedPaymentMethodId === method.id 
                             ? 'border-primary bg-primary/5' 
                             : 'border-muted-foreground/20'
                         }`}
+                        onClick={() => {
+                          setSelectedPaymentMethodId(method.id);
+                          if (method.type === 'cod') {
+                            setUsePartialPayment(false);
+                            setPartialPaymentAmount("");
+                          }
+                        }}
                       >
-                        <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-2">
                           <RadioGroupItem value={method.id} id={method.id} />
-                          <Label htmlFor={method.id} className="font-light cursor-pointer flex items-center gap-2 flex-1">
+                          <Label htmlFor={method.id} className="font-light cursor-pointer flex items-center gap-1.5 flex-1 text-sm">
                             {getPaymentIcon(method.type)}
-                            <span>{method.name}</span>
+                            <span className="truncate">{method.name}</span>
                           </Label>
                         </div>
                       </div>
@@ -888,22 +895,22 @@ const Checkout = () => {
                       </div>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div>
-                        <Label className="text-sm font-light">Transaction ID *</Label>
+                        <Label className="text-xs font-light">Transaction ID *</Label>
                         <Input
                           value={paymentInfo.transactionId}
                           onChange={(e) => handlePaymentInfoChange("transactionId", e.target.value)}
-                          className="mt-1.5 rounded-none"
+                          className="mt-1 rounded-none h-9 text-sm"
                           placeholder="Enter transaction ID"
                         />
                       </div>
                       <div>
-                        <Label className="text-sm font-light">Sender Number *</Label>
+                        <Label className="text-xs font-light">Sender Number *</Label>
                         <Input
                           value={paymentInfo.senderNumber}
                           onChange={(e) => handlePaymentInfoChange("senderNumber", e.target.value)}
-                          className="mt-1.5 rounded-none"
+                          className="mt-1 rounded-none h-9 text-sm"
                           placeholder="Number you sent from"
                         />
                       </div>

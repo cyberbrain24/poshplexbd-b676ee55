@@ -39,7 +39,7 @@ const MegaMenu = ({ activeItem, onMouseEnter, onMouseLeave }: MegaMenuProps) => 
                   to={sub.href}
                   className="group flex flex-col items-center gap-2 w-[100px]"
                 >
-                  <div className="w-full aspect-square rounded-[10px] overflow-hidden bg-muted">
+                  <div className="w-full aspect-square rounded-[10px] overflow-hidden bg-muted" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.18)' }}>
                     {sub.image_url ? (
                       <img
                         src={sub.image_url}

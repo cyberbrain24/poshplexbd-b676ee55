@@ -179,9 +179,9 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
         </div>
       )}
 
-      {/* Quantity and Add to Cart */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-4 justify-center lg:justify-start">
+      {/* Quantity - desktop only */}
+      <div className="hidden lg:block space-y-2">
+        <div className="flex items-center gap-4 justify-start">
           <span className="text-sm font-light text-foreground">Quantity</span>
           <div className="flex items-center border border-border">
             <Button
@@ -228,6 +228,27 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
             Please select color and size to add to bag
           </p>
         )}
+      </div>
+
+      {/* Mobile sticky bottom bar - above footer nav */}
+      <div className="fixed bottom-16 left-0 right-0 z-40 bg-background border-t border-border p-3 lg:hidden">
+        <div className="flex gap-3">
+          <Button 
+            className="flex-1 h-10 bg-foreground text-background hover:bg-foreground/90 font-light rounded-none disabled:opacity-50"
+            disabled={!canAddToCart}
+            onClick={handleAddToCart}
+          >
+            {isVariableProduct && !selectedVariant ? "Select Options" : "Add to Bag"}
+          </Button>
+          <Button 
+            variant="outline"
+            className="flex-1 h-10 border-foreground text-foreground hover:bg-foreground hover:text-background font-light rounded-none disabled:opacity-50"
+            disabled={!canAddToCart}
+            onClick={handleBuyNow}
+          >
+            Buy Now
+          </Button>
+        </div>
       </div>
     </div>
   );

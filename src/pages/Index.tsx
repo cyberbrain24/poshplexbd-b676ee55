@@ -34,7 +34,6 @@ const Index = () => {
       
       <main className="-mt-[1px]">
         <HeroSection />
-        <FeaturesBar />
         <Suspense fallback={<GalleryFallback />}>
           <CategorySection />
         </Suspense>

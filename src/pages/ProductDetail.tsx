@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { Link } from "react-router-dom";
 import PoshplexHeader from "../components/header/PoshplexHeader";
 import PoshplexFooter from "../components/footer/PoshplexFooter";
 import ProductImageGallery from "../components/product/ProductImageGallery";
@@ -9,14 +8,6 @@ import ProductDescription from "../components/product/ProductDescription";
 import RelatedProducts from "../components/product/RelatedProducts";
 import { useProduct } from "@/hooks/useProducts";
 import { ProductSEO } from "@/components/seo";
-import { 
-  Breadcrumb, 
-  BreadcrumbItem, 
-  BreadcrumbLink, 
-  BreadcrumbList, 
-  BreadcrumbPage, 
-  BreadcrumbSeparator 
-} from "@/components/ui/breadcrumb";
 import { trackViewContent } from "@/services/facebook-pixel.service";
 
 const ProductDetail = () => {
@@ -55,29 +46,6 @@ const ProductDetail = () => {
       
       <main className="pt-1">
         <section className="w-full px-6">
-          {/* Breadcrumb - Show above image on smaller screens */}
-          <div className="lg:hidden mb-2">
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbLink asChild>
-                    <Link to="/">Home</Link>
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbLink asChild>
-                    <Link to={`/category/${categorySlug}`}>{categoryName}</Link>
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>{productName}</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-          
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
             <ProductImageGallery 
               product={product} 

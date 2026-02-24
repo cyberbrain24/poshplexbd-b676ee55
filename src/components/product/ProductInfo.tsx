@@ -1,14 +1,6 @@
 import { useState, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { 
-  Breadcrumb, 
-  BreadcrumbItem, 
-  BreadcrumbLink, 
-  BreadcrumbList, 
-  BreadcrumbPage, 
-  BreadcrumbSeparator 
-} from "@/components/ui/breadcrumb";
 import { Minus, Plus } from "lucide-react";
 import FavoriteButton from "./FavoriteButton";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -125,29 +117,6 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
 
   return (
     <div className="space-y-2">
-      {/* Breadcrumb - Show only on desktop */}
-      <div className="hidden lg:block">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link to="/">Home</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link to={`/category/${categorySlug}`}>{categoryName}</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{productName}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-      </div>
-
       {/* Product title and price */}
       <div className="space-y-1">
         <div className="flex justify-between items-start">

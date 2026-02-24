@@ -29,8 +29,6 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
-  X,
-  Pencil,
   Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -61,6 +59,16 @@ const SYSTEM_FIELDS = [
 
 type SystemFieldKey = (typeof SYSTEM_FIELDS)[number]["key"];
 
+// Fields where comma = multiple values (variants / images)
+const COMMA_FIELDS = new Set<string>([
+  "image_urls",
+  "variant_color",
+  "variant_size",
+  "variant_material",
+  "variant_sku",
+  "variant_price",
+]);
+
 interface RowData {
   [key: string]: string;
 }
@@ -68,6 +76,9 @@ interface RowData {
 interface CellError {
   row: number;
   col: string;
+  /** index inside comma-separated list, or -1 for the whole cell */
+  idx: number;
+  value: string;
   message: string;
   resolved: boolean;
   resolvedValue?: string;
@@ -85,6 +96,13 @@ interface LookupData {
 
 type Step = "upload" | "mapping" | "review" | "importing" | "done";
 
+/** Split a cell by comma, trim each, filter empty */
+const splitComma = (v: string): string[] =>
+  v
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
 const BulkProductUpload = () => {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -93,14 +111,9 @@ const BulkProductUpload = () => {
   const [fileName, setFileName] = useState("");
   const [headers, setHeaders] = useState<string[]>([]);
   const [rows, setRows] = useState<RowData[]>([]);
-  const [mapping, setMapping] = useState<Record<string, SystemFieldKey | "">>(
-    {}
-  );
+  const [mapping, setMapping] = useState<Record<string, SystemFieldKey | "">>({});
   const [errors, setErrors] = useState<CellError[]>([]);
-  const [editCell, setEditCell] = useState<{
-    row: number;
-    col: string;
-  } | null>(null);
+  const [editCell, setEditCell] = useState<{ row: number; col: string } | null>(null);
   const [lookup, setLookup] = useState<LookupData | null>(null);
   const [importProgress, setImportProgress] = useState(0);
   const [importTotal, setImportTotal] = useState(0);
@@ -116,16 +129,7 @@ const BulkProductUpload = () => {
       supabase.from("size_guides").select("id, name"),
       supabase.from("care_instructions").select("id, name"),
     ]);
-    setLookup({
-      categories: cats.data || [],
-      brands: brands.data || [],
-      colors: colors.data || [],
-      sizes: sizes.data || [],
-      materials: mats.data || [],
-      sizeGuides: sg.data || [],
-      careInstructions: ci.data || [],
-    });
-    return {
+    const data: LookupData = {
       categories: cats.data || [],
       brands: brands.data || [],
       colors: colors.data || [],
@@ -134,35 +138,69 @@ const BulkProductUpload = () => {
       sizeGuides: sg.data || [],
       careInstructions: ci.data || [],
     };
+    setLookup(data);
+    return data;
   }, []);
 
   // ── Template download ──────────────────────────────────────
   const downloadTemplate = () => {
     const templateHeaders = SYSTEM_FIELDS.map((f) => f.label);
-    // Row 1: product with first variant
+    // Variable product – comma-separated variants in one row
     const row1 = [
-      "Summer T-Shirt", "", "Men", "T-Shirts", "Poshplex",
-      "Comfortable cotton tee", "Full description here...", "1200",
-      "variable", "true", "false", "", "", "",
-      "https://example.com/img1.jpg", "Red", "M", "Cotton", "", "1200",
+      "Summer T-Shirt",                         // Product Name
+      "TSH-001",                                 // SKU
+      "Men",                                     // Category
+      "T-Shirts",                                // Subcategory
+      "Poshplex",                                // Brand
+      "Comfortable cotton tee",                  // Short Description
+      "Full description here...",                // Full Description
+      "1200",                                    // Price
+      "variable",                                // Product Type
+      "true",                                    // Active
+      "false",                                   // Featured
+      "",                                        // YouTube Video
+      "",                                        // Size Guide
+      "",                                        // Care & Cleaning
+      "https://example.com/img1.jpg, https://example.com/img2.jpg", // Images (comma)
+      "Red, Blue, Black",                        // Variant Color (comma)
+      "M, L, XL",                                // Variant Size (comma)
+      "Cotton, Cotton, Cotton",                  // Variant Material (comma)
+      "TSH-001-RM, TSH-001-BL, TSH-001-BK",     // Variant SKU (comma)
+      "1200, 1300, 1250",                        // Variant Price (comma)
     ];
-    // Row 2: same product name → adds another variant (no need to repeat product details)
+    // Simple product – no variant data
     const row2 = [
-      "Summer T-Shirt", "", "", "", "",
-      "", "", "1200",
-      "", "", "", "", "", "",
-      "", "Blue", "L", "Cotton", "", "1300",
+      "Classic Polo",
+      "POL-001",
+      "Men",
+      "Polos",
+      "Poshplex",
+      "Premium polo shirt",
+      "Detailed description...",
+      "1500",
+      "simple",
+      "true",
+      "false",
+      "",
+      "",
+      "",
+      "https://example.com/polo.jpg",
+      "",
+      "",
+      "",
+      "",
+      "",
     ];
-    // Row 3: different product (simple)
-    const row3 = [
-      "Classic Polo", "", "Men", "Polos", "Poshplex",
-      "Premium polo shirt", "Detailed description...", "1500",
-      "simple", "true", "false", "", "", "",
-      "https://example.com/polo.jpg", "", "", "", "", "",
-    ];
-    const csvRows = [templateHeaders, row1, row2, row3].map((r) => r.join(","));
-    const csv = csvRows.join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
+    const csvContent = [templateHeaders, row1, row2]
+      .map((r) =>
+        r.map((cell) => {
+          // Wrap in quotes if cell contains comma
+          if (cell.includes(",")) return `"${cell}"`;
+          return cell;
+        }).join(",")
+      )
+      .join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -181,10 +219,7 @@ const BulkProductUpload = () => {
 
       if (ext === "csv") {
         const text = await file.text();
-        const result = Papa.parse<RowData>(text, {
-          header: true,
-          skipEmptyLines: true,
-        });
+        const result = Papa.parse<RowData>(text, { header: true, skipEmptyLines: true });
         parsedHeaders = result.meta.fields || [];
         parsedRows = result.data;
       } else if (ext === "xlsx" || ext === "xls") {
@@ -244,6 +279,53 @@ const BulkProductUpload = () => {
     if (file) handleFile(file);
   };
 
+  // ── Validate a lookup value (single) ───────────────────────
+  const validateLookup = (
+    value: string,
+    col: string,
+    lk: LookupData
+  ): boolean => {
+    const v = value.toLowerCase();
+    switch (col) {
+      case "category":
+        return lk.categories.some((c) => c.name.toLowerCase() === v);
+      case "brand":
+        return lk.brands.some((b) => b.name.toLowerCase() === v);
+      case "variant_color":
+        return lk.colors.some((c) => c.name.toLowerCase() === v);
+      case "variant_size":
+        return lk.sizes.some((s) => s.label.toLowerCase() === v);
+      case "variant_material":
+        return lk.materials.some((m) => m.name.toLowerCase() === v);
+      case "size_guide":
+        return lk.sizeGuides.some((s) => s.name.toLowerCase() === v);
+      case "care_instruction":
+        return lk.careInstructions.some((c) => c.name.toLowerCase() === v);
+      default:
+        return true;
+    }
+  };
+
+  const LOOKUP_FIELDS = new Set([
+    "category",
+    "brand",
+    "variant_color",
+    "variant_size",
+    "variant_material",
+    "size_guide",
+    "care_instruction",
+  ]);
+
+  const fieldLabel: Record<string, string> = {
+    category: "Category",
+    brand: "Brand",
+    variant_color: "Color",
+    variant_size: "Size",
+    variant_material: "Material",
+    size_guide: "Size Guide",
+    care_instruction: "Care Instruction",
+  };
+
   // ── Proceed to review with validation ──────────────────────
   const proceedToReview = useCallback(() => {
     if (!lookup) return;
@@ -255,160 +337,84 @@ const BulkProductUpload = () => {
       (f) => f.required && !mappedFields.includes(f.key)
     );
     if (missingRequired.length > 0) {
-      toast.error(
-        `Required fields not mapped: ${missingRequired.map((f) => f.label).join(", ")}`
-      );
+      toast.error(`Required fields not mapped: ${missingRequired.map((f) => f.label).join(", ")}`);
       return;
     }
 
     // Reverse map: systemKey → csvHeader
-    const reverseMap: Record<string, string> = {};
+    const rMap: Record<string, string> = {};
     Object.entries(mapping).forEach(([csvH, sysK]) => {
-      if (sysK) reverseMap[sysK] = csvH;
+      if (sysK) rMap[sysK] = csvH;
     });
 
     rows.forEach((row, ri) => {
-      // Validate category
-      const catHeader = reverseMap["category"];
-      if (catHeader && row[catHeader]?.trim()) {
-        const val = row[catHeader].trim();
-        const found = lookup.categories.find(
-          (c) => c.name.toLowerCase() === val.toLowerCase()
-        );
-        if (!found) {
-          newErrors.push({
-            row: ri,
-            col: "category",
-            message: `Category "${val}" not found`,
-            resolved: false,
-          });
-        }
-      }
-
-      // Validate brand
-      const brandHeader = reverseMap["brand"];
-      if (brandHeader && row[brandHeader]?.trim()) {
-        const val = row[brandHeader].trim();
-        const found = lookup.brands.find(
-          (b) => b.name.toLowerCase() === val.toLowerCase()
-        );
-        if (!found) {
-          newErrors.push({
-            row: ri,
-            col: "brand",
-            message: `Brand "${val}" not found`,
-            resolved: false,
-          });
-        }
-      }
-
-      // Validate variant color
-      const colorHeader = reverseMap["variant_color"];
-      if (colorHeader && row[colorHeader]?.trim()) {
-        const val = row[colorHeader].trim();
-        const found = lookup.colors.find(
-          (c) => c.name.toLowerCase() === val.toLowerCase()
-        );
-        if (!found) {
-          newErrors.push({
-            row: ri,
-            col: "variant_color",
-            message: `Color "${val}" not found`,
-            resolved: false,
-          });
-        }
-      }
-
-      // Validate variant size
-      const sizeHeader = reverseMap["variant_size"];
-      if (sizeHeader && row[sizeHeader]?.trim()) {
-        const val = row[sizeHeader].trim();
-        const found = lookup.sizes.find(
-          (s) => s.label.toLowerCase() === val.toLowerCase()
-        );
-        if (!found) {
-          newErrors.push({
-            row: ri,
-            col: "variant_size",
-            message: `Size "${val}" not found`,
-            resolved: false,
-          });
-        }
-      }
-
-      // Validate variant material
-      const matHeader = reverseMap["variant_material"];
-      if (matHeader && row[matHeader]?.trim()) {
-        const val = row[matHeader].trim();
-        const found = lookup.materials.find(
-          (m) => m.name.toLowerCase() === val.toLowerCase()
-        );
-        if (!found) {
-          newErrors.push({
-            row: ri,
-            col: "variant_material",
-            message: `Material "${val}" not found`,
-            resolved: false,
-          });
-        }
-      }
-
-      // Validate size guide
-      const sgHeader = reverseMap["size_guide"];
-      if (sgHeader && row[sgHeader]?.trim()) {
-        const val = row[sgHeader].trim();
-        const found = lookup.sizeGuides.find(
-          (s) => s.name.toLowerCase() === val.toLowerCase()
-        );
-        if (!found) {
-          newErrors.push({
-            row: ri,
-            col: "size_guide",
-            message: `Size Guide "${val}" not found`,
-            resolved: false,
-          });
-        }
-      }
-
-      // Validate care instruction
-      const ciHeader = reverseMap["care_instruction"];
-      if (ciHeader && row[ciHeader]?.trim()) {
-        const val = row[ciHeader].trim();
-        const found = lookup.careInstructions.find(
-          (c) => c.name.toLowerCase() === val.toLowerCase()
-        );
-        if (!found) {
-          newErrors.push({
-            row: ri,
-            col: "care_instruction",
-            message: `Care Instruction "${val}" not found`,
-            resolved: false,
-          });
-        }
-      }
-
-      // Validate price is a number
-      const priceHeader = reverseMap["base_price"];
-      if (priceHeader) {
-        const val = row[priceHeader]?.trim();
-        if (!val || isNaN(Number(val))) {
-          newErrors.push({
-            row: ri,
-            col: "base_price",
-            message: "Price must be a valid number",
-            resolved: false,
-          });
-        }
-      }
-
       // Validate name
-      const nameHeader = reverseMap["name"];
-      if (nameHeader && !row[nameHeader]?.trim()) {
-        newErrors.push({
-          row: ri,
-          col: "name",
-          message: "Product name is required",
-          resolved: false,
+      const nameH = rMap["name"];
+      if (nameH && !row[nameH]?.trim()) {
+        newErrors.push({ row: ri, col: "name", idx: -1, value: "", message: "Product name is required", resolved: false });
+      }
+
+      // Validate price
+      const priceH = rMap["base_price"];
+      if (priceH) {
+        const val = row[priceH]?.trim();
+        if (!val || isNaN(Number(val))) {
+          newErrors.push({ row: ri, col: "base_price", idx: -1, value: val || "", message: "Price must be a valid number", resolved: false });
+        }
+      }
+
+      // Validate lookup fields (some are comma-separated)
+      for (const field of LOOKUP_FIELDS) {
+        const csvH = rMap[field];
+        if (!csvH) continue;
+        const raw = row[csvH]?.trim();
+        if (!raw) continue;
+
+        if (COMMA_FIELDS.has(field)) {
+          // Comma-separated: validate each item
+          const items = splitComma(raw);
+          items.forEach((item, idx) => {
+            if (!validateLookup(item, field, lookup)) {
+              newErrors.push({
+                row: ri,
+                col: field,
+                idx,
+                value: item,
+                message: `${fieldLabel[field] || field} "${item}" not found`,
+                resolved: false,
+              });
+            }
+          });
+        } else {
+          // Single value
+          if (!validateLookup(raw, field, lookup)) {
+            newErrors.push({
+              row: ri,
+              col: field,
+              idx: -1,
+              value: raw,
+              message: `${fieldLabel[field] || field} "${raw}" not found`,
+              resolved: false,
+            });
+          }
+        }
+      }
+
+      // Validate variant prices are numbers
+      const vpH = rMap["variant_price"];
+      if (vpH && row[vpH]?.trim()) {
+        const prices = splitComma(row[vpH]);
+        prices.forEach((p, idx) => {
+          if (isNaN(Number(p))) {
+            newErrors.push({
+              row: ri,
+              col: "variant_price",
+              idx,
+              value: p,
+              message: `Variant price "${p}" is not a valid number`,
+              resolved: false,
+            });
+          }
         });
       }
     });
@@ -427,9 +433,7 @@ const BulkProductUpload = () => {
   };
 
   // ── Get lookup options for a field ─────────────────────────
-  const getLookupOptions = (
-    col: string
-  ): { value: string; label: string }[] => {
+  const getLookupOptions = (col: string): { value: string; label: string }[] => {
     if (!lookup) return [];
     switch (col) {
       case "category":
@@ -441,20 +445,11 @@ const BulkProductUpload = () => {
       case "variant_size":
         return lookup.sizes.map((s) => ({ value: s.label, label: s.label }));
       case "variant_material":
-        return lookup.materials.map((m) => ({
-          value: m.name,
-          label: m.name,
-        }));
+        return lookup.materials.map((m) => ({ value: m.name, label: m.name }));
       case "size_guide":
-        return lookup.sizeGuides.map((s) => ({
-          value: s.name,
-          label: s.name,
-        }));
+        return lookup.sizeGuides.map((s) => ({ value: s.name, label: s.name }));
       case "care_instruction":
-        return lookup.careInstructions.map((c) => ({
-          value: c.name,
-          label: c.name,
-        }));
+        return lookup.careInstructions.map((c) => ({ value: c.name, label: c.name }));
       default:
         return [];
     }
@@ -481,9 +476,7 @@ const BulkProductUpload = () => {
     if (!lookup) return;
     const unresolvedErrors = errors.filter((e) => !e.resolved);
     if (unresolvedErrors.length > 0) {
-      toast.error(
-        `${unresolvedErrors.length} unresolved error(s). Fix all before importing.`
-      );
+      toast.error(`${unresolvedErrors.length} unresolved error(s). Fix all before importing.`);
       return;
     }
 
@@ -497,15 +490,28 @@ const BulkProductUpload = () => {
       if (sysK) rMap[sysK] = csvH;
     });
 
-    // Helper to get cell value (with resolved error override)
+    /** Get cell value, applying resolved error overrides for single-value fields */
     const getVal = (row: RowData, rowIdx: number, key: string): string => {
       const csvH = rMap[key];
       if (!csvH) return "";
-      const err = errors.find(
-        (e) => e.row === rowIdx && e.col === key && e.resolved
-      );
+      // For single-value fields, check resolved error
+      const err = errors.find((e) => e.row === rowIdx && e.col === key && e.idx === -1 && e.resolved);
       if (err?.resolvedValue) return err.resolvedValue;
       return row[csvH]?.trim() || "";
+    };
+
+    /** Get comma-separated values, applying resolved error overrides per index */
+    const getCommaVal = (row: RowData, rowIdx: number, key: string): string[] => {
+      const csvH = rMap[key];
+      if (!csvH) return [];
+      const raw = row[csvH]?.trim() || "";
+      if (!raw) return [];
+      const items = splitComma(raw);
+      // Apply per-index resolved errors
+      return items.map((item, idx) => {
+        const err = errors.find((e) => e.row === rowIdx && e.col === key && e.idx === idx && e.resolved);
+        return err?.resolvedValue || item;
+      });
     };
 
     // Helper to resolve category ID
@@ -520,92 +526,59 @@ const BulkProductUpload = () => {
         return sub?.id || parent?.id || null;
       }
       if (categoryName) {
-        return lookup.categories.find(
-          (c) => c.name.toLowerCase() === categoryName.toLowerCase()
-        )?.id || null;
+        return lookup.categories.find((c) => c.name.toLowerCase() === categoryName.toLowerCase())?.id || null;
       }
       return null;
     };
 
-    // Helper to resolve variant IDs
-    const resolveVariantIds = (colorName: string, sizeName: string, matName: string) => ({
-      colorId: colorName
-        ? lookup.colors.find((c) => c.name.toLowerCase() === colorName.toLowerCase())?.id || null
-        : null,
-      sizeId: sizeName
-        ? lookup.sizes.find((s) => s.label.toLowerCase() === sizeName.toLowerCase())?.id || null
-        : null,
-      matId: matName
-        ? lookup.materials.find((m) => m.name.toLowerCase() === matName.toLowerCase())?.id || null
-        : null,
-    });
-
-    // ── Group rows by Product Name ───────────────────────────
-    // Rows with the same product name are treated as one product with multiple variants.
-    // The first row defines the product details; subsequent rows only add variants.
-    const productGroups: Map<string, number[]> = new Map();
-    rows.forEach((row, i) => {
-      const name = getVal(row, i, "name").toLowerCase();
-      if (!name) return;
-      if (!productGroups.has(name)) {
-        productGroups.set(name, []);
-      }
-      productGroups.get(name)!.push(i);
-    });
-
     let successCount = 0;
     let failCount = 0;
-    let processedRows = 0;
 
-    for (const [, rowIndices] of productGroups) {
-      const firstIdx = rowIndices[0];
-      const firstRow = rows[firstIdx];
-
+    for (let ri = 0; ri < rows.length; ri++) {
+      const row = rows[ri];
       try {
-        // Use the first row for product-level data
-        const categoryId = resolveCategoryId(
-          getVal(firstRow, firstIdx, "category"),
-          getVal(firstRow, firstIdx, "subcategory")
-        );
-        const brandName = getVal(firstRow, firstIdx, "brand");
+        const categoryId = resolveCategoryId(getVal(row, ri, "category"), getVal(row, ri, "subcategory"));
+        const brandName = getVal(row, ri, "brand");
         const brandId = brandName
           ? lookup.brands.find((b) => b.name.toLowerCase() === brandName.toLowerCase())?.id || null
           : null;
-        const sgName = getVal(firstRow, firstIdx, "size_guide");
+        const sgName = getVal(row, ri, "size_guide");
         const sgId = sgName
           ? lookup.sizeGuides.find((s) => s.name.toLowerCase() === sgName.toLowerCase())?.id || null
           : null;
-        const ciName = getVal(firstRow, firstIdx, "care_instruction");
+        const ciName = getVal(row, ri, "care_instruction");
         const ciId = ciName
           ? lookup.careInstructions.find((c) => c.name.toLowerCase() === ciName.toLowerCase())?.id || null
           : null;
 
-        // If multiple rows share this name, it's a variable product
-        const hasMultipleRows = rowIndices.length > 1;
-        const anyRowHasVariant = rowIndices.some((ri) => {
-          const r = rows[ri];
-          return getVal(r, ri, "variant_color") || getVal(r, ri, "variant_size") || getVal(r, ri, "variant_material");
-        });
-        const explicitType = getVal(firstRow, firstIdx, "product_type");
-        const productType = explicitType || (hasMultipleRows || anyRowHasVariant ? "variable" : "simple");
-        const isActive = getVal(firstRow, firstIdx, "is_active").toLowerCase() !== "false";
-        const isFeatured = getVal(firstRow, firstIdx, "is_featured").toLowerCase() === "true";
+        // Determine product type from comma-separated variant fields
+        const colors = getCommaVal(row, ri, "variant_color");
+        const sizes = getCommaVal(row, ri, "variant_size");
+        const materials = getCommaVal(row, ri, "variant_material");
+        const variantSkus = getCommaVal(row, ri, "variant_sku");
+        const variantPrices = getCommaVal(row, ri, "variant_price");
+        const hasVariants = colors.length > 0 || sizes.length > 0 || materials.length > 0;
 
-        // Insert product (once per group)
+        const explicitType = getVal(row, ri, "product_type");
+        const productType = explicitType || (hasVariants ? "variable" : "simple");
+        const isActive = getVal(row, ri, "is_active").toLowerCase() !== "false";
+        const isFeatured = getVal(row, ri, "is_featured").toLowerCase() === "true";
+
+        // Insert product
         const { data: product, error: prodErr } = await supabase
           .from("products")
           .insert({
-            name: getVal(firstRow, firstIdx, "name"),
-            sku: getVal(firstRow, firstIdx, "sku") || undefined,
+            name: getVal(row, ri, "name"),
+            sku: getVal(row, ri, "sku") || `BULK-${Date.now()}-${ri}`,
             category_id: categoryId,
             brand_id: brandId,
-            short_description: getVal(firstRow, firstIdx, "short_description") || null,
-            full_description: getVal(firstRow, firstIdx, "full_description") || null,
-            base_price: Number(getVal(firstRow, firstIdx, "base_price")) || 0,
+            short_description: getVal(row, ri, "short_description") || null,
+            full_description: getVal(row, ri, "full_description") || null,
+            base_price: Number(getVal(row, ri, "base_price")) || 0,
             product_type: productType as "simple" | "variable",
             is_active: isActive,
             is_featured: isFeatured,
-            youtube_url: getVal(firstRow, firstIdx, "youtube_url") || null,
+            youtube_url: getVal(row, ri, "youtube_url") || null,
             size_guide_id: sgId,
             care_instruction_id: ciId,
           })
@@ -614,61 +587,59 @@ const BulkProductUpload = () => {
 
         if (prodErr) throw prodErr;
 
-        // Collect all unique image URLs across all rows of this product
-        const allImageUrls = new Set<string>();
-        for (const ri of rowIndices) {
-          const urls = getVal(rows[ri], ri, "image_urls");
-          if (urls) {
-            urls.split(",").map((u) => u.trim()).filter(Boolean).forEach((u) => allImageUrls.add(u));
-          }
-        }
-        let imgIdx = 0;
-        for (const url of allImageUrls) {
+        // Insert images (comma-separated URLs)
+        const imageUrls = getCommaVal(row, ri, "image_urls");
+        for (let imgIdx = 0; imgIdx < imageUrls.length; imgIdx++) {
           await supabase.from("product_images").insert({
             product_id: product.id,
-            image_url: url,
+            image_url: imageUrls[imgIdx],
             is_main: imgIdx === 0,
             sort_order: imgIdx,
           });
-          imgIdx++;
         }
 
-        // Insert variants from each row
-        for (const ri of rowIndices) {
-          const r = rows[ri];
-          const colorName = getVal(r, ri, "variant_color");
-          const sizeName = getVal(r, ri, "variant_size");
-          const matName = getVal(r, ri, "variant_material");
-          const hasVariantData = colorName || sizeName || matName;
+        // Insert variants by index
+        // The number of variants = max length among colors, sizes, materials
+        if (hasVariants) {
+          const variantCount = Math.max(colors.length, sizes.length, materials.length, variantSkus.length, variantPrices.length);
+          for (let vi = 0; vi < variantCount; vi++) {
+            const colorName = colors[vi] || "";
+            const sizeName = sizes[vi] || "";
+            const matName = materials[vi] || "";
 
-          if (hasVariantData) {
-            const { colorId, sizeId, matId } = resolveVariantIds(colorName, sizeName, matName);
+            const colorId = colorName
+              ? lookup.colors.find((c) => c.name.toLowerCase() === colorName.toLowerCase())?.id || null
+              : null;
+            const sizeId = sizeName
+              ? lookup.sizes.find((s) => s.label.toLowerCase() === sizeName.toLowerCase())?.id || null
+              : null;
+            const matId = matName
+              ? lookup.materials.find((m) => m.name.toLowerCase() === matName.toLowerCase())?.id || null
+              : null;
+
+            const vSku = variantSkus[vi] || `${getVal(row, ri, "sku") || "BULK"}-V${vi + 1}`;
+            const vPrice = Number(variantPrices[vi]) || Number(getVal(row, ri, "base_price")) || 0;
+
             await supabase.from("product_variants").insert({
               product_id: product.id,
               color_id: colorId,
               size_id: sizeId,
               material_id: matId,
-              sku: getVal(r, ri, "variant_sku") || undefined,
-              selling_price:
-                Number(getVal(r, ri, "variant_price")) ||
-                Number(getVal(firstRow, firstIdx, "base_price")) ||
-                0,
+              sku: vSku,
+              selling_price: vPrice,
               purchase_price: 0,
               is_active: true,
             });
           }
-
-          processedRows++;
-          setImportProgress(processedRows);
         }
 
         successCount++;
       } catch (err) {
         failCount++;
-        processedRows += rowIndices.length;
-        setImportProgress(processedRows);
-        console.error(`Product group failed (rows ${rowIndices.map((r) => r + 1).join(",")}):`, err);
+        console.error(`Row ${ri + 1} failed:`, err);
       }
+
+      setImportProgress(ri + 1);
     }
 
     // Invalidate queries
@@ -681,9 +652,7 @@ const BulkProductUpload = () => {
     if (failCount === 0) {
       toast.success(`All ${successCount} products imported successfully!`);
     } else {
-      toast.warning(
-        `${successCount} imported, ${failCount} failed. Check console for details.`
-      );
+      toast.warning(`${successCount} imported, ${failCount} failed. Check console for details.`);
     }
   };
 
@@ -709,30 +678,13 @@ const BulkProductUpload = () => {
 
   const unresolvedCount = errors.filter((e) => !e.resolved).length;
 
-  // ── Compute product groups for review display ──────────────
-  const productGroupMap = new Map<string, number[]>();
-  const nameHeader = reverseMap["name"];
-  if (nameHeader) {
-    rows.forEach((row, i) => {
-      const name = (row[nameHeader] || "").trim().toLowerCase();
-      if (!name) return;
-      if (!productGroupMap.has(name)) productGroupMap.set(name, []);
-      productGroupMap.get(name)!.push(i);
-    });
-  }
-  const uniqueProductCount = productGroupMap.size;
-  const multiVariantGroups = [...productGroupMap.values()].filter((g) => g.length > 1);
-  // Build a set of row indices that belong to multi-row groups (for highlighting)
-  const groupedRowSet = new Set<number>();
-  const rowGroupIndex = new Map<number, number>(); // row index → group number (for alternating colors)
-  let groupNum = 0;
-  for (const indices of multiVariantGroups) {
-    for (const idx of indices) {
-      groupedRowSet.add(idx);
-      rowGroupIndex.set(idx, groupNum);
-    }
-    groupNum++;
-  }
+  // Count variant info per row for display
+  const getVariantCount = (row: RowData, ri: number): number => {
+    const colors = reverseMap["variant_color"] ? splitComma(row[reverseMap["variant_color"]] || "").length : 0;
+    const sizes = reverseMap["variant_size"] ? splitComma(row[reverseMap["variant_size"]] || "").length : 0;
+    const materials = reverseMap["variant_material"] ? splitComma(row[reverseMap["variant_material"]] || "").length : 0;
+    return Math.max(colors, sizes, materials);
+  };
 
   // ── RENDER ─────────────────────────────────────────────────
   return (
@@ -754,11 +706,11 @@ const BulkProductUpload = () => {
             className="border-2 border-dashed border-border rounded-lg p-12 text-center cursor-pointer hover:border-primary/50 transition-colors"
           >
             <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-            <p className="text-sm font-medium">
-              Drop CSV or Excel file here, or click to browse
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Supports .csv, .xlsx, .xls
+            <p className="text-sm font-medium">Drop CSV or Excel file here, or click to browse</p>
+            <p className="text-xs text-muted-foreground mt-1">Supports .csv, .xlsx, .xls</p>
+            <p className="text-xs text-muted-foreground mt-2">
+              <span className="font-medium">Tip:</span> Use commas within cells for multiple variants
+              (e.g. Colors: "Red, Blue, Black")
             </p>
           </div>
 
@@ -779,33 +731,28 @@ const BulkProductUpload = () => {
             <div className="flex items-center gap-2">
               <FileSpreadsheet className="h-5 w-5 text-muted-foreground" />
               <span className="text-sm font-medium">{fileName}</span>
-              <Badge variant="secondary">{rows.length} rows</Badge>
+              <Badge variant="secondary">{rows.length} products</Badge>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={reset}>
-                Cancel
-              </Button>
-              <Button size="sm" onClick={proceedToReview}>
-                Continue to Review
-              </Button>
+              <Button variant="outline" size="sm" onClick={reset}>Cancel</Button>
+              <Button size="sm" onClick={proceedToReview}>Continue to Review</Button>
             </div>
           </div>
 
           <p className="text-sm text-muted-foreground">
-            Map each column from your file to the correct system field. Required
-            fields are marked with{" "}
+            Map each column from your file to the correct system field. Required fields are marked with{" "}
             <span className="text-destructive font-medium">*</span>
           </p>
 
+          <div className="bg-accent/30 border border-border rounded-lg p-3 text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">One row = one product.</span>{" "}
+            For variable products, use commas within cells for variant data. Example: Color cell = "Red, Blue, Black" creates 3 variants.
+          </div>
+
           <div className="border border-border rounded-lg divide-y divide-border">
             {headers.map((h) => (
-              <div
-                key={h}
-                className="flex items-center justify-between px-4 py-3"
-              >
-                <span className="text-sm font-medium truncate max-w-[200px]">
-                  {h}
-                </span>
+              <div key={h} className="flex items-center justify-between px-4 py-3">
+                <span className="text-sm font-medium truncate max-w-[200px]">{h}</span>
                 <Select
                   value={mapping[h] || "___unmapped___"}
                   onValueChange={(v) =>
@@ -819,13 +766,10 @@ const BulkProductUpload = () => {
                     <SelectValue placeholder="Skip this column" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="___unmapped___">
-                      — Skip —
-                    </SelectItem>
+                    <SelectItem value="___unmapped___">— Skip —</SelectItem>
                     {SYSTEM_FIELDS.map((sf) => (
                       <SelectItem key={sf.key} value={sf.key}>
-                        {sf.label}
-                        {sf.required ? " *" : ""}
+                        {sf.label}{sf.required ? " *" : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -841,42 +785,29 @@ const BulkProductUpload = () => {
         <div className="space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-3 flex-wrap">
-              <Badge variant="secondary">{rows.length} rows</Badge>
-              <Badge variant="outline">{uniqueProductCount} unique products</Badge>
-              {multiVariantGroups.length > 0 && (
-                <Badge variant="outline" className="gap-1">
-                  {multiVariantGroups.length} grouped (multi-variant)
-                </Badge>
-              )}
+              <Badge variant="secondary">{rows.length} products</Badge>
+              {(() => {
+                const variableCount = rows.filter((r, ri) => getVariantCount(r, ri) > 0).length;
+                return variableCount > 0 ? (
+                  <Badge variant="outline">{variableCount} variable, {rows.length - variableCount} simple</Badge>
+                ) : null;
+              })()}
               {unresolvedCount > 0 ? (
                 <Badge variant="destructive" className="gap-1">
                   <AlertCircle className="h-3 w-3" />
                   {unresolvedCount} issue{unresolvedCount > 1 ? "s" : ""}
                 </Badge>
               ) : (
-                <Badge
-                  variant="outline"
-                  className="gap-1 border-green-500 text-green-700"
-                >
+                <Badge variant="outline" className="gap-1 border-green-500 text-green-700">
                   <CheckCircle2 className="h-3 w-3" />
                   All clear
                 </Badge>
               )}
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setStep("mapping")}
-              >
-                Back
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleImport}
-                disabled={unresolvedCount > 0}
-              >
-                Import {uniqueProductCount} Products
+              <Button variant="outline" size="sm" onClick={() => setStep("mapping")}>Back</Button>
+              <Button size="sm" onClick={handleImport} disabled={unresolvedCount > 0}>
+                Import {rows.length} Products
               </Button>
             </div>
           </div>
@@ -897,23 +828,16 @@ const BulkProductUpload = () => {
                         : "bg-destructive/10 border border-destructive/20"
                     )}
                   >
-                    <span className="text-muted-foreground shrink-0">
-                      Row {err.row + 1}
-                    </span>
+                    <span className="text-muted-foreground shrink-0">Row {err.row + 1}</span>
                     <span className="truncate">{err.message}</span>
                     {!err.resolved && getLookupOptions(err.col).length > 0 ? (
-                      <Select
-                        value=""
-                        onValueChange={(v) => resolveError(ei, v)}
-                      >
+                      <Select value="" onValueChange={(v) => resolveError(ei, v)}>
                         <SelectTrigger className="w-40 h-8 shrink-0">
                           <SelectValue placeholder="Fix..." />
                         </SelectTrigger>
                         <SelectContent>
                           {getLookupOptions(err.col).map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </SelectItem>
+                            <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -933,103 +857,110 @@ const BulkProductUpload = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-10 sticky left-0 bg-muted/80 z-10">
-                    #
-                  </TableHead>
+                  <TableHead className="w-10 sticky left-0 bg-muted/80 z-10">#</TableHead>
                   {mappedSystemFields.map((f) => (
                     <TableHead key={f.key} className="min-w-[120px]">
-                      {f.label}
+                      <div className="flex items-center gap-1">
+                        {f.label}
+                        {COMMA_FIELDS.has(f.key) && (
+                          <span className="text-[10px] px-1 rounded bg-primary/10 text-primary font-medium">CSV</span>
+                        )}
+                      </div>
                     </TableHead>
                   ))}
+                  <TableHead className="w-20">Variants</TableHead>
                   <TableHead className="w-10" />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {rows.map((row, ri) => {
-                  const isGrouped = groupedRowSet.has(ri);
-                  const gIdx = rowGroupIndex.get(ri) ?? 0;
-                  const isFirstInGroup = isGrouped && (ri === 0 || rowGroupIndex.get(ri - 1) !== gIdx || !groupedRowSet.has(ri - 1));
+                  const vc = getVariantCount(row, ri);
                   return (
-                  <TableRow
-                    key={ri}
-                    className={cn(
-                      isGrouped && gIdx % 2 === 0 && "bg-primary/5",
-                      isGrouped && gIdx % 2 === 1 && "bg-accent/30"
-                    )}
-                  >
-                    <TableCell className="sticky left-0 bg-background z-10 text-muted-foreground text-xs">
-                      <div className="flex items-center gap-1">
+                    <TableRow key={ri}>
+                      <TableCell className="sticky left-0 bg-background z-10 text-muted-foreground text-xs">
                         {ri + 1}
-                        {isFirstInGroup && (
-                          <span className="text-[10px] px-1 rounded bg-primary/10 text-primary font-medium">
-                            GRP
-                          </span>
-                        )}
-                      </div>
-                    </TableCell>
-                    {mappedSystemFields.map((f) => {
-                      const csvH = reverseMap[f.key];
-                      const cellVal = row[csvH] || "";
-                      const hasError = errors.some(
-                        (e) => e.row === ri && e.col === f.key && !e.resolved
-                      );
-                      const resolvedErr = errors.find(
-                        (e) => e.row === ri && e.col === f.key && e.resolved
-                      );
-                      const isEditing =
-                        editCell?.row === ri && editCell?.col === f.key;
+                      </TableCell>
+                      {mappedSystemFields.map((f) => {
+                        const csvH = reverseMap[f.key];
+                        const cellVal = row[csvH] || "";
+                        const hasError = errors.some((e) => e.row === ri && e.col === f.key && !e.resolved);
+                        const resolvedErr = errors.find((e) => e.row === ri && e.col === f.key && e.resolved);
+                        const isEditing = editCell?.row === ri && editCell?.col === f.key;
+                        const isCommaField = COMMA_FIELDS.has(f.key);
 
-                      return (
-                        <TableCell
-                          key={f.key}
-                          className={cn(
-                            "relative",
-                            hasError && "bg-destructive/10",
-                            resolvedErr && "bg-green-50"
-                          )}
-                          onClick={() => setEditCell({ row: ri, col: f.key })}
-                        >
-                          {isEditing ? (
-                            <Input
-                              autoFocus
-                              className="h-7 text-xs"
-                              defaultValue={resolvedErr?.resolvedValue || cellVal}
-                              onBlur={(e) => {
-                                updateCell(ri, csvH, e.target.value);
-                                setEditCell(null);
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                  updateCell(
-                                    ri,
-                                    csvH,
-                                    (e.target as HTMLInputElement).value
-                                  );
+                        return (
+                          <TableCell
+                            key={f.key}
+                            className={cn(
+                              "relative",
+                              hasError && "bg-destructive/10",
+                              resolvedErr && "bg-green-50"
+                            )}
+                            onClick={() => setEditCell({ row: ri, col: f.key })}
+                          >
+                            {isEditing ? (
+                              <Input
+                                autoFocus
+                                className="h-7 text-xs"
+                                defaultValue={cellVal}
+                                onBlur={(e) => {
+                                  updateCell(ri, csvH, e.target.value);
                                   setEditCell(null);
-                                }
-                              }}
-                            />
-                          ) : (
-                            <span className="text-xs truncate block max-w-[200px]">
-                              {resolvedErr?.resolvedValue || cellVal || (
-                                <span className="text-muted-foreground">—</span>
-                              )}
-                            </span>
-                          )}
-                        </TableCell>
-                      );
-                    })}
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => deleteRow(ri)}
-                      >
-                        <Trash2 className="h-3 w-3 text-destructive" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    updateCell(ri, csvH, (e.target as HTMLInputElement).value);
+                                    setEditCell(null);
+                                  }
+                                }}
+                              />
+                            ) : isCommaField && cellVal ? (
+                              <div className="flex flex-wrap gap-1 max-w-[250px]">
+                                {splitComma(cellVal).map((item, idx) => {
+                                  const itemErr = errors.find(
+                                    (e) => e.row === ri && e.col === f.key && e.idx === idx && !e.resolved
+                                  );
+                                  const itemResolved = errors.find(
+                                    (e) => e.row === ri && e.col === f.key && e.idx === idx && e.resolved
+                                  );
+                                  return (
+                                    <span
+                                      key={idx}
+                                      className={cn(
+                                        "text-[11px] px-1.5 py-0.5 rounded",
+                                        itemErr
+                                          ? "bg-destructive/15 text-destructive border border-destructive/30"
+                                          : itemResolved
+                                          ? "bg-green-100 text-green-800 border border-green-300"
+                                          : "bg-muted text-muted-foreground"
+                                      )}
+                                    >
+                                      {itemResolved?.resolvedValue || item}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <span className="text-xs truncate block max-w-[200px]">
+                                {cellVal || <span className="text-muted-foreground">—</span>}
+                              </span>
+                            )}
+                          </TableCell>
+                        );
+                      })}
+                      <TableCell>
+                        {vc > 0 ? (
+                          <Badge variant="outline" className="text-[10px]">{vc} variants</Badge>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Simple</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteRow(ri)}>
+                          <Trash2 className="h-3 w-3 text-destructive" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
               </TableBody>
@@ -1042,15 +973,11 @@ const BulkProductUpload = () => {
       {step === "importing" && (
         <div className="flex flex-col items-center justify-center py-16 space-y-4">
           <Loader2 className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-sm font-medium">
-            Importing products... {importProgress} / {importTotal}
-          </p>
+          <p className="text-sm font-medium">Importing products... {importProgress} / {importTotal}</p>
           <div className="w-64 h-2 bg-muted rounded-full overflow-hidden">
             <div
               className="h-full bg-primary rounded-full transition-all"
-              style={{
-                width: `${importTotal > 0 ? (importProgress / importTotal) * 100 : 0}%`,
-              }}
+              style={{ width: `${importTotal > 0 ? (importProgress / importTotal) * 100 : 0}%` }}
             />
           </div>
         </div>
@@ -1061,9 +988,7 @@ const BulkProductUpload = () => {
         <div className="flex flex-col items-center justify-center py-16 space-y-4">
           <CheckCircle2 className="h-12 w-12 text-green-600" />
           <p className="text-lg font-medium">Import Complete</p>
-          <p className="text-sm text-muted-foreground">
-            {importProgress} products processed
-          </p>
+          <p className="text-sm text-muted-foreground">{importProgress} products processed</p>
           <Button onClick={reset}>Upload Another File</Button>
         </div>
       )}

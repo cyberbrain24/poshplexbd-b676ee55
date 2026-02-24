@@ -156,9 +156,6 @@ XL: Chest 42-44"`;
                 </div>
               );
             })()}
-            <p className="text-sm font-light text-muted-foreground">
-              All measurements are approximate. For detailed sizing information, please visit our <a href="/about/size-guide" className="underline hover:opacity-70">Size Guide</a> page.
-            </p>
           </div>
         )}
       </div>

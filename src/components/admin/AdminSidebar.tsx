@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, MouseEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { 
+import {
   Package, 
   Palette, 
   Ruler, 
@@ -32,6 +32,7 @@ import {
   Boxes,
   ArrowDownToLine,
   ArrowUpFromLine,
+  Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -59,6 +60,7 @@ const productManagementItems: NavItem[] = [
   { icon: Sparkles, label: "Care & Cleaning", path: "/admin/care-instructions" },
   { icon: FolderTree, label: "Categories", path: "/admin/categories" },
   { icon: Building2, label: "Brands", path: "/admin/brands" },
+  { icon: Upload, label: "Bulk Upload", path: "/admin/bulk-upload" },
 ];
 
 const orderItems: NavItem[] = [

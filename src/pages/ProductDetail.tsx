@@ -44,7 +44,7 @@ const ProductDetail = () => {
       <ProductSEO product={product} />
       <PoshplexHeader />
       
-      <main className="pt-1 lg:pt-8">
+      <main className="pt-1">
         <section className="w-full px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
             <ProductImageGallery 

@@ -10,8 +10,8 @@ import { toast } from "sonner";
 import { User, Package, LogOut, Key, Eye, EyeOff, Crown, MessageSquare, Camera, Pencil, ShoppingBag, Hash, Info, CalendarIcon } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { BirthDatePicker } from "@/components/ui/birth-date-picker";
 import PoshplexHeader from "@/components/header/PoshplexHeader";
 import PoshplexFooter from "@/components/footer/PoshplexFooter";
 import MyReviews from "@/components/account/MyReviews";
@@ -520,26 +520,11 @@ const CustomerAccount = () => {
                     </div>
                     <div>
                       <Label className="text-sm">Date of Birth</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn("w-full mt-1 justify-start text-left font-normal", !editForm.birthdate && "text-muted-foreground")}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {editForm.birthdate ? format(new Date(editForm.birthdate), "PPP") : "Pick a date"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={editForm.birthdate ? new Date(editForm.birthdate) : undefined}
-                            onSelect={(date) => setEditForm(f => ({ ...f, birthdate: date ? format(date, "yyyy-MM-dd") : "" }))}
-                            disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
+                      <BirthDatePicker
+                        value={editForm.birthdate ? new Date(editForm.birthdate) : undefined}
+                        onChange={(date) => setEditForm(f => ({ ...f, birthdate: date ? format(date, "yyyy-MM-dd") : "" }))}
+                        className="mt-1"
+                      />
                     </div>
                   </div>
 

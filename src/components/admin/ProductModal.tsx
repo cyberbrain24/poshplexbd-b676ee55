@@ -139,7 +139,45 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
   const handleSubmit = async () => {
     try {
       if (product) {
+        // 1. Update product info
         await updateProduct.mutateAsync({ id: product.id, data: formData });
+
+        // 2. Sync variants for existing product
+        const existingVariantIds = (product.variants || []).map(v => v.id);
+        const currentVariantIds = variants.filter(v => v.id).map(v => v.id!);
+
+        // Delete removed variants
+        const deletedIds = existingVariantIds.filter(id => !currentVariantIds.includes(id));
+        for (const id of deletedIds) {
+          await deleteVariant.mutateAsync(id);
+        }
+
+        // Update existing variants & add new ones
+        for (const variant of variants) {
+          if (variant.id && existingVariantIds.includes(variant.id)) {
+            // Update existing
+            await updateVariant.mutateAsync({
+              id: variant.id,
+              data: {
+                color_id: variant.color_id,
+                size_id: variant.size_id,
+                material_id: variant.material_id,
+                sku: variant.sku,
+                purchase_price: variant.purchase_price,
+                selling_price: variant.selling_price,
+                is_active: variant.is_active,
+                image_url: variant.image_url,
+              },
+            });
+          } else {
+            // Add new variant
+            await addVariant.mutateAsync({
+              productId: product.id,
+              variantData: variant,
+            });
+          }
+        }
+
         toast.success("Product updated successfully");
       } else {
         const newProduct = await createProduct.mutateAsync(formData);

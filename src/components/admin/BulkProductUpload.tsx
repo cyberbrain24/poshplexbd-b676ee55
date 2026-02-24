@@ -264,6 +264,11 @@ const BulkProductUpload = () => {
   // ── Parse file ─────────────────────────────────────────────
   const handleFile = useCallback(
     async (file: File) => {
+      // Reset all state for fresh upload
+      setErrors([]);
+      setEditCell(null);
+      setImportProgress(0);
+      setImportTotal(0);
       setFileName(file.name);
       const ext = file.name.split(".").pop()?.toLowerCase();
       let parsedHeaders: string[] = [];

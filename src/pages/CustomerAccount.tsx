@@ -227,6 +227,13 @@ const CustomerAccount = () => {
     try {
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
+
+      // Re-authenticate with the new password to maintain the session
+      const email = user?.email;
+      if (email) {
+        await supabase.auth.signInWithPassword({ email, password: newPassword });
+      }
+
       toast.success("Password updated successfully");
       setIsChangingPassword(false);
       setNewPassword("");

@@ -54,7 +54,7 @@ const ProductDetail = () => {
               selectedVariantImageUrl={selectedVariantImageUrl}
             />
             
-            <div className="lg:pl-12 mt-1.5 lg:mt-0 lg:sticky lg:top-6 lg:h-fit">
+            <div className="lg:pl-12 mt-1.5 lg:mt-0 lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto lg:scrollbar-hide">
               <ProductInfo 
                 product={product} 
                 isLoading={isLoading} 

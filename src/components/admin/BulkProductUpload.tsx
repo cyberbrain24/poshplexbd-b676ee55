@@ -621,7 +621,7 @@ const BulkProductUpload = () => {
           .from("products")
           .insert({
             name: getVal(row, ri, "name"),
-            sku: getVal(row, ri, "sku") || `BULK-${Date.now()}-${ri}`,
+            sku: getVal(row, ri, "sku") || "",
             category_id: categoryId,
             brand_id: brandId,
             short_description: getVal(row, ri, "short_description") || null,
@@ -669,7 +669,7 @@ const BulkProductUpload = () => {
               ? lookup.materials.find((m) => m.name.toLowerCase() === matName.toLowerCase())?.id || null
               : null;
 
-            const vSku = variantSkus[vi] || `${getVal(row, ri, "sku") || "BULK"}-V${vi + 1}`;
+            const vSku = variantSkus[vi] || "";
             const vPrice = Number(variantPrices[vi]) || Number(getVal(row, ri, "base_price")) || 0;
 
             await supabase.from("product_variants").insert({

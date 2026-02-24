@@ -36,6 +36,10 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
     }
     // Notify parent of variant-specific image
     onVariantImageChange?.(variant?.image_url || null);
+    // Scroll to top on desktop so user sees the image change
+    if (variant && window.innerWidth >= 1024) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }, [onColorChange, onVariantImageChange]);
 
   // Fallback data for static display

@@ -34,7 +34,7 @@ const MegaMenu = ({ activeItem, onMouseEnter, onMouseLeave }: MegaMenuProps) => 
           <div className="flex flex-col items-center">
             <div className="flex flex-wrap justify-center gap-4 w-full max-w-5xl">
               {subcategories.map((sub) => (
-                <Link
+                 <Link
                   key={sub.name}
                   to={sub.href}
                   className="group flex flex-col items-center gap-2 w-[100px]"
@@ -44,8 +44,11 @@ const MegaMenu = ({ activeItem, onMouseEnter, onMouseLeave }: MegaMenuProps) => 
                       <img
                         src={sub.image_url}
                         alt={sub.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        width={100}
+                        height={100}
                         loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">

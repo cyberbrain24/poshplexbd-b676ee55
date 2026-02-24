@@ -63,7 +63,10 @@ const CategorySection = () => {
                       <img
                         src={category.image_url || "/placeholder.svg"}
                         alt={category.name}
+                        width={100}
+                        height={100}
                         loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -93,20 +96,23 @@ const CategorySection = () => {
         <span className="text-6xl md:text-8xl font-black text-muted-foreground/30">01</span>
         <h2 className="text-2xl md:text-3xl font-black tracking-tight text-foreground uppercase">Shop by Category</h2>
       </div>
-      <div className="flex justify-center gap-6">
+      <div className="flex justify-center gap-4 md:gap-6">
         {mainCategories.map((category) => {
           const slug = category.name.toLowerCase().replace(/\s+/g, "-");
           return (
             <Link
               key={category.id}
               to={`/category/${slug}`}
-              className="block w-[140px] text-center group"
+              className="block w-[150px] lg:w-[200px] text-center group"
             >
               <div className="aspect-square overflow-hidden rounded-2xl bg-muted mx-auto" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.15), 0 -2px 6px rgba(0,0,0,0.06)' }}>
                 <img
                   src={category.image_url || "/placeholder.svg"}
                   alt={category.name}
+                  width={200}
+                  height={200}
                   loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
               </div>

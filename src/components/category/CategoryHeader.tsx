@@ -44,7 +44,7 @@ const CategoryHeader = ({ category, categorySlug }: CategoryHeaderProps) => {
       </h1>
 
       {subcategories.length > 0 && (
-        <div className="mt-0.5">
+        <div className="mt-0">
           {isMobile ? (
             <>
               <Carousel opts={{ align: "start", loop: false }} setApi={setApi} className="w-full">
@@ -81,29 +81,29 @@ const CategoryHeader = ({ category, categorySlug }: CategoryHeaderProps) => {
                 </CarouselContent>
               </Carousel>
               {canScrollNext && (
-                <div className="flex items-center justify-center gap-1.5 mt-2">
+                <div className="flex items-center justify-center gap-1.5 mt-1">
                   <span className="text-[10px] text-muted-foreground tracking-wider uppercase">Swipe</span>
                   <span className="text-muted-foreground text-xs">→</span>
                 </div>
               )}
             </>
           ) : (
-            <div className="flex flex-wrap justify-center gap-4">
+            <div className="flex flex-wrap justify-center gap-2.5">
               {subcategories.map((sub) => {
                 const slug = sub.name.toLowerCase().replace(/\s+/g, "-");
                 return (
                   <Link
                     key={sub.id}
                     to={`/category/${slug}`}
-                    className="group flex flex-col items-center gap-2 w-[120px]"
+                    className="group flex flex-col items-center gap-1 w-[104px]"
                   >
                     <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-muted" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.18)' }}>
                       {sub.image_url ? (
                         <img
                           src={sub.image_url}
                           alt={sub.name}
-                          width={120}
-                          height={120}
+                          width={104}
+                          height={104}
                           loading="lazy"
                           decoding="async"
                           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
@@ -112,7 +112,7 @@ const CategoryHeader = ({ category, categorySlug }: CategoryHeaderProps) => {
                         <div className="w-full h-full bg-muted" />
                       )}
                     </div>
-                    <span className="text-[10px] uppercase font-semibold tracking-wider text-foreground group-hover:text-primary transition-colors text-center leading-tight">
+                    <span className="text-[9px] uppercase font-semibold tracking-wider text-foreground group-hover:text-primary transition-colors text-center leading-tight">
                       {sub.name}
                     </span>
                   </Link>

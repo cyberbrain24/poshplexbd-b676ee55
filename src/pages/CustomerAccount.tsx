@@ -530,7 +530,7 @@ const CustomerAccount = () => {
 
                   {/* Address Section */}
                   <div className="border-t border-border pt-3 mt-3">
-                    <p className="text-sm font-medium mb-2">Address</p>
+                    <p className="text-sm font-medium mb-2">Shipping Address</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div className="sm:col-span-2">
                         <Label className="text-sm">Address</Label>
@@ -609,7 +609,7 @@ const CustomerAccount = () => {
 
                   {/* Address Display */}
                   <div className="border-t border-border pt-3">
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Address</p>
+                    <p className="text-sm font-medium text-muted-foreground mb-2">Shipping Address</p>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                       <div className="col-span-2">
                         <Label className="text-muted-foreground text-sm">Address</Label>

@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
-import { Link } from "react-router-dom";
 import PoshplexHeader from "@/components/header/PoshplexHeader";
 import PoshplexFooter from "@/components/footer/PoshplexFooter";
 
@@ -117,12 +116,6 @@ const Auth = () => {
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Loading..." : "Sign In"}
             </Button>
-
-            <div className="text-right">
-              <Link to="/forgot-password" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Forgot password?
-              </Link>
-            </div>
           </form>
         </div>
       </div>

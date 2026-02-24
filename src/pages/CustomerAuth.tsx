@@ -225,14 +225,6 @@ const CustomerAuth = () => {
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Loading..." : isLogin ? "Log In" : "Create Account"}
             </Button>
-
-            {isLogin && (
-              <div className="text-right">
-                <Link to="/forgot-password" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  Forgot password?
-                </Link>
-              </div>
-            )}
           </form>
 
           <div className="text-center space-y-4">

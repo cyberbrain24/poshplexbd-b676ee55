@@ -8,6 +8,7 @@ import { HelmetProvider } from "react-helmet-async";
 import ScrollToTop from "./components/ScrollToTop";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { CartProvider } from "./contexts/CartContext";
+import { FavoritesProvider } from "./contexts/FavoritesContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import MobileFooterNav from "./components/navigation/MobileFooterNav";
 import FacebookPixelTracker from "./components/tracking/FacebookPixelTracker";
@@ -32,6 +33,7 @@ import CustomerAccount from "./pages/CustomerAccount";
 import OrderTracking from "./pages/OrderTracking";
 import MyOrders from "./pages/MyOrders";
 const Membership = lazy(() => import("./pages/Membership"));
+const Favorites = lazy(() => import("./pages/Favorites"));
 
 // Admin pages - lazy loaded (separate chunk, never downloaded by storefront users)
 const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
@@ -86,79 +88,82 @@ const App = () => (
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
         <CartProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-          <BrowserRouter
-            future={{
-              v7_startTransition: true,
-              v7_relativeSplatPath: true,
-            }}
-          >
-            <ScrollToTop />
-            <FacebookPixelTracker />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/categories" element={<CategoryBrowser />} />
-              <Route path="/category/:category" element={<Category />} />
-              <Route path="/product/:productSlug" element={<ProductDetail />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/order-tracking" element={<OrderTracking />} />
-              <Route path="/my-orders" element={<MyOrders />} />
-              <Route path="/account" element={<CustomerAccount />} />
-              <Route path="/membership" element={<Suspense fallback={<LoadingFallback />}><Membership /></Suspense>} />
-              <Route path="/pages/our-story" element={<Suspense fallback={<LoadingFallback />}><OurStory /></Suspense>} />
-              <Route path="/pages/store-locator" element={<Suspense fallback={<LoadingFallback />}><StoreLocator /></Suspense>} />
-              <Route path="/pages/privacy-policy" element={<Suspense fallback={<LoadingFallback />}><PrivacyPolicy /></Suspense>} />
-              <Route path="/pages/terms-conditions" element={<Suspense fallback={<LoadingFallback />}><TermsConditions /></Suspense>} />
-              <Route path="/pages/shipping-delivery" element={<Suspense fallback={<LoadingFallback />}><ShippingDelivery /></Suspense>} />
-              <Route path="/about/*" element={<Suspense fallback={<LoadingFallback />}><OurStory /></Suspense>} />
-              <Route path="/privacy-policy" element={<Suspense fallback={<LoadingFallback />}><PrivacyPolicy /></Suspense>} />
-              <Route path="/terms-of-service" element={<Suspense fallback={<LoadingFallback />}><TermsConditions /></Suspense>} />
-              <Route path="/shipping-delivery" element={<Suspense fallback={<LoadingFallback />}><ShippingDelivery /></Suspense>} />
-              <Route path="/auth" element={<Suspense fallback={<LoadingFallback />}><Auth /></Suspense>} />
-              <Route path="/login" element={<CustomerAuth />} />
-              
-              {/* Admin Routes - Lazy loaded */}
-              <Route path="/admin" element={
-                <ProtectedRoute>
-                  <Suspense fallback={<LoadingFallback />}>
-                    <AdminLayout />
-                  </Suspense>
-                </ProtectedRoute>
-              }>
-                <Route index element={<AdminDashboard />} />
-                <Route path="products" element={<AdminProducts />} />
-                <Route path="reviews" element={<AdminReviews />} />
-                <Route path="media" element={<AdminMedia />} />
-                <Route path="colors" element={<AdminColors />} />
-                <Route path="sizes" element={<AdminSizes />} />
-                <Route path="materials" element={<AdminMaterials />} />
-                <Route path="size-guides" element={<AdminSizeGuides />} />
-                <Route path="care-instructions" element={<AdminCareInstructions />} />
-                <Route path="categories" element={<AdminCategories />} />
-                <Route path="brands" element={<AdminBrands />} />
-                <Route path="accounts" element={<AdminAccounts />} />
-                <Route path="accounts-list" element={<AdminAccountsList />} />
-                <Route path="income-categories" element={<AdminIncomeCategories />} />
-                <Route path="expense-categories" element={<AdminExpenseCategories />} />
-                <Route path="customers" element={<AdminCustomers />} />
-                <Route path="divisions" element={<AdminDivisions />} />
-                <Route path="thanas" element={<AdminThanas />} />
-                <Route path="customer-types" element={<AdminCustomerTypes />} />
-                <Route path="orders" element={<AdminOrders />} />
-                <Route path="payment-methods" element={<AdminPaymentMethods />} />
-                <Route path="promo-codes" element={<AdminPromoCodes />} />
-                <Route path="inventory-in" element={<AdminInventoryIn />} />
-                <Route path="inventory-out" element={<AdminInventoryOut />} />
-                <Route path="site-settings" element={<AdminSiteSettings />} />
-              </Route>
-              
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <MobileFooterNav />
-          </BrowserRouter>
-          </TooltipProvider>
+          <FavoritesProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter
+                future={{
+                  v7_startTransition: true,
+                  v7_relativeSplatPath: true,
+                }}
+              >
+                <ScrollToTop />
+                <FacebookPixelTracker />
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/categories" element={<CategoryBrowser />} />
+                  <Route path="/category/:category" element={<Category />} />
+                  <Route path="/product/:productSlug" element={<ProductDetail />} />
+                  <Route path="/checkout" element={<Checkout />} />
+                  <Route path="/order-tracking" element={<OrderTracking />} />
+                  <Route path="/my-orders" element={<MyOrders />} />
+                  <Route path="/account" element={<CustomerAccount />} />
+                  <Route path="/favorites" element={<Suspense fallback={<LoadingFallback />}><Favorites /></Suspense>} />
+                  <Route path="/membership" element={<Suspense fallback={<LoadingFallback />}><Membership /></Suspense>} />
+                  <Route path="/pages/our-story" element={<Suspense fallback={<LoadingFallback />}><OurStory /></Suspense>} />
+                  <Route path="/pages/store-locator" element={<Suspense fallback={<LoadingFallback />}><StoreLocator /></Suspense>} />
+                  <Route path="/pages/privacy-policy" element={<Suspense fallback={<LoadingFallback />}><PrivacyPolicy /></Suspense>} />
+                  <Route path="/pages/terms-conditions" element={<Suspense fallback={<LoadingFallback />}><TermsConditions /></Suspense>} />
+                  <Route path="/pages/shipping-delivery" element={<Suspense fallback={<LoadingFallback />}><ShippingDelivery /></Suspense>} />
+                  <Route path="/about/*" element={<Suspense fallback={<LoadingFallback />}><OurStory /></Suspense>} />
+                  <Route path="/privacy-policy" element={<Suspense fallback={<LoadingFallback />}><PrivacyPolicy /></Suspense>} />
+                  <Route path="/terms-of-service" element={<Suspense fallback={<LoadingFallback />}><TermsConditions /></Suspense>} />
+                  <Route path="/shipping-delivery" element={<Suspense fallback={<LoadingFallback />}><ShippingDelivery /></Suspense>} />
+                  <Route path="/auth" element={<Suspense fallback={<LoadingFallback />}><Auth /></Suspense>} />
+                  <Route path="/login" element={<CustomerAuth />} />
+                  
+                  {/* Admin Routes - Lazy loaded */}
+                  <Route path="/admin" element={
+                    <ProtectedRoute>
+                      <Suspense fallback={<LoadingFallback />}>
+                        <AdminLayout />
+                      </Suspense>
+                    </ProtectedRoute>
+                  }>
+                    <Route index element={<AdminDashboard />} />
+                    <Route path="products" element={<AdminProducts />} />
+                    <Route path="reviews" element={<AdminReviews />} />
+                    <Route path="media" element={<AdminMedia />} />
+                    <Route path="colors" element={<AdminColors />} />
+                    <Route path="sizes" element={<AdminSizes />} />
+                    <Route path="materials" element={<AdminMaterials />} />
+                    <Route path="size-guides" element={<AdminSizeGuides />} />
+                    <Route path="care-instructions" element={<AdminCareInstructions />} />
+                    <Route path="categories" element={<AdminCategories />} />
+                    <Route path="brands" element={<AdminBrands />} />
+                    <Route path="accounts" element={<AdminAccounts />} />
+                    <Route path="accounts-list" element={<AdminAccountsList />} />
+                    <Route path="income-categories" element={<AdminIncomeCategories />} />
+                    <Route path="expense-categories" element={<AdminExpenseCategories />} />
+                    <Route path="customers" element={<AdminCustomers />} />
+                    <Route path="divisions" element={<AdminDivisions />} />
+                    <Route path="thanas" element={<AdminThanas />} />
+                    <Route path="customer-types" element={<AdminCustomerTypes />} />
+                    <Route path="orders" element={<AdminOrders />} />
+                    <Route path="payment-methods" element={<AdminPaymentMethods />} />
+                    <Route path="promo-codes" element={<AdminPromoCodes />} />
+                    <Route path="inventory-in" element={<AdminInventoryIn />} />
+                    <Route path="inventory-out" element={<AdminInventoryOut />} />
+                    <Route path="site-settings" element={<AdminSiteSettings />} />
+                  </Route>
+                  
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+                <MobileFooterNav />
+              </BrowserRouter>
+            </TooltipProvider>
+          </FavoritesProvider>
         </CartProvider>
       </QueryClientProvider>
     </HelmetProvider>

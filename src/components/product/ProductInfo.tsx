@@ -10,10 +10,12 @@ import {
   BreadcrumbSeparator 
 } from "@/components/ui/breadcrumb";
 import { Minus, Plus } from "lucide-react";
+import FavoriteButton from "./FavoriteButton";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Product, ProductVariant } from "@/types/product";
 import VariantSelector from "./VariantSelector";
 import { useCart } from "@/contexts/CartContext";
+import { generateProductSlug } from "@/lib/slug";
 import { toast } from "sonner";
 import { trackAddToCart } from "@/services/facebook-pixel.service";
 
@@ -153,12 +155,24 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
             <p className="text-sm font-light text-muted-foreground mb-1 hidden lg:block">{categoryName}</p>
             <h1 className="text-lg md:text-2xl font-light text-foreground">{productName}</h1>
           </div>
-          <div className="text-right">
-            <p className="text-xl font-light text-foreground">৳{displayPrice.toLocaleString()}</p>
-            {selectedVariant && selectedVariant.selling_price !== basePrice && (
-              <p className="text-sm font-light text-muted-foreground line-through">
-                ৳{basePrice.toLocaleString()}
-              </p>
+          <div className="flex items-start gap-2">
+            <div className="text-right">
+              <p className="text-xl font-light text-foreground">৳{displayPrice.toLocaleString()}</p>
+              {selectedVariant && selectedVariant.selling_price !== basePrice && (
+                <p className="text-sm font-light text-muted-foreground line-through">
+                  ৳{basePrice.toLocaleString()}
+                </p>
+              )}
+            </div>
+            {product && (
+              <FavoriteButton
+                productId={product.id}
+                name={productName}
+                price={displayPrice}
+                image={product.images?.find(img => img.is_main)?.image_url || product.images?.[0]?.image_url || '/placeholder.svg'}
+                slug={generateProductSlug(product.name, product.id)}
+                size={20}
+              />
             )}
           </div>
         </div>

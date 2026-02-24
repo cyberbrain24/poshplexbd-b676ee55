@@ -1,11 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, LayoutGrid, ShoppingBag, User } from "lucide-react";
+import { Home, LayoutGrid, Heart, ShoppingBag, User } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
+import { useFavorites } from "@/contexts/FavoritesContext";
 import { cn } from "@/lib/utils";
 
 const MobileFooterNav = () => {
   const location = useLocation();
   const { cartCount } = useCart();
+  const { favCount } = useFavorites();
 
   // Don't show on admin pages or checkout
   const hiddenPaths = ["/admin", "/checkout", "/auth"];
@@ -25,6 +27,12 @@ const MobileFooterNav = () => {
       icon: LayoutGrid,
       label: "Category",
       path: "/categories",
+    },
+    {
+      icon: Heart,
+      label: "Favorites",
+      path: "/favorites",
+      badge: favCount > 0 ? favCount : undefined,
     },
     {
       icon: ShoppingBag,

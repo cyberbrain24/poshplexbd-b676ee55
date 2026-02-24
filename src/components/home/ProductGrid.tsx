@@ -3,6 +3,7 @@ import { ShoppingBag, ArrowRight } from "lucide-react";
 import { useHomepageProducts } from "@/hooks/useHomepageProducts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { generateProductSlug } from "@/lib/slug";
+import FavoriteButton from "@/components/product/FavoriteButton";
 
 const ProductGrid = () => {
   const { data: products, isLoading } = useHomepageProducts();
@@ -116,10 +117,19 @@ const ProductGrid = () => {
                 {String(index + 1).padStart(2, '0')}
               </span>
               
-              <div className="absolute top-0 left-0">
+              <div className="absolute top-0 left-0 flex items-center justify-between w-full">
                 <span className="inline-block bg-foreground text-background px-2 py-1 text-[9px] font-bold tracking-[0.15em] uppercase">
                   New
                 </span>
+                <FavoriteButton
+                  productId={product.id}
+                  name={product.name}
+                  price={product.base_price}
+                  image={getMainImage(product)}
+                  slug={generateProductSlug(product.name, product.id)}
+                  className="bg-background/70 backdrop-blur-sm"
+                  size={14}
+                />
               </div>
 
               <button 

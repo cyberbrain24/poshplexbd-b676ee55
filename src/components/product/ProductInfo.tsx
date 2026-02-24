@@ -119,12 +119,10 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
     <div className="space-y-2">
       {/* Product title and price */}
       <div className="space-y-1">
-        <div className="flex justify-between items-start">
-          <div>
-            <p className="text-sm font-light text-muted-foreground mb-1 hidden lg:block">{categoryName}</p>
-            <h1 className="text-lg md:text-2xl font-light text-foreground">{productName}</h1>
-          </div>
-          <div className="flex items-start gap-2">
+        <p className="text-sm font-light text-muted-foreground mb-1 hidden lg:block">{categoryName}</p>
+        <div className="flex justify-between items-center">
+          <h1 className="text-lg md:text-2xl font-light text-foreground">{productName}</h1>
+          <div className="flex items-center gap-2">
             <div className="text-right">
               <p className="text-xl font-light text-foreground">৳{displayPrice.toLocaleString()}</p>
               {selectedVariant && selectedVariant.selling_price !== basePrice && (

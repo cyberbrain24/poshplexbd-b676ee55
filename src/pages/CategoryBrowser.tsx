@@ -73,10 +73,14 @@ const CategoryBrowser = () => {
                       : "opacity-90 scale-100"
                   )}
                 >
-                  {cat.image_url ? (
+                {cat.image_url ? (
                     <img
                       src={cat.image_url}
                       alt={cat.name}
+                      width={100}
+                      height={100}
+                      loading="eager"
+                      decoding="async"
                       className="absolute inset-0 w-full h-full object-cover"
                     />
                   ) : (
@@ -126,6 +130,10 @@ const CategoryBrowser = () => {
                       <img
                         src={sub.image_url}
                         alt={sub.name}
+                        width={100}
+                        height={100}
+                        loading="lazy"
+                        decoding="async"
                         className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
                     ) : (

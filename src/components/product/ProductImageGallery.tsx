@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import ImageZoom from "./ImageZoom";
 import { Product } from "@/types/product";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PRESET_SIZES } from "@/components/ui/responsive-image";
 
 interface ProductImageGalleryProps {
   product?: Product | null;
@@ -125,6 +126,12 @@ const ProductImageGallery = ({ product, isLoading, selectedColorId, selectedVari
               <img
                 src={image}
                 alt={`Product view ${index + 1}`}
+                sizes={PRESET_SIZES.detail.sizes}
+                width={PRESET_SIZES.detail.widths.desktop}
+                height={PRESET_SIZES.detail.widths.desktop}
+                loading={index === 0 ? "eager" : "lazy"}
+                decoding="async"
+                fetchPriority={index === 0 ? "high" : "auto"}
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
               />
             </div>
@@ -158,6 +165,12 @@ const ProductImageGallery = ({ product, isLoading, selectedColorId, selectedVari
             <img
               src={productImages[currentImageIndex]}
               alt={`Product view ${currentImageIndex + 1}`}
+              sizes={PRESET_SIZES.detail.sizes}
+              width={PRESET_SIZES.detail.widths.tablet}
+              height={PRESET_SIZES.detail.widths.tablet}
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 select-none"
             />
           </div>

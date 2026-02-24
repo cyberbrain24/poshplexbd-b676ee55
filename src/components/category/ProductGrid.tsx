@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { generateProductSlug } from "@/lib/slug";
 import FavoriteButton from "@/components/product/FavoriteButton";
+import { ResponsiveImage } from "@/components/ui/responsive-image";
 import type { SortOption, ProductFilters } from "./FilterSortBar";
 
 interface ProductGridProps {
@@ -78,19 +79,21 @@ const ProductGrid = ({ sortBy = "newest", filters }: ProductGridProps) => {
               <Card className="border-none shadow-none bg-transparent group cursor-pointer">
                 <CardContent className="p-0">
                   <div className="aspect-square mb-3 overflow-hidden bg-muted/10 relative">
-                    <img
+                    <ResponsiveImage
                       src={getMainImage(product)}
                       alt={product.name}
-                      className={`w-full h-full object-cover transition-all duration-300 ${hoverImage ? 'group-hover:opacity-0' : ''}`}
+                      preset="grid"
+                      className={`w-full h-full transition-all duration-300 ${hoverImage ? 'group-hover:opacity-0' : ''}`}
                     />
                     {hoverImage && (
-                      <img
+                      <ResponsiveImage
                         src={hoverImage}
                         alt={`${product.name} alternate`}
-                        className="absolute inset-0 w-full h-full object-cover transition-all duration-300 opacity-0 group-hover:opacity-100"
+                        preset="grid"
+                        className="absolute inset-0 w-full h-full transition-all duration-300 opacity-0 group-hover:opacity-100"
                       />
                     )}
-                    <div className="absolute inset-0 bg-black/[0.03]"></div>
+                    <div className="absolute inset-0 bg-black/[0.03] pointer-events-none"></div>
                     {/* Favorite button */}
                     <div className="absolute top-2 right-2 z-10">
                       <FavoriteButton

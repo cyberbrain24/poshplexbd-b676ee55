@@ -56,7 +56,7 @@ const SYSTEM_FIELDS = [
   { key: "variant_size", label: "Variant Size", required: false },
   { key: "variant_material", label: "Variant Material", required: false },
   { key: "variant_sku", label: "Variant SKU", required: false },
-  { key: "variant_price", label: "Variant Price", required: false },
+  
 ] as const;
 
 type SystemFieldKey = (typeof SYSTEM_FIELDS)[number]["key"];
@@ -68,7 +68,6 @@ const COMMA_FIELDS = new Set<string>([
   "variant_size",
   "variant_material",
   "variant_sku",
-  "variant_price",
 ]);
 
 interface RowData {
@@ -169,7 +168,6 @@ const BulkProductUpload = () => {
       "M, L, XL, XXL",                           // Variant Size (comma)
       "100% Cotton, 100% Cotton, 100% Cotton, 100% Cotton", // Variant Material (comma)
       "DRP-001-BK, DRP-001-WH, DRP-001-CR, DRP-001-MR", // Variant SKU (comma)
-      "1290, 1290, 1350, 1350",                  // Variant Price (comma)
     ];
 
     // Row 2: Another variable product with 3 variants
@@ -193,7 +191,6 @@ const BulkProductUpload = () => {
       "M, L, XL",                                // Variant Size
       "French Terry, French Terry, French Terry", // Variant Material
       "BGJ-001-BK, BGJ-001-CF, BGJ-001-BG",     // Variant SKU
-      "1490, 1490, 1590",                        // Variant Price
     ];
 
     // Row 3: Simple product (no variants)
@@ -217,7 +214,6 @@ const BulkProductUpload = () => {
       "",                                        // Variant Size
       "",                                        // Variant Material
       "",                                        // Variant SKU
-      "",                                        // Variant Price
     ];
 
     // Row 4: Combo product
@@ -241,7 +237,6 @@ const BulkProductUpload = () => {
       "M, L, XL",                                // Variant Size
       "100% Cotton, 100% Cotton, 100% Cotton",   // Variant Material
       "CMB-001-BK, CMB-001-WH, CMB-001-CR",     // Variant SKU
-      "2490, 2490, 2590",                        // Variant Price
     ];
 
     const csvContent = [templateHeaders, row1, row2, row3, row4]
@@ -457,23 +452,6 @@ const BulkProductUpload = () => {
         }
       }
 
-      // Validate variant prices are numbers
-      const vpH = rMap["variant_price"];
-      if (vpH && row[vpH]?.trim()) {
-        const prices = splitComma(row[vpH]);
-        prices.forEach((p, idx) => {
-          if (isNaN(Number(p))) {
-            newErrors.push({
-              row: ri,
-              col: "variant_price",
-              idx,
-              value: p,
-              message: `Variant price "${p}" is not a valid number`,
-              resolved: false,
-            });
-          }
-        });
-      }
     });
 
     setErrors(newErrors);
@@ -613,7 +591,7 @@ const BulkProductUpload = () => {
         const sizes = getCommaVal(row, ri, "variant_size");
         const materials = getCommaVal(row, ri, "variant_material");
         const variantSkus = getCommaVal(row, ri, "variant_sku");
-        const variantPrices = getCommaVal(row, ri, "variant_price");
+        
         const hasVariants = colors.length > 0 || sizes.length > 0 || materials.length > 0;
 
         const explicitType = getVal(row, ri, "product_type");

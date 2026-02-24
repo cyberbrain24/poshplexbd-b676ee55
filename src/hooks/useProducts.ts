@@ -174,6 +174,7 @@ export const useCreateProduct = () => {
           size_guide_id: productData.size_guide_id || null,
           care_instruction_id: productData.care_instruction_id || null,
           is_active: productData.is_active,
+          is_featured: productData.is_featured,
         })
         .select()
         .single();
@@ -212,6 +213,7 @@ export const useUpdateProduct = () => {
           size_guide_id: productData.size_guide_id || null,
           care_instruction_id: productData.care_instruction_id || null,
           is_active: productData.is_active,
+          is_featured: productData.is_featured,
         })
         .eq("id", id)
         .select()
@@ -224,6 +226,7 @@ export const useUpdateProduct = () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["products-list"] });
       queryClient.invalidateQueries({ queryKey: ["category-products-optimized"] });
+      queryClient.invalidateQueries({ queryKey: ["featured-products"] });
     },
   });
 };

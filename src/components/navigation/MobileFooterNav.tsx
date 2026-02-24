@@ -33,6 +33,7 @@ const MobileFooterNav = () => {
       label: "Favorites",
       path: "/favorites",
       badge: favCount > 0 ? favCount : undefined,
+      filled: true,
     },
     {
       icon: ShoppingBag,
@@ -65,13 +66,15 @@ const MobileFooterNav = () => {
                 to={item.path}
                 className={cn(
                   "flex flex-col items-center justify-center flex-1 h-full py-2 transition-colors",
-                  isActive
-                    ? "text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
+                  item.filled
+                    ? "text-red-500"
+                    : isActive
+                      ? "text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 <div className="relative">
-                  <Icon className="h-5 w-5" strokeWidth={1.5} />
+                  <Icon className="h-5 w-5" strokeWidth={1.5} fill={item.filled ? "currentColor" : "none"} />
                   {item.badge && (
                     <span className="absolute -top-1.5 -right-2 bg-foreground text-background text-[10px] font-medium rounded-full h-4 min-w-4 flex items-center justify-center px-1">
                       {item.badge > 99 ? "99+" : item.badge}

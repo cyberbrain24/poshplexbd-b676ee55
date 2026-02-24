@@ -1,11 +1,13 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, User, ShoppingBag as ShoppingBagIcon } from "lucide-react";
+import { lazy, Suspense } from "react";
 import AnnouncementBar from "./AnnouncementBar";
 import MegaMenu from "./MegaMenu";
-import MobileMenu from "./MobileMenu";
 import ShoppingBag from "./ShoppingBag";
 import SearchOverlay from "./SearchOverlay";
+
+const MobileMenu = lazy(() => import("./MobileMenu"));
 import { useCategories } from "@/hooks/useMasterData";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -220,12 +222,13 @@ const PoshplexHeader = () => {
       {isSearchOpen && <SearchOverlay onClose={() => setIsSearchOpen(false)} />}
 
       {/* Mobile menu */}
-      {isMobileMenuOpen && (
-        <MobileMenu 
-          navItems={navItems} 
-          onClose={() => setIsMobileMenuOpen(false)} 
+      <Suspense fallback={null}>
+        <MobileMenu
+          navItems={navItems}
+          isOpen={isMobileMenuOpen}
+          onClose={() => setIsMobileMenuOpen(false)}
         />
-      )}
+      </Suspense>
 
       {/* Shopping bag slide-out */}
       <ShoppingBag

@@ -1,6 +1,7 @@
-import { Link } from "react-router-dom";
-import { ChevronDown } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
+import { X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface SubcategoryItem {
   name: string;
@@ -17,49 +18,116 @@ interface MobileMenuProps {
       featured: { name: string; href: string }[];
     };
   }[];
+  isOpen: boolean;
   onClose: () => void;
 }
 
-const MobileMenu = ({ navItems, onClose }: MobileMenuProps) => {
-  const [expandedItem, setExpandedItem] = useState<string | null>(null);
+const MobileMenu = ({ navItems, isOpen, onClose }: MobileMenuProps) => {
+  const [activeCategory, setActiveCategory] = useState<string | null>(
+    navItems.length > 0 ? navItems[0].name : null
+  );
+
+  const activeSubs =
+    navItems.find((i) => i.name === activeCategory)?.submenu.subcategories ?? [];
 
   return (
-    <div className="lg:hidden absolute top-full left-0 right-0 bg-background border-b border-border z-50 max-h-[80vh] overflow-y-auto">
-      <div className="px-6 py-6">
-        <div className="space-y-4">
-          {navItems.map((item) => (
-            <div key={item.name} className="border-b border-border pb-4">
-              <button
-                className="flex items-center justify-between w-full text-foreground text-sm font-medium tracking-wider"
-                onClick={() => setExpandedItem(expandedItem === item.name ? null : item.name)}
-              >
-                {item.name}
-                <ChevronDown 
-                  size={16} 
-                  className={`transition-transform ${expandedItem === item.name ? 'rotate-180' : ''}`}
-                  strokeWidth={1.5}
-                />
-              </button>
-              
-              {expandedItem === item.name && (
-                <div className="mt-4 pl-4 space-y-3">
-                  {item.submenu.subcategories.map((sub) => (
-                    <Link
-                      key={sub.name}
-                      to={sub.href}
-                      className="block text-muted-foreground hover:text-foreground text-sm tracking-wide"
-                      onClick={onClose}
-                    >
+    <>
+      {/* Overlay */}
+      <div
+        className={cn(
+          "fixed inset-0 z-[60] bg-black/50 transition-opacity duration-300",
+          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+        )}
+        onClick={onClose}
+        aria-hidden
+      />
+
+      {/* Panel */}
+      <div
+        className={cn(
+          "fixed top-0 right-0 z-[70] h-full w-[85vw] max-w-[420px] bg-background shadow-2xl",
+          "flex flex-col transition-transform duration-300 ease-out",
+          isOpen ? "translate-x-0" : "translate-x-full"
+        )}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 h-14 border-b border-border shrink-0">
+          <span className="text-sm font-semibold tracking-wider text-foreground uppercase">
+            Menu
+          </span>
+          <button
+            onClick={onClose}
+            className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="Close menu"
+          >
+            <X size={20} strokeWidth={1.5} />
+          </button>
+        </div>
+
+        {/* Body — split layout */}
+        <div className="flex flex-1 min-h-0">
+          {/* Left: Category list */}
+          <nav className="w-[110px] shrink-0 border-r border-border overflow-y-auto py-3">
+            {navItems.map((item) => {
+              const isActive = item.name === activeCategory;
+              return (
+                <button
+                  key={item.name}
+                  onClick={() => setActiveCategory(item.name)}
+                  className={cn(
+                    "w-full text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wider transition-colors",
+                    isActive
+                      ? "bg-accent text-accent-foreground border-l-2 border-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  )}
+                >
+                  {item.name}
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Right: Subcategory grid */}
+          <div className="flex-1 overflow-y-auto p-3">
+            {activeSubs.length > 0 ? (
+              <div className="grid grid-cols-3 gap-2">
+                {activeSubs.map((sub) => (
+                  <Link
+                    key={sub.name}
+                    to={sub.href}
+                    onClick={onClose}
+                    className="flex flex-col items-center gap-1.5 group"
+                  >
+                    <div className="relative w-full aspect-square rounded-lg overflow-hidden bg-muted">
+                      {sub.image_url ? (
+                        <img
+                          src={sub.image_url}
+                          alt={sub.name}
+                          width={100}
+                          height={100}
+                          loading="lazy"
+                          decoding="async"
+                          className="absolute inset-0 w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-muted" />
+                      )}
+                    </div>
+                    <span className="text-[9px] font-semibold uppercase tracking-wider text-center text-foreground leading-tight line-clamp-2">
                       {sub.name}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground text-xs mt-8">
+                No subcategories
+              </p>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

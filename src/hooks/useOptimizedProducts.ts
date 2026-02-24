@@ -257,10 +257,18 @@ export const useOptimizedCategoryProducts = (
         .select("id", { count: "exact", head: true })
         .eq("is_active", true);
 
-      // Apply category filter
+      // Apply category filter via junction table (product_categories)
       if (categoryIds.length > 0) {
-        query = query.in("category_id", categoryIds);
-        countQuery = countQuery.in("category_id", categoryIds);
+        const { data: pcData } = await supabase
+          .from("product_categories")
+          .select("product_id")
+          .in("category_id", categoryIds);
+        const catProductIds = [...new Set((pcData || []).map((r) => r.product_id))];
+        if (catProductIds.length === 0) {
+          return { products: [], totalCount: 0, nextPage: pageParam + 1 };
+        }
+        query = query.in("id", catProductIds);
+        countQuery = countQuery.in("id", catProductIds);
       }
 
       // Apply variant-based product filter

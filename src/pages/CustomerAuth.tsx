@@ -22,7 +22,7 @@ const CustomerAuth = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const redirectPath = (location.state as any)?.from || "/my-orders";
+  const redirectPath = (location.state as any)?.from || "/account";
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {

@@ -22,6 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Upload,
   Download,
@@ -30,6 +31,7 @@ import {
   AlertCircle,
   Loader2,
   Trash2,
+  Ban,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -800,33 +802,78 @@ const BulkProductUpload = () => {
           </div>
 
           <div className="border border-border rounded-lg divide-y divide-border">
-            {headers.map((h) => (
-              <div key={h} className="flex items-center justify-between px-4 py-3">
-                <span className="text-sm font-medium truncate max-w-[200px]">{h}</span>
-                <Select
-                  value={mapping[h] || "___unmapped___"}
-                  onValueChange={(v) =>
-                    setMapping((prev) => ({
-                      ...prev,
-                      [h]: v === "___unmapped___" ? "" : (v as SystemFieldKey),
-                    }))
-                  }
+            {headers.map((h) => {
+              const isSkipped = !mapping[h];
+              return (
+                <div
+                  key={h}
+                  className={cn(
+                    "flex items-center justify-between px-4 py-3 gap-3",
+                    isSkipped && "bg-muted/40 opacity-70"
+                  )}
                 >
-                  <SelectTrigger className="w-52">
-                    <SelectValue placeholder="Skip this column" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="___unmapped___">— Skip —</SelectItem>
-                    {SYSTEM_FIELDS.map((sf) => (
-                      <SelectItem key={sf.key} value={sf.key}>
-                        {sf.label}{sf.required ? " *" : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            ))}
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Checkbox
+                      checked={!isSkipped}
+                      onCheckedChange={(checked) => {
+                        if (!checked) {
+                          setMapping((prev) => ({ ...prev, [h]: "" }));
+                        } else {
+                          // Re-auto-map on uncheck
+                          const norm = h.toLowerCase().replace(/[^a-z0-9]/g, "");
+                          const match = SYSTEM_FIELDS.find((sf) => {
+                            const sfNorm = sf.label.toLowerCase().replace(/[^a-z0-9]/g, "");
+                            const keyNorm = sf.key.toLowerCase().replace(/[^a-z0-9]/g, "");
+                            return sfNorm === norm || keyNorm === norm || norm.includes(sfNorm) || sfNorm.includes(norm);
+                          });
+                          setMapping((prev) => ({ ...prev, [h]: match?.key || "" }));
+                        }
+                      }}
+                    />
+                    <span className={cn("text-sm font-medium truncate max-w-[200px]", isSkipped && "line-through")}>{h}</span>
+                    {isSkipped && (
+                      <Badge variant="secondary" className="gap-1 text-[10px] shrink-0">
+                        <Ban className="h-3 w-3" />
+                        Skipped
+                      </Badge>
+                    )}
+                  </div>
+                  <Select
+                    value={mapping[h] || "___unmapped___"}
+                    onValueChange={(v) =>
+                      setMapping((prev) => ({
+                        ...prev,
+                        [h]: v === "___unmapped___" ? "" : (v as SystemFieldKey),
+                      }))
+                    }
+                  >
+                    <SelectTrigger className={cn("w-52", isSkipped && "border-dashed")}>
+                      <SelectValue placeholder="Skip this column" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="___unmapped___">— Skip (leave empty) —</SelectItem>
+                      {SYSTEM_FIELDS.map((sf) => (
+                        <SelectItem key={sf.key} value={sf.key}>
+                          {sf.label}{sf.required ? " *" : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              );
+            })}
           </div>
+
+          {/* Skip summary */}
+          {(() => {
+            const skippedCount = headers.filter((h) => !mapping[h]).length;
+            return skippedCount > 0 ? (
+              <p className="text-xs text-muted-foreground">
+                <Ban className="h-3 w-3 inline mr-1" />
+                {skippedCount} column{skippedCount > 1 ? "s" : ""} skipped — those fields will be left empty on imported products.
+              </p>
+            ) : null;
+          })()}
         </div>
       )}
 

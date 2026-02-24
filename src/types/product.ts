@@ -73,6 +73,7 @@ export interface Product {
   size_guide_id: string | null;
   care_instruction_id: string | null;
   is_active: boolean;
+  is_featured: boolean;
   created_at: string;
   updated_at: string;
   // Joined data
@@ -130,6 +131,7 @@ export interface ProductFormData {
   size_guide_id: string | null;
   care_instruction_id: string | null;
   is_active: boolean;
+  is_featured: boolean;
 }
 
 export interface VariantFormData {

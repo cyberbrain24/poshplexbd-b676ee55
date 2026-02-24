@@ -675,7 +675,7 @@ const BulkProductUpload = () => {
               : null;
 
             const vSku = variantSkus[vi] || "";
-            const vPrice = Number(variantPrices[vi]) || Number(getVal(row, ri, "base_price")) || 0;
+            const vPrice = Number(getVal(row, ri, "base_price")) || 0;
 
             await supabase.from("product_variants").insert({
               product_id: product.id,

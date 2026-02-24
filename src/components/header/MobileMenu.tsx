@@ -22,13 +22,28 @@ interface MobileMenuProps {
   onClose: () => void;
 }
 
+const USEFUL_LINKS_KEY = "__useful_links__";
+
+const usefulLinks = [
+  { name: "Our Story", href: "/pages/our-story" },
+  { name: "Members", href: "/membership" },
+  { name: "Find Us", href: "/pages/find-us" },
+  { name: "Privacy Policy", href: "/pages/privacy-policy" },
+  { name: "Terms & Conditions", href: "/pages/terms-conditions" },
+  { name: "Shipping & Delivery", href: "/pages/shipping-delivery" },
+];
+
 const MobileMenu = ({ navItems, isOpen, onClose }: MobileMenuProps) => {
   const [activeCategory, setActiveCategory] = useState<string | null>(
     navItems.length > 0 ? navItems[0].name : null
   );
 
+  const isUsefulLinks = activeCategory === USEFUL_LINKS_KEY;
+
   const activeSubs =
-    navItems.find((i) => i.name === activeCategory)?.submenu.subcategories ?? [];
+    !isUsefulLinks
+      ? navItems.find((i) => i.name === activeCategory)?.submenu.subcategories ?? []
+      : [];
 
   return (
     <>
@@ -66,8 +81,8 @@ const MobileMenu = ({ navItems, isOpen, onClose }: MobileMenuProps) => {
 
         {/* Body — split layout */}
         <div className="flex flex-1 min-h-0">
-          {/* Left: Category list */}
-          <nav className="w-[110px] shrink-0 border-r border-border overflow-y-auto py-3">
+          {/* Left: Category list + Useful Links */}
+          <nav className="w-[110px] shrink-0 border-r border-border overflow-y-auto py-3 flex flex-col">
             {navItems.map((item) => {
               const isActive = item.name === activeCategory;
               return (
@@ -85,11 +100,40 @@ const MobileMenu = ({ navItems, isOpen, onClose }: MobileMenuProps) => {
                 </button>
               );
             })}
+
+            {/* Separator */}
+            <div className="mx-4 my-2 border-t border-border" />
+
+            {/* Useful Links button */}
+            <button
+              onClick={() => setActiveCategory(USEFUL_LINKS_KEY)}
+              className={cn(
+                "w-full text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wider transition-colors",
+                isUsefulLinks
+                  ? "bg-accent text-accent-foreground border-l-2 border-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              )}
+            >
+              Useful Links
+            </button>
           </nav>
 
-          {/* Right: Subcategory grid */}
+          {/* Right: Content area */}
           <div className="flex-1 overflow-y-auto p-3">
-            {activeSubs.length > 0 ? (
+            {isUsefulLinks ? (
+              <div className="space-y-1">
+                {usefulLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    to={link.href}
+                    onClick={onClose}
+                    className="block px-3 py-3 text-sm text-foreground hover:bg-muted/50 rounded-md transition-colors tracking-wide"
+                  >
+                    {link.name}
+                  </Link>
+                ))}
+              </div>
+            ) : activeSubs.length > 0 ? (
               <div className="grid grid-cols-2 gap-2">
                 {activeSubs.map((sub) => (
                   <Link

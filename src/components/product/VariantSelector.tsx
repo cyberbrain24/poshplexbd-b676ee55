@@ -101,13 +101,8 @@ const VariantSelector = ({ variants, onVariantChange }: VariantSelectorProps) =>
         {/* Color Selection */}
         {uniqueColors.length > 0 && (
           <div className="flex items-center justify-center gap-3 lg:block lg:space-y-1.5">
-            <div className="hidden lg:flex items-center shrink-0 lg:justify-between">
+            <div className="hidden lg:flex items-center shrink-0">
               <span className="text-sm font-light text-foreground">Color</span>
-              {selectedColor && (
-                <span className="text-sm font-light text-muted-foreground hidden lg:inline ml-2">
-                  {uniqueColors.find((c) => c.id === selectedColor)?.name}
-                </span>
-              )}
             </div>
             <div className="flex flex-wrap gap-3 lg:gap-2 justify-center lg:justify-start">
               {uniqueColors.map((color) => {
@@ -144,13 +139,8 @@ const VariantSelector = ({ variants, onVariantChange }: VariantSelectorProps) =>
         {/* Size Selection */}
         {uniqueSizes.length > 0 && (
           <div className="flex items-center justify-center gap-3 lg:block lg:space-y-1.5 mt-4 lg:mt-0">
-            <div className="hidden lg:flex items-center shrink-0 lg:justify-between">
+            <div className="hidden lg:flex items-center shrink-0">
               <span className="text-sm font-light text-foreground">Size</span>
-              {selectedSize && (
-                <span className="text-sm font-light text-muted-foreground hidden lg:inline ml-2">
-                  {uniqueSizes.find((s) => s.id === selectedSize)?.label}
-                </span>
-              )}
             </div>
             <div className="flex flex-wrap gap-3 lg:gap-2 justify-center lg:justify-start">
               {uniqueSizes.map((size) => {

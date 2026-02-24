@@ -27,10 +27,16 @@ interface ProductDescriptionProps {
 }
 
 const ProductDescription = ({ product }: ProductDescriptionProps) => {
-  const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
-  const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
-  const [isCareOpen, setIsCareOpen] = useState(false);
-  const [isReviewsOpen, setIsReviewsOpen] = useState(false);
+  const [openSection, setOpenSection] = useState<string | null>(null);
+
+  const toggleSection = (section: string) => {
+    setOpenSection(prev => prev === section ? null : section);
+  };
+
+  const isDescriptionOpen = openSection === 'description';
+  const isSizeGuideOpen = openSection === 'sizeGuide';
+  const isCareOpen = openSection === 'care';
+  const isReviewsOpen = openSection === 'reviews';
 
   const { data: reviews = [] } = useProductReviews(product?.id || null);
 
@@ -62,7 +68,7 @@ XL: Chest 42-44"`;
       <div className="border-b border-border">
         <Button
           variant="ghost"
-          onClick={() => setIsDescriptionOpen(!isDescriptionOpen)}
+          onClick={() => toggleSection('description')}
           className="w-full h-10 lg:h-14 px-0 justify-between hover:bg-transparent font-light rounded-none"
         >
           <span>Description</span>
@@ -87,7 +93,7 @@ XL: Chest 42-44"`;
       <div className="border-b border-border">
         <Button
           variant="ghost"
-          onClick={() => setIsSizeGuideOpen(!isSizeGuideOpen)}
+          onClick={() => toggleSection('sizeGuide')}
           className="w-full h-10 lg:h-14 px-0 justify-between hover:bg-transparent font-light rounded-none"
         >
           <span>Size Guide</span>
@@ -164,7 +170,7 @@ XL: Chest 42-44"`;
       <div className="border-b border-border">
         <Button
           variant="ghost"
-          onClick={() => setIsCareOpen(!isCareOpen)}
+          onClick={() => toggleSection('care')}
           className="w-full h-10 lg:h-14 px-0 justify-between hover:bg-transparent font-light rounded-none"
         >
           <span>Care & Cleaning</span>
@@ -192,7 +198,7 @@ XL: Chest 42-44"`;
       <div className="border-b border-border lg:mb-16">
         <Button
           variant="ghost"
-          onClick={() => setIsReviewsOpen(!isReviewsOpen)}
+          onClick={() => toggleSection('reviews')}
           className="w-full h-10 lg:h-14 px-0 justify-between hover:bg-transparent font-light rounded-none"
         >
           <div className="flex items-center gap-3">

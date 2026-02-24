@@ -38,13 +38,13 @@ const CategoryHeader = ({ category, categorySlug }: CategoryHeaderProps) => {
   }, [api]);
 
   return (
-    <section className="w-full px-4 md:px-6 mb-2">
+    <section className="w-full px-4 md:px-6 mb-1">
       <h1 className="text-[10px] font-semibold uppercase tracking-wider text-foreground">
         {category}
       </h1>
 
       {subcategories.length > 0 && (
-        <div className="mt-2">
+        <div className="mt-1">
           {isMobile ? (
             <>
               <Carousel opts={{ align: "start", loop: false }} setApi={setApi} className="w-full">

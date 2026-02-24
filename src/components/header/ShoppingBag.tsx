@@ -25,7 +25,7 @@ const ShoppingBag = ({ isOpen, onClose, cartItems, updateQuantity, onViewFavorit
       />
       
       {/* Off-canvas panel */}
-      <div className="absolute right-0 top-0 h-screen w-96 bg-background border-l border-border animate-slide-in-right flex flex-col">
+      <div className="absolute right-0 top-0 h-screen w-96 max-w-full bg-background border-l border-border animate-slide-in-right flex flex-col pb-20 lg:pb-0">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border">
           <h2 className="text-lg font-light text-foreground">Shopping Bag</h2>

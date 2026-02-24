@@ -95,86 +95,89 @@ const VariantSelector = ({ variants, onVariantChange }: VariantSelectorProps) =>
   };
 
   return (
-    <div className="space-y-4 lg:space-y-3">
-      {/* Color Selection */}
-      {uniqueColors.length > 0 && (
-        <div className="flex items-center justify-center gap-3 lg:block lg:space-y-1.5">
-          <div className="hidden lg:flex items-center shrink-0 lg:justify-between">
-            <span className="text-sm font-light text-foreground">Color</span>
-            {selectedColor && (
-              <span className="text-sm font-light text-muted-foreground hidden lg:inline ml-auto">
-                {uniqueColors.find((c) => c.id === selectedColor)?.name}
-              </span>
-            )}
+    <div className="space-y-4 lg:space-y-0">
+      {/* Desktop: side by side | Mobile: stacked */}
+      <div className="flex flex-col lg:flex-row lg:gap-6">
+        {/* Color Selection */}
+        {uniqueColors.length > 0 && (
+          <div className="flex items-center justify-center gap-3 lg:block lg:space-y-1.5">
+            <div className="hidden lg:flex items-center shrink-0 lg:justify-between">
+              <span className="text-sm font-light text-foreground">Color</span>
+              {selectedColor && (
+                <span className="text-sm font-light text-muted-foreground hidden lg:inline ml-2">
+                  {uniqueColors.find((c) => c.id === selectedColor)?.name}
+                </span>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-3 lg:gap-2 justify-center lg:justify-start">
+              {uniqueColors.map((color) => {
+                const isAvailable = isColorAvailable(color.id);
+                const isSelected = selectedColor === color.id;
+                
+                return (
+                  <button
+                    key={color.id}
+                    onClick={() => setSelectedColor(color.id)}
+                    disabled={!isAvailable && selectedSize !== null}
+                    className={cn(
+                      "w-10 h-10 lg:w-8 lg:h-8 rounded-full border-2 transition-all relative",
+                      isSelected
+                        ? "border-foreground ring-2 ring-offset-2 ring-foreground"
+                        : "border-border hover:border-foreground/50",
+                      !isAvailable && selectedSize !== null && "opacity-30 cursor-not-allowed"
+                    )}
+                    style={{ backgroundColor: color.hex_code }}
+                    title={color.name}
+                  >
+                    {!isAvailable && selectedSize !== null && (
+                      <span className="absolute inset-0 flex items-center justify-center">
+                        <span className="w-full h-0.5 bg-muted-foreground rotate-45 absolute" />
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-3 lg:gap-2 justify-center lg:justify-start">
-            {uniqueColors.map((color) => {
-              const isAvailable = isColorAvailable(color.id);
-              const isSelected = selectedColor === color.id;
-              
-              return (
-                <button
-                  key={color.id}
-                  onClick={() => setSelectedColor(color.id)}
-                  disabled={!isAvailable && selectedSize !== null}
-                  className={cn(
-                    "w-10 h-10 lg:w-8 lg:h-8 rounded-full border-2 transition-all relative",
-                    isSelected
-                      ? "border-foreground ring-2 ring-offset-2 ring-foreground"
-                      : "border-border hover:border-foreground/50",
-                    !isAvailable && selectedSize !== null && "opacity-30 cursor-not-allowed"
-                  )}
-                  style={{ backgroundColor: color.hex_code }}
-                  title={color.name}
-                >
-                  {!isAvailable && selectedSize !== null && (
-                    <span className="absolute inset-0 flex items-center justify-center">
-                      <span className="w-full h-0.5 bg-muted-foreground rotate-45 absolute" />
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+        )}
 
-      {/* Size Selection */}
-      {uniqueSizes.length > 0 && (
-        <div className="flex items-center justify-center gap-3 lg:block lg:space-y-1.5">
-          <div className="hidden lg:flex items-center shrink-0 lg:justify-between">
-            <span className="text-sm font-light text-foreground">Size</span>
-            {selectedSize && (
-              <span className="text-sm font-light text-muted-foreground hidden lg:inline ml-auto">
-                {uniqueSizes.find((s) => s.id === selectedSize)?.label}
-              </span>
-            )}
+        {/* Size Selection */}
+        {uniqueSizes.length > 0 && (
+          <div className="flex items-center justify-center gap-3 lg:block lg:space-y-1.5 mt-4 lg:mt-0">
+            <div className="hidden lg:flex items-center shrink-0 lg:justify-between">
+              <span className="text-sm font-light text-foreground">Size</span>
+              {selectedSize && (
+                <span className="text-sm font-light text-muted-foreground hidden lg:inline ml-2">
+                  {uniqueSizes.find((s) => s.id === selectedSize)?.label}
+                </span>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-3 lg:gap-2 justify-center lg:justify-start">
+              {uniqueSizes.map((size) => {
+                const isAvailable = isSizeAvailable(size.id);
+                const isSelected = selectedSize === size.id;
+                
+                return (
+                  <button
+                    key={size.id}
+                    onClick={() => setSelectedSize(size.id)}
+                    disabled={!isAvailable && selectedColor !== null}
+                    className={cn(
+                      "min-w-14 h-10 lg:min-w-12 lg:h-8 px-4 lg:px-3 border text-sm font-light transition-all relative",
+                      isSelected
+                        ? "border-foreground bg-foreground text-background"
+                        : "border-border hover:border-foreground text-foreground",
+                      !isAvailable && selectedColor !== null && "opacity-30 cursor-not-allowed line-through"
+                    )}
+                  >
+                    {size.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-3 lg:gap-2 justify-center lg:justify-start">
-            {uniqueSizes.map((size) => {
-              const isAvailable = isSizeAvailable(size.id);
-              const isSelected = selectedSize === size.id;
-              
-              return (
-                <button
-                  key={size.id}
-                  onClick={() => setSelectedSize(size.id)}
-                  disabled={!isAvailable && selectedColor !== null}
-                  className={cn(
-                    "min-w-14 h-10 lg:min-w-12 lg:h-8 px-4 lg:px-3 border text-sm font-light transition-all relative",
-                    isSelected
-                      ? "border-foreground bg-foreground text-background"
-                      : "border-border hover:border-foreground text-foreground",
-                    !isAvailable && selectedColor !== null && "opacity-30 cursor-not-allowed line-through"
-                  )}
-                >
-                  {size.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

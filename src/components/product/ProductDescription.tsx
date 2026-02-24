@@ -202,20 +202,12 @@ XL: Chest 42-44"`;
           onClick={() => toggleSection('reviews')}
           className="w-full h-10 lg:h-14 px-0 justify-between hover:bg-transparent font-light rounded-none"
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <span>Customer Reviews</span>
             {reviews.length > 0 && (
-              <div className="flex items-center">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <CustomStar
-                    key={star}
-                    filled={star <= Math.round(averageRating)}
-                  />
-                ))}
-                <span className="text-sm font-light text-muted-foreground ml-1">
-                  {averageRating.toFixed(1)} ({reviews.length})
-                </span>
-              </div>
+              <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-foreground text-background text-xs font-medium">
+                {reviews.length}
+              </span>
             )}
           </div>
           {isReviewsOpen ? (

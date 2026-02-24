@@ -36,6 +36,7 @@ const defaultFormData: ProductFormData = {
   size_guide_id: null,
   care_instruction_id: null,
   is_active: true,
+  is_featured: false,
 };
 
 const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
@@ -89,6 +90,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
         size_guide_id: product.size_guide_id,
         care_instruction_id: product.care_instruction_id,
         is_active: product.is_active,
+        is_featured: product.is_featured ?? false,
       });
       setImages(product.images || []);
       setVariants([]);
@@ -451,6 +453,15 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                   onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
                 />
                 <Label htmlFor="is_active">Active (visible on store)</Label>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Switch
+                  id="is_featured"
+                  checked={formData.is_featured}
+                  onCheckedChange={(checked) => setFormData({ ...formData, is_featured: checked })}
+                />
+                <Label htmlFor="is_featured">Featured (show on homepage)</Label>
               </div>
             </TabsContent>
 

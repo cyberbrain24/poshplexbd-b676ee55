@@ -1148,6 +1148,7 @@ export type Database = {
           full_description: string | null
           id: string
           is_active: boolean
+          is_featured: boolean
           name: string
           product_type: Database["public"]["Enums"]["product_type"]
           short_description: string | null
@@ -1167,6 +1168,7 @@ export type Database = {
           full_description?: string | null
           id?: string
           is_active?: boolean
+          is_featured?: boolean
           name: string
           product_type?: Database["public"]["Enums"]["product_type"]
           short_description?: string | null
@@ -1186,6 +1188,7 @@ export type Database = {
           full_description?: string | null
           id?: string
           is_active?: boolean
+          is_featured?: boolean
           name?: string
           product_type?: Database["public"]["Enums"]["product_type"]
           short_description?: string | null

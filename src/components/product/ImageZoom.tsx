@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PRESET_SIZES } from "@/components/ui/responsive-image";
 
 interface ImageZoomProps {
   images: string[];
@@ -68,6 +69,11 @@ const ImageZoom = ({ images, initialIndex, isOpen, onClose }: ImageZoomProps) =>
               <img
                 src={image}
                 alt={`Product view ${index + 1}`}
+                sizes={PRESET_SIZES.zoom.sizes}
+                width={PRESET_SIZES.zoom.widths.desktop}
+                height={PRESET_SIZES.zoom.widths.desktop}
+                loading={index === 0 ? "eager" : "lazy"}
+                decoding="async"
                 className="w-full max-w-none object-cover animate-scale-in"
               />
             </div>

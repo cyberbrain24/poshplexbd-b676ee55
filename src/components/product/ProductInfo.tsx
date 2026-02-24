@@ -154,7 +154,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
 
       {/* Variant Selection */}
       {hasVariants && (
-        <div className="py-2 lg:border-b lg:border-border">
+        <div className="py-2 lg:py-4 lg:border-b lg:border-border">
           <VariantSelector 
             variants={product!.variants!} 
             onVariantChange={handleVariantChange}
@@ -163,7 +163,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
       )}
 
       {/* Quantity - desktop only */}
-      <div className="hidden lg:block space-y-2">
+      <div className="hidden lg:block space-y-4 pt-2">
         <div className="flex items-center gap-4 justify-start">
           <span className="text-sm font-light text-foreground">Quantity</span>
           <div className="flex items-center border border-border">

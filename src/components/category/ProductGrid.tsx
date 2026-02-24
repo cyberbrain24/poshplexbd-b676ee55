@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { generateProductSlug } from "@/lib/slug";
+import FavoriteButton from "@/components/product/FavoriteButton";
 import type { SortOption, ProductFilters } from "./FilterSortBar";
 
 interface ProductGridProps {
@@ -90,6 +91,18 @@ const ProductGrid = ({ sortBy = "newest", filters }: ProductGridProps) => {
                       />
                     )}
                     <div className="absolute inset-0 bg-black/[0.03]"></div>
+                    {/* Favorite button */}
+                    <div className="absolute top-2 right-2 z-10">
+                      <FavoriteButton
+                        productId={product.id}
+                        name={product.name}
+                        price={product.base_price}
+                        image={getMainImage(product)}
+                        slug={generateProductSlug(product.name, product.id)}
+                        className="bg-background/70 backdrop-blur-sm"
+                        size={14}
+                      />
+                    </div>
                     {new Date(product.created_at).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000 && (
                       <div className="absolute top-2 left-2 px-2 py-1 text-xs font-medium text-black">
                         NEW

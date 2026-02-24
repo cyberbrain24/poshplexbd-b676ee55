@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, User, ShoppingBag as ShoppingBagIcon } from "lucide-react";
+import { Search, User, ShoppingBag as ShoppingBagIcon, Heart } from "lucide-react";
 import { lazy, Suspense } from "react";
 import AnnouncementBar from "./AnnouncementBar";
 import MegaMenu from "./MegaMenu";
@@ -12,6 +12,7 @@ import { useCategories } from "@/hooks/useMasterData";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useSiteBranding } from "@/hooks/useSiteBranding";
+import { useFavorites } from "@/contexts/FavoritesContext";
 
 interface SubcategoryItem {
   name: string;
@@ -43,6 +44,7 @@ const PoshplexHeader = () => {
   const { data: allCategories = [] } = useCategories();
   const { cartItems, updateQuantity, cartCount } = useCart();
   const { data: branding } = useSiteBranding();
+  const { favCount } = useFavorites();
 
   const SITE_NAME = branding?.site_name || "POSHPLEX";
   const SITE_LOGO_URL = branding?.logo_url || null;
@@ -187,6 +189,18 @@ const PoshplexHeader = () => {
           >
             <Search size={20} strokeWidth={1.5} />
           </button>
+          <Link
+            to="/favorites"
+            className="hidden lg:block p-2 text-foreground hover:text-nav-hover transition-colors relative"
+            aria-label="Favorites"
+          >
+            <Heart size={20} strokeWidth={1.5} />
+            {favCount > 0 && (
+              <span className="absolute top-0 right-0 w-4 h-4 bg-foreground text-background text-[10px] font-bold flex items-center justify-center">
+                {favCount}
+              </span>
+            )}
+          </Link>
           <button
             onClick={handleAccountClick}
             className="hidden lg:block p-2 text-foreground hover:text-nav-hover transition-colors"

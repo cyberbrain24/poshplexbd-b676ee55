@@ -27,7 +27,8 @@ interface ProductDescriptionProps {
 }
 
 const ProductDescription = ({ product }: ProductDescriptionProps) => {
-  const [openSection, setOpenSection] = useState<string | null>(null);
+  const isMobile = window.innerWidth < 1024;
+  const [openSection, setOpenSection] = useState<string | null>(isMobile ? null : 'sizeGuide');
 
   const toggleSection = (section: string) => {
     setOpenSection(prev => prev === section ? null : section);

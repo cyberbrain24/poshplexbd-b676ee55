@@ -81,7 +81,7 @@ const MobileFooterNav = () => {
                     </span>
                   )}
                 </div>
-                <span className="text-[10px] mt-1 font-light">{item.label}</span>
+                <span className={cn("text-[10px] mt-1 font-light", item.filled && "text-foreground")}>{item.label}</span>
               </Link>
             );
           })}

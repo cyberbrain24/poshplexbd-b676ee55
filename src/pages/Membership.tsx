@@ -1,20 +1,21 @@
 import { useState } from "react";
-import { User } from "lucide-react";
+import { User, Users, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import PoshplexHeader from "@/components/header/PoshplexHeader";
 import PoshplexFooter from "@/components/footer/PoshplexFooter";
 import { usePublicMembershipTypes, usePublicMembers } from "@/hooks/usePublicMembers";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 const Membership = () => {
-  const [activeType, setActiveType] = useState<string | undefined>(undefined);
+  const [activeType, setActiveType] = useState<string | null>(null);
   const { data: membershipTypes = [], isLoading: typesLoading } = usePublicMembershipTypes();
-  const { data: members = [], isLoading: membersLoading } = usePublicMembers(activeType);
+  const { data: members = [], isLoading: membersLoading } = usePublicMembers(activeType ?? undefined);
 
   const activeTypeName = activeType
     ? membershipTypes.find((t) => t.id === activeType)?.name
-    : "All";
+    : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -31,98 +32,135 @@ const Membership = () => {
           </p>
         </div>
 
-        {/* Membership Type Filter Tabs */}
-        {!typesLoading && membershipTypes.length > 0 && (
-          <div className="flex flex-wrap justify-center gap-2 mb-10">
-            <button
-              onClick={() => setActiveType(undefined)}
-              className={`px-5 py-2 text-xs font-semibold tracking-wider uppercase border transition-colors ${
-                !activeType
-                  ? "bg-foreground text-background border-foreground"
-                  : "bg-background text-foreground border-border hover:border-foreground"
-              }`}
-            >
-              All
-            </button>
-            {membershipTypes.map((type) => (
-              <button
-                key={type.id}
-                onClick={() => setActiveType(type.id)}
-                className={`px-5 py-2 text-xs font-semibold tracking-wider uppercase border transition-colors ${
-                  activeType === type.id
-                    ? "bg-foreground text-background border-foreground"
-                    : "bg-background text-foreground border-border hover:border-foreground"
-                }`}
-              >
-                {type.name}
-              </button>
+        {/* Membership Type Grid */}
+        {typesLoading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-10">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-28 rounded-xl" />
             ))}
           </div>
-        )}
-
-        {/* Members Grid */}
-        {membersLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
-            {Array.from({ length: 10 }).map((_, i) => (
-              <div key={i} className="flex flex-col items-center gap-3">
-                <Skeleton className="w-24 h-24 sm:w-28 sm:h-28 rounded-full" />
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-3 w-16" />
-              </div>
-            ))}
-          </div>
-        ) : members.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 sm:gap-8">
-            {members.map((member) => {
-              const ct = Array.isArray(member.customer_type)
-                ? member.customer_type[0]
-                : member.customer_type;
+        ) : membershipTypes.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 mb-10">
+            {membershipTypes.map((type) => {
+              const isActive = activeType === type.id;
               return (
-                <div
-                  key={member.id}
-                  className="flex flex-col items-center text-center group"
+                <button
+                  key={type.id}
+                  onClick={() => setActiveType(isActive ? null : type.id)}
+                  className={cn(
+                    "relative flex flex-col items-center justify-center gap-2 p-5 sm:p-6 rounded-xl border-2 transition-all duration-200 text-center group",
+                    isActive
+                      ? "border-foreground bg-foreground text-background shadow-lg scale-[1.02]"
+                      : "border-border bg-card text-foreground hover:border-foreground/50 hover:shadow-md"
+                  )}
                 >
-                  {/* Avatar */}
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-border bg-muted mb-3 flex items-center justify-center">
-                    {member.profile_image_url ? (
-                      <img
-                        src={member.profile_image_url}
-                        alt={member.name}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <User className="w-10 h-10 text-muted-foreground" strokeWidth={1} />
+                  <Users
+                    className={cn(
+                      "w-6 h-6 sm:w-7 sm:h-7 transition-colors",
+                      isActive ? "text-background" : "text-muted-foreground group-hover:text-foreground"
                     )}
-                  </div>
-
-                  {/* Name */}
-                  <p className="text-sm font-semibold text-foreground tracking-wide">
-                    {member.name}
-                  </p>
-
-                  {/* Membership Badge */}
-                  {ct && (
-                    <Badge variant="secondary" className="mt-1 text-[10px] tracking-wider uppercase">
-                      {ct.name}
-                    </Badge>
+                    strokeWidth={1.5}
+                  />
+                  <span className="text-xs sm:text-sm font-bold tracking-wider uppercase">
+                    {type.name}
+                  </span>
+                  {type.description && (
+                    <span
+                      className={cn(
+                        "text-[10px] sm:text-xs leading-tight line-clamp-2",
+                        isActive ? "text-background/70" : "text-muted-foreground"
+                      )}
+                    >
+                      {type.description}
+                    </span>
                   )}
-
-                  {/* Member Since */}
-                  {ct?.show_member_since && member.membership_assigned_at && (
-                    <p className="text-[11px] text-muted-foreground mt-1">
-                      Member since {format(new Date(member.membership_assigned_at), "MMM yyyy")}
-                    </p>
+                  {isActive && (
+                    <ChevronDown className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-5 h-5 text-foreground bg-foreground rounded-full p-0.5 text-background" />
                   )}
-                </div>
+                </button>
               );
             })}
           </div>
-        ) : (
-          <div className="text-center py-16">
-            <User className="mx-auto w-12 h-12 text-muted-foreground mb-4" strokeWidth={1} />
+        ) : null}
+
+        {/* Members Section - only shown when a type is selected */}
+        {activeType && (
+          <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="flex items-center gap-2 mb-6">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-xs font-semibold tracking-wider uppercase text-muted-foreground px-3">
+                {activeTypeName} Members
+              </span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+
+            {membersLoading ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+                {Array.from({ length: 10 }).map((_, i) => (
+                  <div key={i} className="flex flex-col items-center gap-3">
+                    <Skeleton className="w-24 h-24 sm:w-28 sm:h-28 rounded-full" />
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-3 w-16" />
+                  </div>
+                ))}
+              </div>
+            ) : members.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 sm:gap-8">
+                {members.map((member) => {
+                  const ct = Array.isArray(member.customer_type)
+                    ? member.customer_type[0]
+                    : member.customer_type;
+                  return (
+                    <div
+                      key={member.id}
+                      className="flex flex-col items-center text-center group"
+                    >
+                      <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-border bg-muted mb-3 flex items-center justify-center">
+                        {member.profile_image_url ? (
+                          <img
+                            src={member.profile_image_url}
+                            alt={member.name}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <User className="w-10 h-10 text-muted-foreground" strokeWidth={1} />
+                        )}
+                      </div>
+                      <p className="text-sm font-semibold text-foreground tracking-wide">
+                        {member.name}
+                      </p>
+                      {ct && (
+                        <Badge variant="secondary" className="mt-1 text-[10px] tracking-wider uppercase">
+                          {ct.name}
+                        </Badge>
+                      )}
+                      {ct?.show_member_since && member.membership_assigned_at && (
+                        <p className="text-[11px] text-muted-foreground mt-1">
+                          Member since {format(new Date(member.membership_assigned_at), "MMM yyyy")}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <User className="mx-auto w-12 h-12 text-muted-foreground mb-4" strokeWidth={1} />
+                <p className="text-muted-foreground text-sm tracking-wider uppercase">
+                  No members in {activeTypeName} yet
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Prompt when no type selected */}
+        {!activeType && !typesLoading && membershipTypes.length > 0 && (
+          <div className="text-center py-16 animate-in fade-in duration-300">
+            <Users className="mx-auto w-12 h-12 text-muted-foreground mb-4" strokeWidth={1} />
             <p className="text-muted-foreground text-sm tracking-wider uppercase">
-              {activeType ? `No members in ${activeTypeName} yet` : "No members to display yet"}
+              Select a membership type above to view members
             </p>
           </div>
         )}

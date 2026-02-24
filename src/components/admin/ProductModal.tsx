@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { X, Plus, Trash2, Upload, GripVertical, Play, ChevronDown, ChevronUp, Image as ImageIcon } from "lucide-react";
+import { X, Plus, Trash2, Upload, GripVertical, Play, ChevronDown, ChevronUp, Image as ImageIcon, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,6 +15,7 @@ import { Product, ProductFormData, VariantFormData, ProductImage } from "@/types
 import { toast } from "sonner";
 import VariantBuilder from "@/components/admin/VariantBuilder";
 import ProductImagePickerModal from "@/components/admin/ProductImagePickerModal";
+import { useProductCategoryIds, useSyncProductCategories } from "@/hooks/useProductCategories";
 
 interface ProductModalProps {
   isOpen: boolean;
@@ -46,17 +48,15 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [showBuilder, setShowBuilder] = useState(false);
   const [mediaPickerIndex, setMediaPickerIndex] = useState<number | null>(null);
-  const [parentCategoryId, setParentCategoryId] = useState<string | null>(null);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: categories = [] } = useCategories();
+  const { data: productCategoryIds = [] } = useProductCategoryIds(product?.id);
+  const syncCategories = useSyncProductCategories();
 
-  // Derived: parent categories (no parent_id) and subcategories of selected parent
+  // Derived: parent categories and their subcategories (for display grouping)
   const parentCategories = useMemo(() => categories.filter(c => !c.parent_id), [categories]);
-  const subcategories = useMemo(() =>
-    parentCategoryId ? categories.filter(c => c.parent_id === parentCategoryId) : [],
-    [categories, parentCategoryId]
-  );
   const { data: brands = [] } = useBrands();
   const { data: sizeGuides = [] } = useSizeGuides();
   const { data: careInstructions = [] } = useCareInstructions();
@@ -98,21 +98,19 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
       setFormData(defaultFormData);
       setImages([]);
       setVariants([]);
-      setParentCategoryId(null);
+      setSelectedCategoryIds([]);
     }
   }, [product]);
 
-  // Resolve parent category separately to avoid infinite loop
+  // Load multi-category selections when editing
   useEffect(() => {
-    if (product?.category_id && categories.length > 0) {
-      const cat = categories.find(c => c.id === product.category_id);
-      if (cat?.parent_id) {
-        setParentCategoryId(cat.parent_id);
-      } else {
-        setParentCategoryId(product.category_id);
-      }
+    if (productCategoryIds.length > 0) {
+      setSelectedCategoryIds(productCategoryIds);
+    } else if (product?.category_id) {
+      // Fallback: use legacy category_id if no junction data
+      setSelectedCategoryIds([product.category_id]);
     }
-  }, [product?.category_id, categories.length]);
+  }, [productCategoryIds, product?.category_id]);
 
   // Load existing variants when editing
   useEffect(() => {
@@ -139,9 +137,12 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
   const handleSubmit = async () => {
     try {
       if (product) {
-        // 1. Update product info
-        await updateProduct.mutateAsync({ id: product.id, data: formData });
+        // 1. Update product info (set category_id to first selected for backward compat)
+        const updatedFormData = { ...formData, category_id: selectedCategoryIds[0] || null };
+        await updateProduct.mutateAsync({ id: product.id, data: updatedFormData });
 
+        // 2. Sync multi-category junction table
+        await syncCategories.mutateAsync({ productId: product.id, categoryIds: selectedCategoryIds });
         // 2. Sync variants for existing product
         const existingVariantIds = (product.variants || []).map(v => v.id);
         const currentVariantIds = variants.filter(v => v.id).map(v => v.id!);
@@ -180,7 +181,13 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
 
         toast.success("Product updated successfully");
       } else {
-        const newProduct = await createProduct.mutateAsync(formData);
+        const createFormData = { ...formData, category_id: selectedCategoryIds[0] || null };
+        const newProduct = await createProduct.mutateAsync(createFormData);
+
+        // Sync multi-category junction table
+        if (selectedCategoryIds.length > 0) {
+          await syncCategories.mutateAsync({ productId: newProduct.id, categoryIds: selectedCategoryIds });
+        }
         
         // Upload images for new product
         for (const img of images) {
@@ -397,51 +404,61 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Category *</Label>
-                  <Select
-                    value={parentCategoryId || "none"}
-                    onValueChange={(value) => {
-                      const newParentId = value === "none" ? null : value;
-                      setParentCategoryId(newParentId);
-                      // If this parent has no children, assign it directly; otherwise clear
-                      const children = categories.filter(c => c.parent_id === newParentId);
-                      if (children.length === 0) {
-                        setFormData(prev => ({ ...prev, category_id: newParentId }));
-                      } else {
-                        setFormData(prev => ({ ...prev, category_id: null }));
-                      }
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No Category</SelectItem>
-                      {parentCategories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Subcategory{subcategories.length > 0 ? " *" : ""}</Label>
-                  <Select
-                    value={formData.category_id || "none"}
-                    onValueChange={(value) => setFormData({ ...formData, category_id: value === "none" ? null : value })}
-                    disabled={!parentCategoryId || subcategories.length === 0}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={!parentCategoryId ? "Select category first" : subcategories.length === 0 ? "No subcategories" : "Select subcategory"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {subcategories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Categories & Subcategories</Label>
+                  <div className="border border-border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
+                    {parentCategories.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No categories available</p>
+                    ) : (
+                      parentCategories.map((parent) => {
+                        const children = categories.filter(c => c.parent_id === parent.id);
+                        const isParentChecked = selectedCategoryIds.includes(parent.id);
+                        return (
+                          <div key={parent.id} className="space-y-1">
+                            <label className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5">
+                              <Checkbox
+                                checked={isParentChecked}
+                                onCheckedChange={(checked) => {
+                                  setSelectedCategoryIds(prev =>
+                                    checked
+                                      ? [...prev, parent.id]
+                                      : prev.filter(id => id !== parent.id)
+                                  );
+                                }}
+                              />
+                              <span className="text-sm font-medium">{parent.name}</span>
+                            </label>
+                            {children.length > 0 && (
+                              <div className="ml-6 space-y-0.5">
+                                {children.map((child) => {
+                                  const isChecked = selectedCategoryIds.includes(child.id);
+                                  return (
+                                    <label key={child.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5">
+                                      <Checkbox
+                                        checked={isChecked}
+                                        onCheckedChange={(checked) => {
+                                          setSelectedCategoryIds(prev =>
+                                            checked
+                                              ? [...prev, child.id]
+                                              : prev.filter(id => id !== child.id)
+                                          );
+                                        }}
+                                      />
+                                      <span className="text-sm text-muted-foreground">{child.name}</span>
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                  {selectedCategoryIds.length > 0 && (
+                    <p className="text-xs text-muted-foreground">{selectedCategoryIds.length} selected</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label>Brand / Collection</Label>

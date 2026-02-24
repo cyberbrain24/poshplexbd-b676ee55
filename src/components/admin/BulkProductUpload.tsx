@@ -622,6 +622,14 @@ const BulkProductUpload = () => {
 
         if (prodErr) throw prodErr;
 
+        // Insert into product_categories junction table for multi-category support
+        if (categoryId) {
+          await supabase.from("product_categories").insert({
+            product_id: product.id,
+            category_id: categoryId,
+          });
+        }
+
         // Insert images (comma-separated URLs)
         const imageUrls = getCommaVal(row, ri, "image_urls");
         for (let imgIdx = 0; imgIdx < imageUrls.length; imgIdx++) {

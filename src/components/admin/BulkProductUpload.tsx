@@ -406,12 +406,16 @@ const BulkProductUpload = () => {
         newErrors.push({ row: ri, col: "name", idx: -1, value: "", message: "Product name is required", resolved: false });
       }
 
-      // Validate price
+      // Validate price — if value contains commas, treat first value as base price
       const priceH = rMap["base_price"];
       if (priceH) {
         const val = row[priceH]?.trim();
-        if (!val || isNaN(Number(val))) {
-          newErrors.push({ row: ri, col: "base_price", idx: -1, value: val || "", message: "Price must be a valid number", resolved: false });
+        if (val) {
+          // If comma-separated (e.g. "549,549,549"), use first value as base price
+          const firstPrice = val.includes(",") ? splitComma(val)[0] : val;
+          if (isNaN(Number(firstPrice))) {
+            newErrors.push({ row: ri, col: "base_price", idx: -1, value: firstPrice, message: "Price must be a valid number", resolved: false });
+          }
         }
       }
 
@@ -626,7 +630,7 @@ const BulkProductUpload = () => {
             brand_id: brandId,
             short_description: getVal(row, ri, "short_description") || null,
             full_description: getVal(row, ri, "full_description") || null,
-            base_price: Number(getVal(row, ri, "base_price")) || 0,
+            base_price: (() => { const raw = getVal(row, ri, "base_price") || "0"; const first = raw.includes(",") ? splitComma(raw)[0] : raw; return Number(first) || 0; })(),
             product_type: productType as "simple" | "variable",
             is_active: isActive,
             is_featured: isFeatured,

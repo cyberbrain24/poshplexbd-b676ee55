@@ -9,6 +9,12 @@ import { useCategories } from "@/hooks/useMasterData";
 import { Category } from "@/types/product";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import SizeGuideTableEditor, {
+  DEFAULT_TABLE,
+  parseSizeGuideContent,
+  serializeSizeGuideTable,
+  type SizeGuideTableData,
+} from "@/components/admin/SizeGuideTableEditor";
 
 interface MasterDataModalProps {
   isOpen: boolean;
@@ -21,6 +27,7 @@ interface MasterDataModalProps {
 
 const MasterDataModal = ({ isOpen, onClose, onSave, title, type, initialData }: MasterDataModalProps) => {
   const [formData, setFormData] = useState<any>({});
+  const [sizeGuideTable, setSizeGuideTable] = useState<SizeGuideTableData>(DEFAULT_TABLE);
   const [isUploading, setIsUploading] = useState(false);
   const { data: categories = [] } = useCategories();
   
@@ -29,6 +36,11 @@ const MasterDataModal = ({ isOpen, onClose, onSave, title, type, initialData }: 
   useEffect(() => {
     if (initialData) {
       setFormData(initialData);
+      // Parse existing size guide table data
+      if (type === "size-guide" && initialData.content) {
+        const parsed = parseSizeGuideContent(initialData.content);
+        setSizeGuideTable(parsed || DEFAULT_TABLE);
+      }
     } else {
       // Reset form based on type
       switch (type) {
@@ -42,6 +54,9 @@ const MasterDataModal = ({ isOpen, onClose, onSave, title, type, initialData }: 
           setFormData({ name: "", gsm: "", season: "" });
           break;
         case "size-guide":
+          setFormData({ name: "", content: "" });
+          setSizeGuideTable({ ...DEFAULT_TABLE });
+          break;
         case "care-instruction":
           setFormData({ name: "", content: "" });
           break;
@@ -56,7 +71,11 @@ const MasterDataModal = ({ isOpen, onClose, onSave, title, type, initialData }: 
   }, [initialData, type, isOpen]);
 
   const handleSubmit = () => {
-    onSave(formData);
+    let submitData = { ...formData };
+    if (type === "size-guide") {
+      submitData.content = serializeSizeGuideTable(sizeGuideTable);
+    }
+    onSave(submitData);
     onClose();
   };
 
@@ -163,6 +182,21 @@ const MasterDataModal = ({ isOpen, onClose, onSave, title, type, initialData }: 
         );
 
       case "size-guide":
+        return (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="name">Name *</Label>
+              <Input
+                id="name"
+                value={formData.name || ""}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="e.g., T-Shirt Size Guide"
+              />
+            </div>
+            <SizeGuideTableEditor value={sizeGuideTable} onChange={setSizeGuideTable} />
+          </>
+        );
+
       case "care-instruction":
         return (
           <>
@@ -172,7 +206,7 @@ const MasterDataModal = ({ isOpen, onClose, onSave, title, type, initialData }: 
                 id="name"
                 value={formData.name || ""}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder={type === "size-guide" ? "e.g., Earrings Size Guide" : "e.g., Jewelry Care"}
+                placeholder="e.g., Jewelry Care"
               />
             </div>
             <div className="space-y-2">
@@ -181,7 +215,7 @@ const MasterDataModal = ({ isOpen, onClose, onSave, title, type, initialData }: 
                 id="content"
                 value={formData.content || ""}
                 onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                placeholder={type === "size-guide" ? "Size measurements and details..." : "Care and cleaning instructions..."}
+                placeholder="Care and cleaning instructions..."
                 rows={6}
               />
             </div>
@@ -339,6 +373,7 @@ const MasterDataModal = ({ isOpen, onClose, onSave, title, type, initialData }: 
       case "material":
         return formData.name;
       case "size-guide":
+        return formData.name && sizeGuideTable.columns.length > 0 && sizeGuideTable.rows.length > 0;
       case "care-instruction":
         return formData.name && formData.content;
       case "category":
@@ -350,8 +385,8 @@ const MasterDataModal = ({ isOpen, onClose, onSave, title, type, initialData }: 
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center">
-      <div className="w-full max-w-md bg-background p-6 animate-in fade-in zoom-in-95">
+    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+      <div className={`w-full bg-background p-6 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto ${type === "size-guide" ? "max-w-2xl" : "max-w-md"}`}>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-medium">{title}</h2>
           <Button variant="ghost" size="icon" onClick={onClose}>

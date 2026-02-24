@@ -90,7 +90,7 @@ const MobileMenu = ({ navItems, isOpen, onClose }: MobileMenuProps) => {
           {/* Right: Subcategory grid */}
           <div className="flex-1 overflow-y-auto p-3">
             {activeSubs.length > 0 ? (
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 {activeSubs.map((sub) => (
                   <Link
                     key={sub.name}

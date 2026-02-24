@@ -222,9 +222,11 @@ export const useUpdateProduct = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (updatedProduct) => {
+      queryClient.invalidateQueries({ queryKey: ["product", updatedProduct.id] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["products-list"] });
+      queryClient.invalidateQueries({ queryKey: ["products-optimized"] });
       queryClient.invalidateQueries({ queryKey: ["category-products-optimized"] });
       queryClient.invalidateQueries({ queryKey: ["featured-products"] });
     },

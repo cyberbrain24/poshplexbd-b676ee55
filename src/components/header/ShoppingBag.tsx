@@ -17,7 +17,7 @@ const ShoppingBag = ({ isOpen, onClose, cartItems, updateQuantity, onViewFavorit
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   return (
-    <div className="fixed inset-0 z-50 h-screen">
+    <div className="fixed inset-0 z-[60] h-screen">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/50 h-screen"

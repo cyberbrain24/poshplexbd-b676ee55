@@ -38,7 +38,7 @@ const CategoryHeader = ({ category, categorySlug }: CategoryHeaderProps) => {
   }, [api]);
 
   return (
-    <section className="w-full px-4 md:px-6">
+    <section className="w-full px-4 md:px-6 text-center">
       <h1 className="text-[10px] font-semibold uppercase tracking-wider text-foreground">
         {category}
       </h1>

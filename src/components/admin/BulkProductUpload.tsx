@@ -647,18 +647,19 @@ const BulkProductUpload = () => {
         // Insert images (comma-separated URLs)
         const imageUrls = getCommaVal(row, ri, "image_urls");
         for (let imgIdx = 0; imgIdx < imageUrls.length; imgIdx++) {
-          await supabase.from("product_images").insert({
+          const { error: imgErr } = await supabase.from("product_images").insert({
             product_id: product.id,
             image_url: imageUrls[imgIdx],
             is_main: imgIdx === 0,
             sort_order: imgIdx,
           });
+          if (imgErr) console.error(`Image ${imgIdx + 1} for row ${ri + 1} failed:`, imgErr);
         }
 
         // Insert variants by index
         // The number of variants = max length among colors, sizes, materials
         if (hasVariants) {
-          const variantCount = Math.max(colors.length, sizes.length, materials.length, variantSkus.length, variantPrices.length);
+          const variantCount = Math.max(colors.length, sizes.length, materials.length, variantSkus.length);
           for (let vi = 0; vi < variantCount; vi++) {
             const colorName = colors[vi] || "";
             const sizeName = sizes[vi] || "";
@@ -677,7 +678,7 @@ const BulkProductUpload = () => {
             const vSku = variantSkus[vi] || "";
             const vPrice = Number(getVal(row, ri, "base_price")) || 0;
 
-            await supabase.from("product_variants").insert({
+            const { error: varErr } = await supabase.from("product_variants").insert({
               product_id: product.id,
               color_id: colorId,
               size_id: sizeId,
@@ -687,6 +688,9 @@ const BulkProductUpload = () => {
               purchase_price: 0,
               is_active: true,
             });
+            if (varErr) {
+              console.error(`Variant ${vi + 1} for row ${ri + 1} failed:`, varErr);
+            }
           }
         }
 

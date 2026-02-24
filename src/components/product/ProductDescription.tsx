@@ -70,9 +70,9 @@ XL: Chest 42-44"`;
         <Button
           variant="ghost"
           onClick={() => toggleSection('description')}
-          className="w-full h-10 lg:h-14 px-0 justify-between hover:bg-transparent font-light rounded-none"
+          className={`w-full h-10 lg:h-14 px-0 justify-between hover:bg-transparent rounded-none ${isDescriptionOpen ? 'font-semibold' : 'font-light'}`}
         >
-          <span>Description</span>
+          <span className={isDescriptionOpen ? 'text-foreground' : ''}>Description</span>
           {isDescriptionOpen ? (
             <ChevronUp className="h-4 w-4" />
           ) : (
@@ -95,9 +95,9 @@ XL: Chest 42-44"`;
         <Button
           variant="ghost"
           onClick={() => toggleSection('sizeGuide')}
-          className="w-full h-10 lg:h-14 px-0 justify-between hover:bg-transparent font-light rounded-none"
+          className={`w-full h-10 lg:h-14 px-0 justify-between hover:bg-transparent rounded-none ${isSizeGuideOpen ? 'font-semibold' : 'font-light'}`}
         >
-          <span>Size Guide</span>
+          <span className={isSizeGuideOpen ? 'text-foreground' : ''}>Size Guide</span>
           {isSizeGuideOpen ? (
             <ChevronUp className="h-4 w-4" />
           ) : (
@@ -172,9 +172,9 @@ XL: Chest 42-44"`;
         <Button
           variant="ghost"
           onClick={() => toggleSection('care')}
-          className="w-full h-10 lg:h-14 px-0 justify-between hover:bg-transparent font-light rounded-none"
+          className={`w-full h-10 lg:h-14 px-0 justify-between hover:bg-transparent rounded-none ${isCareOpen ? 'font-semibold' : 'font-light'}`}
         >
-          <span>Care & Cleaning</span>
+          <span className={isCareOpen ? 'text-foreground' : ''}>Care & Cleaning</span>
           {isCareOpen ? (
             <ChevronUp className="h-4 w-4" />
           ) : (
@@ -200,10 +200,10 @@ XL: Chest 42-44"`;
         <Button
           variant="ghost"
           onClick={() => toggleSection('reviews')}
-          className="w-full h-10 lg:h-14 px-0 justify-between hover:bg-transparent font-light rounded-none"
+          className={`w-full h-10 lg:h-14 px-0 justify-between hover:bg-transparent rounded-none ${isReviewsOpen ? 'font-semibold' : 'font-light'}`}
         >
           <div className="flex items-center gap-2">
-            <span>Customer Reviews</span>
+            <span className={isReviewsOpen ? 'text-foreground' : ''}>Customer Reviews</span>
             {reviews.length > 0 && (
               <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-foreground text-background text-xs font-medium">
                 {reviews.length}

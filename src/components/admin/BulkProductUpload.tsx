@@ -145,56 +145,106 @@ const BulkProductUpload = () => {
   // ── Template download ──────────────────────────────────────
   const downloadTemplate = () => {
     const templateHeaders = SYSTEM_FIELDS.map((f) => f.label);
-    // Variable product – comma-separated variants in one row
+
+    // Row 1: Variable product with 4 variants (comma-separated)
     const row1 = [
-      "Summer T-Shirt",                         // Product Name
-      "TSH-001",                                 // SKU
-      "Men",                                     // Category
-      "T-Shirts",                                // Subcategory
+      "Solid Drop Shoulder T-Shirt",             // Product Name
+      "DRP-001",                                 // SKU
+      "Upper Wear",                              // Category
+      "Solid Drop",                              // Subcategory
       "Poshplex",                                // Brand
-      "Comfortable cotton tee",                  // Short Description
-      "Full description here...",                // Full Description
-      "1200",                                    // Price
+      "Premium oversized drop shoulder tee",     // Short Description
+      "Made with 100% cotton fabric for ultimate comfort. Features a relaxed oversized fit with drop shoulder design.", // Full Description
+      "1290",                                    // Price (base)
+      "variable",                                // Product Type
+      "true",                                    // Active
+      "true",                                    // Featured
+      "",                                        // YouTube Video
+      "Drop Shoulder Size Chart",                // Size Guide
+      "Standard Wash",                           // Care & Cleaning
+      "https://example.com/drp-black.jpg, https://example.com/drp-white.jpg, https://example.com/drp-cream.jpg, https://example.com/drp-maroon.jpg", // Images (comma)
+      "Black, White, Cream, Maroon",             // Variant Color (comma)
+      "M, L, XL, XXL",                           // Variant Size (comma)
+      "100% Cotton, 100% Cotton, 100% Cotton, 100% Cotton", // Variant Material (comma)
+      "DRP-001-BK, DRP-001-WH, DRP-001-CR, DRP-001-MR", // Variant SKU (comma)
+      "1290, 1290, 1350, 1350",                  // Variant Price (comma)
+    ];
+
+    // Row 2: Another variable product with 3 variants
+    const row2 = [
+      "Printed Baggy Joggers",                   // Product Name
+      "BGJ-001",                                 // SKU
+      "Bottom  Wear",                            // Category
+      "Printed Baggy Joggers",                   // Subcategory
+      "Poshplex",                                // Brand
+      "Streetwear baggy joggers with print",     // Short Description
+      "High-quality printed baggy joggers with elastic waistband and cuffed ankles. Perfect for street style.", // Full Description
+      "1490",                                    // Price
       "variable",                                // Product Type
       "true",                                    // Active
       "false",                                   // Featured
       "",                                        // YouTube Video
       "",                                        // Size Guide
-      "",                                        // Care & Cleaning
-      "https://example.com/img1.jpg, https://example.com/img2.jpg", // Images (comma)
-      "Red, Blue, Black",                        // Variant Color (comma)
-      "M, L, XL",                                // Variant Size (comma)
-      "Cotton, Cotton, Cotton",                  // Variant Material (comma)
-      "TSH-001-RM, TSH-001-BL, TSH-001-BK",     // Variant SKU (comma)
-      "1200, 1300, 1250",                        // Variant Price (comma)
+      "Standard Wash",                           // Care & Cleaning
+      "https://example.com/bgj-black.jpg, https://example.com/bgj-coffee.jpg", // Images
+      "Black, Coffee, Bottle Green",             // Variant Color
+      "M, L, XL",                                // Variant Size
+      "French Terry, French Terry, French Terry", // Variant Material
+      "BGJ-001-BK, BGJ-001-CF, BGJ-001-BG",     // Variant SKU
+      "1490, 1490, 1590",                        // Variant Price
     ];
-    // Simple product – no variant data
-    const row2 = [
-      "Classic Polo",
-      "POL-001",
-      "Men",
-      "Polos",
-      "Poshplex",
-      "Premium polo shirt",
-      "Detailed description...",
-      "1500",
-      "simple",
-      "true",
-      "false",
-      "",
-      "",
-      "",
-      "https://example.com/polo.jpg",
-      "",
-      "",
-      "",
-      "",
-      "",
+
+    // Row 3: Simple product (no variants)
+    const row3 = [
+      "Premium Bandana",                         // Product Name
+      "BND-001",                                 // SKU
+      "Accessories",                             // Category
+      "Bandana",                                 // Subcategory
+      "Poshplex",                                // Brand
+      "Classic cotton bandana",                  // Short Description
+      "Versatile bandana made from soft cotton. Can be worn as headwear, neck accessory, or wrist wrap.", // Full Description
+      "390",                                     // Price
+      "simple",                                  // Product Type
+      "true",                                    // Active
+      "false",                                   // Featured
+      "",                                        // YouTube Video
+      "",                                        // Size Guide
+      "Delicate Care",                           // Care & Cleaning
+      "https://example.com/bandana.jpg",         // Images
+      "",                                        // Variant Color (empty = simple)
+      "",                                        // Variant Size
+      "",                                        // Variant Material
+      "",                                        // Variant SKU
+      "",                                        // Variant Price
     ];
-    const csvContent = [templateHeaders, row1, row2]
+
+    // Row 4: Combo product
+    const row4 = [
+      "Drop & Baggy Combo Set",                  // Product Name
+      "CMB-001",                                 // SKU
+      "Combo",                                   // Category
+      "Drop & Baggy",                            // Subcategory (note: trailing space in DB)
+      "Poshplex",                                // Brand
+      "Drop shoulder tee + baggy jogger combo",  // Short Description
+      "Complete streetwear set featuring our signature drop shoulder t-shirt paired with matching baggy joggers.", // Full Description
+      "2490",                                    // Price
+      "variable",                                // Product Type
+      "true",                                    // Active
+      "true",                                    // Featured
+      "",                                        // YouTube Video
+      "",                                        // Size Guide
+      "Standard Wash",                           // Care & Cleaning
+      "https://example.com/combo-black.jpg, https://example.com/combo-white.jpg", // Images
+      "Black, White, Cream",                     // Variant Color
+      "M, L, XL",                                // Variant Size
+      "100% Cotton, 100% Cotton, 100% Cotton",   // Variant Material
+      "CMB-001-BK, CMB-001-WH, CMB-001-CR",     // Variant SKU
+      "2490, 2490, 2590",                        // Variant Price
+    ];
+
+    const csvContent = [templateHeaders, row1, row2, row3, row4]
       .map((r) =>
         r.map((cell) => {
-          // Wrap in quotes if cell contains comma
           if (cell.includes(",")) return `"${cell}"`;
           return cell;
         }).join(",")

@@ -139,29 +139,29 @@ const BulkProductUpload = () => {
   // ── Template download ──────────────────────────────────────
   const downloadTemplate = () => {
     const templateHeaders = SYSTEM_FIELDS.map((f) => f.label);
-    const sampleRow = [
-      "Summer T-Shirt",
-      "",
-      "Men",
-      "T-Shirts",
-      "Poshplex",
-      "Comfortable cotton tee",
-      "Full description here...",
-      "1200",
-      "variable",
-      "true",
-      "false",
-      "",
-      "",
-      "",
-      "https://example.com/img1.jpg, https://example.com/img2.jpg",
-      "Red",
-      "M",
-      "Cotton",
-      "",
-      "1200",
+    // Row 1: product with first variant
+    const row1 = [
+      "Summer T-Shirt", "", "Men", "T-Shirts", "Poshplex",
+      "Comfortable cotton tee", "Full description here...", "1200",
+      "variable", "true", "false", "", "", "",
+      "https://example.com/img1.jpg", "Red", "M", "Cotton", "", "1200",
     ];
-    const csv = [templateHeaders.join(","), sampleRow.join(",")].join("\n");
+    // Row 2: same product name → adds another variant (no need to repeat product details)
+    const row2 = [
+      "Summer T-Shirt", "", "", "", "",
+      "", "", "1200",
+      "", "", "", "", "", "",
+      "", "Blue", "L", "Cotton", "", "1300",
+    ];
+    // Row 3: different product (simple)
+    const row3 = [
+      "Classic Polo", "", "Men", "Polos", "Poshplex",
+      "Premium polo shirt", "Detailed description...", "1500",
+      "simple", "true", "false", "", "", "",
+      "https://example.com/polo.jpg", "", "", "", "", "",
+    ];
+    const csvRows = [templateHeaders, row1, row2, row3].map((r) => r.join(","));
+    const csv = csvRows.join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -492,95 +492,120 @@ const BulkProductUpload = () => {
     setImportProgress(0);
 
     // Build reverse map
-    const reverseMap: Record<string, string> = {};
+    const rMap: Record<string, string> = {};
     Object.entries(mapping).forEach(([csvH, sysK]) => {
-      if (sysK) reverseMap[sysK] = csvH;
+      if (sysK) rMap[sysK] = csvH;
+    });
+
+    // Helper to get cell value (with resolved error override)
+    const getVal = (row: RowData, rowIdx: number, key: string): string => {
+      const csvH = rMap[key];
+      if (!csvH) return "";
+      const err = errors.find(
+        (e) => e.row === rowIdx && e.col === key && e.resolved
+      );
+      if (err?.resolvedValue) return err.resolvedValue;
+      return row[csvH]?.trim() || "";
+    };
+
+    // Helper to resolve category ID
+    const resolveCategoryId = (categoryName: string, subcategoryName: string): string | null => {
+      if (subcategoryName) {
+        const parent = lookup.categories.find(
+          (c) => c.name.toLowerCase() === categoryName.toLowerCase() && !c.parent_id
+        );
+        const sub = lookup.categories.find(
+          (c) => c.name.toLowerCase() === subcategoryName.toLowerCase() && c.parent_id === parent?.id
+        );
+        return sub?.id || parent?.id || null;
+      }
+      if (categoryName) {
+        return lookup.categories.find(
+          (c) => c.name.toLowerCase() === categoryName.toLowerCase()
+        )?.id || null;
+      }
+      return null;
+    };
+
+    // Helper to resolve variant IDs
+    const resolveVariantIds = (colorName: string, sizeName: string, matName: string) => ({
+      colorId: colorName
+        ? lookup.colors.find((c) => c.name.toLowerCase() === colorName.toLowerCase())?.id || null
+        : null,
+      sizeId: sizeName
+        ? lookup.sizes.find((s) => s.label.toLowerCase() === sizeName.toLowerCase())?.id || null
+        : null,
+      matId: matName
+        ? lookup.materials.find((m) => m.name.toLowerCase() === matName.toLowerCase())?.id || null
+        : null,
+    });
+
+    // ── Group rows by Product Name ───────────────────────────
+    // Rows with the same product name are treated as one product with multiple variants.
+    // The first row defines the product details; subsequent rows only add variants.
+    const productGroups: Map<string, number[]> = new Map();
+    rows.forEach((row, i) => {
+      const name = getVal(row, i, "name").toLowerCase();
+      if (!name) return;
+      if (!productGroups.has(name)) {
+        productGroups.set(name, []);
+      }
+      productGroups.get(name)!.push(i);
     });
 
     let successCount = 0;
     let failCount = 0;
+    let processedRows = 0;
 
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
+    for (const [, rowIndices] of productGroups) {
+      const firstIdx = rowIndices[0];
+      const firstRow = rows[firstIdx];
+
       try {
-        const getVal = (key: string): string => {
-          const csvH = reverseMap[key];
-          if (!csvH) return "";
-          // Check if there's a resolved error for this cell
-          const err = errors.find(
-            (e) => e.row === i && e.col === key && e.resolved
-          );
-          if (err?.resolvedValue) return err.resolvedValue;
-          return row[csvH]?.trim() || "";
-        };
-
-        // Resolve IDs
-        const categoryName = getVal("category");
-        const subcategoryName = getVal("subcategory");
-        let categoryId: string | null = null;
-        if (subcategoryName) {
-          const parent = lookup.categories.find(
-            (c) =>
-              c.name.toLowerCase() === categoryName.toLowerCase() &&
-              !c.parent_id
-          );
-          const sub = lookup.categories.find(
-            (c) =>
-              c.name.toLowerCase() === subcategoryName.toLowerCase() &&
-              c.parent_id === parent?.id
-          );
-          categoryId = sub?.id || parent?.id || null;
-        } else if (categoryName) {
-          categoryId =
-            lookup.categories.find(
-              (c) => c.name.toLowerCase() === categoryName.toLowerCase()
-            )?.id || null;
-        }
-
-        const brandName = getVal("brand");
+        // Use the first row for product-level data
+        const categoryId = resolveCategoryId(
+          getVal(firstRow, firstIdx, "category"),
+          getVal(firstRow, firstIdx, "subcategory")
+        );
+        const brandName = getVal(firstRow, firstIdx, "brand");
         const brandId = brandName
-          ? lookup.brands.find(
-              (b) => b.name.toLowerCase() === brandName.toLowerCase()
-            )?.id || null
+          ? lookup.brands.find((b) => b.name.toLowerCase() === brandName.toLowerCase())?.id || null
           : null;
-
-        const sgName = getVal("size_guide");
+        const sgName = getVal(firstRow, firstIdx, "size_guide");
         const sgId = sgName
-          ? lookup.sizeGuides.find(
-              (s) => s.name.toLowerCase() === sgName.toLowerCase()
-            )?.id || null
+          ? lookup.sizeGuides.find((s) => s.name.toLowerCase() === sgName.toLowerCase())?.id || null
           : null;
-
-        const ciName = getVal("care_instruction");
+        const ciName = getVal(firstRow, firstIdx, "care_instruction");
         const ciId = ciName
-          ? lookup.careInstructions.find(
-              (c) => c.name.toLowerCase() === ciName.toLowerCase()
-            )?.id || null
+          ? lookup.careInstructions.find((c) => c.name.toLowerCase() === ciName.toLowerCase())?.id || null
           : null;
 
-        const hasVariantData =
-          getVal("variant_color") ||
-          getVal("variant_size") ||
-          getVal("variant_material");
-        const productType = getVal("product_type") || (hasVariantData ? "variable" : "simple");
-        const isActive = getVal("is_active").toLowerCase() !== "false";
-        const isFeatured = getVal("is_featured").toLowerCase() === "true";
+        // If multiple rows share this name, it's a variable product
+        const hasMultipleRows = rowIndices.length > 1;
+        const anyRowHasVariant = rowIndices.some((ri) => {
+          const r = rows[ri];
+          return getVal(r, ri, "variant_color") || getVal(r, ri, "variant_size") || getVal(r, ri, "variant_material");
+        });
+        const explicitType = getVal(firstRow, firstIdx, "product_type");
+        const productType = explicitType || (hasMultipleRows || anyRowHasVariant ? "variable" : "simple");
+        const isActive = getVal(firstRow, firstIdx, "is_active").toLowerCase() !== "false";
+        const isFeatured = getVal(firstRow, firstIdx, "is_featured").toLowerCase() === "true";
 
-        // Insert product
+        // Insert product (once per group)
         const { data: product, error: prodErr } = await supabase
           .from("products")
           .insert({
-            name: getVal("name"),
-            sku: getVal("sku") || undefined,
+            name: getVal(firstRow, firstIdx, "name"),
+            sku: getVal(firstRow, firstIdx, "sku") || undefined,
             category_id: categoryId,
             brand_id: brandId,
-            short_description: getVal("short_description") || null,
-            full_description: getVal("full_description") || null,
-            base_price: Number(getVal("base_price")) || 0,
+            short_description: getVal(firstRow, firstIdx, "short_description") || null,
+            full_description: getVal(firstRow, firstIdx, "full_description") || null,
+            base_price: Number(getVal(firstRow, firstIdx, "base_price")) || 0,
             product_type: productType as "simple" | "variable",
             is_active: isActive,
             is_featured: isFeatured,
-            youtube_url: getVal("youtube_url") || null,
+            youtube_url: getVal(firstRow, firstIdx, "youtube_url") || null,
             size_guide_id: sgId,
             care_instruction_id: ciId,
           })
@@ -589,66 +614,61 @@ const BulkProductUpload = () => {
 
         if (prodErr) throw prodErr;
 
-        // Insert images
-        const imageUrls = getVal("image_urls");
-        if (imageUrls && product) {
-          const urls = imageUrls
-            .split(",")
-            .map((u) => u.trim())
-            .filter(Boolean);
-          for (let j = 0; j < urls.length; j++) {
-            await supabase.from("product_images").insert({
-              product_id: product.id,
-              image_url: urls[j],
-              is_main: j === 0,
-              sort_order: j,
-            });
+        // Collect all unique image URLs across all rows of this product
+        const allImageUrls = new Set<string>();
+        for (const ri of rowIndices) {
+          const urls = getVal(rows[ri], ri, "image_urls");
+          if (urls) {
+            urls.split(",").map((u) => u.trim()).filter(Boolean).forEach((u) => allImageUrls.add(u));
           }
         }
-
-        // Insert variant if data present
-        if (hasVariantData && product) {
-          const colorName = getVal("variant_color");
-          const sizeName = getVal("variant_size");
-          const matName = getVal("variant_material");
-
-          const colorId = colorName
-            ? lookup.colors.find(
-                (c) => c.name.toLowerCase() === colorName.toLowerCase()
-              )?.id || null
-            : null;
-          const sizeId = sizeName
-            ? lookup.sizes.find(
-                (s) => s.label.toLowerCase() === sizeName.toLowerCase()
-              )?.id || null
-            : null;
-          const matId = matName
-            ? lookup.materials.find(
-                (m) => m.name.toLowerCase() === matName.toLowerCase()
-              )?.id || null
-            : null;
-
-          await supabase.from("product_variants").insert({
+        let imgIdx = 0;
+        for (const url of allImageUrls) {
+          await supabase.from("product_images").insert({
             product_id: product.id,
-            color_id: colorId,
-            size_id: sizeId,
-            material_id: matId,
-            sku: getVal("variant_sku") || undefined,
-            selling_price:
-              Number(getVal("variant_price")) ||
-              Number(getVal("base_price")) ||
-              0,
-            purchase_price: 0,
-            is_active: true,
+            image_url: url,
+            is_main: imgIdx === 0,
+            sort_order: imgIdx,
           });
+          imgIdx++;
+        }
+
+        // Insert variants from each row
+        for (const ri of rowIndices) {
+          const r = rows[ri];
+          const colorName = getVal(r, ri, "variant_color");
+          const sizeName = getVal(r, ri, "variant_size");
+          const matName = getVal(r, ri, "variant_material");
+          const hasVariantData = colorName || sizeName || matName;
+
+          if (hasVariantData) {
+            const { colorId, sizeId, matId } = resolveVariantIds(colorName, sizeName, matName);
+            await supabase.from("product_variants").insert({
+              product_id: product.id,
+              color_id: colorId,
+              size_id: sizeId,
+              material_id: matId,
+              sku: getVal(r, ri, "variant_sku") || undefined,
+              selling_price:
+                Number(getVal(r, ri, "variant_price")) ||
+                Number(getVal(firstRow, firstIdx, "base_price")) ||
+                0,
+              purchase_price: 0,
+              is_active: true,
+            });
+          }
+
+          processedRows++;
+          setImportProgress(processedRows);
         }
 
         successCount++;
       } catch (err) {
         failCount++;
-        console.error(`Row ${i + 1} failed:`, err);
+        processedRows += rowIndices.length;
+        setImportProgress(processedRows);
+        console.error(`Product group failed (rows ${rowIndices.map((r) => r + 1).join(",")}):`, err);
       }
-      setImportProgress(i + 1);
     }
 
     // Invalidate queries
@@ -688,6 +708,31 @@ const BulkProductUpload = () => {
   const mappedSystemFields = SYSTEM_FIELDS.filter((f) => reverseMap[f.key]);
 
   const unresolvedCount = errors.filter((e) => !e.resolved).length;
+
+  // ── Compute product groups for review display ──────────────
+  const productGroupMap = new Map<string, number[]>();
+  const nameHeader = reverseMap["name"];
+  if (nameHeader) {
+    rows.forEach((row, i) => {
+      const name = (row[nameHeader] || "").trim().toLowerCase();
+      if (!name) return;
+      if (!productGroupMap.has(name)) productGroupMap.set(name, []);
+      productGroupMap.get(name)!.push(i);
+    });
+  }
+  const uniqueProductCount = productGroupMap.size;
+  const multiVariantGroups = [...productGroupMap.values()].filter((g) => g.length > 1);
+  // Build a set of row indices that belong to multi-row groups (for highlighting)
+  const groupedRowSet = new Set<number>();
+  const rowGroupIndex = new Map<number, number>(); // row index → group number (for alternating colors)
+  let groupNum = 0;
+  for (const indices of multiVariantGroups) {
+    for (const idx of indices) {
+      groupedRowSet.add(idx);
+      rowGroupIndex.set(idx, groupNum);
+    }
+    groupNum++;
+  }
 
   // ── RENDER ─────────────────────────────────────────────────
   return (
@@ -795,8 +840,14 @@ const BulkProductUpload = () => {
       {step === "review" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-3">
-              <Badge variant="secondary">{rows.length} products</Badge>
+            <div className="flex items-center gap-3 flex-wrap">
+              <Badge variant="secondary">{rows.length} rows</Badge>
+              <Badge variant="outline">{uniqueProductCount} unique products</Badge>
+              {multiVariantGroups.length > 0 && (
+                <Badge variant="outline" className="gap-1">
+                  {multiVariantGroups.length} grouped (multi-variant)
+                </Badge>
+              )}
               {unresolvedCount > 0 ? (
                 <Badge variant="destructive" className="gap-1">
                   <AlertCircle className="h-3 w-3" />
@@ -825,7 +876,7 @@ const BulkProductUpload = () => {
                 onClick={handleImport}
                 disabled={unresolvedCount > 0}
               >
-                Import {rows.length} Products
+                Import {uniqueProductCount} Products
               </Button>
             </div>
           </div>
@@ -894,10 +945,27 @@ const BulkProductUpload = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((row, ri) => (
-                  <TableRow key={ri}>
+                {rows.map((row, ri) => {
+                  const isGrouped = groupedRowSet.has(ri);
+                  const gIdx = rowGroupIndex.get(ri) ?? 0;
+                  const isFirstInGroup = isGrouped && (ri === 0 || rowGroupIndex.get(ri - 1) !== gIdx || !groupedRowSet.has(ri - 1));
+                  return (
+                  <TableRow
+                    key={ri}
+                    className={cn(
+                      isGrouped && gIdx % 2 === 0 && "bg-primary/5",
+                      isGrouped && gIdx % 2 === 1 && "bg-accent/30"
+                    )}
+                  >
                     <TableCell className="sticky left-0 bg-background z-10 text-muted-foreground text-xs">
-                      {ri + 1}
+                      <div className="flex items-center gap-1">
+                        {ri + 1}
+                        {isFirstInGroup && (
+                          <span className="text-[10px] px-1 rounded bg-primary/10 text-primary font-medium">
+                            GRP
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
                     {mappedSystemFields.map((f) => {
                       const csvH = reverseMap[f.key];
@@ -962,7 +1030,8 @@ const BulkProductUpload = () => {
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           </div>

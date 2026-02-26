@@ -1,6 +1,7 @@
 import { useState, useRef, useMemo } from "react";
 import { useMediaFiles, useUploadMedia, useDeleteMedia, useRenameMedia, MediaFile } from "@/hooks/useMedia";
 import { useAllMediaMetadata, useDeleteMediaMetadata } from "@/hooks/useMediaMetadata";
+import { useMediaReferences, MediaReference } from "@/hooks/useMediaReferences";
 import { getFileType, formatFileSize, copyFileUrl } from "@/services/media.service";
 import MediaSeoEditor from "@/components/admin/MediaSeoEditor";
 import { Button } from "@/components/ui/button";
@@ -43,9 +44,13 @@ import {
   File,
   Music,
   Pencil,
-  X,
   Loader2,
   ExternalLink,
+  Package,
+  Tag,
+  Monitor,
+  Star,
+  Layers,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -65,6 +70,17 @@ const BUCKET_LABELS: Record<string, string> = {
   "profile-images": "Profile Images",
 };
 
+const REF_TYPE_ICONS: Record<string, React.ElementType> = {
+  product: Package,
+  variant: Layers,
+  category: Tag,
+  banner: Monitor,
+  review: Star,
+};
+
+const INITIAL_LOAD = 18;
+const LOAD_MORE_SIZE = 50;
+
 const AdminMedia = () => {
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
@@ -74,16 +90,18 @@ const AdminMedia = () => {
   const [isRenameOpen, setIsRenameOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [newFileName, setNewFileName] = useState("");
+  const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: files = [], isLoading } = useMediaFiles();
   const { data: allMetadata = [] } = useAllMediaMetadata();
+  const { data: referencesMap } = useMediaReferences();
   const uploadMutation = useUploadMedia();
   const deleteMutation = useDeleteMedia();
   const deleteMetadataMutation = useDeleteMediaMetadata();
   const renameMutation = useRenameMedia();
 
-  // Filter files based on search, type, and bucket
+  // Filter files based on search, type, and bucket (filters work across ALL files)
   const filteredFiles = useMemo(() => {
     return files.filter((file) => {
       const matchesSearch = file.name.toLowerCase().includes(search.toLowerCase());
@@ -94,11 +112,23 @@ const AdminMedia = () => {
     });
   }, [files, search, filterType, filterBucket]);
 
-  // Get unique buckets from files
+  // Reset visible count when filters change
+  useMemo(() => {
+    setVisibleCount(INITIAL_LOAD);
+  }, [search, filterType, filterBucket]);
+
+  // Paginated slice for display
+  const visibleFiles = useMemo(() => filteredFiles.slice(0, visibleCount), [filteredFiles, visibleCount]);
+  const hasMore = visibleCount < filteredFiles.length;
+
   const buckets = useMemo(() => {
-    const uniqueBuckets = [...new Set(files.map((f) => f.bucket_id))];
-    return uniqueBuckets;
+    return [...new Set(files.map((f) => f.bucket_id))];
   }, [files]);
+
+  const getFileReferences = (file: MediaFile): MediaReference[] => {
+    if (!referencesMap) return [];
+    return referencesMap.get(file.public_url) || [];
+  };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files;
@@ -120,7 +150,7 @@ const AdminMedia = () => {
 
   const handleRename = async () => {
     if (!selectedFile || !newFileName.trim()) return;
-    
+
     const ext = selectedFile.name.split(".").pop();
     const finalName = newFileName.includes(".") ? newFileName : `${newFileName}.${ext}`;
 
@@ -138,24 +168,32 @@ const AdminMedia = () => {
   const handleDelete = async () => {
     if (!selectedFile) return;
 
-    await deleteMutation.mutateAsync({
-      bucketId: selectedFile.bucket_id,
-      fileName: selectedFile.name,
-    });
+    try {
+      await deleteMutation.mutateAsync({
+        bucketId: selectedFile.bucket_id,
+        fileName: selectedFile.name,
+      });
 
-    // Also clean up any associated metadata
-    deleteMetadataMutation.mutate({
-      bucketId: selectedFile.bucket_id,
-      filePath: selectedFile.name,
-    });
+      // Also clean up any associated metadata
+      deleteMetadataMutation.mutate({
+        bucketId: selectedFile.bucket_id,
+        filePath: selectedFile.name,
+      });
 
-    setIsDeleteOpen(false);
-    setSelectedFile(null);
+      setIsDeleteOpen(false);
+      setIsPreviewOpen(false);
+      setSelectedFile(null);
+      toast.success("File deleted successfully");
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast.error("Failed to delete file. Check storage permissions.");
+    }
   };
 
   const openRenameDialog = (file: MediaFile) => {
     setSelectedFile(file);
-    setNewFileName(file.name.split(".").slice(0, -1).join("."));
+    const nameWithoutPath = file.name.includes("/") ? file.name.split("/").pop()! : file.name;
+    setNewFileName(nameWithoutPath.split(".").slice(0, -1).join("."));
     setIsRenameOpen(true);
   };
 
@@ -197,6 +235,27 @@ const AdminMedia = () => {
     return (
       <div className={`${sizeClass} bg-muted flex items-center justify-center ${size === "sm" ? "rounded-t" : "rounded"}`}>
         <Icon className={size === "sm" ? "h-12 w-12 text-muted-foreground" : "h-24 w-24 text-muted-foreground"} />
+      </div>
+    );
+  };
+
+  const renderReferences = (refs: MediaReference[]) => {
+    if (refs.length === 0) return null;
+    return (
+      <div className="space-y-1.5">
+        <p className="text-xs font-medium text-muted-foreground">Used by:</p>
+        {refs.map((ref, i) => {
+          const Icon = REF_TYPE_ICONS[ref.type] || File;
+          return (
+            <div key={i} className="flex items-center gap-1.5 text-xs">
+              <Icon className="h-3 w-3 text-muted-foreground shrink-0" />
+              <Badge variant="outline" className="text-xs capitalize py-0 h-5">
+                {ref.type}
+              </Badge>
+              <span className="truncate text-muted-foreground">{ref.label}</span>
+            </div>
+          );
+        })}
       </div>
     );
   };
@@ -306,78 +365,99 @@ const AdminMedia = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {filteredFiles.map((file) => {
-            const fileType = getFileType(file.mime_type, file.name);
-            const canEdit = file.bucket_id === "media";
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {visibleFiles.map((file) => {
+              const fileType = getFileType(file.mime_type, file.name);
+              const refs = getFileReferences(file);
 
-            return (
-              <Card
-                key={`${file.bucket_id}-${file.name}`}
-                className="group overflow-hidden hover:ring-2 hover:ring-primary/20 transition-all cursor-pointer"
-                onClick={() => openPreview(file)}
-              >
-                <div className="relative">
-                  {renderFilePreview(file, "sm")}
-                  <Badge
-                    variant="secondary"
-                    className="absolute top-2 right-2 text-xs capitalize"
-                  >
-                    {fileType}
-                  </Badge>
-                </div>
-                <CardContent className="p-3 space-y-2">
-                  <p className="text-sm font-medium truncate" title={file.name}>
-                    {file.name.includes("/") ? file.name.split("/").pop() : file.name}
-                  </p>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{formatFileSize(file.size)}</span>
-                    <span>{BUCKET_LABELS[file.bucket_id] || file.bucket_id}</span>
-                  </div>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 w-7 p-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCopyUrl(file.public_url);
-                      }}
+              return (
+                <Card
+                  key={`${file.bucket_id}-${file.name}`}
+                  className="group overflow-hidden hover:ring-2 hover:ring-primary/20 transition-all cursor-pointer"
+                  onClick={() => openPreview(file)}
+                >
+                  <div className="relative">
+                    {renderFilePreview(file, "sm")}
+                    <Badge
+                      variant="secondary"
+                      className="absolute top-2 right-2 text-xs capitalize"
                     >
-                      <Copy className="h-3.5 w-3.5" />
-                    </Button>
-                    {canEdit && (
-                      <>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-7 w-7 p-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openRenameDialog(file);
-                          }}
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openDeleteDialog(file);
-                          }}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </>
+                      {fileType}
+                    </Badge>
+                    {refs.length > 0 && (
+                      <Badge variant="default" className="absolute top-2 left-2 text-xs">
+                        {refs.length} ref{refs.length > 1 ? "s" : ""}
+                      </Badge>
                     )}
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                  <CardContent className="p-3 space-y-2">
+                    <p className="text-sm font-medium truncate" title={file.name}>
+                      {file.name.includes("/") ? file.name.split("/").pop() : file.name}
+                    </p>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>{formatFileSize(file.size)}</span>
+                      <span>{BUCKET_LABELS[file.bucket_id] || file.bucket_id}</span>
+                    </div>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 w-7 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCopyUrl(file.public_url);
+                        }}
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 w-7 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openRenameDialog(file);
+                        }}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openDeleteDialog(file);
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Load More */}
+          {hasMore && (
+            <div className="flex justify-center pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setVisibleCount((prev) => prev + LOAD_MORE_SIZE)}
+              >
+                Load More ({visibleFiles.length} of {filteredFiles.length})
+              </Button>
+            </div>
+          )}
+
+          {!hasMore && filteredFiles.length > INITIAL_LOAD && (
+            <p className="text-center text-sm text-muted-foreground">
+              Showing all {filteredFiles.length} files
+            </p>
+          )}
+        </>
       )}
 
       {/* Preview Dialog */}
@@ -411,7 +491,11 @@ const AdminMedia = () => {
                   {format(new Date(selectedFile.created_at), "MMM d, yyyy")}
                 </div>
               </div>
-              <div className="flex gap-2 pt-2">
+
+              {/* File References */}
+              {renderReferences(getFileReferences(selectedFile))}
+
+              <div className="flex flex-wrap gap-2 pt-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -420,15 +504,27 @@ const AdminMedia = () => {
                   <Copy className="h-4 w-4 mr-2" />
                   Copy URL
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  asChild
-                >
+                <Button variant="outline" size="sm" asChild>
                   <a href={selectedFile.public_url} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="h-4 w-4 mr-2" />
                     Open
                   </a>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openRenameDialog(selectedFile)}
+                >
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Rename
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => openDeleteDialog(selectedFile)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
                 </Button>
               </div>
 
@@ -480,8 +576,21 @@ const AdminMedia = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete File</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "{selectedFile?.name}"? This action cannot be undone.
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>Are you sure you want to delete "{selectedFile?.name}"? This action cannot be undone.</p>
+                {selectedFile && getFileReferences(selectedFile).length > 0 && (
+                  <div className="bg-muted p-3 rounded text-sm space-y-1 mt-2">
+                    <p className="font-medium text-foreground">⚠️ This file is currently used by:</p>
+                    <ul className="list-disc list-inside text-muted-foreground">
+                      {getFileReferences(selectedFile).map((ref, i) => (
+                        <li key={i}>{ref.type}: {ref.label}</li>
+                      ))}
+                    </ul>
+                    <p className="text-xs text-destructive mt-1">Deleting will break these references.</p>
+                  </div>
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

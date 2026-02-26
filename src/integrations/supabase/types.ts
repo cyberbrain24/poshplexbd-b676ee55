@@ -408,6 +408,8 @@ export type Database = {
           date: string
           id: string
           notes: string | null
+          subcategory_id: string | null
+          transaction_id: string | null
           type: string
           updated_at: string
         }
@@ -419,6 +421,8 @@ export type Database = {
           date?: string
           id?: string
           notes?: string | null
+          subcategory_id?: string | null
+          transaction_id?: string | null
           type: string
           updated_at?: string
         }
@@ -430,6 +434,8 @@ export type Database = {
           date?: string
           id?: string
           notes?: string | null
+          subcategory_id?: string | null
+          transaction_id?: string | null
           type?: string
           updated_at?: string
         }
@@ -446,6 +452,20 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "transaction_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_entries_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "transaction_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_entries_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
             referencedColumns: ["id"]
           },
         ]

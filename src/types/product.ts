@@ -108,6 +108,8 @@ export interface ProductVariant {
   selling_price: number;
   is_active: boolean;
   image_url: string | null;
+  stock_quantity: number;
+  low_stock_threshold: number;
   created_at: string;
   updated_at: string;
   // Joined data

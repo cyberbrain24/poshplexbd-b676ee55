@@ -115,7 +115,7 @@ const AdminProducts = () => {
               <TableHead>Type</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Price</TableHead>
-              <TableHead>Variants</TableHead>
+              <TableHead>Stock</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="w-24">Actions</TableHead>
             </TableRow>
@@ -162,7 +162,17 @@ const AdminProducts = () => {
                   </TableCell>
                   <TableCell>{product.category?.name || "-"}</TableCell>
                   <TableCell>৳{product.base_price.toLocaleString()}</TableCell>
-                  <TableCell>{product.variants?.length || 0}</TableCell>
+                  <TableCell>
+                    {(() => {
+                      const totalStock = product.variants?.reduce((sum, v) => sum + (v.stock_quantity ?? 0), 0) ?? 0;
+                      const lowThreshold = product.variants?.some(v => (v.stock_quantity ?? 0) <= (v.low_stock_threshold ?? 5)) ?? false;
+                      return (
+                        <Badge variant={totalStock === 0 ? "destructive" : lowThreshold ? "outline" : "secondary"}>
+                          {totalStock}
+                        </Badge>
+                      );
+                    })()}
+                  </TableCell>
                   <TableCell>
                     <Badge variant={product.is_active ? "default" : "outline"}>
                       {product.is_active ? "Active" : "Inactive"}

@@ -379,23 +379,17 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
     })));
   };
 
-  const handleDragEnd = useCallback(async (fromIndex: number, toIndex: number) => {
+  const handleDragEnd = useCallback((fromIndex: number, toIndex: number) => {
     if (fromIndex === toIndex) return;
-    const reordered = [...images];
-    const [moved] = reordered.splice(fromIndex, 1);
-    reordered.splice(toIndex, 0, moved);
-    const updated = reordered.map((img, i) => ({ ...img, sort_order: i }));
-    setImages(updated);
+    setImages(prev => {
+      const reordered = [...prev];
+      const [moved] = reordered.splice(fromIndex, 1);
+      reordered.splice(toIndex, 0, moved);
+      return reordered.map((img, i) => ({ ...img, sort_order: i }));
+    });
     setDragIndex(null);
     setDragOverIndex(null);
-    if (product) {
-      for (let i = 0; i < updated.length; i++) {
-        if (!updated[i].id.startsWith("temp-")) {
-          await updateImage.mutateAsync({ id: updated[i].id, sortOrder: i });
-        }
-      }
-    }
-  }, [images, product, updateImage]);
+  }, []);
 
   const addNewVariant = () => {
     setVariants(prev => [...prev, {

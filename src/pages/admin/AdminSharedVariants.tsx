@@ -27,6 +27,7 @@ const AdminSharedVariants = () => {
   const [sizeId, setSizeId] = useState("");
   const [materialId, setMaterialId] = useState("");
   const [categoryId, setCategoryId] = useState("");
+  const [subcategoryId, setSubcategoryId] = useState("");
   const [sku, setSku] = useState("");
   const [purchasePrice, setPurchasePrice] = useState(0);
   const [lowThreshold, setLowThreshold] = useState(5);
@@ -56,10 +57,14 @@ const AdminSharedVariants = () => {
   const { data: categories } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
-      const { data } = await supabase.from("categories").select("id, name").order("name");
+      const { data } = await supabase.from("categories").select("id, name, parent_id").order("sort_order");
       return data || [];
     },
   });
+
+  // Derive parent categories and subcategories
+  const parentCategories = categories?.filter((c) => !c.parent_id) || [];
+  const subcategories = categories?.filter((c) => c.parent_id === categoryId) || [];
 
   const openCreate = () => {
     setEditing(null);
@@ -67,6 +72,7 @@ const AdminSharedVariants = () => {
     setSizeId("");
     setMaterialId("");
     setCategoryId("");
+    setSubcategoryId("");
     setSku("");
     setPurchasePrice(0);
     setLowThreshold(5);
@@ -79,6 +85,7 @@ const AdminSharedVariants = () => {
     setSizeId(sv.size_id || "");
     setMaterialId(sv.material_id || "");
     setCategoryId(sv.category_id || "");
+    setSubcategoryId(sv.subcategory_id || "");
     setSku(sv.sku);
     setPurchasePrice(sv.purchase_price);
     setLowThreshold(sv.low_stock_threshold);
@@ -91,6 +98,7 @@ const AdminSharedVariants = () => {
       size_id: sizeId || null,
       material_id: materialId || null,
       category_id: categoryId || null,
+      subcategory_id: subcategoryId || null,
       sku,
       purchase_price: purchasePrice,
       low_stock_threshold: lowThreshold,
@@ -133,6 +141,7 @@ const AdminSharedVariants = () => {
             <TableRow>
               <TableHead>SKU</TableHead>
               <TableHead>Category</TableHead>
+              <TableHead>Subcategory</TableHead>
               <TableHead>Color</TableHead>
               <TableHead>Size</TableHead>
               <TableHead>Material</TableHead>
@@ -145,14 +154,15 @@ const AdminSharedVariants = () => {
           <TableBody>
             {!variants?.length ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                   No shared variants yet. Create one to start managing blank stock.
                 </TableCell>
               </TableRow>
             ) : variants.map((sv) => (
               <TableRow key={sv.id}>
                 <TableCell className="font-mono text-sm">{sv.sku || "—"}</TableCell>
-                <TableCell>{(sv as any).category?.name || "—"}</TableCell>
+                <TableCell>{sv.category?.name || "—"}</TableCell>
+                <TableCell>{sv.subcategory?.name || "—"}</TableCell>
                 <TableCell>
                   {sv.color ? (
                     <div className="flex items-center gap-2">
@@ -201,15 +211,28 @@ const AdminSharedVariants = () => {
             </div>
             <div>
               <Label>Category (Product Type)</Label>
-              <Select value={categoryId} onValueChange={setCategoryId}>
+              <Select value={categoryId} onValueChange={(v) => { setCategoryId(v); setSubcategoryId(""); }}>
                 <SelectTrigger><SelectValue placeholder="e.g. T-Shirt, Pants" /></SelectTrigger>
                 <SelectContent>
-                  {categories?.map((c) => (
+                  {parentCategories.map((c) => (
                     <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+            {subcategories.length > 0 && (
+              <div>
+                <Label>Subcategory</Label>
+                <Select value={subcategoryId} onValueChange={setSubcategoryId}>
+                  <SelectTrigger><SelectValue placeholder="Select subcategory" /></SelectTrigger>
+                  <SelectContent>
+                    {subcategories.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div>
               <Label>Color</Label>
               <Select value={colorId} onValueChange={setColorId}>

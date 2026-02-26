@@ -232,34 +232,73 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
+    // Reset input so the same files can be re-selected if needed
+    if (fileInputRef.current) fileInputRef.current.value = "";
+
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+    // Validate and filter files
+    const validFiles: File[] = [];
+    for (const file of Array.from(files)) {
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        toast.error(`"${file.name}" skipped — only JPEG, PNG, WebP, GIF allowed`);
+        continue;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error(`"${file.name}" skipped — exceeds 5MB limit`);
+        continue;
+      }
+      validFiles.push(file);
+    }
+
+    if (validFiles.length === 0) return;
+
     setIsUploading(true);
+    let uploadedCount = 0;
+
     try {
-      for (const file of Array.from(files)) {
-        if (product) {
-          // Upload directly for existing product
+      if (product) {
+        // Existing product: upload sequentially, track sort order correctly
+        let currentSortOrder = images.length;
+        const existingUrls = new Set(images.map(i => i.image_url));
+
+        for (const file of validFiles) {
           const imageUrl = await uploadProductImage(file, product.id);
+          if (existingUrls.has(imageUrl)) continue; // skip duplicate
           await addImage.mutateAsync({
             productId: product.id,
             imageUrl,
-            sortOrder: images.length,
-            isMain: images.length === 0,
+            sortOrder: currentSortOrder,
+            isMain: currentSortOrder === 0,
           });
-        } else {
-          // Store locally for new product
+          existingUrls.add(imageUrl);
+          currentSortOrder++;
+          uploadedCount++;
+        }
+      } else {
+        // New product: store as blobs locally, maintaining selection order
+        const newImages: ProductImage[] = validFiles.map((file, idx) => {
           const localUrl = URL.createObjectURL(file);
-          setImages(prev => [...prev, {
+          const currentLength = images.length + idx;
+          return {
             id: `temp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
             product_id: "",
             image_url: localUrl,
             alt_text: null,
-            sort_order: prev.length,
-            is_main: prev.length === 0,
+            sort_order: currentLength,
+            is_main: currentLength === 0,
             color_id: null,
             created_at: new Date().toISOString(),
-          }]);
-        }
+          };
+        });
+        setImages(prev => [...prev, ...newImages]);
+        uploadedCount = newImages.length;
       }
-      toast.success("Images uploaded");
+
+      if (uploadedCount > 0) {
+        toast.success(`${uploadedCount} image${uploadedCount > 1 ? "s" : ""} uploaded`);
+      }
     } catch (error) {
       toast.error("Failed to upload images");
     } finally {

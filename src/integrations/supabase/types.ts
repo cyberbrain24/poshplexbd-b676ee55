@@ -475,6 +475,7 @@ export type Database = {
           created_at: string
           entry_id: string
           id: string
+          inventory_product_id: string | null
           product_id: string | null
           purchase_price: number | null
           quantity: number
@@ -485,6 +486,7 @@ export type Database = {
           created_at?: string
           entry_id: string
           id?: string
+          inventory_product_id?: string | null
           product_id?: string | null
           purchase_price?: number | null
           quantity?: number
@@ -495,6 +497,7 @@ export type Database = {
           created_at?: string
           entry_id?: string
           id?: string
+          inventory_product_id?: string | null
           product_id?: string | null
           purchase_price?: number | null
           quantity?: number
@@ -507,6 +510,13 @@ export type Database = {
             columns: ["entry_id"]
             isOneToOne: false
             referencedRelation: "inventory_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_entry_items_inventory_product_id_fkey"
+            columns: ["inventory_product_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_products"
             referencedColumns: ["id"]
           },
           {
@@ -531,6 +541,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      inventory_products: {
+        Row: {
+          created_at: string
+          current_stock: number
+          id: string
+          is_active: boolean
+          name: string
+          purchase_price: number
+          sku: string
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_stock?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          purchase_price?: number
+          sku?: string
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_stock?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          purchase_price?: number
+          sku?: string
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       materials: {
         Row: {

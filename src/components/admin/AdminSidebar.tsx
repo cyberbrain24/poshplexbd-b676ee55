@@ -48,6 +48,7 @@ const accountManagementItems: NavItem[] = [
 ];
 
 const inventoryItems: NavItem[] = [
+  { icon: Package, label: "Inventory Products", path: "/admin/inventory-products" },
   { icon: ArrowDownToLine, label: "Inventory In", path: "/admin/inventory-in" },
   { icon: ArrowUpFromLine, label: "Inventory Out", path: "/admin/inventory-out" },
 ];

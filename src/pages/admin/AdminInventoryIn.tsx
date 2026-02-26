@@ -82,7 +82,7 @@ const AdminInventoryIn = () => {
                 <TableCell className="font-medium">{formatCurrency(getTotalPrice(e))}</TableCell>
                 <TableCell>{e.account?.name || "—"}</TableCell>
                 <TableCell>{e.category?.name || "—"}</TableCell>
-                <TableCell>{(e as any).subcategory?.name || "—"}</TableCell>
+                <TableCell>{e.subcategory?.name || "—"}</TableCell>
                 <TableCell className="max-w-[200px] truncate">{e.notes || "—"}</TableCell>
                 <TableCell className="text-right space-x-1">
                   <Button variant="ghost" size="icon" onClick={() => setViewEntry(e)}><Eye className="h-4 w-4" /></Button>
@@ -104,7 +104,6 @@ const AdminInventoryIn = () => {
         saving={createMutation.isPending || updateMutation.isPending}
       />
 
-      {/* View Dialog */}
       <Dialog open={!!viewEntry} onOpenChange={(o) => !o && setViewEntry(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -116,14 +115,14 @@ const AdminInventoryIn = () => {
                 <div><span className="text-muted-foreground">Date:</span> {format(new Date(viewEntry.date), "dd MMM yyyy")}</div>
                 <div><span className="text-muted-foreground">Account:</span> {viewEntry.account?.name || "—"}</div>
                 <div><span className="text-muted-foreground">Category:</span> {viewEntry.category?.name || "—"}</div>
-                <div><span className="text-muted-foreground">Subcategory:</span> {(viewEntry as any).subcategory?.name || "—"}</div>
+                <div><span className="text-muted-foreground">Subcategory:</span> {viewEntry.subcategory?.name || "—"}</div>
                 <div><span className="text-muted-foreground">Notes:</span> {viewEntry.notes || "—"}</div>
               </div>
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Product</TableHead>
-                    <TableHead>Variant</TableHead>
+                    <TableHead>Unit</TableHead>
                     <TableHead>Qty</TableHead>
                     <TableHead>Cost</TableHead>
                     <TableHead>Line Total</TableHead>
@@ -132,14 +131,13 @@ const AdminInventoryIn = () => {
                 <TableBody>
                   {viewEntry.items?.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell>{item.product?.name || "—"}</TableCell>
-                      <TableCell>{item.variant?.sku || "—"}</TableCell>
+                      <TableCell>{item.inventory_product?.name || "—"}</TableCell>
+                      <TableCell>{item.inventory_product?.unit || "—"}</TableCell>
                       <TableCell>{item.quantity}</TableCell>
                       <TableCell>{formatCurrency(item.purchase_price)}</TableCell>
                       <TableCell>{formatCurrency(item.quantity * item.purchase_price)}</TableCell>
                     </TableRow>
                   ))}
-                  {/* Totals row */}
                   <TableRow className="bg-muted/50 font-semibold">
                     <TableCell colSpan={2}>Grand Total</TableCell>
                     <TableCell>{getTotalQty(viewEntry)}</TableCell>

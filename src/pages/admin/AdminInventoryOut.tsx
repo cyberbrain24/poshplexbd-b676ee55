@@ -38,6 +38,8 @@ const AdminInventoryOut = () => {
     }
   };
 
+  const getTotalQty = (e: InventoryEntry) => e.items?.reduce((sum, i) => sum + i.quantity, 0) || 0;
+
   if (isLoading) return <AdminLoadingSpinner />;
 
   return (
@@ -58,17 +60,19 @@ const AdminInventoryOut = () => {
             <TableRow>
               <TableHead>Date</TableHead>
               <TableHead>Items</TableHead>
+              <TableHead>Total Qty</TableHead>
               <TableHead>Notes</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {!entries?.length ? (
-              <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">No entries yet</TableCell></TableRow>
+              <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No entries yet</TableCell></TableRow>
             ) : entries.map((e) => (
               <TableRow key={e.id}>
                 <TableCell>{format(new Date(e.date), "dd MMM yyyy")}</TableCell>
                 <TableCell>{e.items?.length || 0} item(s)</TableCell>
+                <TableCell className="font-medium">{getTotalQty(e)}</TableCell>
                 <TableCell className="max-w-[200px] truncate">{e.notes || "—"}</TableCell>
                 <TableCell className="text-right space-x-1">
                   <Button variant="ghost" size="icon" onClick={() => setViewEntry(e)}><Eye className="h-4 w-4" /></Button>
@@ -90,7 +94,6 @@ const AdminInventoryOut = () => {
         saving={createMutation.isPending || updateMutation.isPending}
       />
 
-      {/* View Dialog */}
       <Dialog open={!!viewEntry} onOpenChange={(o) => !o && setViewEntry(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -106,15 +109,15 @@ const AdminInventoryOut = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Product</TableHead>
-                    <TableHead>Variant</TableHead>
+                    <TableHead>Unit</TableHead>
                     <TableHead>Qty</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {viewEntry.items?.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell>{item.product?.name || "—"}</TableCell>
-                      <TableCell>{item.variant?.sku || "—"}</TableCell>
+                      <TableCell>{item.inventory_product?.name || "—"}</TableCell>
+                      <TableCell>{item.inventory_product?.unit || "—"}</TableCell>
                       <TableCell>{item.quantity}</TableCell>
                     </TableRow>
                   ))}

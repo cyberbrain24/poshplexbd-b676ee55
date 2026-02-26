@@ -1601,6 +1601,42 @@ export type Database = {
           },
         ]
       }
+      shared_variant_categories: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          shared_variant_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          shared_variant_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          shared_variant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_variant_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shared_variant_categories_shared_variant_id_fkey"
+            columns: ["shared_variant_id"]
+            isOneToOne: false
+            referencedRelation: "shared_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shared_variants: {
         Row: {
           category_id: string | null

@@ -21,18 +21,21 @@ export interface InventoryEntry {
 export interface InventoryEntryItem {
   id: string;
   entry_id: string;
-  product_id: string;
-  variant_id: string;
+  product_id: string | null;
+  variant_id: string | null;
+  shared_variant_id: string | null;
   quantity: number;
   purchase_price: number;
   created_at: string;
   product?: { id: string; name: string; sku: string } | null;
   variant?: { id: string; sku: string; color?: { name: string } | null; size?: { label: string } | null; material?: { name: string } | null } | null;
+  shared_variant?: { id: string; sku: string; color?: { name: string } | null; size?: { label: string } | null; material?: { name: string } | null } | null;
 }
 
 export interface InventoryItemInput {
-  product_id: string;
-  variant_id: string;
+  product_id?: string;
+  variant_id?: string;
+  shared_variant_id?: string;
   quantity: number;
   purchase_price?: number;
 }
@@ -48,7 +51,8 @@ export const fetchInventoryEntries = async (type: "in" | "out") => {
       items:inventory_entry_items(
         *,
         product:products(id, name, sku),
-        variant:product_variants(id, sku, color:colors(name), size:sizes(label), material:materials(name))
+        variant:product_variants(id, sku, color:colors(name), size:sizes(label), material:materials(name)),
+        shared_variant:shared_variants(id, sku, color:colors(name), size:sizes(label), material:materials(name))
       )
     `)
     .eq("type", type)
@@ -66,7 +70,6 @@ export const createInventoryEntry = async (
   
   let transactionId: string | null = null;
 
-  // Auto-create expense transaction for inventory-in if account is selected
   if (entry.type === "in" && entry.account_id && totalAmount > 0) {
     const { data: txn, error: txnError } = await supabase
       .from("transactions")
@@ -85,7 +88,6 @@ export const createInventoryEntry = async (
     transactionId = txn.id;
   }
 
-  // Create entry
   const { data: entryData, error: entryError } = await supabase
     .from("inventory_entries")
     .insert({
@@ -102,11 +104,11 @@ export const createInventoryEntry = async (
 
   if (entryError) throw entryError;
 
-  // Create items
   const itemsToInsert = items.map((item) => ({
     entry_id: entryData.id,
-    product_id: item.product_id,
-    variant_id: item.variant_id,
+    product_id: item.product_id || null,
+    variant_id: item.variant_id || null,
+    shared_variant_id: item.shared_variant_id || null,
     quantity: item.quantity,
     purchase_price: item.purchase_price || 0,
   }));
@@ -127,7 +129,6 @@ export const updateInventoryEntry = async (
 ) => {
   const totalAmount = items.reduce((sum, i) => sum + (i.quantity || 0) * (i.purchase_price || 0), 0);
 
-  // Get existing entry to find linked transaction
   const { data: existing } = await supabase
     .from("inventory_entries")
     .select("transaction_id, type")
@@ -136,11 +137,9 @@ export const updateInventoryEntry = async (
 
   let transactionId = existing?.transaction_id || null;
 
-  // Sync transaction for inventory-in
   if (existing?.type === "in") {
     if (entry.account_id && totalAmount > 0) {
       if (transactionId) {
-        // Update existing transaction
         await supabase
           .from("transactions")
           .update({
@@ -152,7 +151,6 @@ export const updateInventoryEntry = async (
           })
           .eq("id", transactionId);
       } else {
-        // Create new transaction
         const { data: txn, error: txnError } = await supabase
           .from("transactions")
           .insert({
@@ -169,13 +167,11 @@ export const updateInventoryEntry = async (
         transactionId = txn.id;
       }
     } else if (transactionId && !entry.account_id) {
-      // Remove transaction if account cleared
       await supabase.from("transactions").delete().eq("id", transactionId);
       transactionId = null;
     }
   }
 
-  // Update entry header
   const { error: entryError } = await supabase
     .from("inventory_entries")
     .update({
@@ -190,7 +186,6 @@ export const updateInventoryEntry = async (
 
   if (entryError) throw entryError;
 
-  // Delete old items (trigger reverses stock)
   const { error: delError } = await supabase
     .from("inventory_entry_items")
     .delete()
@@ -198,11 +193,11 @@ export const updateInventoryEntry = async (
 
   if (delError) throw delError;
 
-  // Insert new items (trigger adds stock)
   const itemsToInsert = items.map((item) => ({
     entry_id: id,
-    product_id: item.product_id,
-    variant_id: item.variant_id,
+    product_id: item.product_id || null,
+    variant_id: item.variant_id || null,
+    shared_variant_id: item.shared_variant_id || null,
     quantity: item.quantity,
     purchase_price: item.purchase_price || 0,
   }));
@@ -215,14 +210,12 @@ export const updateInventoryEntry = async (
 };
 
 export const deleteInventoryEntry = async (id: string) => {
-  // Get linked transaction before deleting
   const { data: existing } = await supabase
     .from("inventory_entries")
     .select("transaction_id")
     .eq("id", id)
     .single();
 
-  // Delete entry (cascades to items, trigger reverses stock)
   const { error } = await supabase
     .from("inventory_entries")
     .delete()
@@ -230,7 +223,6 @@ export const deleteInventoryEntry = async (id: string) => {
 
   if (error) throw error;
 
-  // Delete linked transaction
   if (existing?.transaction_id) {
     await supabase.from("transactions").delete().eq("id", existing.transaction_id);
   }

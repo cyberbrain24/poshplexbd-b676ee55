@@ -10,6 +10,8 @@ import { useAccounts, useTransactionCategories } from "@/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { InventoryEntry, InventoryItemInput } from "@/services/inventory.service";
+import { useSharedVariants } from "@/hooks/useSharedVariants";
+import { formatSharedVariantLabel } from "@/services/shared-variant.service";
 import { formatCurrency } from "@/lib/currency";
 
 interface Props {
@@ -24,6 +26,7 @@ interface Props {
 interface LineItem {
   product_id: string;
   variant_id: string;
+  shared_variant_id: string;
   quantity: number;
   purchase_price: number;
 }
@@ -34,17 +37,16 @@ const InventoryEntryModal = ({ open, onClose, onSave, type, editEntry, saving }:
   const [accountId, setAccountId] = useState<string>("");
   const [categoryId, setCategoryId] = useState<string>("");
   const [subcategoryId, setSubcategoryId] = useState<string>("");
-  const [items, setItems] = useState<LineItem[]>([{ product_id: "", variant_id: "", quantity: 1, purchase_price: 0 }]);
+  const [stockMode, setStockMode] = useState<"product" | "shared">("product");
+  const [items, setItems] = useState<LineItem[]>([{ product_id: "", variant_id: "", shared_variant_id: "", quantity: 1, purchase_price: 0 }]);
 
   const { data: accounts } = useAccounts();
   const { data: categories } = useTransactionCategories("expense");
-  
-  // Parent categories (no parent_id)
+  const { data: sharedVariants } = useSharedVariants();
+
   const parentCategories = useMemo(() => categories?.filter((c) => !c.parent_id) || [], [categories]);
-  // Subcategories for selected parent
   const subcategories = useMemo(() => categories?.filter((c) => c.parent_id === categoryId) || [], [categories, categoryId]);
 
-  // Fetch products for dropdown
   const { data: products } = useQuery({
     queryKey: ["products-for-inventory"],
     queryFn: async () => {
@@ -58,7 +60,6 @@ const InventoryEntryModal = ({ open, onClose, onSave, type, editEntry, saving }:
     },
   });
 
-  // Fetch variants for selected products
   const selectedProductIds = [...new Set(items.map((i) => i.product_id).filter(Boolean))];
   const { data: variants } = useQuery({
     queryKey: ["variants-for-inventory", selectedProductIds],
@@ -76,7 +77,6 @@ const InventoryEntryModal = ({ open, onClose, onSave, type, editEntry, saving }:
     enabled: selectedProductIds.length > 0,
   });
 
-  // Populate form when editing
   useEffect(() => {
     if (editEntry) {
       setDate(editEntry.date);
@@ -85,9 +85,12 @@ const InventoryEntryModal = ({ open, onClose, onSave, type, editEntry, saving }:
       setCategoryId(editEntry.category_id || "");
       setSubcategoryId((editEntry as any).subcategory_id || "");
       if (editEntry.items?.length) {
-        setItems(editEntry.items.map((i) => ({
-          product_id: i.product_id,
-          variant_id: i.variant_id,
+        const hasShared = editEntry.items.some((i: any) => i.shared_variant_id);
+        setStockMode(hasShared ? "shared" : "product");
+        setItems(editEntry.items.map((i: any) => ({
+          product_id: i.product_id || "",
+          variant_id: i.variant_id || "",
+          shared_variant_id: i.shared_variant_id || "",
           quantity: i.quantity,
           purchase_price: i.purchase_price,
         })));
@@ -98,18 +101,16 @@ const InventoryEntryModal = ({ open, onClose, onSave, type, editEntry, saving }:
       setAccountId("");
       setCategoryId("");
       setSubcategoryId("");
-      setItems([{ product_id: "", variant_id: "", quantity: 1, purchase_price: 0 }]);
+      setStockMode("product");
+      setItems([{ product_id: "", variant_id: "", shared_variant_id: "", quantity: 1, purchase_price: 0 }]);
     }
   }, [editEntry, open]);
 
-  // Reset subcategory when category changes
   useEffect(() => {
-    if (!editEntry) {
-      setSubcategoryId("");
-    }
+    if (!editEntry) setSubcategoryId("");
   }, [categoryId]);
 
-  const addLine = () => setItems([...items, { product_id: "", variant_id: "", quantity: 1, purchase_price: 0 }]);
+  const addLine = () => setItems([...items, { product_id: "", variant_id: "", shared_variant_id: "", quantity: 1, purchase_price: 0 }]);
   const removeLine = (idx: number) => setItems(items.filter((_, i) => i !== idx));
 
   const updateLine = (idx: number, field: keyof LineItem, value: string | number) => {
@@ -133,11 +134,12 @@ const InventoryEntryModal = ({ open, onClose, onSave, type, editEntry, saving }:
     return parts.join(" | ");
   };
 
-  // Grand totals
   const grandTotalQty = items.reduce((sum, i) => sum + (i.quantity || 0), 0);
   const grandTotalPrice = items.reduce((sum, i) => sum + (i.quantity || 0) * (i.purchase_price || 0), 0);
 
-  const canSave = items.every((i) => i.product_id && i.variant_id && i.quantity > 0);
+  const canSave = stockMode === "shared"
+    ? items.every((i) => i.shared_variant_id && i.quantity > 0)
+    : items.every((i) => i.product_id && i.variant_id && i.quantity > 0);
 
   const handleSave = () => {
     onSave(
@@ -149,12 +151,18 @@ const InventoryEntryModal = ({ open, onClose, onSave, type, editEntry, saving }:
         subcategory_id: type === "in" ? subcategoryId || null : null,
       },
       items.map((i) => ({
-        product_id: i.product_id,
-        variant_id: i.variant_id,
+        product_id: stockMode === "shared" ? undefined : i.product_id,
+        variant_id: stockMode === "shared" ? undefined : i.variant_id,
+        shared_variant_id: stockMode === "shared" ? i.shared_variant_id : undefined,
         quantity: i.quantity,
         purchase_price: type === "in" ? i.purchase_price : 0,
       }))
     );
+  };
+
+  const handleModeChange = (mode: string) => {
+    setStockMode(mode as "product" | "shared");
+    setItems([{ product_id: "", variant_id: "", shared_variant_id: "", quantity: 1, purchase_price: 0 }]);
   };
 
   return (
@@ -165,6 +173,20 @@ const InventoryEntryModal = ({ open, onClose, onSave, type, editEntry, saving }:
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Stock Mode Toggle */}
+          <div>
+            <Label>Stock Type</Label>
+            <Select value={stockMode} onValueChange={handleModeChange}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="product">Per-Product Variant</SelectItem>
+                <SelectItem value="shared">Shared Variant (POD)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Date & Notes */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -233,36 +255,58 @@ const InventoryEntryModal = ({ open, onClose, onSave, type, editEntry, saving }:
 
             <div className="space-y-3">
               {items.map((item, idx) => (
-                <div key={idx} className="grid grid-cols-[1fr_1fr_80px_100px_40px] gap-2 items-end border border-border rounded-md p-3">
-                  {/* Product */}
-                  <div>
-                    <Label className="text-xs">Product</Label>
-                    <Select value={item.product_id} onValueChange={(v) => updateLine(idx, "product_id", v)}>
-                      <SelectTrigger><SelectValue placeholder="Product" /></SelectTrigger>
-                      <SelectContent>
-                        {products?.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>{p.name} ({p.sku})</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Variant */}
-                  <div>
-                    <Label className="text-xs">Variant</Label>
-                    <Select
-                      value={item.variant_id}
-                      onValueChange={(v) => updateLine(idx, "variant_id", v)}
-                      disabled={!item.product_id}
-                    >
-                      <SelectTrigger><SelectValue placeholder="Variant" /></SelectTrigger>
-                      <SelectContent>
-                        {getVariantsForProduct(item.product_id).map((v) => (
-                          <SelectItem key={v.id} value={v.id}>{formatVariantLabel(v)}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div key={idx} className={`grid gap-2 items-end border border-border rounded-md p-3 ${
+                  stockMode === "shared" 
+                    ? "grid-cols-[1fr_80px_100px_40px]" 
+                    : "grid-cols-[1fr_1fr_80px_100px_40px]"
+                }`}>
+                  {stockMode === "shared" ? (
+                    /* Shared variant picker */
+                    <div>
+                      <Label className="text-xs">Shared Variant</Label>
+                      <Select value={item.shared_variant_id} onValueChange={(v) => updateLine(idx, "shared_variant_id", v)}>
+                        <SelectTrigger><SelectValue placeholder="Select blank variant" /></SelectTrigger>
+                        <SelectContent>
+                          {sharedVariants?.filter(sv => sv.is_active).map((sv) => (
+                            <SelectItem key={sv.id} value={sv.id}>
+                              {formatSharedVariantLabel(sv)} (Stock: {sv.stock_quantity})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Product */}
+                      <div>
+                        <Label className="text-xs">Product</Label>
+                        <Select value={item.product_id} onValueChange={(v) => updateLine(idx, "product_id", v)}>
+                          <SelectTrigger><SelectValue placeholder="Product" /></SelectTrigger>
+                          <SelectContent>
+                            {products?.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>{p.name} ({p.sku})</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {/* Variant */}
+                      <div>
+                        <Label className="text-xs">Variant</Label>
+                        <Select
+                          value={item.variant_id}
+                          onValueChange={(v) => updateLine(idx, "variant_id", v)}
+                          disabled={!item.product_id}
+                        >
+                          <SelectTrigger><SelectValue placeholder="Variant" /></SelectTrigger>
+                          <SelectContent>
+                            {getVariantsForProduct(item.product_id).map((v) => (
+                              <SelectItem key={v.id} value={v.id}>{formatVariantLabel(v)}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </>
+                  )}
 
                   {/* Quantity */}
                   <div>

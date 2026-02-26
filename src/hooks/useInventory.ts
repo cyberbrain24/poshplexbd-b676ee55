@@ -27,6 +27,7 @@ export const useCreateInventoryEntry = () => {
       qc.invalidateQueries({ queryKey: ["products"] });
       qc.invalidateQueries({ queryKey: ["transactions"] });
       qc.invalidateQueries({ queryKey: ["accounts"] });
+      qc.invalidateQueries({ queryKey: ["shared-variants"] });
       toast.success(`Inventory ${vars.entry.type} recorded`);
     },
     onError: (err: Error) => toast.error(err.message),
@@ -46,6 +47,7 @@ export const useUpdateInventoryEntry = () => {
       qc.invalidateQueries({ queryKey: ["products"] });
       qc.invalidateQueries({ queryKey: ["transactions"] });
       qc.invalidateQueries({ queryKey: ["accounts"] });
+      qc.invalidateQueries({ queryKey: ["shared-variants"] });
       toast.success("Inventory entry updated");
     },
     onError: (err: Error) => toast.error(err.message),
@@ -61,6 +63,7 @@ export const useDeleteInventoryEntry = () => {
       qc.invalidateQueries({ queryKey: ["products"] });
       qc.invalidateQueries({ queryKey: ["transactions"] });
       qc.invalidateQueries({ queryKey: ["accounts"] });
+      qc.invalidateQueries({ queryKey: ["shared-variants"] });
       toast.success("Inventory entry deleted");
     },
     onError: (err: Error) => toast.error(err.message),

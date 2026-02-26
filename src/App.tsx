@@ -62,6 +62,7 @@ const AdminPromoCodes = lazy(() => import("./pages/admin/AdminPromoCodes"));
 const AdminSiteSettings = lazy(() => import("./pages/admin/AdminSiteSettings"));
 const AdminInventoryIn = lazy(() => import("./pages/admin/AdminInventoryIn"));
 const AdminInventoryOut = lazy(() => import("./pages/admin/AdminInventoryOut"));
+const AdminSharedVariants = lazy(() => import("./pages/admin/AdminSharedVariants"));
 const AdminBulkUpload = lazy(() => import("./pages/admin/AdminBulkUpload"));
 
 const queryClient = new QueryClient({
@@ -156,6 +157,7 @@ const App = () => (
                     <Route path="promo-codes" element={<AdminPromoCodes />} />
                     <Route path="inventory-in" element={<AdminInventoryIn />} />
                     <Route path="inventory-out" element={<AdminInventoryOut />} />
+                    <Route path="shared-variants" element={<AdminSharedVariants />} />
                     <Route path="bulk-upload" element={<AdminBulkUpload />} />
                     <Route path="site-settings" element={<AdminSiteSettings />} />
                   </Route>

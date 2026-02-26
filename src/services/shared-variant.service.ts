@@ -7,6 +7,7 @@ export interface SharedVariant {
   material_id: string | null;
   category_id: string | null;
   subcategory_id: string | null;
+  image_url: string | null;
   sku: string;
   purchase_price: number;
   stock_quantity: number;
@@ -44,6 +45,7 @@ export const createSharedVariant = async (input: {
   material_id?: string | null;
   category_id?: string | null;
   subcategory_id?: string | null;
+  image_url?: string | null;
   sku: string;
   purchase_price?: number;
   low_stock_threshold?: number;
@@ -56,6 +58,7 @@ export const createSharedVariant = async (input: {
       material_id: input.material_id || null,
       category_id: input.category_id || null,
       subcategory_id: input.subcategory_id || null,
+      image_url: input.image_url || null,
       sku: input.sku,
       purchase_price: input.purchase_price || 0,
       low_stock_threshold: input.low_stock_threshold || 5,
@@ -75,6 +78,7 @@ export const updateSharedVariant = async (
     material_id?: string | null;
     category_id?: string | null;
     subcategory_id?: string | null;
+    image_url?: string | null;
     sku?: string;
     purchase_price?: number;
     low_stock_threshold?: number;

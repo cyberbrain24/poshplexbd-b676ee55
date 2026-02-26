@@ -1,0 +1,1 @@
+DROP TRIGGER IF EXISTS set_updated_at_product_images ON public.product_images;

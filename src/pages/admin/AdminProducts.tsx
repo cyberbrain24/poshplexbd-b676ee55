@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Pencil, Trash2, Package, Loader2, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, Loader2, AlertTriangle, ExternalLink } from "lucide-react";
 import ProductModal from "@/components/admin/ProductModal";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -10,6 +10,7 @@ import { Product } from "@/types/product";
 import { toast } from "sonner";
 import DebouncedSearchInput from "@/components/admin/DebouncedSearchInput";
 import { supabase } from "@/integrations/supabase/client";
+import { generateProductSlug } from "@/lib/slug";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -180,6 +181,14 @@ const AdminProducts = () => {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => window.open(`/product/${generateProductSlug(product.name, product.id)}`, '_blank')}
+                        title="View product page"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"

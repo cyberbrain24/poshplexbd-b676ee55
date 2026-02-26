@@ -1124,6 +1124,45 @@ export type Database = {
           },
         ]
       }
+      product_variant_shared_links: {
+        Row: {
+          created_at: string
+          id: string
+          product_variant_id: string
+          quantity: number
+          shared_variant_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_variant_id: string
+          quantity?: number
+          shared_variant_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_variant_id?: string
+          quantity?: number
+          shared_variant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variant_shared_links_product_variant_id_fkey"
+            columns: ["product_variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_variant_shared_links_shared_variant_id_fkey"
+            columns: ["shared_variant_id"]
+            isOneToOne: false
+            referencedRelation: "shared_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_variants: {
         Row: {
           color_id: string | null
@@ -1575,6 +1614,7 @@ export type Database = {
           size_id: string | null
           sku: string
           stock_quantity: number
+          subcategory_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1589,6 +1629,7 @@ export type Database = {
           size_id?: string | null
           sku?: string
           stock_quantity?: number
+          subcategory_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1603,6 +1644,7 @@ export type Database = {
           size_id?: string | null
           sku?: string
           stock_quantity?: number
+          subcategory_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1632,6 +1674,13 @@ export type Database = {
             columns: ["size_id"]
             isOneToOne: false
             referencedRelation: "sizes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shared_variants_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
             referencedColumns: ["id"]
           },
         ]

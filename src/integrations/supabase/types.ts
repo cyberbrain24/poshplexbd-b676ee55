@@ -1564,6 +1564,7 @@ export type Database = {
       }
       shared_variants: {
         Row: {
+          category_id: string | null
           color_id: string | null
           created_at: string
           id: string
@@ -1577,6 +1578,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          category_id?: string | null
           color_id?: string | null
           created_at?: string
           id?: string
@@ -1590,6 +1592,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          category_id?: string | null
           color_id?: string | null
           created_at?: string
           id?: string
@@ -1603,6 +1606,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "shared_variants_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "shared_variants_color_id_fkey"
             columns: ["color_id"]

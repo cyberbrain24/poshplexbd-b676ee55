@@ -26,6 +26,7 @@ const AdminSharedVariants = () => {
   const [colorId, setColorId] = useState("");
   const [sizeId, setSizeId] = useState("");
   const [materialId, setMaterialId] = useState("");
+  const [categoryId, setCategoryId] = useState("");
   const [sku, setSku] = useState("");
   const [purchasePrice, setPurchasePrice] = useState(0);
   const [lowThreshold, setLowThreshold] = useState(5);
@@ -52,12 +53,20 @@ const AdminSharedVariants = () => {
       return data || [];
     },
   });
+  const { data: categories } = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const { data } = await supabase.from("categories").select("id, name").order("name");
+      return data || [];
+    },
+  });
 
   const openCreate = () => {
     setEditing(null);
     setColorId("");
     setSizeId("");
     setMaterialId("");
+    setCategoryId("");
     setSku("");
     setPurchasePrice(0);
     setLowThreshold(5);
@@ -69,6 +78,7 @@ const AdminSharedVariants = () => {
     setColorId(sv.color_id || "");
     setSizeId(sv.size_id || "");
     setMaterialId(sv.material_id || "");
+    setCategoryId(sv.category_id || "");
     setSku(sv.sku);
     setPurchasePrice(sv.purchase_price);
     setLowThreshold(sv.low_stock_threshold);
@@ -80,6 +90,7 @@ const AdminSharedVariants = () => {
       color_id: colorId || null,
       size_id: sizeId || null,
       material_id: materialId || null,
+      category_id: categoryId || null,
       sku,
       purchase_price: purchasePrice,
       low_stock_threshold: lowThreshold,
@@ -121,6 +132,7 @@ const AdminSharedVariants = () => {
           <TableHeader>
             <TableRow>
               <TableHead>SKU</TableHead>
+              <TableHead>Category</TableHead>
               <TableHead>Color</TableHead>
               <TableHead>Size</TableHead>
               <TableHead>Material</TableHead>
@@ -133,13 +145,14 @@ const AdminSharedVariants = () => {
           <TableBody>
             {!variants?.length ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                   No shared variants yet. Create one to start managing blank stock.
                 </TableCell>
               </TableRow>
             ) : variants.map((sv) => (
               <TableRow key={sv.id}>
                 <TableCell className="font-mono text-sm">{sv.sku || "—"}</TableCell>
+                <TableCell>{(sv as any).category?.name || "—"}</TableCell>
                 <TableCell>
                   {sv.color ? (
                     <div className="flex items-center gap-2">
@@ -185,6 +198,17 @@ const AdminSharedVariants = () => {
             <div>
               <Label>SKU</Label>
               <Input value={sku} onChange={(e) => setSku(e.target.value)} placeholder="e.g. BLK-XL-COT" />
+            </div>
+            <div>
+              <Label>Category (Product Type)</Label>
+              <Select value={categoryId} onValueChange={setCategoryId}>
+                <SelectTrigger><SelectValue placeholder="e.g. T-Shirt, Pants" /></SelectTrigger>
+                <SelectContent>
+                  {categories?.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label>Color</Label>

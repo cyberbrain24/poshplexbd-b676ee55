@@ -5,6 +5,7 @@ export interface SharedVariant {
   color_id: string | null;
   size_id: string | null;
   material_id: string | null;
+  category_id: string | null;
   sku: string;
   purchase_price: number;
   stock_quantity: number;
@@ -15,6 +16,7 @@ export interface SharedVariant {
   color?: { id: string; name: string; hex_code: string } | null;
   size?: { id: string; label: string } | null;
   material?: { id: string; name: string } | null;
+  category?: { id: string; name: string } | null;
 }
 
 export const fetchSharedVariants = async () => {
@@ -24,7 +26,8 @@ export const fetchSharedVariants = async () => {
       *,
       color:colors(id, name, hex_code),
       size:sizes(id, label),
-      material:materials(id, name)
+      material:materials(id, name),
+      category:categories(id, name)
     `)
     .order("created_at", { ascending: false });
 
@@ -36,6 +39,7 @@ export const createSharedVariant = async (input: {
   color_id?: string | null;
   size_id?: string | null;
   material_id?: string | null;
+  category_id?: string | null;
   sku: string;
   purchase_price?: number;
   low_stock_threshold?: number;
@@ -46,6 +50,7 @@ export const createSharedVariant = async (input: {
       color_id: input.color_id || null,
       size_id: input.size_id || null,
       material_id: input.material_id || null,
+      category_id: input.category_id || null,
       sku: input.sku,
       purchase_price: input.purchase_price || 0,
       low_stock_threshold: input.low_stock_threshold || 5,
@@ -63,6 +68,7 @@ export const updateSharedVariant = async (
     color_id?: string | null;
     size_id?: string | null;
     material_id?: string | null;
+    category_id?: string | null;
     sku?: string;
     purchase_price?: number;
     low_stock_threshold?: number;
@@ -89,6 +95,7 @@ export const deleteSharedVariant = async (id: string) => {
 export const formatSharedVariantLabel = (sv: SharedVariant) => {
   const parts: string[] = [];
   if (sv.sku) parts.push(sv.sku);
+  if (sv.category?.name) parts.push(sv.category.name);
   if (sv.color?.name) parts.push(sv.color.name);
   if (sv.size?.label) parts.push(sv.size.label);
   if (sv.material?.name) parts.push(sv.material.name);

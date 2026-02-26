@@ -1,0 +1,1 @@
+ALTER TABLE public.shared_variants ADD COLUMN category_id UUID REFERENCES public.categories(id) ON DELETE SET NULL DEFAULT NULL;

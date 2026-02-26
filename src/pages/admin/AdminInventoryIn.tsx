@@ -61,6 +61,7 @@ const AdminInventoryIn = () => {
           <TableHeader>
             <TableRow>
               <TableHead>Date</TableHead>
+              <TableHead>Stock Type</TableHead>
               <TableHead>Items</TableHead>
               <TableHead>Total Qty</TableHead>
               <TableHead>Total Price</TableHead>
@@ -73,10 +74,17 @@ const AdminInventoryIn = () => {
           </TableHeader>
           <TableBody>
             {!entries?.length ? (
-              <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">No entries yet</TableCell></TableRow>
+              <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">No entries yet</TableCell></TableRow>
             ) : entries.map((e) => (
               <TableRow key={e.id}>
                 <TableCell>{format(new Date(e.date), "dd MMM yyyy")}</TableCell>
+                <TableCell>
+                  {e.items?.some((i: any) => i.shared_variant_id) ? (
+                    <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">Shared (POD)</span>
+                  ) : (
+                    <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">Per-Product</span>
+                  )}
+                </TableCell>
                 <TableCell>{e.items?.length || 0} item(s)</TableCell>
                 <TableCell className="font-medium">{getTotalQty(e)}</TableCell>
                 <TableCell className="font-medium">{formatCurrency(getTotalPrice(e))}</TableCell>

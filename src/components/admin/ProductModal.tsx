@@ -46,6 +46,8 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
   const [images, setImages] = useState<ProductImage[]>([]);
   const [variants, setVariants] = useState<VariantFormData[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [showBuilder, setShowBuilder] = useState(false);
   const [mediaPickerIndex, setMediaPickerIndex] = useState<number | null>(null);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
@@ -262,44 +264,73 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
 
     try {
       if (product) {
-        // Existing product: upload sequentially with delay to avoid rate limits
-        let currentSortOrder = images.length;
+        // Existing product: upload sequentially, prepend new images
         const existingUrls = new Set(images.map(i => i.image_url));
+        const newUploaded: ProductImage[] = [];
 
         for (let i = 0; i < validFiles.length; i++) {
           const file = validFiles[i];
-          // Add small delay between uploads to avoid rate limiting
           if (i > 0) await new Promise(r => setTimeout(r, 200));
 
           const imageUrl = await uploadProductImage(file, product.id);
           if (existingUrls.has(imageUrl)) continue;
-          await addImage.mutateAsync({
-            productId: product.id,
-            imageUrl,
-            sortOrder: currentSortOrder,
-            isMain: currentSortOrder === 0,
-          });
           existingUrls.add(imageUrl);
-          currentSortOrder++;
+          newUploaded.push({
+            id: `temp-uploaded-${Date.now()}-${i}`,
+            product_id: product.id,
+            image_url: imageUrl,
+            alt_text: null,
+            sort_order: i,
+            is_main: false,
+            color_id: null,
+            created_at: new Date().toISOString(),
+          });
           uploadedCount++;
         }
+
+        // Prepend new uploads, re-index sort_order, then persist
+        if (newUploaded.length > 0) {
+          const combined = [...newUploaded, ...images].map((img, idx) => ({ ...img, sort_order: idx }));
+          setImages(combined);
+          // Persist to DB
+          for (const img of combined) {
+            if (img.id.startsWith("temp-uploaded-")) {
+              await addImage.mutateAsync({
+                productId: product.id,
+                imageUrl: img.image_url,
+                sortOrder: img.sort_order,
+                isMain: img.is_main,
+              });
+            } else {
+              await updateImage.mutateAsync({ id: img.id, sortOrder: img.sort_order });
+            }
+          }
+        }
       } else {
-        // New product: store as blobs locally, maintaining selection order
+        // New product: store as blobs locally; prepend new images so latest uploads appear first
         const newImages: ProductImage[] = validFiles.map((file, idx) => {
           const localUrl = URL.createObjectURL(file);
-          const currentLength = images.length + idx;
           return {
-            id: `temp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+            id: `temp-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 9)}`,
             product_id: "",
             image_url: localUrl,
             alt_text: null,
-            sort_order: currentLength,
-            is_main: currentLength === 0,
+            sort_order: idx,
+            is_main: false,
             color_id: null,
             created_at: new Date().toISOString(),
           };
         });
-        setImages(prev => [...prev, ...newImages]);
+        setImages(prev => {
+          const combined = [...newImages, ...prev];
+          // Re-assign sort_order and ensure first image is main if none set
+          const hasMain = combined.some(i => i.is_main);
+          return combined.map((img, i) => ({
+            ...img,
+            sort_order: i,
+            is_main: !hasMain && i === 0 ? true : img.is_main,
+          }));
+        });
         uploadedCount = newImages.length;
       }
 
@@ -340,6 +371,24 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
       is_main: img.id === imageId,
     })));
   };
+
+  const handleDragEnd = useCallback(async (fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex) return;
+    const reordered = [...images];
+    const [moved] = reordered.splice(fromIndex, 1);
+    reordered.splice(toIndex, 0, moved);
+    const updated = reordered.map((img, i) => ({ ...img, sort_order: i }));
+    setImages(updated);
+    setDragIndex(null);
+    setDragOverIndex(null);
+    if (product) {
+      for (let i = 0; i < updated.length; i++) {
+        if (!updated[i].id.startsWith("temp-")) {
+          await updateImage.mutateAsync({ id: updated[i].id, sortOrder: i });
+        }
+      }
+    }
+  }, [images, product, updateImage]);
 
   const addNewVariant = () => {
     setVariants(prev => [...prev, {
@@ -593,15 +642,26 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
 
                 {images.length > 0 ? (
                   <div className="grid grid-cols-4 gap-4">
-                    {images.map((image) => (
+                    {images.map((image, idx) => (
                       <div
                         key={image.id}
-                        className={`relative group border ${image.is_main ? 'border-foreground' : 'border-border'} p-2`}
+                        draggable
+                        onDragStart={() => setDragIndex(idx)}
+                        onDragOver={(e) => { e.preventDefault(); setDragOverIndex(idx); }}
+                        onDragEnd={() => { if (dragIndex !== null && dragOverIndex !== null) handleDragEnd(dragIndex, dragOverIndex); setDragIndex(null); setDragOverIndex(null); }}
+                        onDrop={(e) => { e.preventDefault(); if (dragIndex !== null) handleDragEnd(dragIndex, idx); }}
+                        className={`relative group border ${image.is_main ? 'border-foreground' : 'border-border'} p-2 cursor-grab active:cursor-grabbing transition-opacity ${dragIndex === idx ? 'opacity-50' : ''} ${dragOverIndex === idx && dragIndex !== idx ? 'ring-2 ring-primary' : ''}`}
                       >
+                        <div className="absolute top-1 left-1 z-10 bg-background/80 rounded p-0.5">
+                          <GripVertical className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className="absolute top-1 right-1 z-10 bg-background/80 rounded px-1 text-xs text-muted-foreground">
+                          {idx + 1}
+                        </div>
                         <img
                           src={image.image_url}
                           alt={image.alt_text || "Product"}
-                          className="w-full aspect-square object-cover"
+                          className="w-full aspect-square object-cover pointer-events-none"
                         />
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                           <Button
@@ -621,7 +681,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                           </Button>
                         </div>
                         {image.is_main && (
-                          <div className="absolute top-0 left-0 bg-foreground text-background text-xs px-2 py-1">
+                          <div className="absolute top-0 left-0 bg-foreground text-background text-xs px-2 py-1 mt-6">
                             Main
                           </div>
                         )}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,11 +10,12 @@ import { useAccounts, useTransactionCategories } from "@/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { InventoryEntry, InventoryItemInput } from "@/services/inventory.service";
+import { formatCurrency } from "@/lib/currency";
 
 interface Props {
   open: boolean;
   onClose: () => void;
-  onSave: (entry: { date: string; notes?: string; account_id?: string | null; category_id?: string | null }, items: InventoryItemInput[]) => void;
+  onSave: (entry: { date: string; notes?: string; account_id?: string | null; category_id?: string | null; subcategory_id?: string | null }, items: InventoryItemInput[]) => void;
   type: "in" | "out";
   editEntry?: InventoryEntry | null;
   saving?: boolean;
@@ -32,11 +33,16 @@ const InventoryEntryModal = ({ open, onClose, onSave, type, editEntry, saving }:
   const [notes, setNotes] = useState("");
   const [accountId, setAccountId] = useState<string>("");
   const [categoryId, setCategoryId] = useState<string>("");
+  const [subcategoryId, setSubcategoryId] = useState<string>("");
   const [items, setItems] = useState<LineItem[]>([{ product_id: "", variant_id: "", quantity: 1, purchase_price: 0 }]);
 
   const { data: accounts } = useAccounts();
-  const { data: categories } = useTransactionCategories();
-  const expenseCategories = categories?.filter((c) => c.type === "expense") || [];
+  const { data: categories } = useTransactionCategories("expense");
+  
+  // Parent categories (no parent_id)
+  const parentCategories = useMemo(() => categories?.filter((c) => !c.parent_id) || [], [categories]);
+  // Subcategories for selected parent
+  const subcategories = useMemo(() => categories?.filter((c) => c.parent_id === categoryId) || [], [categories, categoryId]);
 
   // Fetch products for dropdown
   const { data: products } = useQuery({
@@ -77,6 +83,7 @@ const InventoryEntryModal = ({ open, onClose, onSave, type, editEntry, saving }:
       setNotes(editEntry.notes || "");
       setAccountId(editEntry.account_id || "");
       setCategoryId(editEntry.category_id || "");
+      setSubcategoryId((editEntry as any).subcategory_id || "");
       if (editEntry.items?.length) {
         setItems(editEntry.items.map((i) => ({
           product_id: i.product_id,
@@ -90,9 +97,17 @@ const InventoryEntryModal = ({ open, onClose, onSave, type, editEntry, saving }:
       setNotes("");
       setAccountId("");
       setCategoryId("");
+      setSubcategoryId("");
       setItems([{ product_id: "", variant_id: "", quantity: 1, purchase_price: 0 }]);
     }
   }, [editEntry, open]);
+
+  // Reset subcategory when category changes
+  useEffect(() => {
+    if (!editEntry) {
+      setSubcategoryId("");
+    }
+  }, [categoryId]);
 
   const addLine = () => setItems([...items, { product_id: "", variant_id: "", quantity: 1, purchase_price: 0 }]);
   const removeLine = (idx: number) => setItems(items.filter((_, i) => i !== idx));
@@ -118,6 +133,10 @@ const InventoryEntryModal = ({ open, onClose, onSave, type, editEntry, saving }:
     return parts.join(" | ");
   };
 
+  // Grand totals
+  const grandTotalQty = items.reduce((sum, i) => sum + (i.quantity || 0), 0);
+  const grandTotalPrice = items.reduce((sum, i) => sum + (i.quantity || 0) * (i.purchase_price || 0), 0);
+
   const canSave = items.every((i) => i.product_id && i.variant_id && i.quantity > 0);
 
   const handleSave = () => {
@@ -127,6 +146,7 @@ const InventoryEntryModal = ({ open, onClose, onSave, type, editEntry, saving }:
         notes,
         account_id: type === "in" ? accountId || null : null,
         category_id: type === "in" ? categoryId || null : null,
+        subcategory_id: type === "in" ? subcategoryId || null : null,
       },
       items.map((i) => ({
         product_id: i.product_id,
@@ -146,7 +166,7 @@ const InventoryEntryModal = ({ open, onClose, onSave, type, editEntry, saving }:
 
         <div className="space-y-4">
           {/* Date & Notes */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>Date</Label>
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
@@ -159,29 +179,46 @@ const InventoryEntryModal = ({ open, onClose, onSave, type, editEntry, saving }:
 
           {/* Account & Category (only for IN) */}
           {type === "in" && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Expense Account</Label>
-                <Select value={accountId} onValueChange={setAccountId}>
-                  <SelectTrigger><SelectValue placeholder="Select account" /></SelectTrigger>
-                  <SelectContent>
-                    {accounts?.filter((a) => a.is_active).map((a) => (
-                      <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label>Expense Account</Label>
+                  <Select value={accountId} onValueChange={setAccountId}>
+                    <SelectTrigger><SelectValue placeholder="Select account" /></SelectTrigger>
+                    <SelectContent>
+                      {accounts?.filter((a) => a.is_active).map((a) => (
+                        <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Expense Category</Label>
+                  <Select value={categoryId} onValueChange={(v) => { setCategoryId(v); setSubcategoryId(""); }}>
+                    <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                    <SelectContent>
+                      {parentCategories.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div>
-                <Label>Expense Category</Label>
-                <Select value={categoryId} onValueChange={setCategoryId}>
-                  <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
-                  <SelectContent>
-                    {expenseCategories.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {subcategories.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Expense Subcategory</Label>
+                    <Select value={subcategoryId} onValueChange={setSubcategoryId}>
+                      <SelectTrigger><SelectValue placeholder="Select subcategory" /></SelectTrigger>
+                      <SelectContent>
+                        {subcategories.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -268,6 +305,22 @@ const InventoryEntryModal = ({ open, onClose, onSave, type, editEntry, saving }:
                 </div>
               ))}
             </div>
+
+            {/* Grand Totals */}
+            {type === "in" && (
+              <div className="mt-4 flex justify-end">
+                <div className="bg-muted rounded-md p-3 space-y-1 min-w-[220px]">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Total Qty:</span>
+                    <span className="font-semibold">{grandTotalQty}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Grand Total:</span>
+                    <span className="font-semibold">{formatCurrency(grandTotalPrice)}</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Actions */}

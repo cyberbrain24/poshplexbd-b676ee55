@@ -232,15 +232,18 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    // Reset input so the same files can be re-selected if needed
+    // Capture files into array BEFORE resetting input (resetting clears the FileList)
+    const fileArray = Array.from(files);
+
+    // Reset input so the same files can be re-selected later
     if (fileInputRef.current) fileInputRef.current.value = "";
 
     const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-    const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
 
     // Validate and filter files
     const validFiles: File[] = [];
-    for (const file of Array.from(files)) {
+    for (const file of fileArray) {
       if (!ALLOWED_TYPES.includes(file.type)) {
         toast.error(`"${file.name}" skipped — only JPEG, PNG, WebP, GIF allowed`);
         continue;
@@ -259,13 +262,17 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
 
     try {
       if (product) {
-        // Existing product: upload sequentially, track sort order correctly
+        // Existing product: upload sequentially with delay to avoid rate limits
         let currentSortOrder = images.length;
         const existingUrls = new Set(images.map(i => i.image_url));
 
-        for (const file of validFiles) {
+        for (let i = 0; i < validFiles.length; i++) {
+          const file = validFiles[i];
+          // Add small delay between uploads to avoid rate limiting
+          if (i > 0) await new Promise(r => setTimeout(r, 200));
+
           const imageUrl = await uploadProductImage(file, product.id);
-          if (existingUrls.has(imageUrl)) continue; // skip duplicate
+          if (existingUrls.has(imageUrl)) continue;
           await addImage.mutateAsync({
             productId: product.id,
             imageUrl,
@@ -300,6 +307,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
         toast.success(`${uploadedCount} image${uploadedCount > 1 ? "s" : ""} uploaded`);
       }
     } catch (error) {
+      console.error("Image upload error:", error);
       toast.error("Failed to upload images");
     } finally {
       setIsUploading(false);

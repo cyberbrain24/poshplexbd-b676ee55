@@ -35,11 +35,13 @@ export const useOptimizedProducts = (
   activeOnly = false
 ): UseOptimizedProductsResult => {
   const [page, setPage] = useState(1);
-  const pageSize = 50;
+  const [accumulatedProducts, setAccumulatedProducts] = useState<Product[]>([]);
+  const pageSize = 20;
   const debouncedSearch = useDebounce(search, 300);
   
   useEffect(() => {
     setPage(1);
+    setAccumulatedProducts([]);
   }, [debouncedSearch, categoryId, activeOnly]);
 
   const offset = (page - 1) * pageSize;
@@ -65,6 +67,7 @@ export const useOptimizedProducts = (
           product_type,
           base_price,
           is_active,
+          is_featured,
           created_at,
           category:categories(id, name),
           brand:brands(id, name),
@@ -105,6 +108,21 @@ export const useOptimizedProducts = (
     ...QUERY_CONFIG.listView,
   });
 
+  // Accumulate products across pages
+  useEffect(() => {
+    if (data?.products) {
+      if (page === 1) {
+        setAccumulatedProducts(data.products);
+      } else {
+        setAccumulatedProducts(prev => {
+          const existingIds = new Set(prev.map(p => p.id));
+          const newProducts = data.products.filter(p => !existingIds.has(p.id));
+          return [...prev, ...newProducts];
+        });
+      }
+    }
+  }, [data, page]);
+
   const totalCount = data?.totalCount || 0;
   const totalPages = Math.ceil(totalCount / pageSize);
 
@@ -132,7 +150,7 @@ export const useOptimizedProducts = (
   };
 
   return {
-    products: data?.products || [],
+    products: accumulatedProducts,
     isLoading,
     error: error as Error | null,
     pagination,

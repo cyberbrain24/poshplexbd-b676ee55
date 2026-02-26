@@ -1,19 +1,19 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, ImageIcon } from "lucide-react";
 import { useSharedVariants, useCreateSharedVariant, useUpdateSharedVariant, useDeleteSharedVariant } from "@/hooks/useSharedVariants";
 import { SharedVariant } from "@/services/shared-variant.service";
 import { AdminLoadingSpinner } from "@/components/admin";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSharedVariantCategoryIds, useSyncSharedVariantCategories } from "@/hooks/useSharedVariantCategories";
+import MediaLibraryPickerModal from "@/components/admin/MediaLibraryPickerModal";
 
 const AdminSharedVariants = () => {
   const { data: variants, isLoading } = useSharedVariants();
@@ -24,6 +24,7 @@ const AdminSharedVariants = () => {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<SharedVariant | null>(null);
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
 
   // Form state
   const [colorId, setColorId] = useState("");
@@ -31,13 +32,12 @@ const AdminSharedVariants = () => {
   const [materialId, setMaterialId] = useState("");
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [sku, setSku] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
   const [purchasePrice, setPurchasePrice] = useState(0);
   const [lowThreshold, setLowThreshold] = useState(5);
 
-  // Fetch editing shared variant's categories
   const { data: editingCategoryIds } = useSharedVariantCategoryIds(editing?.id);
 
-  // Sync selected categories when editing
   useEffect(() => {
     if (editing && editingCategoryIds) {
       setSelectedCategoryIds(editingCategoryIds);
@@ -74,7 +74,6 @@ const AdminSharedVariants = () => {
     },
   });
 
-  // Fetch all shared variant category links for display
   const { data: allSvCategories } = useQuery({
     queryKey: ["shared-variant-categories-all"],
     queryFn: async () => {
@@ -86,7 +85,6 @@ const AdminSharedVariants = () => {
     },
   });
 
-  // Derive parent categories and their children
   const parentCategories = categories?.filter((c) => !c.parent_id) || [];
   const getSubcategories = (parentId: string) =>
     categories?.filter((c) => c.parent_id === parentId) || [];
@@ -97,7 +95,6 @@ const AdminSharedVariants = () => {
     );
   };
 
-  // Toggle parent + all its children
   const toggleParent = (parentId: string) => {
     const childIds = getSubcategories(parentId).map((c) => c.id);
     const allIds = [parentId, ...childIds];
@@ -116,6 +113,7 @@ const AdminSharedVariants = () => {
     setMaterialId("");
     setSelectedCategoryIds([]);
     setSku("");
+    setImageUrl("");
     setPurchasePrice(0);
     setLowThreshold(5);
     setModalOpen(true);
@@ -126,8 +124,9 @@ const AdminSharedVariants = () => {
     setColorId(sv.color_id || "");
     setSizeId(sv.size_id || "");
     setMaterialId(sv.material_id || "");
-    setSelectedCategoryIds([]); // Will be populated by useEffect
+    setSelectedCategoryIds([]);
     setSku(sv.sku);
+    setImageUrl(sv.image_url || "");
     setPurchasePrice(sv.purchase_price);
     setLowThreshold(sv.low_stock_threshold);
     setModalOpen(true);
@@ -140,6 +139,7 @@ const AdminSharedVariants = () => {
       material_id: materialId || null,
       category_id: null as string | null,
       subcategory_id: null as string | null,
+      image_url: imageUrl || null,
       sku,
       purchase_price: purchasePrice,
       low_stock_threshold: lowThreshold,
@@ -170,24 +170,27 @@ const AdminSharedVariants = () => {
     }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
     if (confirm("Delete this shared variant? This cannot be undone.")) {
       deleteMutation.mutate(id);
     }
   };
 
-  // Helper: get category names for a shared variant from junction data
   const getCategoryBadges = (svId: string) => {
     if (!allSvCategories) return null;
     const links = allSvCategories.filter((l) => l.shared_variant_id === svId);
-    if (!links.length) return <span className="text-muted-foreground">—</span>;
+    if (!links.length) return null;
     return (
-      <div className="flex flex-wrap gap-1">
-        {links.map((l: any) => (
-          <Badge key={l.category_id} variant={l.category?.parent_id ? "outline" : "secondary"} className="text-xs">
-            {l.category?.name || "Unknown"}
+      <div className="flex flex-wrap gap-0.5">
+        {links.slice(0, 3).map((l: any) => (
+          <Badge key={l.category_id} variant={l.category?.parent_id ? "outline" : "secondary"} className="text-[10px] px-1 py-0">
+            {l.category?.name || "?"}
           </Badge>
         ))}
+        {links.length > 3 && (
+          <Badge variant="outline" className="text-[10px] px-1 py-0">+{links.length - 3}</Badge>
+        )}
       </div>
     );
   };
@@ -206,66 +209,89 @@ const AdminSharedVariants = () => {
         </Button>
       </div>
 
-      <div className="border rounded-md overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>SKU</TableHead>
-              <TableHead>Categories</TableHead>
-              <TableHead>Color</TableHead>
-              <TableHead>Size</TableHead>
-              <TableHead>Material</TableHead>
-              <TableHead className="text-right">Stock</TableHead>
-              <TableHead className="text-right">Threshold</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {!variants?.length ? (
-              <TableRow>
-                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                  No shared variants yet. Create one to start managing blank stock.
-                </TableCell>
-              </TableRow>
-            ) : variants.map((sv) => (
-              <TableRow key={sv.id}>
-                <TableCell className="font-mono text-sm">{sv.sku || "—"}</TableCell>
-                <TableCell>{getCategoryBadges(sv.id)}</TableCell>
-                <TableCell>
-                  {sv.color ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: sv.color.hex_code }} />
-                      {sv.color.name}
-                    </div>
-                  ) : "—"}
-                </TableCell>
-                <TableCell>{sv.size?.label || "—"}</TableCell>
-                <TableCell>{sv.material?.name || "—"}</TableCell>
-                <TableCell className="text-right font-medium">
-                  <Badge variant={sv.stock_quantity <= 0 ? "destructive" : sv.stock_quantity <= sv.low_stock_threshold ? "secondary" : "default"}>
+      {/* Grid Layout - 8 columns */}
+      {!variants?.length ? (
+        <div className="border rounded-md p-12 text-center text-muted-foreground">
+          No shared variants yet. Create one to start managing blank stock.
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
+          {variants.map((sv) => (
+            <div
+              key={sv.id}
+              className="group relative border rounded-lg overflow-hidden bg-card hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => openEdit(sv)}
+            >
+              {/* Image */}
+              <div className="aspect-square bg-muted relative overflow-hidden">
+                {sv.image_url ? (
+                  <img
+                    src={sv.image_url}
+                    alt={sv.sku}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    {sv.color?.hex_code ? (
+                      <div
+                        className="w-full h-full"
+                        style={{ backgroundColor: sv.color.hex_code }}
+                      />
+                    ) : (
+                      <ImageIcon className="h-8 w-8 text-muted-foreground/40" />
+                    )}
+                  </div>
+                )}
+
+                {/* Stock badge overlay */}
+                <div className="absolute top-1 right-1">
+                  <Badge
+                    variant={sv.stock_quantity <= 0 ? "destructive" : sv.stock_quantity <= sv.low_stock_threshold ? "secondary" : "default"}
+                    className="text-[10px] px-1.5 py-0"
+                  >
                     {sv.stock_quantity}
                   </Badge>
-                </TableCell>
-                <TableCell className="text-right">{sv.low_stock_threshold}</TableCell>
-                <TableCell>
-                  <Badge variant={sv.is_active ? "default" : "secondary"}>
-                    {sv.is_active ? "Active" : "Inactive"}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right space-x-1">
-                  <Button variant="ghost" size="icon" onClick={() => openEdit(sv)}>
-                    <Pencil className="h-4 w-4" />
+                </div>
+
+                {/* Status overlay */}
+                {!sv.is_active && (
+                  <div className="absolute top-1 left-1">
+                    <Badge variant="secondary" className="text-[10px] px-1 py-0">Inactive</Badge>
+                  </div>
+                )}
+
+                {/* Hover actions */}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                  <Button size="icon" variant="secondary" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); openEdit(sv); }}>
+                    <Pencil className="h-3.5 w-3.5" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(sv.id)}>
-                    <Trash2 className="h-4 w-4" />
+                  <Button size="icon" variant="destructive" className="h-7 w-7" onClick={(e) => handleDelete(sv.id, e)}>
+                    <Trash2 className="h-3.5 w-3.5" />
                   </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+                </div>
+              </div>
+
+              {/* Info */}
+              <div className="p-2 space-y-1">
+                <p className="font-mono text-xs font-medium truncate">{sv.sku || "—"}</p>
+                <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                  {sv.color && (
+                    <div className="flex items-center gap-0.5">
+                      <div className="w-2.5 h-2.5 rounded-full border" style={{ backgroundColor: sv.color.hex_code }} />
+                      <span className="truncate">{sv.color.name}</span>
+                    </div>
+                  )}
+                  {sv.size && <span>• {sv.size.label}</span>}
+                </div>
+                {sv.material && (
+                  <p className="text-[11px] text-muted-foreground truncate">{sv.material.name}</p>
+                )}
+                {getCategoryBadges(sv.id)}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Create/Edit Modal */}
       <Dialog open={modalOpen} onOpenChange={(o) => !o && setModalOpen(false)}>
@@ -274,6 +300,33 @@ const AdminSharedVariants = () => {
             <DialogTitle>{editing ? "Edit" : "New"} Shared Variant</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {/* Image */}
+            <div>
+              <Label className="mb-2 block">Image</Label>
+              <div className="flex items-start gap-3">
+                <div
+                  className="w-24 h-24 rounded-md border bg-muted flex items-center justify-center overflow-hidden cursor-pointer shrink-0"
+                  onClick={() => setMediaPickerOpen(true)}
+                >
+                  {imageUrl ? (
+                    <img src={imageUrl} alt="Variant" className="w-full h-full object-cover" />
+                  ) : (
+                    <ImageIcon className="h-8 w-8 text-muted-foreground/40" />
+                  )}
+                </div>
+                <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                  <Button variant="outline" size="sm" onClick={() => setMediaPickerOpen(true)}>
+                    Choose from Media
+                  </Button>
+                  {imageUrl && (
+                    <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setImageUrl("")}>
+                      Remove
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <div>
               <Label>SKU</Label>
               <Input value={sku} onChange={(e) => setSku(e.target.value)} placeholder="e.g. BLK-XL-COT" />
@@ -324,9 +377,7 @@ const AdminSharedVariants = () => {
                 })}
               </div>
               {selectedCategoryIds.length > 0 && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  {selectedCategoryIds.length} selected
-                </p>
+                <p className="text-xs text-muted-foreground mt-1">{selectedCategoryIds.length} selected</p>
               )}
             </div>
 
@@ -382,6 +433,16 @@ const AdminSharedVariants = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Media Library Picker */}
+      <MediaLibraryPickerModal
+        isOpen={mediaPickerOpen}
+        onClose={() => setMediaPickerOpen(false)}
+        onSelect={(url) => {
+          setImageUrl(url);
+          setMediaPickerOpen(false);
+        }}
+      />
     </div>
   );
 };

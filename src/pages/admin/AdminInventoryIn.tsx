@@ -61,7 +61,6 @@ const AdminInventoryIn = () => {
           <TableHeader>
             <TableRow>
               <TableHead>Date</TableHead>
-              <TableHead>Stock Type</TableHead>
               <TableHead>Items</TableHead>
               <TableHead>Total Qty</TableHead>
               <TableHead>Total Price</TableHead>
@@ -74,17 +73,10 @@ const AdminInventoryIn = () => {
           </TableHeader>
           <TableBody>
             {!entries?.length ? (
-              <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">No entries yet</TableCell></TableRow>
+              <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">No entries yet</TableCell></TableRow>
             ) : entries.map((e) => (
               <TableRow key={e.id}>
                 <TableCell>{format(new Date(e.date), "dd MMM yyyy")}</TableCell>
-                <TableCell>
-                  {e.items?.some((i: any) => i.shared_variant_id) ? (
-                    <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">Shared (POD)</span>
-                  ) : (
-                    <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">Per-Product</span>
-                  )}
-                </TableCell>
                 <TableCell>{e.items?.length || 0} item(s)</TableCell>
                 <TableCell className="font-medium">{getTotalQty(e)}</TableCell>
                 <TableCell className="font-medium">{formatCurrency(getTotalPrice(e))}</TableCell>
@@ -138,23 +130,15 @@ const AdminInventoryIn = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {viewEntry.items?.map((item) => {
-                    const isShared = !!(item as any).shared_variant_id;
-                    const sv = (item as any).shared_variant;
-                    const productName = isShared ? (sv?.sku || "Shared") : (item.product?.name || "—");
-                    const variantSku = isShared 
-                      ? [sv?.color?.name, sv?.size?.label, sv?.material?.name].filter(Boolean).join(" | ") 
-                      : (item.variant?.sku || "—");
-                    return (
+                  {viewEntry.items?.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell>{productName}</TableCell>
-                      <TableCell>{variantSku}</TableCell>
+                      <TableCell>{item.product?.name || "—"}</TableCell>
+                      <TableCell>{item.variant?.sku || "—"}</TableCell>
                       <TableCell>{item.quantity}</TableCell>
                       <TableCell>{formatCurrency(item.purchase_price)}</TableCell>
                       <TableCell>{formatCurrency(item.quantity * item.purchase_price)}</TableCell>
                     </TableRow>
-                    );
-                  })}
+                  ))}
                   {/* Totals row */}
                   <TableRow className="bg-muted/50 font-semibold">
                     <TableCell colSpan={2}>Grand Total</TableCell>

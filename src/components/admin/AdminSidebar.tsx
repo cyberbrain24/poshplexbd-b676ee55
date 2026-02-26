@@ -50,7 +50,6 @@ const accountManagementItems: NavItem[] = [
 const inventoryItems: NavItem[] = [
   { icon: ArrowDownToLine, label: "Inventory In", path: "/admin/inventory-in" },
   { icon: ArrowUpFromLine, label: "Inventory Out", path: "/admin/inventory-out" },
-  { icon: Boxes, label: "Shared Variants", path: "/admin/shared-variants" },
 ];
 
 const customerManagementItems: NavItem[] = [

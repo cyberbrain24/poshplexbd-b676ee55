@@ -111,21 +111,13 @@ const AdminInventoryOut = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {viewEntry.items?.map((item) => {
-                    const isShared = !!(item as any).shared_variant_id;
-                    const sv = (item as any).shared_variant;
-                    const productName = isShared ? (sv?.sku || "Shared") : (item.product?.name || "—");
-                    const variantSku = isShared 
-                      ? [sv?.color?.name, sv?.size?.label, sv?.material?.name].filter(Boolean).join(" | ") 
-                      : (item.variant?.sku || "—");
-                    return (
+                  {viewEntry.items?.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell>{productName}</TableCell>
-                      <TableCell>{variantSku}</TableCell>
+                      <TableCell>{item.product?.name || "—"}</TableCell>
+                      <TableCell>{item.variant?.sku || "—"}</TableCell>
                       <TableCell>{item.quantity}</TableCell>
                     </TableRow>
-                    );
-                  })}
+                  ))}
                 </TableBody>
               </Table>
             </div>

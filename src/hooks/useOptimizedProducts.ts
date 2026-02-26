@@ -71,8 +71,7 @@ export const useOptimizedProducts = (
           created_at,
           category:categories(id, name),
           brand:brands(id, name),
-          images:product_images(id, image_url, is_main, sort_order),
-          variants:product_variants(id, stock_quantity, low_stock_threshold, shared_variant_id, shared_variant:shared_variants(id, stock_quantity))
+          images:product_images(id, image_url, is_main, sort_order)
         `)
         .order("created_at", { ascending: false })
         .range(offset, offset + pageSize - 1);
@@ -102,7 +101,7 @@ export const useOptimizedProducts = (
       if (dataResult.error) throw dataResult.error;
 
       return {
-        products: dataResult.data as unknown as Product[],
+        products: dataResult.data as Product[],
         totalCount: countResult.count || 0,
       };
     },

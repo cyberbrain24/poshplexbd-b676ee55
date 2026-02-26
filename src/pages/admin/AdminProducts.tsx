@@ -117,7 +117,6 @@ const AdminProducts = () => {
               <TableHead>Category</TableHead>
               <TableHead>Price</TableHead>
               <TableHead>Stock</TableHead>
-              <TableHead>Shared Stock</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="w-24">Actions</TableHead>
             </TableRow>
@@ -125,14 +124,14 @@ const AdminProducts = () => {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                 <TableCell colSpan={10} className="text-center py-8">
+                <TableCell colSpan={9} className="text-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
                   Loading products...
                 </TableCell>
               </TableRow>
             ) : products.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center py-8">
+                <TableCell colSpan={9} className="text-center py-8">
                   <Package className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                   <p className="text-muted-foreground">
                     {searchQuery ? "No products match your search" : "No products found"}
@@ -171,20 +170,6 @@ const AdminProducts = () => {
                       return (
                         <Badge variant={totalStock === 0 ? "destructive" : lowThreshold ? "outline" : "secondary"}>
                           {totalStock}
-                        </Badge>
-                      );
-                    })()}
-                  </TableCell>
-                  <TableCell>
-                    {(() => {
-                      const sharedStock = product.variants
-                        ?.filter((v: any) => v.shared_variant_id)
-                        ?.reduce((sum: number, v: any) => sum + (v.shared_variant?.stock_quantity ?? 0), 0) ?? 0;
-                      const hasShared = product.variants?.some((v: any) => v.shared_variant_id);
-                      if (!hasShared) return <span className="text-muted-foreground">—</span>;
-                      return (
-                        <Badge variant={sharedStock === 0 ? "destructive" : "secondary"}>
-                          {sharedStock}
                         </Badge>
                       );
                     })()}

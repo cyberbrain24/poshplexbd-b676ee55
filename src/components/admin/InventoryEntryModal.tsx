@@ -7,8 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2 } from "lucide-react";
 import { useAccounts, useTransactionCategories } from "@/hooks";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useInventoryProducts } from "@/hooks/useInventory";
 import { InventoryEntry, InventoryItemInput } from "@/services/inventory.service";
 import { formatCurrency } from "@/lib/currency";
 
@@ -22,8 +21,7 @@ interface Props {
 }
 
 interface LineItem {
-  product_id: string;
-  variant_id: string;
+  inventory_product_id: string;
   quantity: number;
   purchase_price: number;
 }
@@ -34,49 +32,15 @@ const InventoryEntryModal = ({ open, onClose, onSave, type, editEntry, saving }:
   const [accountId, setAccountId] = useState<string>("");
   const [categoryId, setCategoryId] = useState<string>("");
   const [subcategoryId, setSubcategoryId] = useState<string>("");
-  const [items, setItems] = useState<LineItem[]>([{ product_id: "", variant_id: "", quantity: 1, purchase_price: 0 }]);
+  const [items, setItems] = useState<LineItem[]>([{ inventory_product_id: "", quantity: 1, purchase_price: 0 }]);
 
   const { data: accounts } = useAccounts();
   const { data: categories } = useTransactionCategories("expense");
-  
-  // Parent categories (no parent_id)
+  const { data: inventoryProducts } = useInventoryProducts();
+
   const parentCategories = useMemo(() => categories?.filter((c) => !c.parent_id) || [], [categories]);
-  // Subcategories for selected parent
   const subcategories = useMemo(() => categories?.filter((c) => c.parent_id === categoryId) || [], [categories, categoryId]);
 
-  // Fetch products for dropdown
-  const { data: products } = useQuery({
-    queryKey: ["products-for-inventory"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("products")
-        .select("id, name, sku")
-        .eq("is_active", true)
-        .order("name");
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  // Fetch variants for selected products
-  const selectedProductIds = [...new Set(items.map((i) => i.product_id).filter(Boolean))];
-  const { data: variants } = useQuery({
-    queryKey: ["variants-for-inventory", selectedProductIds],
-    queryFn: async () => {
-      if (!selectedProductIds.length) return [];
-      const { data, error } = await supabase
-        .from("product_variants")
-        .select("id, product_id, sku, selling_price, purchase_price, color:colors(name), size:sizes(label), material:materials(name)")
-        .in("product_id", selectedProductIds)
-        .eq("is_active", true)
-        .order("sku");
-      if (error) throw error;
-      return data;
-    },
-    enabled: selectedProductIds.length > 0,
-  });
-
-  // Populate form when editing
   useEffect(() => {
     if (editEntry) {
       setDate(editEntry.date);
@@ -86,8 +50,7 @@ const InventoryEntryModal = ({ open, onClose, onSave, type, editEntry, saving }:
       setSubcategoryId((editEntry as any).subcategory_id || "");
       if (editEntry.items?.length) {
         setItems(editEntry.items.map((i) => ({
-          product_id: i.product_id,
-          variant_id: i.variant_id,
+          inventory_product_id: i.inventory_product_id,
           quantity: i.quantity,
           purchase_price: i.purchase_price,
         })));
@@ -98,46 +61,27 @@ const InventoryEntryModal = ({ open, onClose, onSave, type, editEntry, saving }:
       setAccountId("");
       setCategoryId("");
       setSubcategoryId("");
-      setItems([{ product_id: "", variant_id: "", quantity: 1, purchase_price: 0 }]);
+      setItems([{ inventory_product_id: "", quantity: 1, purchase_price: 0 }]);
     }
   }, [editEntry, open]);
 
-  // Reset subcategory when category changes
   useEffect(() => {
-    if (!editEntry) {
-      setSubcategoryId("");
-    }
+    if (!editEntry) setSubcategoryId("");
   }, [categoryId]);
 
-  const addLine = () => setItems([...items, { product_id: "", variant_id: "", quantity: 1, purchase_price: 0 }]);
+  const addLine = () => setItems([...items, { inventory_product_id: "", quantity: 1, purchase_price: 0 }]);
   const removeLine = (idx: number) => setItems(items.filter((_, i) => i !== idx));
 
   const updateLine = (idx: number, field: keyof LineItem, value: string | number) => {
     const updated = [...items];
-    if (field === "product_id") {
-      updated[idx] = { ...updated[idx], product_id: value as string, variant_id: "" };
-    } else {
-      (updated[idx] as any)[field] = value;
-    }
+    (updated[idx] as any)[field] = value;
     setItems(updated);
   };
 
-  const getVariantsForProduct = (productId: string) =>
-    variants?.filter((v) => v.product_id === productId) || [];
-
-  const formatVariantLabel = (v: any) => {
-    const parts = [v.sku];
-    if (v.color?.name) parts.push(v.color.name);
-    if (v.size?.label) parts.push(v.size.label);
-    if (v.material?.name) parts.push(v.material.name);
-    return parts.join(" | ");
-  };
-
-  // Grand totals
   const grandTotalQty = items.reduce((sum, i) => sum + (i.quantity || 0), 0);
   const grandTotalPrice = items.reduce((sum, i) => sum + (i.quantity || 0) * (i.purchase_price || 0), 0);
 
-  const canSave = items.every((i) => i.product_id && i.variant_id && i.quantity > 0);
+  const canSave = items.every((i) => i.inventory_product_id && i.quantity > 0);
 
   const handleSave = () => {
     onSave(
@@ -149,13 +93,14 @@ const InventoryEntryModal = ({ open, onClose, onSave, type, editEntry, saving }:
         subcategory_id: type === "in" ? subcategoryId || null : null,
       },
       items.map((i) => ({
-        product_id: i.product_id,
-        variant_id: i.variant_id,
+        inventory_product_id: i.inventory_product_id,
         quantity: i.quantity,
         purchase_price: type === "in" ? i.purchase_price : 0,
       }))
     );
   };
+
+  const activeProducts = inventoryProducts?.filter(p => p.is_active) || [];
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -165,7 +110,6 @@ const InventoryEntryModal = ({ open, onClose, onSave, type, editEntry, saving }:
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Date & Notes */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>Date</Label>
@@ -177,7 +121,6 @@ const InventoryEntryModal = ({ open, onClose, onSave, type, editEntry, saving }:
             </div>
           </div>
 
-          {/* Account & Category (only for IN) */}
           {type === "in" && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -233,38 +176,21 @@ const InventoryEntryModal = ({ open, onClose, onSave, type, editEntry, saving }:
 
             <div className="space-y-3">
               {items.map((item, idx) => (
-                <div key={idx} className="grid grid-cols-[1fr_1fr_80px_100px_40px] gap-2 items-end border border-border rounded-md p-3">
-                  {/* Product */}
+                <div key={idx} className={`grid gap-2 items-end border border-border rounded-md p-3 ${type === "in" ? "grid-cols-[1fr_80px_100px_40px]" : "grid-cols-[1fr_80px_40px]"}`}>
                   <div>
                     <Label className="text-xs">Product</Label>
-                    <Select value={item.product_id} onValueChange={(v) => updateLine(idx, "product_id", v)}>
-                      <SelectTrigger><SelectValue placeholder="Product" /></SelectTrigger>
+                    <Select value={item.inventory_product_id} onValueChange={(v) => updateLine(idx, "inventory_product_id", v)}>
+                      <SelectTrigger><SelectValue placeholder="Select product" /></SelectTrigger>
                       <SelectContent>
-                        {products?.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>{p.name} ({p.sku})</SelectItem>
+                        {activeProducts.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.name}{p.sku ? ` (${p.sku})` : ""} — {p.unit}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
 
-                  {/* Variant */}
-                  <div>
-                    <Label className="text-xs">Variant</Label>
-                    <Select
-                      value={item.variant_id}
-                      onValueChange={(v) => updateLine(idx, "variant_id", v)}
-                      disabled={!item.product_id}
-                    >
-                      <SelectTrigger><SelectValue placeholder="Variant" /></SelectTrigger>
-                      <SelectContent>
-                        {getVariantsForProduct(item.product_id).map((v) => (
-                          <SelectItem key={v.id} value={v.id}>{formatVariantLabel(v)}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Quantity */}
                   <div>
                     <Label className="text-xs">Qty</Label>
                     <Input
@@ -275,8 +201,7 @@ const InventoryEntryModal = ({ open, onClose, onSave, type, editEntry, saving }:
                     />
                   </div>
 
-                  {/* Purchase Price (only for IN) */}
-                  {type === "in" ? (
+                  {type === "in" && (
                     <div>
                       <Label className="text-xs">Cost</Label>
                       <Input
@@ -287,11 +212,8 @@ const InventoryEntryModal = ({ open, onClose, onSave, type, editEntry, saving }:
                         onChange={(e) => updateLine(idx, "purchase_price", parseFloat(e.target.value) || 0)}
                       />
                     </div>
-                  ) : (
-                    <div />
                   )}
 
-                  {/* Remove */}
                   <Button
                     type="button"
                     variant="ghost"
@@ -307,23 +229,22 @@ const InventoryEntryModal = ({ open, onClose, onSave, type, editEntry, saving }:
             </div>
 
             {/* Grand Totals */}
-            {type === "in" && (
-              <div className="mt-4 flex justify-end">
-                <div className="bg-muted rounded-md p-3 space-y-1 min-w-[220px]">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Total Qty:</span>
-                    <span className="font-semibold">{grandTotalQty}</span>
-                  </div>
+            <div className="mt-4 flex justify-end">
+              <div className="bg-muted rounded-md p-3 space-y-1 min-w-[220px]">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Total Qty:</span>
+                  <span className="font-semibold">{grandTotalQty}</span>
+                </div>
+                {type === "in" && (
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Grand Total:</span>
                     <span className="font-semibold">{formatCurrency(grandTotalPrice)}</span>
                   </div>
-                </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
 
-          {/* Actions */}
           <div className="flex justify-end gap-2 pt-4">
             <Button variant="outline" onClick={onClose}>Cancel</Button>
             <Button onClick={handleSave} disabled={!canSave || saving}>

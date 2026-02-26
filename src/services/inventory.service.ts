@@ -1,5 +1,72 @@
 import { supabase } from "@/integrations/supabase/client";
 
+/* ─── Inventory Products (independent from store products) ─── */
+
+export interface InventoryProduct {
+  id: string;
+  name: string;
+  sku: string;
+  unit: string;
+  purchase_price: number;
+  current_stock: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InventoryProductInput {
+  name: string;
+  sku?: string;
+  unit?: string;
+  purchase_price?: number;
+  is_active?: boolean;
+}
+
+export const fetchInventoryProducts = async () => {
+  const { data, error } = await supabase
+    .from("inventory_products")
+    .select("*")
+    .order("name");
+  if (error) throw error;
+  return data as InventoryProduct[];
+};
+
+export const createInventoryProduct = async (input: InventoryProductInput) => {
+  const { data, error } = await supabase
+    .from("inventory_products")
+    .insert(input)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as InventoryProduct;
+};
+
+export const updateInventoryProduct = async (id: string, input: InventoryProductInput) => {
+  const { data, error } = await supabase
+    .from("inventory_products")
+    .update(input)
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as InventoryProduct;
+};
+
+export const deleteInventoryProduct = async (id: string) => {
+  // Check if used in any inventory entry items
+  const { count } = await supabase
+    .from("inventory_entry_items")
+    .select("id", { count: "exact", head: true })
+    .eq("inventory_product_id", id);
+  if (count && count > 0) {
+    throw new Error(`Cannot delete: this product is used in ${count} inventory entries.`);
+  }
+  const { error } = await supabase.from("inventory_products").delete().eq("id", id);
+  if (error) throw error;
+};
+
+/* ─── Inventory Entries ─── */
+
 export interface InventoryEntry {
   id: string;
   type: "in" | "out";
@@ -21,18 +88,15 @@ export interface InventoryEntry {
 export interface InventoryEntryItem {
   id: string;
   entry_id: string;
-  product_id: string;
-  variant_id: string;
+  inventory_product_id: string;
   quantity: number;
   purchase_price: number;
   created_at: string;
-  product?: { id: string; name: string; sku: string } | null;
-  variant?: { id: string; sku: string; color?: { name: string } | null; size?: { label: string } | null; material?: { name: string } | null } | null;
+  inventory_product?: InventoryProduct | null;
 }
 
 export interface InventoryItemInput {
-  product_id: string;
-  variant_id: string;
+  inventory_product_id: string;
   quantity: number;
   purchase_price?: number;
 }
@@ -47,8 +111,7 @@ export const fetchInventoryEntries = async (type: "in" | "out") => {
       subcategory:transaction_categories!inventory_entries_subcategory_id_fkey(id, name, type),
       items:inventory_entry_items(
         *,
-        product:products(id, name, sku),
-        variant:product_variants(id, sku, color:colors(name), size:sizes(label), material:materials(name))
+        inventory_product:inventory_products(*)
       )
     `)
     .eq("type", type)
@@ -63,7 +126,7 @@ export const createInventoryEntry = async (
   items: InventoryItemInput[]
 ) => {
   const totalAmount = items.reduce((sum, i) => sum + (i.quantity || 0) * (i.purchase_price || 0), 0);
-  
+
   let transactionId: string | null = null;
 
   // Auto-create expense transaction for inventory-in if account is selected
@@ -85,7 +148,6 @@ export const createInventoryEntry = async (
     transactionId = txn.id;
   }
 
-  // Create entry
   const { data: entryData, error: entryError } = await supabase
     .from("inventory_entries")
     .insert({
@@ -102,11 +164,9 @@ export const createInventoryEntry = async (
 
   if (entryError) throw entryError;
 
-  // Create items
   const itemsToInsert = items.map((item) => ({
     entry_id: entryData.id,
-    product_id: item.product_id,
-    variant_id: item.variant_id,
+    inventory_product_id: item.inventory_product_id,
     quantity: item.quantity,
     purchase_price: item.purchase_price || 0,
   }));
@@ -127,7 +187,6 @@ export const updateInventoryEntry = async (
 ) => {
   const totalAmount = items.reduce((sum, i) => sum + (i.quantity || 0) * (i.purchase_price || 0), 0);
 
-  // Get existing entry to find linked transaction
   const { data: existing } = await supabase
     .from("inventory_entries")
     .select("transaction_id, type")
@@ -136,11 +195,9 @@ export const updateInventoryEntry = async (
 
   let transactionId = existing?.transaction_id || null;
 
-  // Sync transaction for inventory-in
   if (existing?.type === "in") {
     if (entry.account_id && totalAmount > 0) {
       if (transactionId) {
-        // Update existing transaction
         await supabase
           .from("transactions")
           .update({
@@ -152,7 +209,6 @@ export const updateInventoryEntry = async (
           })
           .eq("id", transactionId);
       } else {
-        // Create new transaction
         const { data: txn, error: txnError } = await supabase
           .from("transactions")
           .insert({
@@ -169,13 +225,11 @@ export const updateInventoryEntry = async (
         transactionId = txn.id;
       }
     } else if (transactionId && !entry.account_id) {
-      // Remove transaction if account cleared
       await supabase.from("transactions").delete().eq("id", transactionId);
       transactionId = null;
     }
   }
 
-  // Update entry header
   const { error: entryError } = await supabase
     .from("inventory_entries")
     .update({
@@ -190,7 +244,6 @@ export const updateInventoryEntry = async (
 
   if (entryError) throw entryError;
 
-  // Delete old items (trigger reverses stock)
   const { error: delError } = await supabase
     .from("inventory_entry_items")
     .delete()
@@ -198,11 +251,9 @@ export const updateInventoryEntry = async (
 
   if (delError) throw delError;
 
-  // Insert new items (trigger adds stock)
   const itemsToInsert = items.map((item) => ({
     entry_id: id,
-    product_id: item.product_id,
-    variant_id: item.variant_id,
+    inventory_product_id: item.inventory_product_id,
     quantity: item.quantity,
     purchase_price: item.purchase_price || 0,
   }));
@@ -215,14 +266,12 @@ export const updateInventoryEntry = async (
 };
 
 export const deleteInventoryEntry = async (id: string) => {
-  // Get linked transaction before deleting
   const { data: existing } = await supabase
     .from("inventory_entries")
     .select("transaction_id")
     .eq("id", id)
     .single();
 
-  // Delete entry (cascades to items, trigger reverses stock)
   const { error } = await supabase
     .from("inventory_entries")
     .delete()
@@ -230,7 +279,6 @@ export const deleteInventoryEntry = async (id: string) => {
 
   if (error) throw error;
 
-  // Delete linked transaction
   if (existing?.transaction_id) {
     await supabase.from("transactions").delete().eq("id", existing.transaction_id);
   }

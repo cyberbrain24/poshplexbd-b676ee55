@@ -39,7 +39,7 @@ export async function fetchProducts(
       brand:brands(id, name),
       images:product_images(id, image_url, alt_text, is_main, sort_order, color_id),
       variants:product_variants(
-        id, sku, purchase_price, selling_price, is_active, image_url,
+        id, sku, purchase_price, selling_price, is_active, image_url, stock_quantity, low_stock_threshold,
         color:colors(id, name, hex_code),
         size:sizes(id, label),
         material:materials(id, name)
@@ -86,7 +86,7 @@ export async function fetchProductById(productId: string): Promise<Product | nul
       care_instruction:care_instructions(id, name, content),
       images:product_images(id, image_url, alt_text, is_main, sort_order, color_id),
       variants:product_variants(
-        id, sku, purchase_price, selling_price, is_active, image_url,
+        id, sku, purchase_price, selling_price, is_active, image_url, stock_quantity, low_stock_threshold,
         color:colors(id, name, hex_code),
         size:sizes(id, label),
         material:materials(id, name)

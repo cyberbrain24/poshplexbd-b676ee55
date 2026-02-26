@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -6,18 +6,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useSharedVariants, useCreateSharedVariant, useUpdateSharedVariant, useDeleteSharedVariant } from "@/hooks/useSharedVariants";
-import { SharedVariant, formatSharedVariantLabel } from "@/services/shared-variant.service";
+import { SharedVariant } from "@/services/shared-variant.service";
 import { AdminLoadingSpinner } from "@/components/admin";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useSharedVariantCategoryIds, useSyncSharedVariantCategories } from "@/hooks/useSharedVariantCategories";
 
 const AdminSharedVariants = () => {
   const { data: variants, isLoading } = useSharedVariants();
   const createMutation = useCreateSharedVariant();
   const updateMutation = useUpdateSharedVariant();
   const deleteMutation = useDeleteSharedVariant();
+  const syncCategoriesMutation = useSyncSharedVariantCategories();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<SharedVariant | null>(null);
@@ -26,11 +29,20 @@ const AdminSharedVariants = () => {
   const [colorId, setColorId] = useState("");
   const [sizeId, setSizeId] = useState("");
   const [materialId, setMaterialId] = useState("");
-  const [categoryId, setCategoryId] = useState("");
-  const [subcategoryId, setSubcategoryId] = useState("");
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [sku, setSku] = useState("");
   const [purchasePrice, setPurchasePrice] = useState(0);
   const [lowThreshold, setLowThreshold] = useState(5);
+
+  // Fetch editing shared variant's categories
+  const { data: editingCategoryIds } = useSharedVariantCategoryIds(editing?.id);
+
+  // Sync selected categories when editing
+  useEffect(() => {
+    if (editing && editingCategoryIds) {
+      setSelectedCategoryIds(editingCategoryIds);
+    }
+  }, [editing, editingCategoryIds]);
 
   // Fetch attribute lists
   const { data: colors } = useQuery({
@@ -62,17 +74,47 @@ const AdminSharedVariants = () => {
     },
   });
 
-  // Derive parent categories and subcategories
+  // Fetch all shared variant category links for display
+  const { data: allSvCategories } = useQuery({
+    queryKey: ["shared-variant-categories-all"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shared_variant_categories")
+        .select("shared_variant_id, category_id, category:categories(id, name, parent_id)");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Derive parent categories and their children
   const parentCategories = categories?.filter((c) => !c.parent_id) || [];
-  const subcategories = categories?.filter((c) => c.parent_id === categoryId) || [];
+  const getSubcategories = (parentId: string) =>
+    categories?.filter((c) => c.parent_id === parentId) || [];
+
+  const toggleCategory = (catId: string) => {
+    setSelectedCategoryIds((prev) =>
+      prev.includes(catId) ? prev.filter((id) => id !== catId) : [...prev, catId]
+    );
+  };
+
+  // Toggle parent + all its children
+  const toggleParent = (parentId: string) => {
+    const childIds = getSubcategories(parentId).map((c) => c.id);
+    const allIds = [parentId, ...childIds];
+    const allSelected = allIds.every((id) => selectedCategoryIds.includes(id));
+    if (allSelected) {
+      setSelectedCategoryIds((prev) => prev.filter((id) => !allIds.includes(id)));
+    } else {
+      setSelectedCategoryIds((prev) => [...new Set([...prev, ...allIds])]);
+    }
+  };
 
   const openCreate = () => {
     setEditing(null);
     setColorId("");
     setSizeId("");
     setMaterialId("");
-    setCategoryId("");
-    setSubcategoryId("");
+    setSelectedCategoryIds([]);
     setSku("");
     setPurchasePrice(0);
     setLowThreshold(5);
@@ -84,21 +126,20 @@ const AdminSharedVariants = () => {
     setColorId(sv.color_id || "");
     setSizeId(sv.size_id || "");
     setMaterialId(sv.material_id || "");
-    setCategoryId(sv.category_id || "");
-    setSubcategoryId(sv.subcategory_id || "");
+    setSelectedCategoryIds([]); // Will be populated by useEffect
     setSku(sv.sku);
     setPurchasePrice(sv.purchase_price);
     setLowThreshold(sv.low_stock_threshold);
     setModalOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const payload = {
       color_id: colorId || null,
       size_id: sizeId || null,
       material_id: materialId || null,
-      category_id: categoryId || null,
-      subcategory_id: subcategoryId || null,
+      category_id: null as string | null,
+      subcategory_id: null as string | null,
       sku,
       purchase_price: purchasePrice,
       low_stock_threshold: lowThreshold,
@@ -106,11 +147,25 @@ const AdminSharedVariants = () => {
 
     if (editing) {
       updateMutation.mutate({ id: editing.id, ...payload }, {
-        onSuccess: () => setModalOpen(false),
+        onSuccess: () => {
+          syncCategoriesMutation.mutate({
+            sharedVariantId: editing.id,
+            categoryIds: selectedCategoryIds,
+          });
+          setModalOpen(false);
+        },
       });
     } else {
       createMutation.mutate(payload, {
-        onSuccess: () => setModalOpen(false),
+        onSuccess: (data: any) => {
+          if (data?.id) {
+            syncCategoriesMutation.mutate({
+              sharedVariantId: data.id,
+              categoryIds: selectedCategoryIds,
+            });
+          }
+          setModalOpen(false);
+        },
       });
     }
   };
@@ -119,6 +174,22 @@ const AdminSharedVariants = () => {
     if (confirm("Delete this shared variant? This cannot be undone.")) {
       deleteMutation.mutate(id);
     }
+  };
+
+  // Helper: get category names for a shared variant from junction data
+  const getCategoryBadges = (svId: string) => {
+    if (!allSvCategories) return null;
+    const links = allSvCategories.filter((l) => l.shared_variant_id === svId);
+    if (!links.length) return <span className="text-muted-foreground">—</span>;
+    return (
+      <div className="flex flex-wrap gap-1">
+        {links.map((l: any) => (
+          <Badge key={l.category_id} variant={l.category?.parent_id ? "outline" : "secondary"} className="text-xs">
+            {l.category?.name || "Unknown"}
+          </Badge>
+        ))}
+      </div>
+    );
   };
 
   if (isLoading) return <AdminLoadingSpinner />;
@@ -140,8 +211,7 @@ const AdminSharedVariants = () => {
           <TableHeader>
             <TableRow>
               <TableHead>SKU</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Subcategory</TableHead>
+              <TableHead>Categories</TableHead>
               <TableHead>Color</TableHead>
               <TableHead>Size</TableHead>
               <TableHead>Material</TableHead>
@@ -154,15 +224,14 @@ const AdminSharedVariants = () => {
           <TableBody>
             {!variants?.length ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                   No shared variants yet. Create one to start managing blank stock.
                 </TableCell>
               </TableRow>
             ) : variants.map((sv) => (
               <TableRow key={sv.id}>
                 <TableCell className="font-mono text-sm">{sv.sku || "—"}</TableCell>
-                <TableCell>{sv.category?.name || "—"}</TableCell>
-                <TableCell>{sv.subcategory?.name || "—"}</TableCell>
+                <TableCell>{getCategoryBadges(sv.id)}</TableCell>
                 <TableCell>
                   {sv.color ? (
                     <div className="flex items-center gap-2">
@@ -200,7 +269,7 @@ const AdminSharedVariants = () => {
 
       {/* Create/Edit Modal */}
       <Dialog open={modalOpen} onOpenChange={(o) => !o && setModalOpen(false)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing ? "Edit" : "New"} Shared Variant</DialogTitle>
           </DialogHeader>
@@ -209,30 +278,58 @@ const AdminSharedVariants = () => {
               <Label>SKU</Label>
               <Input value={sku} onChange={(e) => setSku(e.target.value)} placeholder="e.g. BLK-XL-COT" />
             </div>
+
+            {/* Multi-Category Selection */}
             <div>
-              <Label>Category (Product Type)</Label>
-              <Select value={categoryId} onValueChange={(v) => { setCategoryId(v); setSubcategoryId(""); }}>
-                <SelectTrigger><SelectValue placeholder="e.g. T-Shirt, Pants" /></SelectTrigger>
-                <SelectContent>
-                  {parentCategories.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {subcategories.length > 0 && (
-              <div>
-                <Label>Subcategory</Label>
-                <Select value={subcategoryId} onValueChange={setSubcategoryId}>
-                  <SelectTrigger><SelectValue placeholder="Select subcategory" /></SelectTrigger>
-                  <SelectContent>
-                    {subcategories.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <Label className="mb-2 block">Categories & Subcategories</Label>
+              <div className="border rounded-md p-3 space-y-3 max-h-48 overflow-y-auto">
+                {parentCategories.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No categories found</p>
+                ) : parentCategories.map((parent) => {
+                  const children = getSubcategories(parent.id);
+                  const allIds = [parent.id, ...children.map((c) => c.id)];
+                  const allSelected = allIds.every((id) => selectedCategoryIds.includes(id));
+                  const someSelected = allIds.some((id) => selectedCategoryIds.includes(id)) && !allSelected;
+
+                  return (
+                    <div key={parent.id} className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id={`cat-${parent.id}`}
+                          checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                          onCheckedChange={() => toggleParent(parent.id)}
+                        />
+                        <label htmlFor={`cat-${parent.id}`} className="text-sm font-medium cursor-pointer">
+                          {parent.name}
+                        </label>
+                      </div>
+                      {children.length > 0 && (
+                        <div className="ml-6 space-y-1">
+                          {children.map((child) => (
+                            <div key={child.id} className="flex items-center gap-2">
+                              <Checkbox
+                                id={`cat-${child.id}`}
+                                checked={selectedCategoryIds.includes(child.id)}
+                                onCheckedChange={() => toggleCategory(child.id)}
+                              />
+                              <label htmlFor={`cat-${child.id}`} className="text-sm cursor-pointer">
+                                {child.name}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-            )}
+              {selectedCategoryIds.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {selectedCategoryIds.length} selected
+                </p>
+              )}
+            </div>
+
             <div>
               <Label>Color</Label>
               <Select value={colorId} onValueChange={setColorId}>

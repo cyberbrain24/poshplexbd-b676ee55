@@ -82,16 +82,16 @@ const AdminProducts = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-medium tracking-tight">Products</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-xl md:text-2xl font-medium tracking-tight">Products</h1>
+          <p className="text-muted-foreground text-xs md:text-sm mt-0.5">
             Manage your product catalog ({totalCount} total)
           </p>
         </div>
-        <Button onClick={openCreateModal}>
-          <Plus className="h-4 w-4 mr-2" />
+        <Button onClick={openCreateModal} size="sm" className="self-start sm:self-auto">
+          <Plus className="h-4 w-4 mr-1.5" />
           Add Product
         </Button>
       </div>
@@ -106,7 +106,7 @@ const AdminProducts = () => {
       />
 
       {/* Products Table */}
-      <div className="border border-border">
+      <div className="border border-border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>

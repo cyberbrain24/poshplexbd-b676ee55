@@ -5,7 +5,6 @@ import { AdminErrorBoundary } from "./AdminErrorBoundary";
 import { AdminLoadingSpinner } from "./AdminLoadingState";
 import { useERPDataPrefetch } from "@/hooks/useERPPrefetch";
 
-// Routes that benefit from ERP reference data prefetch
 const ERP_ROUTES = ["/admin", "/admin/products", "/admin/orders", "/admin/inventory-in", "/admin/inventory-out", "/admin/customers"];
 
 interface AdminLayoutProps {
@@ -17,11 +16,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const [isPending, startTransition] = useTransition();
   const previousPathRef = useRef(location.pathname);
 
-  // Conditionally prefetch ERP data only on routes that use it
   const needsERP = ERP_ROUTES.some(r => location.pathname === r || location.pathname.startsWith(r + "/"));
   useERPDataPrefetch(needsERP);
 
-  // Track navigation changes for transition handling
   useEffect(() => {
     if (previousPathRef.current !== location.pathname) {
       startTransition(() => {
@@ -33,12 +30,10 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   return (
     <div className="flex min-h-screen bg-background">
       <AdminSidebar />
-      <main className="flex-1 p-8 relative">
-        {/* Subtle loading overlay during transitions */}
+      <main className="flex-1 p-4 pt-16 md:p-8 md:pt-8 min-w-0 relative">
         {isPending && (
           <div className="absolute inset-0 bg-background/50 z-10 pointer-events-none" />
         )}
-        
         <AdminErrorBoundary key={location.pathname}>
           <Suspense fallback={<AdminLoadingSpinner />}>
             {children || <Outlet key={location.pathname} />}

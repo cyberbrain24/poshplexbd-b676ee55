@@ -51,6 +51,9 @@ import {
   Monitor,
   Star,
   Layers,
+  CheckSquare,
+  Square,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -89,8 +92,12 @@ const AdminMedia = () => {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isRenameOpen, setIsRenameOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
   const [newFileName, setNewFileName] = useState("");
   const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: files = [], isLoading } = useMediaFiles();
@@ -190,6 +197,50 @@ const AdminMedia = () => {
     }
   };
 
+  // Selection helpers
+  const fileKey = (f: MediaFile) => `${f.bucket_id}::${f.name}`;
+
+  const toggleSelection = (file: MediaFile) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      const key = fileKey(file);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    setSelectedIds(new Set(visibleFiles.map(fileKey)));
+  };
+
+  const deselectAll = () => setSelectedIds(new Set());
+
+  const exitSelectionMode = () => {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkDelete = async () => {
+    setIsBulkDeleting(true);
+    let deleted = 0;
+    const filesToDelete = files.filter(f => selectedIds.has(fileKey(f)));
+
+    for (const file of filesToDelete) {
+      try {
+        await deleteMutation.mutateAsync({ bucketId: file.bucket_id, fileName: file.name });
+        deleteMetadataMutation.mutate({ bucketId: file.bucket_id, filePath: file.name });
+        deleted++;
+      } catch (e) {
+        console.error("Bulk delete error for", file.name, e);
+      }
+    }
+
+    toast.success(`${deleted} file${deleted > 1 ? "s" : ""} deleted`);
+    setIsBulkDeleting(false);
+    setIsBulkDeleteOpen(false);
+    exitSelectionMode();
+  };
+
   const openRenameDialog = (file: MediaFile) => {
     setSelectedFile(file);
     const nameWithoutPath = file.name.includes("/") ? file.name.split("/").pop()! : file.name;
@@ -286,26 +337,53 @@ const AdminMedia = () => {
             Manage all your files and images
           </p>
         </div>
-        <div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            onChange={handleUpload}
-            className="hidden"
-            accept="image/*,video/*,audio/*,.pdf"
-          />
-          <Button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploadMutation.isPending}
-          >
-            {uploadMutation.isPending ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Upload className="h-4 w-4 mr-2" />
-            )}
-            Upload Files
-          </Button>
+        <div className="flex gap-2">
+          {selectionMode ? (
+            <>
+              <Button variant="outline" size="sm" onClick={selectedIds.size === visibleFiles.length ? deselectAll : selectAll}>
+                {selectedIds.size === visibleFiles.length ? "Deselect All" : "Select All"}
+              </Button>
+              {selectedIds.size > 0 && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setIsBulkDeleteOpen(true)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete {selectedIds.size}
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" onClick={exitSelectionMode}>
+                <X className="h-4 w-4" />
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" onClick={() => setSelectionMode(true)}>
+                <CheckSquare className="h-4 w-4 mr-2" />
+                Select
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                onChange={handleUpload}
+                className="hidden"
+                accept="image/*,video/*,audio/*,.pdf"
+              />
+              <Button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadMutation.isPending}
+              >
+                {uploadMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4 mr-2" />
+                )}
+                Upload Files
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -370,22 +448,36 @@ const AdminMedia = () => {
             {visibleFiles.map((file) => {
               const fileType = getFileType(file.mime_type, file.name);
               const refs = getFileReferences(file);
+              const isSelected = selectedIds.has(fileKey(file));
 
               return (
                 <Card
                   key={`${file.bucket_id}-${file.name}`}
-                  className="group overflow-hidden hover:ring-2 hover:ring-primary/20 transition-all cursor-pointer"
-                  onClick={() => openPreview(file)}
+                  className={`group overflow-hidden transition-all cursor-pointer ${
+                    isSelected
+                      ? "ring-2 ring-primary"
+                      : "hover:ring-2 hover:ring-primary/20"
+                  }`}
+                  onClick={() => selectionMode ? toggleSelection(file) : openPreview(file)}
                 >
                   <div className="relative">
                     {renderFilePreview(file, "sm")}
+                    {selectionMode && (
+                      <div className="absolute top-2 left-2 z-10">
+                        {isSelected ? (
+                          <CheckSquare className="h-5 w-5 text-primary drop-shadow" />
+                        ) : (
+                          <Square className="h-5 w-5 text-white drop-shadow" />
+                        )}
+                      </div>
+                    )}
                     <Badge
                       variant="secondary"
                       className="absolute top-2 right-2 text-xs capitalize"
                     >
                       {fileType}
                     </Badge>
-                    {refs.length > 0 && (
+                    {!selectionMode && refs.length > 0 && (
                       <Badge variant="default" className="absolute top-2 left-2 text-xs">
                         {refs.length} ref{refs.length > 1 ? "s" : ""}
                       </Badge>
@@ -603,6 +695,33 @@ const AdminMedia = () => {
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : null}
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Delete Dialog */}
+      <AlertDialog open={isBulkDeleteOpen} onOpenChange={setIsBulkDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedIds.size} Files</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {selectedIds.size} selected file{selectedIds.size > 1 ? "s" : ""}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBulkDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={isBulkDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isBulkDeleting ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4 mr-2" />
+              )}
+              Delete {selectedIds.size} Files
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

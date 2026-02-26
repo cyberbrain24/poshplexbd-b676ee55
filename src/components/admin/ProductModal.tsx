@@ -181,6 +181,13 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
           }
         }
 
+        // Sync image sort_order and is_main for existing images
+        for (const img of images) {
+          if (!img.id.startsWith("temp-")) {
+            await updateImage.mutateAsync({ id: img.id, sortOrder: img.sort_order, isMain: img.is_main });
+          }
+        }
+
         toast.success("Product updated successfully");
       } else {
         const createFormData = { ...formData, category_id: selectedCategoryIds[0] || null };

@@ -163,7 +163,6 @@ const AdminProducts = () => {
                   </TableCell>
                   <TableCell>{product.category?.name || "-"}</TableCell>
                   <TableCell>৳{product.base_price.toLocaleString()}</TableCell>
-                  </TableCell>
                   <TableCell>
                     <Badge variant={product.is_active ? "default" : "outline"}>
                       {product.is_active ? "Active" : "Inactive"}

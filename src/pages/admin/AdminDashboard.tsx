@@ -3,7 +3,6 @@ import { formatCurrency } from "@/lib/currency";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   KPICard, SectionTitle, OrderPeriodCard, StatusCard,
-  TopItemsTable, StockByCategoryTable,
 } from "@/components/admin/dashboard/DashboardWidgets";
 import {
   RevenueLast7DaysChart, RevenueLast12MonthsChart, OrdersLast7DaysChart,

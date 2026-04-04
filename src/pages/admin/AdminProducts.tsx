@@ -131,7 +131,7 @@ const AdminProducts = () => {
               </TableRow>
             ) : products.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8">
+                <TableCell colSpan={8} className="text-center py-8">
                   <Package className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                   <p className="text-muted-foreground">
                     {searchQuery ? "No products match your search" : "No products found"}

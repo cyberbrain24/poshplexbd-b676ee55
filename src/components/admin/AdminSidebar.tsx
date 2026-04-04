@@ -187,7 +187,7 @@ const AdminSidebar = () => {
         {renderNavLink("/admin", LayoutDashboard, "Business Intelligence")}
         {renderCollapsible(Package, "Product Management", productManagementItems, openGroup === 'product', () => toggleGroup('product'), isProductMgmtActive)}
         {renderCollapsible(ShoppingCart, "Order Management", orderItems, openGroup === 'orders', () => toggleGroup('orders'), isOrdersActive)}
-        {renderCollapsible(Boxes, "Inventory Management", inventoryItems, openGroup === 'inventory', () => toggleGroup('inventory'), isInventoryActive)}
+        
         {renderCollapsible(Users, "Customer Management", customerManagementItems, openGroup === 'customer', () => toggleGroup('customer'), isCustomerMgmtActive)}
         {renderCollapsible(Wallet, "Account Management", accountManagementItems, openGroup === 'account', () => toggleGroup('account'), isAccountMgmtActive)}
         {renderNavLink("/admin/media", Image, "Media")}

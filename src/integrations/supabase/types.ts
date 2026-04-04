@@ -475,28 +475,34 @@ export type Database = {
           created_at: string
           entry_id: string
           id: string
-          product_id: string
+          inventory_product_id: string | null
+          product_id: string | null
           purchase_price: number | null
           quantity: number
-          variant_id: string
+          shared_variant_id: string | null
+          variant_id: string | null
         }
         Insert: {
           created_at?: string
           entry_id: string
           id?: string
-          product_id: string
+          inventory_product_id?: string | null
+          product_id?: string | null
           purchase_price?: number | null
           quantity?: number
-          variant_id: string
+          shared_variant_id?: string | null
+          variant_id?: string | null
         }
         Update: {
           created_at?: string
           entry_id?: string
           id?: string
-          product_id?: string
+          inventory_product_id?: string | null
+          product_id?: string | null
           purchase_price?: number | null
           quantity?: number
-          variant_id?: string
+          shared_variant_id?: string | null
+          variant_id?: string | null
         }
         Relationships: [
           {
@@ -507,10 +513,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "inventory_entry_items_inventory_product_id_fkey"
+            columns: ["inventory_product_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_products"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "inventory_entry_items_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_entry_items_shared_variant_id_fkey"
+            columns: ["shared_variant_id"]
+            isOneToOne: false
+            referencedRelation: "shared_variants"
             referencedColumns: ["id"]
           },
           {
@@ -521,6 +541,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      inventory_products: {
+        Row: {
+          created_at: string
+          current_stock: number
+          id: string
+          is_active: boolean
+          name: string
+          purchase_price: number
+          sku: string
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_stock?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          purchase_price?: number
+          sku?: string
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_stock?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          purchase_price?: number
+          sku?: string
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       materials: {
         Row: {
@@ -1114,6 +1170,45 @@ export type Database = {
           },
         ]
       }
+      product_variant_shared_links: {
+        Row: {
+          created_at: string
+          id: string
+          product_variant_id: string
+          quantity: number
+          shared_variant_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_variant_id: string
+          quantity?: number
+          shared_variant_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_variant_id?: string
+          quantity?: number
+          shared_variant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variant_shared_links_product_variant_id_fkey"
+            columns: ["product_variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_variant_shared_links_shared_variant_id_fkey"
+            columns: ["shared_variant_id"]
+            isOneToOne: false
+            referencedRelation: "shared_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_variants: {
         Row: {
           color_id: string | null
@@ -1126,6 +1221,7 @@ export type Database = {
           product_id: string
           purchase_price: number
           selling_price: number
+          shared_variant_id: string | null
           size_id: string | null
           sku: string
           stock_quantity: number
@@ -1142,6 +1238,7 @@ export type Database = {
           product_id: string
           purchase_price?: number
           selling_price?: number
+          shared_variant_id?: string | null
           size_id?: string | null
           sku: string
           stock_quantity?: number
@@ -1158,6 +1255,7 @@ export type Database = {
           product_id?: string
           purchase_price?: number
           selling_price?: number
+          shared_variant_id?: string | null
           size_id?: string | null
           sku?: string
           stock_quantity?: number
@@ -1183,6 +1281,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_variants_shared_variant_id_fkey"
+            columns: ["shared_variant_id"]
+            isOneToOne: false
+            referencedRelation: "shared_variants"
             referencedColumns: ["id"]
           },
           {
@@ -1538,6 +1643,129 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shared_variant_categories: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          shared_variant_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          shared_variant_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          shared_variant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_variant_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shared_variant_categories_shared_variant_id_fkey"
+            columns: ["shared_variant_id"]
+            isOneToOne: false
+            referencedRelation: "shared_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shared_variants: {
+        Row: {
+          category_id: string | null
+          color_id: string | null
+          created_at: string
+          id: string
+          image_url: string | null
+          is_active: boolean
+          low_stock_threshold: number
+          material_id: string | null
+          purchase_price: number
+          size_id: string | null
+          sku: string
+          stock_quantity: number
+          subcategory_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          category_id?: string | null
+          color_id?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          low_stock_threshold?: number
+          material_id?: string | null
+          purchase_price?: number
+          size_id?: string | null
+          sku?: string
+          stock_quantity?: number
+          subcategory_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string | null
+          color_id?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          low_stock_threshold?: number
+          material_id?: string | null
+          purchase_price?: number
+          size_id?: string | null
+          sku?: string
+          stock_quantity?: number
+          subcategory_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_variants_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shared_variants_color_id_fkey"
+            columns: ["color_id"]
+            isOneToOne: false
+            referencedRelation: "colors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shared_variants_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shared_variants_size_id_fkey"
+            columns: ["size_id"]
+            isOneToOne: false
+            referencedRelation: "sizes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shared_variants_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
             referencedColumns: ["id"]
           },
         ]

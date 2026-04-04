@@ -491,7 +491,7 @@ const ProductPickerModal = ({ isOpen, onClose, onSelect, products, categories, s
           <div className="p-4 border-b border-border flex flex-wrap gap-3">
             <Select value={catFilter} onValueChange={(v) => { setCatFilter(v === "all" ? "" : v); setSubFilter(""); }}>
               <SelectTrigger className="w-48"><SelectValue placeholder="All Categories" /></SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[80]">
                 <SelectItem value="all">All Categories</SelectItem>
                 {parentCats.map((c) => (<SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>))}
               </SelectContent>
@@ -499,7 +499,7 @@ const ProductPickerModal = ({ isOpen, onClose, onSelect, products, categories, s
             {subCats.length > 0 && (
               <Select value={subFilter} onValueChange={(v) => setSubFilter(v === "all" ? "" : v)}>
                 <SelectTrigger className="w-48"><SelectValue placeholder="All Subcategories" /></SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[80]">
                   <SelectItem value="all">All Subcategories</SelectItem>
                   {subCats.map((c) => (<SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>))}
                 </SelectContent>

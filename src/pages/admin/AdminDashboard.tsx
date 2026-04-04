@@ -101,7 +101,7 @@ const AdminDashboard = () => {
           <KPICard label="Active" value={product.activeProducts} />
           <KPICard label="Inactive" value={product.inactiveProducts} />
         </div>
-
+      </section>
 
       {/* ═══ 2. ORDER ANALYTICS ═══ */}
       <section className="space-y-3">

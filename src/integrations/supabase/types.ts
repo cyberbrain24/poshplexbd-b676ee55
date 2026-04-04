@@ -544,6 +544,7 @@ export type Database = {
       }
       inventory_products: {
         Row: {
+          category_id: string | null
           created_at: string
           current_stock: number
           id: string
@@ -551,10 +552,12 @@ export type Database = {
           name: string
           purchase_price: number
           sku: string
+          subcategory_id: string | null
           unit: string
           updated_at: string
         }
         Insert: {
+          category_id?: string | null
           created_at?: string
           current_stock?: number
           id?: string
@@ -562,10 +565,12 @@ export type Database = {
           name: string
           purchase_price?: number
           sku?: string
+          subcategory_id?: string | null
           unit?: string
           updated_at?: string
         }
         Update: {
+          category_id?: string | null
           created_at?: string
           current_stock?: number
           id?: string
@@ -573,10 +578,26 @@ export type Database = {
           name?: string
           purchase_price?: number
           sku?: string
+          subcategory_id?: string | null
           unit?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "inventory_products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_products_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       materials: {
         Row: {

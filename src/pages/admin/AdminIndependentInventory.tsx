@@ -364,6 +364,7 @@ const ProductModal = ({
   const [sku, setSku] = useState("");
   const [purchasePrice, setPurchasePrice] = useState("0");
   const [unit, setUnit] = useState("pcs");
+  const [imageUrl, setImageUrl] = useState("");
   const [catId, setCatId] = useState("");
   const [subCatId, setSubCatId] = useState("");
 

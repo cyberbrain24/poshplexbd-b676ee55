@@ -379,6 +379,7 @@ const ProductModal = ({
       setSku(editProduct?.sku || "");
       setPurchasePrice(String(editProduct?.purchase_price || 0));
       setUnit(editProduct?.unit || "pcs");
+      setImageUrl(editProduct?.image_url || "");
       setCatId(editProduct?.category_id || "");
       setSubCatId(editProduct?.subcategory_id || "");
     }

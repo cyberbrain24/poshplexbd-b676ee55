@@ -351,15 +351,18 @@ const ProductModal = ({
     [categories, catId]
   );
 
-  const handleOpenChange = (o: boolean) => {
-    if (o) {
-      setName(editProduct?.name || ""); setSku(editProduct?.sku || "");
-      setPurchasePrice(String(editProduct?.purchase_price || 0)); setUnit(editProduct?.unit || "pcs");
-      setImageUrl(editProduct?.image_url || ""); setCatId(editProduct?.category_id || "");
+  // Populate fields when modal opens or editProduct changes
+  useEffect(() => {
+    if (open) {
+      setName(editProduct?.name || "");
+      setSku(editProduct?.sku || "");
+      setPurchasePrice(String(editProduct?.purchase_price || 0));
+      setUnit(editProduct?.unit || "pcs");
+      setImageUrl(editProduct?.image_url || "");
+      setCatId(editProduct?.category_id || "");
       setSubCatId(editProduct?.subcategory_id || "");
     }
-    if (!o) onClose();
-  };
+  }, [open, editProduct]);
 
   const handleSubmit = () => {
     if (!name.trim()) return;

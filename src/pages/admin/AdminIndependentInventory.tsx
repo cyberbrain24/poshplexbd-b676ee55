@@ -286,19 +286,36 @@ const ProductsTab = ({
             {products.map((p) => (
               <div
                 key={p.id}
-                className="border rounded-lg p-3 space-y-1 hover:border-primary/50 transition-colors group relative"
+                className="border rounded-lg overflow-hidden hover:border-primary/50 transition-colors group relative"
               >
-                <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5">
-                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(p)}>
-                    <Pencil className="h-3 w-3" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleDelete(p.id)}>
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
+                {/* 1:1 Product Image */}
+                <div className="relative aspect-square bg-muted">
+                  {p.image_url ? (
+                    <img
+                      src={p.image_url}
+                      alt={p.name}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Package className="h-8 w-8 text-muted-foreground/40" />
+                    </div>
+                  )}
+                  <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5">
+                    <Button variant="secondary" size="icon" className="h-6 w-6" onClick={() => openEdit(p)}>
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                    <Button variant="secondary" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleDelete(p.id)}>
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
-                <p className="text-xs font-medium truncate" title={p.name}>{p.name}</p>
-                <p className="text-lg font-bold">{p.current_stock}</p>
-                <p className="text-[10px] text-muted-foreground">{formatCurrency(p.current_stock * p.purchase_price)}</p>
+                <div className="p-2 space-y-0.5">
+                  <p className="text-xs font-medium truncate" title={p.name}>{p.name}</p>
+                  <p className="text-lg font-bold">{p.current_stock}</p>
+                  <p className="text-[10px] text-muted-foreground">{formatCurrency(p.current_stock * p.purchase_price)}</p>
+                </div>
               </div>
             ))}
             {!products.length && (

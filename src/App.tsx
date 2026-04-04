@@ -152,8 +152,6 @@ const App = () => (
                     <Route path="orders" element={<AdminOrders />} />
                     <Route path="payment-methods" element={<AdminPaymentMethods />} />
                     <Route path="promo-codes" element={<AdminPromoCodes />} />
-                    <Route path="inventory-in" element={<AdminInventoryIn />} />
-                    <Route path="inventory-out" element={<AdminInventoryOut />} />
                     <Route path="bulk-upload" element={<AdminBulkUpload />} />
                     <Route path="site-settings" element={<AdminSiteSettings />} />
                   </Route>

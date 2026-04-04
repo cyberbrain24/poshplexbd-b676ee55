@@ -185,12 +185,6 @@ const AdminDashboard = () => {
         </div>
       </section>
 
-      {/* ═══ 7. INVENTORY HEALTH ═══ */}
-      <InventoryHealthSection
-        deadStock={inventoryHealth.deadStock}
-        slowMoving={inventoryHealth.slowMoving}
-        fastMoving={inventoryHealth.fastMoving}
-      />
 
       {/* ═══ 8. VISUAL CHARTS ═══ */}
       <section className="space-y-3">

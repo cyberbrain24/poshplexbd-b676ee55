@@ -2,7 +2,7 @@ import { useDashboard } from "@/hooks/useDashboard";
 import { formatCurrency } from "@/lib/currency";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  KPICard, SectionTitle, OrderPeriodCard, StatusCard,
+  KPICard, SectionTitle, OrderPeriodCard, StatusCard, TopItemsTable,
 } from "@/components/admin/dashboard/DashboardWidgets";
 import {
   RevenueLast7DaysChart, RevenueLast12MonthsChart, OrdersLast7DaysChart,

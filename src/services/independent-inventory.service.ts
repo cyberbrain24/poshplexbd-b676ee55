@@ -8,6 +8,7 @@ export interface InvProduct {
   unit: string;
   current_stock: number;
   is_active: boolean;
+  image_url: string | null;
   category_id: string | null;
   subcategory_id: string | null;
   created_at: string;

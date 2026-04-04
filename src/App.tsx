@@ -61,6 +61,7 @@ const AdminMedia = lazy(() => import("./pages/admin/AdminMedia"));
 const AdminPromoCodes = lazy(() => import("./pages/admin/AdminPromoCodes"));
 const AdminSiteSettings = lazy(() => import("./pages/admin/AdminSiteSettings"));
 const AdminBulkUpload = lazy(() => import("./pages/admin/AdminBulkUpload"));
+const AdminIndependentInventory = lazy(() => import("./pages/admin/AdminIndependentInventory"));
 
 const queryClient = new QueryClient({
   defaultOptions: {

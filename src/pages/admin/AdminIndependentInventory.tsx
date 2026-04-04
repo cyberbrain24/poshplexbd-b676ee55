@@ -393,6 +393,7 @@ const ProductModal = ({
       sku: sku.trim() || undefined,
       purchase_price: parseFloat(purchasePrice) || 0,
       unit,
+      image_url: imageUrl.trim() || null,
       category_id: catId || null,
       subcategory_id: subCatId || null,
     });

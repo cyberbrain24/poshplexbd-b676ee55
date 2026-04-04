@@ -102,17 +102,6 @@ const AdminDashboard = () => {
           <KPICard label="Inactive" value={product.inactiveProducts} />
         </div>
 
-        <SectionTitle icon="📊">Stock Summary</SectionTitle>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-          <KPICard label="Total Stock" value={stock.totalStock.toLocaleString()} />
-          <KPICard label="Value (Cost)" value={formatCurrency(stock.stockValuePurchase)} />
-          <KPICard label="Value (Retail)" value={formatCurrency(stock.stockValueSelling)} />
-          <KPICard label="Low Stock" value={stock.lowStockCount} sub="Below threshold" />
-          <KPICard label="Out of Stock" value={stock.outOfStockCount} />
-        </div>
-
-        <StockByCategoryTable data={stockByCategory} />
-      </section>
 
       {/* ═══ 2. ORDER ANALYTICS ═══ */}
       <section className="space-y-3">

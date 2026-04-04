@@ -47,10 +47,6 @@ const accountManagementItems: NavItem[] = [
   { icon: TrendingDown, label: "Expense Categories", path: "/admin/expense-categories" },
 ];
 
-const inventoryItems: NavItem[] = [
-  { icon: ArrowDownToLine, label: "Inventory In", path: "/admin/inventory-in" },
-  { icon: ArrowUpFromLine, label: "Inventory Out", path: "/admin/inventory-out" },
-];
 
 const customerManagementItems: NavItem[] = [
   { icon: Users, label: "Customers", path: "/admin/customers" },

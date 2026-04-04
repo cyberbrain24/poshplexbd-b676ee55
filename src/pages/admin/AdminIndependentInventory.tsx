@@ -6,7 +6,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, PackagePlus, PackageMinus, Pencil, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Plus, PackagePlus, PackageMinus, Pencil, Trash2, Package } from "lucide-react";
 import {
   useInvProducts, useCreateInvProduct, useUpdateInvProduct, useDeleteInvProduct,
   useBulkStockMovement, useStockReport,

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -351,15 +351,18 @@ const ProductModal = ({
     [categories, catId]
   );
 
-  const handleOpenChange = (o: boolean) => {
-    if (o) {
-      setName(editProduct?.name || ""); setSku(editProduct?.sku || "");
-      setPurchasePrice(String(editProduct?.purchase_price || 0)); setUnit(editProduct?.unit || "pcs");
-      setImageUrl(editProduct?.image_url || ""); setCatId(editProduct?.category_id || "");
+  // Populate fields when modal opens or editProduct changes
+  useEffect(() => {
+    if (open) {
+      setName(editProduct?.name || "");
+      setSku(editProduct?.sku || "");
+      setPurchasePrice(String(editProduct?.purchase_price || 0));
+      setUnit(editProduct?.unit || "pcs");
+      setImageUrl(editProduct?.image_url || "");
+      setCatId(editProduct?.category_id || "");
       setSubCatId(editProduct?.subcategory_id || "");
     }
-    if (!o) onClose();
-  };
+  }, [open, editProduct]);
 
   const handleSubmit = () => {
     if (!name.trim()) return;
@@ -371,7 +374,7 @@ const ProductModal = ({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={handleOpenChange}>
+      <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>{editProduct ? "Edit Product" : "Add Product"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
@@ -455,6 +458,14 @@ const ProductPickerModal = ({ isOpen, onClose, onSelect, products, categories, s
   const [subFilter, setSubFilter] = useState("");
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string[]>([]);
+
+  // Reset filters when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setCatFilter("");
+      setSubFilter("");
+    }
+  }, [isOpen]);
 
   const parentCats = useMemo(() => categories.filter((c) => !c.parent_id), [categories]);
   const subCats = useMemo(() => catFilter ? categories.filter((c) => c.parent_id === catFilter) : [], [categories, catFilter]);

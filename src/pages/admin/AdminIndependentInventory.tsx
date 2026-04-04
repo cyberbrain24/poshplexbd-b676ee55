@@ -421,6 +421,10 @@ const ProductModal = ({
             <Label>Purchase Price</Label>
             <Input type="number" value={purchasePrice} onChange={(e) => setPurchasePrice(e.target.value)} />
           </div>
+          <div>
+            <Label>Image URL</Label>
+            <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." />
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Category</Label>

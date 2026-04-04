@@ -459,6 +459,14 @@ const ProductPickerModal = ({ isOpen, onClose, onSelect, products, categories, s
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string[]>([]);
 
+  // Reset filters when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setCatFilter("");
+      setSubFilter("");
+    }
+  }, [isOpen]);
+
   const parentCats = useMemo(() => categories.filter((c) => !c.parent_id), [categories]);
   const subCats = useMemo(() => catFilter ? categories.filter((c) => c.parent_id === catFilter) : [], [categories, catFilter]);
 

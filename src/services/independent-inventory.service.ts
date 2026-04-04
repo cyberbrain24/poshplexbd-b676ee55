@@ -8,6 +8,7 @@ export interface InvProduct {
   unit: string;
   current_stock: number;
   is_active: boolean;
+  image_url: string | null;
   category_id: string | null;
   subcategory_id: string | null;
   created_at: string;
@@ -21,6 +22,7 @@ export interface InvProductInput {
   sku?: string;
   purchase_price?: number;
   unit?: string;
+  image_url?: string | null;
   category_id?: string | null;
   subcategory_id?: string | null;
   is_active?: boolean;
@@ -140,60 +142,55 @@ export const bulkStockMovement = async (
   return entry;
 };
 
-/* ── Stock Report ── */
+/* ── Stock Report (individual entries) ── */
 export interface StockReportRow {
+  entry_id: string;
+  date: string;
+  type: "in" | "out";
+  notes: string | null;
   product_name: string;
   product_sku: string;
-  total_in_qty: number;
-  total_in_value: number;
-  total_out_qty: number;
-  total_out_value: number;
+  quantity: number;
+  purchase_price: number;
+  line_total: number;
 }
 
 export const fetchStockReport = async (from: string, to: string) => {
-  // Get all entries in date range with their items
   const { data, error } = await supabase
     .from("inventory_entries")
     .select(`
-      type, date,
+      id, type, date, notes,
       items:inventory_entry_items(
         quantity, purchase_price,
-        inv_product:inventory_products(id, name, sku)
+        inv_product:inventory_products(name, sku)
       )
     `)
     .gte("date", from)
     .lte("date", to)
-    .order("date");
+    .order("date", { ascending: false });
 
   if (error) throw error;
 
-  // Aggregate by product
-  const map = new Map<string, StockReportRow>();
+  const rows: StockReportRow[] = [];
   for (const entry of data as any[]) {
     for (const item of entry.items || []) {
       const p = item.inv_product;
       if (!p) continue;
-      const key = p.id;
-      if (!map.has(key)) {
-        map.set(key, {
-          product_name: p.name,
-          product_sku: p.sku,
-          total_in_qty: 0, total_in_value: 0,
-          total_out_qty: 0, total_out_value: 0,
-        });
-      }
-      const row = map.get(key)!;
       const qty = item.quantity || 0;
       const price = item.purchase_price || 0;
-      if (entry.type === "in") {
-        row.total_in_qty += qty;
-        row.total_in_value += qty * price;
-      } else {
-        row.total_out_qty += qty;
-        row.total_out_value += qty * price;
-      }
+      rows.push({
+        entry_id: entry.id,
+        date: entry.date,
+        type: entry.type,
+        notes: entry.notes,
+        product_name: p.name,
+        product_sku: p.sku || "",
+        quantity: qty,
+        purchase_price: price,
+        line_total: qty * price,
+      });
     }
   }
 
-  return Array.from(map.values()).sort((a, b) => a.product_name.localeCompare(b.product_name));
+  return rows;
 };

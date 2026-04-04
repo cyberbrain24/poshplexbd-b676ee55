@@ -6,7 +6,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, PackagePlus, PackageMinus, Pencil, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Plus, PackagePlus, PackageMinus, Pencil, Trash2, Package } from "lucide-react";
 import {
   useInvProducts, useCreateInvProduct, useUpdateInvProduct, useDeleteInvProduct,
   useBulkStockMovement, useStockReport,
@@ -285,19 +286,36 @@ const ProductsTab = ({
             {products.map((p) => (
               <div
                 key={p.id}
-                className="border rounded-lg p-3 space-y-1 hover:border-primary/50 transition-colors group relative"
+                className="border rounded-lg overflow-hidden hover:border-primary/50 transition-colors group relative"
               >
-                <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5">
-                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(p)}>
-                    <Pencil className="h-3 w-3" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleDelete(p.id)}>
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
+                {/* 1:1 Product Image */}
+                <div className="relative aspect-square bg-muted">
+                  {p.image_url ? (
+                    <img
+                      src={p.image_url}
+                      alt={p.name}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Package className="h-8 w-8 text-muted-foreground/40" />
+                    </div>
+                  )}
+                  <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5">
+                    <Button variant="secondary" size="icon" className="h-6 w-6" onClick={() => openEdit(p)}>
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                    <Button variant="secondary" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleDelete(p.id)}>
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
-                <p className="text-xs font-medium truncate" title={p.name}>{p.name}</p>
-                <p className="text-lg font-bold">{p.current_stock}</p>
-                <p className="text-[10px] text-muted-foreground">{formatCurrency(p.current_stock * p.purchase_price)}</p>
+                <div className="p-2 space-y-0.5">
+                  <p className="text-xs font-medium truncate" title={p.name}>{p.name}</p>
+                  <p className="text-lg font-bold">{p.current_stock}</p>
+                  <p className="text-[10px] text-muted-foreground">{formatCurrency(p.current_stock * p.purchase_price)}</p>
+                </div>
               </div>
             ))}
             {!products.length && (
@@ -346,6 +364,7 @@ const ProductModal = ({
   const [sku, setSku] = useState("");
   const [purchasePrice, setPurchasePrice] = useState("0");
   const [unit, setUnit] = useState("pcs");
+  const [imageUrl, setImageUrl] = useState("");
   const [catId, setCatId] = useState("");
   const [subCatId, setSubCatId] = useState("");
 
@@ -360,6 +379,7 @@ const ProductModal = ({
       setSku(editProduct?.sku || "");
       setPurchasePrice(String(editProduct?.purchase_price || 0));
       setUnit(editProduct?.unit || "pcs");
+      setImageUrl(editProduct?.image_url || "");
       setCatId(editProduct?.category_id || "");
       setSubCatId(editProduct?.subcategory_id || "");
     }
@@ -373,6 +393,7 @@ const ProductModal = ({
       sku: sku.trim() || undefined,
       purchase_price: parseFloat(purchasePrice) || 0,
       unit,
+      image_url: imageUrl.trim() || null,
       category_id: catId || null,
       subcategory_id: subCatId || null,
     });
@@ -402,6 +423,10 @@ const ProductModal = ({
           <div>
             <Label>Purchase Price</Label>
             <Input type="number" value={purchasePrice} onChange={(e) => setPurchasePrice(e.target.value)} />
+          </div>
+          <div>
+            <Label>Image URL</Label>
+            <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -585,10 +610,8 @@ const ReportTab = () => {
   const [to, setTo] = useState(format(new Date(), "yyyy-MM-dd"));
   const { data: report = [], isLoading } = useStockReport(from, to);
 
-  const totalInQty = report.reduce((s, r) => s + r.total_in_qty, 0);
-  const totalInVal = report.reduce((s, r) => s + r.total_in_value, 0);
-  const totalOutQty = report.reduce((s, r) => s + r.total_out_qty, 0);
-  const totalOutVal = report.reduce((s, r) => s + r.total_out_value, 0);
+  const totalQty = report.reduce((s, r) => s + r.quantity, 0);
+  const totalValue = report.reduce((s, r) => s + r.line_total, 0);
 
   return (
     <div className="space-y-4">
@@ -606,22 +629,24 @@ const ReportTab = () => {
       {isLoading ? (
         <AdminLoadingSpinner />
       ) : (
-        <div className="border rounded-md">
+        <div className="border rounded-md overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>Type</TableHead>
                 <TableHead>Product</TableHead>
                 <TableHead>SKU</TableHead>
-                <TableHead className="text-right">Stock In Qty</TableHead>
-                <TableHead className="text-right">Stock In Value</TableHead>
-                <TableHead className="text-right">Stock Out Qty</TableHead>
-                <TableHead className="text-right">Stock Out Value</TableHead>
+                <TableHead className="text-right">Qty</TableHead>
+                <TableHead className="text-right">Unit Price</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+                <TableHead>Notes</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {!report.length ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     No stock movements in selected period
                   </TableCell>
                 </TableRow>
@@ -629,20 +654,26 @@ const ReportTab = () => {
                 <>
                   {report.map((r, i) => (
                     <TableRow key={i}>
+                      <TableCell className="whitespace-nowrap">{r.date}</TableCell>
+                      <TableCell>
+                        <Badge variant={r.type === "in" ? "default" : "secondary"}>
+                          {r.type === "in" ? "Stock In" : "Stock Out"}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="font-medium">{r.product_name}</TableCell>
                       <TableCell className="text-muted-foreground">{r.product_sku || "—"}</TableCell>
-                      <TableCell className="text-right">{r.total_in_qty}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(r.total_in_value)}</TableCell>
-                      <TableCell className="text-right">{r.total_out_qty}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(r.total_out_value)}</TableCell>
+                      <TableCell className="text-right">{r.quantity}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(r.purchase_price)}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(r.line_total)}</TableCell>
+                      <TableCell className="text-muted-foreground text-xs max-w-[200px] truncate">{r.notes || "—"}</TableCell>
                     </TableRow>
                   ))}
                   <TableRow className="bg-muted/50 font-bold">
-                    <TableCell colSpan={2}>Grand Total</TableCell>
-                    <TableCell className="text-right">{totalInQty}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(totalInVal)}</TableCell>
-                    <TableCell className="text-right">{totalOutQty}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(totalOutVal)}</TableCell>
+                    <TableCell colSpan={4}>Grand Total</TableCell>
+                    <TableCell className="text-right">{totalQty}</TableCell>
+                    <TableCell />
+                    <TableCell className="text-right">{formatCurrency(totalValue)}</TableCell>
+                    <TableCell />
                   </TableRow>
                 </>
               )}

@@ -399,6 +399,44 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_categories: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          parent_id: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          parent_id?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          parent_id?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_entries: {
         Row: {
           account_id: string | null
@@ -587,14 +625,14 @@ export type Database = {
             foreignKeyName: "inventory_products_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
-            referencedRelation: "categories"
+            referencedRelation: "inventory_categories"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "inventory_products_subcategory_id_fkey"
             columns: ["subcategory_id"]
             isOneToOne: false
-            referencedRelation: "categories"
+            referencedRelation: "inventory_categories"
             referencedColumns: ["id"]
           },
         ]

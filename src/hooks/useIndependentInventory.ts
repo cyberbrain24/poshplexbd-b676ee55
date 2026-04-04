@@ -6,6 +6,10 @@ import {
   deleteInvProduct,
   bulkStockMovement,
   fetchStockReport,
+  fetchInvCategories,
+  createInvCategory,
+  updateInvCategory,
+  deleteInvCategory,
   InvProductInput,
   StockMovement,
 } from "@/services/independent-inventory.service";
@@ -79,3 +83,47 @@ export const useStockReport = (from: string, to: string, enabled = true) =>
     queryFn: () => fetchStockReport(from, to),
     enabled,
   });
+
+/* ── Inventory Categories ── */
+export const useInvCategories = () =>
+  useQuery({
+    queryKey: ["inv-categories"],
+    queryFn: fetchInvCategories,
+  });
+
+export const useCreateInvCategory = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { name: string; parent_id?: string | null }) => createInvCategory(input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["inv-categories"] });
+      toast.success("Category added");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+};
+
+export const useUpdateInvCategory = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: { name: string; parent_id?: string | null } }) =>
+      updateInvCategory(id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["inv-categories"] });
+      toast.success("Category updated");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+};
+
+export const useDeleteInvCategory = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: deleteInvCategory,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["inv-categories"] });
+      toast.success("Category removed");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+};

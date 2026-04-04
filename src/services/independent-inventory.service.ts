@@ -32,14 +32,49 @@ export interface StockMovement {
   purchase_price: number;
 }
 
+/* ── Fetch inventory categories ── */
+export interface InvCategory {
+  id: string;
+  name: string;
+  parent_id: string | null;
+  sort_order: number;
+  is_active: boolean;
+}
+
+export const fetchInvCategories = async () => {
+  const { data, error } = await supabase
+    .from("inventory_categories")
+    .select("id, name, parent_id, sort_order, is_active")
+    .eq("is_active", true)
+    .order("sort_order");
+  if (error) throw error;
+  return data as InvCategory[];
+};
+
+export const createInvCategory = async (input: { name: string; parent_id?: string | null }) => {
+  const { data, error } = await supabase.from("inventory_categories").insert(input).select().single();
+  if (error) throw error;
+  return data;
+};
+
+export const updateInvCategory = async (id: string, input: { name: string; parent_id?: string | null }) => {
+  const { error } = await supabase.from("inventory_categories").update(input).eq("id", id);
+  if (error) throw error;
+};
+
+export const deleteInvCategory = async (id: string) => {
+  const { error } = await supabase.from("inventory_categories").update({ is_active: false }).eq("id", id);
+  if (error) throw error;
+};
+
 /* ── Fetch products ── */
 export const fetchInvProducts = async (categoryId?: string, subcategoryId?: string) => {
   let query = supabase
     .from("inventory_products")
     .select(`
       *,
-      category:categories!inventory_products_category_id_fkey(id, name),
-      subcategory:categories!inventory_products_subcategory_id_fkey(id, name)
+      category:inventory_categories!inventory_products_category_id_fkey(id, name),
+      subcategory:inventory_categories!inventory_products_subcategory_id_fkey(id, name)
     `)
     .eq("is_active", true)
     .order("name");

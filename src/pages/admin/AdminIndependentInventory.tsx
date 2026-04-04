@@ -6,32 +6,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, PackagePlus, PackageMinus, FileText, Pencil, Trash2 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useInvProducts, useCreateInvProduct, useUpdateInvProduct, useDeleteInvProduct, useBulkStockMovement, useStockReport } from "@/hooks/useIndependentInventory";
-import { InvProduct, InvProductInput, StockMovement } from "@/services/independent-inventory.service";
+import { Plus, PackagePlus, PackageMinus, Pencil, Trash2 } from "lucide-react";
+import {
+  useInvProducts, useCreateInvProduct, useUpdateInvProduct, useDeleteInvProduct,
+  useBulkStockMovement, useStockReport,
+  useInvCategories, useCreateInvCategory, useUpdateInvCategory, useDeleteInvCategory,
+} from "@/hooks/useIndependentInventory";
+import { InvProduct, InvProductInput, StockMovement, InvCategory } from "@/services/independent-inventory.service";
 import { AdminLoadingSpinner } from "@/components/admin";
 import { formatCurrency } from "@/lib/currency";
 import { format } from "date-fns";
-
-/* ── Category hook ── */
-const useCategories = () =>
-  useQuery({
-    queryKey: ["categories-tree"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("categories").select("id, name, parent_id").order("sort_order");
-      if (error) throw error;
-      return data;
-    },
-  });
 
 const AdminIndependentInventory = () => {
   const [tab, setTab] = useState("products");
   const [categoryId, setCategoryId] = useState<string>("");
   const [subcategoryId, setSubcategoryId] = useState<string>("");
 
-  const { data: categories = [] } = useCategories();
+  const { data: categories = [] } = useInvCategories();
   const parentCategories = useMemo(() => categories.filter((c) => !c.parent_id), [categories]);
   const subCategories = useMemo(
     () => (categoryId ? categories.filter((c) => c.parent_id === categoryId) : []),
@@ -48,18 +39,18 @@ const AdminIndependentInventory = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Independent Inventory</h1>
-          <p className="text-sm text-muted-foreground">Manage standalone inventory products & stock</p>
+          <p className="text-sm text-muted-foreground">Standalone inventory management</p>
         </div>
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
           <TabsTrigger value="products">Products</TabsTrigger>
+          <TabsTrigger value="categories">Categories</TabsTrigger>
           <TabsTrigger value="stock">Stock In / Out</TabsTrigger>
           <TabsTrigger value="report">Report</TabsTrigger>
         </TabsList>
 
-        {/* ── Products Tab ── */}
         <TabsContent value="products">
           <ProductsTab
             products={products}
@@ -74,12 +65,14 @@ const AdminIndependentInventory = () => {
           />
         </TabsContent>
 
-        {/* ── Stock Tab ── */}
+        <TabsContent value="categories">
+          <CategoriesTab categories={categories} parentCategories={parentCategories} />
+        </TabsContent>
+
         <TabsContent value="stock">
           <StockTab products={products} isLoading={isLoading} />
         </TabsContent>
 
-        {/* ── Report Tab ── */}
         <TabsContent value="report">
           <ReportTab />
         </TabsContent>
@@ -88,13 +81,136 @@ const AdminIndependentInventory = () => {
   );
 };
 
+/* ═══════════════════ Categories Tab ═══════════════════ */
+const CategoriesTab = ({ categories, parentCategories }: { categories: InvCategory[]; parentCategories: InvCategory[] }) => {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editCat, setEditCat] = useState<InvCategory | null>(null);
+  const [name, setName] = useState("");
+  const [parentId, setParentId] = useState("");
+
+  const createMut = useCreateInvCategory();
+  const updateMut = useUpdateInvCategory();
+  const deleteMut = useDeleteInvCategory();
+
+  const openCreate = (pid?: string) => {
+    setEditCat(null);
+    setName("");
+    setParentId(pid || "");
+    setModalOpen(true);
+  };
+  const openEdit = (c: InvCategory) => {
+    setEditCat(c);
+    setName(c.name);
+    setParentId(c.parent_id || "");
+    setModalOpen(true);
+  };
+
+  const handleSave = () => {
+    if (!name.trim()) return;
+    const input = { name: name.trim(), parent_id: parentId || null };
+    if (editCat) {
+      updateMut.mutate({ id: editCat.id, input }, { onSuccess: () => setModalOpen(false) });
+    } else {
+      createMut.mutate(input, { onSuccess: () => setModalOpen(false) });
+    }
+  };
+
+  const handleDelete = (id: string) => {
+    if (confirm("Remove this category?")) deleteMut.mutate(id);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <Button onClick={() => openCreate()}><Plus className="h-4 w-4 mr-2" />Add Category</Button>
+      </div>
+
+      <div className="border rounded-md">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Category</TableHead>
+              <TableHead>Parent</TableHead>
+              <TableHead>Subcategories</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {!parentCategories.length ? (
+              <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">No categories yet</TableCell></TableRow>
+            ) : parentCategories.map((c) => {
+              const subs = categories.filter((s) => s.parent_id === c.id);
+              return (
+                <TableRow key={c.id}>
+                  <TableCell className="font-medium">{c.name}</TableCell>
+                  <TableCell>—</TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {subs.map((s) => (
+                        <span key={s.id} className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted rounded text-xs">
+                          {s.name}
+                          <button onClick={() => openEdit(s)} className="hover:text-primary"><Pencil className="h-3 w-3" /></button>
+                          <button onClick={() => handleDelete(s.id)} className="hover:text-destructive"><Trash2 className="h-3 w-3" /></button>
+                        </span>
+                      ))}
+                      <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => openCreate(c.id)}>
+                        <Plus className="h-3 w-3 mr-1" />Sub
+                      </Button>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right space-x-1">
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(c)}><Pencil className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(c.id)}><Trash2 className="h-4 w-4" /></Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+
+      <Dialog open={modalOpen} onOpenChange={(o) => !o && setModalOpen(false)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{editCat ? "Edit Category" : "Add Category"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Name *</Label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} />
+            </div>
+            <div>
+              <Label>Parent Category</Label>
+              <Select value={parentId} onValueChange={setParentId}>
+                <SelectTrigger><SelectValue placeholder="None (top-level)" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None (top-level)</SelectItem>
+                  {parentCategories.filter((p) => p.id !== editCat?.id).map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>
+            <Button onClick={handleSave} disabled={!name.trim() || createMut.isPending || updateMut.isPending}>
+              {createMut.isPending || updateMut.isPending ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
 /* ═══════════════════ Products Tab ═══════════════════ */
 interface ProductsTabProps {
   products: InvProduct[];
   isLoading: boolean;
-  categories: any[];
-  parentCategories: any[];
-  subCategories: any[];
+  categories: InvCategory[];
+  parentCategories: InvCategory[];
+  subCategories: InvCategory[];
   categoryId: string;
   setCategoryId: (v: string) => void;
   subcategoryId: string;
@@ -131,7 +247,6 @@ const ProductsTab = ({
 
   return (
     <div className="space-y-4">
-      {/* Filters */}
       <div className="flex flex-wrap gap-3 items-end">
         <div className="w-48">
           <Label className="text-xs text-muted-foreground">Category</Label>
@@ -166,7 +281,6 @@ const ProductsTab = ({
         <AdminLoadingSpinner />
       ) : (
         <>
-          {/* Product Grid - 10 columns */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-8 xl:grid-cols-10 gap-3">
             {products.map((p) => (
               <div
@@ -193,7 +307,6 @@ const ProductsTab = ({
             )}
           </div>
 
-          {/* Totals */}
           {products.length > 0 && (
             <div className="flex gap-6 border-t pt-4 text-sm font-medium">
               <span>Total Products: {products.length}</span>
@@ -204,7 +317,6 @@ const ProductsTab = ({
         </>
       )}
 
-      {/* Product Modal */}
       <ProductModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -226,8 +338,8 @@ const ProductModal = ({
   onClose: () => void;
   onSave: (input: InvProductInput) => void;
   editProduct: InvProduct | null;
-  categories: any[];
-  parentCategories: any[];
+  categories: InvCategory[];
+  parentCategories: InvCategory[];
   saving: boolean;
 }) => {
   const [name, setName] = useState("");
@@ -242,7 +354,6 @@ const ProductModal = ({
     [categories, catId]
   );
 
-  // Reset on open
   const handleOpenChange = (o: boolean) => {
     if (o) {
       setName(editProduct?.name || "");
@@ -448,7 +559,6 @@ const StockTab = ({ products, isLoading }: { products: InvProduct[]; isLoading: 
         </Table>
       </div>
 
-      {/* Grand Totals */}
       {rows.length > 0 && (
         <div className="flex gap-6 text-sm font-semibold border-t pt-3">
           <span>Grand Total Qty: {grandTotalQty}</span>

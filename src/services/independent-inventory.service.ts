@@ -22,6 +22,7 @@ export interface InvProductInput {
   sku?: string;
   purchase_price?: number;
   unit?: string;
+  image_url?: string | null;
   category_id?: string | null;
   subcategory_id?: string | null;
   is_active?: boolean;

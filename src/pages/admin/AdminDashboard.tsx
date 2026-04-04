@@ -9,7 +9,7 @@ import {
 } from "@/components/admin/dashboard/DashboardCharts";
 import {
   SmartAlertsBar, ComparisonCard, PerformanceTable,
-  PaymentRatioChart, InventoryHealthSection,
+  PaymentRatioChart,
 } from "@/components/admin/dashboard/DashboardAdvanced";
 
 const STATUS_LABELS: Record<string, string> = {

@@ -6,6 +6,10 @@ import {
   deleteInvProduct,
   bulkStockMovement,
   fetchStockReport,
+  fetchInvCategories,
+  createInvCategory,
+  updateInvCategory,
+  deleteInvCategory,
   InvProductInput,
   StockMovement,
 } from "@/services/independent-inventory.service";

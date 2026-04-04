@@ -97,7 +97,7 @@ const AdminSidebar = () => {
   const isAccountMgmtActive = accountManagementItems.some(item => location.pathname === item.path);
   const isCustomerMgmtActive = customerManagementItems.some(item => location.pathname === item.path);
 
-  type GroupKey = 'product' | 'orders' | 'inventory' | 'account' | 'customer';
+  type GroupKey = 'product' | 'orders' | 'account' | 'customer';
   const getInitialOpen = (): GroupKey | null => {
     if (isProductMgmtActive) return 'product';
     if (isOrdersActive) return 'orders';

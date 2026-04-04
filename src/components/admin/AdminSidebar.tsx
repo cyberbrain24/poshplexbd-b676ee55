@@ -6,7 +6,7 @@ import {
   LayoutDashboard, ArrowLeft, ChevronDown, Wallet, CreditCard, TrendingUp,
   TrendingDown, Users, MapPin, Map, Crown, ShoppingCart, ExternalLink,
   LucideIcon, RefreshCw, MessageSquare, Image, Tag, Settings,
-  Upload, Menu, X,
+  Upload, Menu, X, Warehouse,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -190,6 +190,7 @@ const AdminSidebar = () => {
         
         {renderCollapsible(Users, "Customer Management", customerManagementItems, openGroup === 'customer', () => toggleGroup('customer'), isCustomerMgmtActive)}
         {renderCollapsible(Wallet, "Account Management", accountManagementItems, openGroup === 'account', () => toggleGroup('account'), isAccountMgmtActive)}
+        {renderNavLink("/admin/independent-inventory", Warehouse, "Independent Inventory")}
         {renderNavLink("/admin/media", Image, "Media")}
         {renderNavLink("/admin/site-settings", Settings, "Site Settings")}
       </nav>

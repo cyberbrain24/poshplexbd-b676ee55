@@ -5,8 +5,8 @@ import {
   Package, Palette, Ruler, Shirt, BookOpen, Sparkles, FolderTree, Building2,
   LayoutDashboard, ArrowLeft, ChevronDown, Wallet, CreditCard, TrendingUp,
   TrendingDown, Users, MapPin, Map, Crown, ShoppingCart, ExternalLink,
-  LucideIcon, RefreshCw, MessageSquare, Image, Tag, Settings, Boxes,
-  ArrowDownToLine, ArrowUpFromLine, Upload, Menu, X,
+  LucideIcon, RefreshCw, MessageSquare, Image, Tag, Settings,
+  Upload, Menu, X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -47,10 +47,6 @@ const accountManagementItems: NavItem[] = [
   { icon: TrendingDown, label: "Expense Categories", path: "/admin/expense-categories" },
 ];
 
-const inventoryItems: NavItem[] = [
-  { icon: ArrowDownToLine, label: "Inventory In", path: "/admin/inventory-in" },
-  { icon: ArrowUpFromLine, label: "Inventory Out", path: "/admin/inventory-out" },
-];
 
 const customerManagementItems: NavItem[] = [
   { icon: Users, label: "Customers", path: "/admin/customers" },
@@ -97,15 +93,15 @@ const AdminSidebar = () => {
 
   const isProductMgmtActive = productManagementItems.some(item => location.pathname === item.path);
   const isOrdersActive = orderItems.some(item => location.pathname === item.path);
-  const isInventoryActive = inventoryItems.some(item => location.pathname === item.path);
+  
   const isAccountMgmtActive = accountManagementItems.some(item => location.pathname === item.path);
   const isCustomerMgmtActive = customerManagementItems.some(item => location.pathname === item.path);
 
-  type GroupKey = 'product' | 'orders' | 'inventory' | 'account' | 'customer';
+  type GroupKey = 'product' | 'orders' | 'account' | 'customer';
   const getInitialOpen = (): GroupKey | null => {
     if (isProductMgmtActive) return 'product';
     if (isOrdersActive) return 'orders';
-    if (isInventoryActive) return 'inventory';
+    
     if (isCustomerMgmtActive) return 'customer';
     if (isAccountMgmtActive) return 'account';
     return null;
@@ -191,7 +187,7 @@ const AdminSidebar = () => {
         {renderNavLink("/admin", LayoutDashboard, "Business Intelligence")}
         {renderCollapsible(Package, "Product Management", productManagementItems, openGroup === 'product', () => toggleGroup('product'), isProductMgmtActive)}
         {renderCollapsible(ShoppingCart, "Order Management", orderItems, openGroup === 'orders', () => toggleGroup('orders'), isOrdersActive)}
-        {renderCollapsible(Boxes, "Inventory Management", inventoryItems, openGroup === 'inventory', () => toggleGroup('inventory'), isInventoryActive)}
+        
         {renderCollapsible(Users, "Customer Management", customerManagementItems, openGroup === 'customer', () => toggleGroup('customer'), isCustomerMgmtActive)}
         {renderCollapsible(Wallet, "Account Management", accountManagementItems, openGroup === 'account', () => toggleGroup('account'), isAccountMgmtActive)}
         {renderNavLink("/admin/media", Image, "Media")}

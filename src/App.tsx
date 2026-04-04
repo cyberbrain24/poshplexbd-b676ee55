@@ -60,8 +60,6 @@ const AdminReviews = lazy(() => import("./pages/admin/AdminReviews"));
 const AdminMedia = lazy(() => import("./pages/admin/AdminMedia"));
 const AdminPromoCodes = lazy(() => import("./pages/admin/AdminPromoCodes"));
 const AdminSiteSettings = lazy(() => import("./pages/admin/AdminSiteSettings"));
-const AdminInventoryIn = lazy(() => import("./pages/admin/AdminInventoryIn"));
-const AdminInventoryOut = lazy(() => import("./pages/admin/AdminInventoryOut"));
 const AdminBulkUpload = lazy(() => import("./pages/admin/AdminBulkUpload"));
 
 const queryClient = new QueryClient({
@@ -154,8 +152,6 @@ const App = () => (
                     <Route path="orders" element={<AdminOrders />} />
                     <Route path="payment-methods" element={<AdminPaymentMethods />} />
                     <Route path="promo-codes" element={<AdminPromoCodes />} />
-                    <Route path="inventory-in" element={<AdminInventoryIn />} />
-                    <Route path="inventory-out" element={<AdminInventoryOut />} />
                     <Route path="bulk-upload" element={<AdminBulkUpload />} />
                     <Route path="site-settings" element={<AdminSiteSettings />} />
                   </Route>

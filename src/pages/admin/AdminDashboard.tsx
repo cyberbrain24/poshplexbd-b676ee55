@@ -2,15 +2,14 @@ import { useDashboard } from "@/hooks/useDashboard";
 import { formatCurrency } from "@/lib/currency";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  KPICard, SectionTitle, OrderPeriodCard, StatusCard,
-  TopItemsTable, StockByCategoryTable,
+  KPICard, SectionTitle, OrderPeriodCard, StatusCard, TopItemsTable,
 } from "@/components/admin/dashboard/DashboardWidgets";
 import {
   RevenueLast7DaysChart, RevenueLast12MonthsChart, OrdersLast7DaysChart,
 } from "@/components/admin/dashboard/DashboardCharts";
 import {
   SmartAlertsBar, ComparisonCard, PerformanceTable,
-  PaymentRatioChart, InventoryHealthSection,
+  PaymentRatioChart,
 } from "@/components/admin/dashboard/DashboardAdvanced";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -65,9 +64,9 @@ const AdminDashboard = () => {
   if (isLoading || !analytics) return <DashboardSkeleton />;
 
   const {
-    product, stock, stockByCategory, periods, statusCounts,
+    product, periods, statusCounts,
     payment, sales, charts, comparisons, performance,
-    paymentRatio, inventoryHealth, smartAlerts,
+    paymentRatio, smartAlerts,
   } = analytics;
 
   return (
@@ -102,17 +101,6 @@ const AdminDashboard = () => {
           <KPICard label="Active" value={product.activeProducts} />
           <KPICard label="Inactive" value={product.inactiveProducts} />
         </div>
-
-        <SectionTitle icon="📊">Stock Summary</SectionTitle>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-          <KPICard label="Total Stock" value={stock.totalStock.toLocaleString()} />
-          <KPICard label="Value (Cost)" value={formatCurrency(stock.stockValuePurchase)} />
-          <KPICard label="Value (Retail)" value={formatCurrency(stock.stockValueSelling)} />
-          <KPICard label="Low Stock" value={stock.lowStockCount} sub="Below threshold" />
-          <KPICard label="Out of Stock" value={stock.outOfStockCount} />
-        </div>
-
-        <StockByCategoryTable data={stockByCategory} />
       </section>
 
       {/* ═══ 2. ORDER ANALYTICS ═══ */}
@@ -197,12 +185,6 @@ const AdminDashboard = () => {
         </div>
       </section>
 
-      {/* ═══ 7. INVENTORY HEALTH ═══ */}
-      <InventoryHealthSection
-        deadStock={inventoryHealth.deadStock}
-        slowMoving={inventoryHealth.slowMoving}
-        fastMoving={inventoryHealth.fastMoving}
-      />
 
       {/* ═══ 8. VISUAL CHARTS ═══ */}
       <section className="space-y-3">

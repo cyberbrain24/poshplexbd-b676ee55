@@ -64,9 +64,9 @@ const AdminDashboard = () => {
   if (isLoading || !analytics) return <DashboardSkeleton />;
 
   const {
-    product, stock, stockByCategory, periods, statusCounts,
+    product, periods, statusCounts,
     payment, sales, charts, comparisons, performance,
-    paymentRatio, inventoryHealth, smartAlerts,
+    paymentRatio, smartAlerts,
   } = analytics;
 
   return (

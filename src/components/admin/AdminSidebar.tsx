@@ -93,7 +93,7 @@ const AdminSidebar = () => {
 
   const isProductMgmtActive = productManagementItems.some(item => location.pathname === item.path);
   const isOrdersActive = orderItems.some(item => location.pathname === item.path);
-  const isInventoryActive = inventoryItems.some(item => location.pathname === item.path);
+  
   const isAccountMgmtActive = accountManagementItems.some(item => location.pathname === item.path);
   const isCustomerMgmtActive = customerManagementItems.some(item => location.pathname === item.path);
 

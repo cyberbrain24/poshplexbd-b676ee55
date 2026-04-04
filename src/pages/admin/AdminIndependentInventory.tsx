@@ -610,10 +610,8 @@ const ReportTab = () => {
   const [to, setTo] = useState(format(new Date(), "yyyy-MM-dd"));
   const { data: report = [], isLoading } = useStockReport(from, to);
 
-  const totalInQty = report.reduce((s, r) => s + r.total_in_qty, 0);
-  const totalInVal = report.reduce((s, r) => s + r.total_in_value, 0);
-  const totalOutQty = report.reduce((s, r) => s + r.total_out_qty, 0);
-  const totalOutVal = report.reduce((s, r) => s + r.total_out_value, 0);
+  const totalQty = report.reduce((s, r) => s + r.quantity, 0);
+  const totalValue = report.reduce((s, r) => s + r.line_total, 0);
 
   return (
     <div className="space-y-4">
@@ -631,22 +629,24 @@ const ReportTab = () => {
       {isLoading ? (
         <AdminLoadingSpinner />
       ) : (
-        <div className="border rounded-md">
+        <div className="border rounded-md overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>Type</TableHead>
                 <TableHead>Product</TableHead>
                 <TableHead>SKU</TableHead>
-                <TableHead className="text-right">Stock In Qty</TableHead>
-                <TableHead className="text-right">Stock In Value</TableHead>
-                <TableHead className="text-right">Stock Out Qty</TableHead>
-                <TableHead className="text-right">Stock Out Value</TableHead>
+                <TableHead className="text-right">Qty</TableHead>
+                <TableHead className="text-right">Unit Price</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+                <TableHead>Notes</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {!report.length ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     No stock movements in selected period
                   </TableCell>
                 </TableRow>
@@ -654,20 +654,26 @@ const ReportTab = () => {
                 <>
                   {report.map((r, i) => (
                     <TableRow key={i}>
+                      <TableCell className="whitespace-nowrap">{r.date}</TableCell>
+                      <TableCell>
+                        <Badge variant={r.type === "in" ? "default" : "secondary"}>
+                          {r.type === "in" ? "Stock In" : "Stock Out"}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="font-medium">{r.product_name}</TableCell>
                       <TableCell className="text-muted-foreground">{r.product_sku || "—"}</TableCell>
-                      <TableCell className="text-right">{r.total_in_qty}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(r.total_in_value)}</TableCell>
-                      <TableCell className="text-right">{r.total_out_qty}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(r.total_out_value)}</TableCell>
+                      <TableCell className="text-right">{r.quantity}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(r.purchase_price)}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(r.line_total)}</TableCell>
+                      <TableCell className="text-muted-foreground text-xs max-w-[200px] truncate">{r.notes || "—"}</TableCell>
                     </TableRow>
                   ))}
                   <TableRow className="bg-muted/50 font-bold">
-                    <TableCell colSpan={2}>Grand Total</TableCell>
-                    <TableCell className="text-right">{totalInQty}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(totalInVal)}</TableCell>
-                    <TableCell className="text-right">{totalOutQty}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(totalOutVal)}</TableCell>
+                    <TableCell colSpan={4}>Grand Total</TableCell>
+                    <TableCell className="text-right">{totalQty}</TableCell>
+                    <TableCell />
+                    <TableCell className="text-right">{formatCurrency(totalValue)}</TableCell>
+                    <TableCell />
                   </TableRow>
                 </>
               )}

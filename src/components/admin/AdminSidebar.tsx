@@ -101,7 +101,7 @@ const AdminSidebar = () => {
   const getInitialOpen = (): GroupKey | null => {
     if (isProductMgmtActive) return 'product';
     if (isOrdersActive) return 'orders';
-    if (isInventoryActive) return 'inventory';
+    
     if (isCustomerMgmtActive) return 'customer';
     if (isAccountMgmtActive) return 'account';
     return null;

@@ -131,9 +131,9 @@ const CourierStatusCell = ({ order }: { order: { id: string; tracking_number: st
         {order.courier_name || "Steadfast"}
       </Badge>
       <span className="text-xs text-muted-foreground font-mono">{order.tracking_number}</span>
-      {order.consignment_id && (
+      {order.tracking_number && (
         <a
-          href={`/track/steadfast/${order.consignment_id}`}
+          href={`https://steadfast.com.bd/t/${order.tracking_number}`}
           target="_blank"
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}

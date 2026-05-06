@@ -28,7 +28,6 @@ const PrivacyPolicy = lazy(() => import("./pages/about/PrivacyPolicy"));
 const TermsConditions = lazy(() => import("./pages/about/TermsConditions"));
 const ShippingDelivery = lazy(() => import("./pages/about/ShippingDelivery"));
 const Auth = lazy(() => import("./pages/Auth"));
-const SteadfastTracking = lazy(() => import("./pages/SteadfastTracking"));
 import CustomerAuth from "./pages/CustomerAuth";
 import CustomerAccount from "./pages/CustomerAccount";
 import OrderTracking from "./pages/OrderTracking";
@@ -123,7 +122,7 @@ const App = () => (
                   <Route path="/shipping-delivery" element={<Suspense fallback={<LoadingFallback />}><ShippingDelivery /></Suspense>} />
                   <Route path="/auth" element={<Suspense fallback={<LoadingFallback />}><Auth /></Suspense>} />
                   <Route path="/login" element={<CustomerAuth />} />
-                  <Route path="/track/steadfast/:consignmentId" element={<Suspense fallback={<LoadingFallback />}><SteadfastTracking /></Suspense>} />
+                  
                   
                   {/* Admin Routes - Lazy loaded */}
                   <Route path="/admin" element={

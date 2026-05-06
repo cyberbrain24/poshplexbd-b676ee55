@@ -50,6 +50,7 @@ const AdminCustomers = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteCustomerName, setDeleteCustomerName] = useState<string>("");
   const [promoHistoryCustomer, setPromoHistoryCustomer] = useState<Customer | null>(null);
+  const [viewCustomer, setViewCustomer] = useState<Customer | null>(null);
   const [impersonating, setImpersonating] = useState<string | null>(null);
 
   // Filters state

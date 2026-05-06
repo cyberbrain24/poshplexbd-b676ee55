@@ -388,6 +388,12 @@ const AdminCustomers = () => {
         customer={selectedCustomer}
       />
 
+      <CustomerDetailModal
+        open={!!viewCustomer}
+        onOpenChange={(open) => !open && setViewCustomer(null)}
+        customer={viewCustomer}
+      />
+
       {promoHistoryCustomer && (
         <PromoUsageHistoryModal
           open={!!promoHistoryCustomer}

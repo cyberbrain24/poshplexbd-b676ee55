@@ -418,13 +418,7 @@ export const useCustomers = (filters?: CustomerFilters) => {
         promoCountMap[p.customer_id] = (promoCountMap[p.customer_id] || 0) + 1;
       });
 
-      // Add promo_usage_count, has_account, order stats to each customer
-      // Fetch order stats (count + total spent) per customer
-      const { data: orderStats, error: orderError } = await supabase
-        .from("orders")
-        .select("customer_id, total_amount, order_status")
-        .in("customer_id", customerIds)
-        .not("order_status", "in", '("cancelled","failed","returned")');
+      // Order stats fetched in parallel above
 
       const orderCountMap: Record<string, number> = {};
       const totalSpentMap: Record<string, number> = {};

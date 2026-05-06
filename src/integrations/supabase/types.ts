@@ -2131,8 +2131,27 @@ export type Database = {
         Args: { p_items: Json; p_order: Json }
         Returns: Json
       }
+      find_customer_id_by_phone: { Args: { p_phone: string }; Returns: string }
+      find_customer_ids_by_phone: {
+        Args: { p_phone: string }
+        Returns: string[]
+      }
       find_product_by_short_id: { Args: { short_id: string }; Returns: string }
       get_my_customer_id: { Args: never; Returns: string }
+      get_public_site_settings: {
+        Args: never
+        Returns: {
+          ga4_enabled: boolean
+          ga4_measurement_id: string
+          id: string
+          meta_advanced_matching: boolean
+          meta_capi_enabled: boolean
+          meta_ecommerce_events_enabled: boolean
+          meta_pixel_enabled: boolean
+          meta_pixel_id: string
+          meta_test_mode: boolean
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2145,6 +2164,10 @@ export type Database = {
         Returns: undefined
       }
       is_admin: { Args: never; Returns: boolean }
+      track_orders_lookup: {
+        Args: { p_email?: string; p_order_number?: string; p_phone?: string }
+        Returns: Json
+      }
       upsert_checkout_customer: {
         Args: {
           p_address?: string

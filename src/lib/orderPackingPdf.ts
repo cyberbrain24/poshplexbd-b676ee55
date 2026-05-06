@@ -148,9 +148,9 @@ export async function generatePackingListPdf(orders: Order[]) {
       }
     }
     if (!drew) {
-      doc.setFillColor(240);
+      doc.setFillColor(240, 240, 240);
       doc.rect(x, rowY, cellW, imgH, "F");
-      doc.setTextColor(150);
+      doc.setTextColor(150, 150, 150);
       doc.setFontSize(8);
       doc.text("No image", x + cellW / 2, rowY + imgH / 2, { align: "center" });
     }

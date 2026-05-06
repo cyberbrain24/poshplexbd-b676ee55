@@ -85,13 +85,11 @@ export const validatePromoCode = async (
 
   // Check per-customer limit by phone
   if (promo.per_customer_limit && customerPhone) {
-    // Find all customer IDs for this phone
-    const { data: customers } = await supabase
-      .from("customers")
-      .select("id")
-      .eq("phone", customerPhone.trim());
+    // Find all customer IDs for this phone via SECURITY DEFINER RPC
+    const { data: customerIdsData } = await supabase
+      .rpc("find_customer_ids_by_phone", { p_phone: customerPhone.trim() });
 
-    const customerIds = customers?.map(c => c.id) || [];
+    const customerIds: string[] = ((customerIdsData as unknown) as string[]) || [];
 
     if (customerIds.length > 0) {
       const { count } = await supabase

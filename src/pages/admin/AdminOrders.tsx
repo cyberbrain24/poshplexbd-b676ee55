@@ -99,8 +99,8 @@ const ParcelIdCell = ({ order }: { order: { id: string; consignment_id: string |
   );
 };
 
-// Courier status component - simplified, shows Ship button or tracking number
-const CourierStatusCell = ({ order }: { order: { id: string; tracking_number: string | null; courier_name: string | null } }) => {
+// Courier status component - shows Ship button or tracking number + tracking link
+const CourierStatusCell = ({ order }: { order: { id: string; tracking_number: string | null; courier_name: string | null; consignment_id?: string | null } }) => {
   const createShipment = useCreateShipment();
 
   if (!order.tracking_number) {
@@ -126,11 +126,88 @@ const CourierStatusCell = ({ order }: { order: { id: string; tracking_number: st
   }
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1 items-end">
       <Badge className="bg-blue-100 text-blue-800" variant="outline">
         {order.courier_name || "Steadfast"}
       </Badge>
       <span className="text-xs text-muted-foreground font-mono">{order.tracking_number}</span>
+      {order.consignment_id && (
+        <a
+          href={`/track/steadfast/${order.consignment_id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="text-[10px] text-primary hover:underline inline-flex items-center gap-0.5"
+        >
+          Track <ExternalLink className="h-2.5 w-2.5" />
+        </a>
+      )}
+    </div>
+  );
+};
+
+// Call customer button — toggles "called" state
+const CallCustomerButton = ({ order }: { order: { id: string; customer_called_at: string | null; shipping_phone: string; customer?: { phone: string } | null } }) => {
+  const mark = useMarkOrderCalled();
+  const phone = order.customer?.phone || order.shipping_phone;
+  const called = !!order.customer_called_at;
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        mark.mutate({ orderId: order.id, called: !called });
+      }}
+      disabled={mark.isPending}
+      title={called ? `Called ${format(new Date(order.customer_called_at!), 'MMM d, h:mm a')} — click to undo` : "Mark as called"}
+      className={`inline-flex items-center justify-center h-5 w-5 rounded-sm border transition-colors ${
+        called
+          ? 'bg-green-100 border-green-400 text-green-700'
+          : 'border-border text-muted-foreground hover:bg-muted'
+      }`}
+    >
+      {mark.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : called ? <PhoneCall className="h-3 w-3" /> : <Phone className="h-3 w-3" />}
+      <span className="sr-only">{called ? `Called ${phone}` : `Mark ${phone} as called`}</span>
+    </button>
+  );
+};
+
+// Call center notes editor (collapsible)
+const CallNotesEditor = ({ order }: { order: { id: string; call_center_notes: string | null } }) => {
+  const [open, setOpen] = useState(!!order.call_center_notes);
+  const [value, setValue] = useState(order.call_center_notes || "");
+  const save = useUpdateCallCenterNotes();
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); setOpen(true); }}
+        className="text-[10px] text-primary hover:underline self-start"
+      >
+        + Add call note
+      </button>
+    );
+  }
+
+  return (
+    <div className="space-y-1" onClick={(e) => e.stopPropagation()}>
+      <Textarea
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="Call notes…"
+        rows={2}
+        className="text-[11px] min-h-[44px] p-1.5"
+      />
+      <Button
+        size="sm"
+        variant="outline"
+        className="h-6 text-[10px] px-2 w-full"
+        disabled={save.isPending || value === (order.call_center_notes || "")}
+        onClick={() => save.mutate({ orderId: order.id, notes: value })}
+      >
+        {save.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Save className="h-3 w-3 mr-1" /> Save note</>}
+      </Button>
     </div>
   );
 };

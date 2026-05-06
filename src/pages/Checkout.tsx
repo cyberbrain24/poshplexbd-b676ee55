@@ -338,17 +338,16 @@ const Checkout = () => {
     const phone = customerDetails.phone.trim();
     
     try {
-      // Check if customer exists
-      const { data: existingCustomer, error: findError } = await supabase
-        .from('customers')
-        .select('id')
-        .eq('phone', phone)
-        .maybeSingle();
+      // Check if customer exists (uses SECURITY DEFINER RPC, no public read)
+      const { data: existingId, error: findError } = await supabase
+        .rpc('find_customer_id_by_phone', { p_phone: phone });
 
       if (findError) {
         console.error('Error finding customer:', findError);
         return null;
       }
+
+      const existingCustomer = existingId ? { id: existingId as string } : null;
 
       if (existingCustomer) {
         // Customer exists - update their details with latest order info

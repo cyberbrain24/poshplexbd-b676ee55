@@ -48,7 +48,8 @@ import {
   Loader2,
   Trash2,
   ShieldAlert,
-  Banknote
+  Banknote,
+  Download
 } from "lucide-react";
 import { format } from "date-fns";
 import OrderDetailModal from "@/components/admin/OrderDetailModal";
@@ -56,6 +57,7 @@ import { useCreateShipment, useResetShipping } from "@/hooks/useSteadfast";
 import { formatCurrency } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { generatePackingListPdf } from "@/lib/orderPackingPdf";
 
 // Parcel ID cell component - simplified, no auto-fetch
 const ParcelIdCell = ({ order }: { order: { id: string; consignment_id: string | null; tracking_number: string | null } }) => {
@@ -159,6 +161,9 @@ const AdminOrders = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
   const [paymentFilter, setPaymentFilter] = useState<PaymentStatus | "all">("all");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null);
   const [deleteOrderNumber, setDeleteOrderNumber] = useState<string>("");
@@ -182,8 +187,27 @@ const AdminOrders = () => {
     status: statusFilter !== "all" ? statusFilter : undefined,
     paymentStatus: paymentFilter !== "all" ? paymentFilter : undefined,
     search: search || undefined,
+    dateFrom: dateFrom ? new Date(dateFrom).toISOString() : undefined,
+    dateTo: dateTo ? new Date(new Date(dateTo).setHours(23, 59, 59, 999)).toISOString() : undefined,
   });
   const deleteOrder = useDeleteOrder();
+
+  const handleDownloadPdf = async () => {
+    if (!orders || orders.length === 0) {
+      toast.error("No orders to download");
+      return;
+    }
+    setDownloadingPdf(true);
+    try {
+      await generatePackingListPdf(orders);
+      toast.success("Packing list downloaded");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to generate PDF");
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
 
   const handleDeleteClick = async (orderId: string, orderNumber: string, paidAmount: number, paymentStatus: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -239,6 +263,10 @@ const AdminOrders = () => {
           <h1 className="text-2xl font-medium tracking-tight">Orders</h1>
           <p className="text-muted-foreground mt-1">Manage customer orders and fulfillment</p>
         </div>
+        <Button onClick={handleDownloadPdf} disabled={downloadingPdf || ordersLoading} variant="outline">
+          {downloadingPdf ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+          Download Packing PDF
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -319,6 +347,28 @@ const AdminOrders = () => {
             <SelectItem value="refunded">Refunded</SelectItem>
           </SelectContent>
         </Select>
+        <div className="flex items-center gap-2">
+          <Input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="w-[150px]"
+            placeholder="From"
+          />
+          <span className="text-muted-foreground text-sm">to</span>
+          <Input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="w-[150px]"
+            placeholder="To"
+          />
+          {(dateFrom || dateTo) && (
+            <Button variant="ghost" size="sm" onClick={() => { setDateFrom(""); setDateTo(""); }}>
+              Clear
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Orders Grid */}
@@ -335,36 +385,60 @@ const AdminOrders = () => {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
           {orders?.map((order) => {
-            const firstItem = order.items?.[0] as any;
-            const imgs = firstItem?.product?.product_images || [];
-            const mainImg = imgs.find((i: any) => i.is_main) || imgs.sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))[0];
-            const imgUrl = mainImg?.image_url;
+            const items = (order.items || []) as any[];
+            const itemImages = items.map((it) => {
+              const imgs = it?.product?.product_images || [];
+              const main = imgs.find((i: any) => i.is_main) || imgs.sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))[0];
+              return { url: main?.image_url as string | undefined, name: it.product_name as string, qty: it.quantity as number };
+            });
             const paidAmount = (order as any).paid_amount ?? 0;
             const remaining = order.total_amount - paidAmount;
-            const itemCount = order.items?.length || 0;
+            const itemCount = items.length;
+            // Choose grid cols for the inner image collage
+            const innerCols = itemCount <= 1 ? 1 : itemCount === 2 ? 2 : itemCount <= 4 ? 2 : 3;
 
             return (
               <div
                 key={order.id}
                 className="border border-border bg-card flex flex-col overflow-hidden hover:shadow-md transition-shadow"
               >
-                {/* Image */}
+                {/* Images collage */}
                 <button
                   type="button"
                   onClick={() => setSelectedOrderId(order.id)}
                   className="relative aspect-square w-full bg-muted overflow-hidden"
                 >
-                  {imgUrl ? (
-                    <img src={imgUrl} alt={firstItem?.product_name || order.order_number} loading="lazy" className="h-full w-full object-cover" />
-                  ) : (
+                  {itemImages.length === 0 ? (
                     <div className="h-full w-full flex items-center justify-center text-muted-foreground">
                       <Package className="h-8 w-8" />
                     </div>
-                  )}
-                  {itemCount > 1 && (
-                    <span className="absolute top-1 right-1 bg-foreground text-background text-[10px] px-1.5 py-0.5 rounded-sm">
-                      +{itemCount - 1}
-                    </span>
+                  ) : (
+                    <div
+                      className="grid h-full w-full gap-px"
+                      style={{ gridTemplateColumns: `repeat(${innerCols}, minmax(0, 1fr))` }}
+                    >
+                      {itemImages.map((im, idx) => (
+                        <div key={idx} className="relative bg-muted overflow-hidden">
+                          {im.url ? (
+                            <img
+                              src={im.url}
+                              alt={im.name}
+                              loading="lazy"
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center text-muted-foreground">
+                              <Package className="h-4 w-4" />
+                            </div>
+                          )}
+                          {im.qty > 1 && (
+                            <span className="absolute bottom-0.5 right-0.5 bg-foreground/80 text-background text-[9px] leading-none px-1 py-0.5 rounded-sm">
+                              ×{im.qty}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   )}
                   {order.risk_level !== 'low' && (
                     <span className="absolute top-1 left-1">

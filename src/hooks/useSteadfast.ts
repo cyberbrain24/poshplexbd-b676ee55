@@ -52,16 +52,26 @@ export function useCreateShipment() {
       return data;
     },
     onSuccess: (data) => {
-      if (data.consignment) {
+      if (data?.consignment) {
         toast.success(`Shipment created! Tracking: ${data.consignment.tracking_code}`);
         queryClient.invalidateQueries({ queryKey: ["orders"] });
         queryClient.invalidateQueries({ queryKey: ["orders-optimized"] });
       } else {
-        toast.error(data.message || "Failed to create shipment");
+        // Extract a human-readable reason from Steadfast's response shape
+        let reason = data?.message || "Failed to create shipment";
+        if (data?.errors && typeof data.errors === "object") {
+          const parts: string[] = [];
+          for (const [field, msgs] of Object.entries(data.errors as Record<string, unknown>)) {
+            const list = Array.isArray(msgs) ? msgs.join(", ") : String(msgs);
+            parts.push(`${field}: ${list}`);
+          }
+          if (parts.length) reason = parts.join(" | ");
+        }
+        toast.error(reason, { duration: 8000 });
       }
     },
     onError: (error: Error) => {
-      toast.error(`Failed to create shipment: ${error.message}`);
+      toast.error(`Failed to create shipment: ${error.message}`, { duration: 8000 });
     },
   });
 }
@@ -85,21 +95,44 @@ export function useBulkCreateShipments() {
     onSuccess: (data) => {
       if (Array.isArray(data)) {
         const successCount = data.filter((c: { status: string }) => c.status === "success").length;
-        const errorCount = data.filter((c: { status: string }) => c.status === "error").length;
-        
+        const failed = data.filter((c: { status: string }) => c.status !== "success");
+
         if (successCount > 0) {
           toast.success(`${successCount} shipments created successfully`);
         }
-        if (errorCount > 0) {
-          toast.error(`${errorCount} shipments failed`);
+        for (const f of failed) {
+          const inv = (f as { invoice?: string }).invoice || "Order";
+          let reason = (f as { message?: string }).message || "Failed";
+          const errs = (f as { errors?: Record<string, unknown> }).errors;
+          if (errs && typeof errs === "object") {
+            const parts: string[] = [];
+            for (const [field, msgs] of Object.entries(errs)) {
+              const list = Array.isArray(msgs) ? msgs.join(", ") : String(msgs);
+              parts.push(`${field}: ${list}`);
+            }
+            if (parts.length) reason = parts.join(" | ");
+          }
+          toast.error(`${inv}: ${reason}`, { duration: 10000 });
         }
-        
+
         queryClient.invalidateQueries({ queryKey: ["orders"] });
         queryClient.invalidateQueries({ queryKey: ["orders-optimized"] });
+      } else if (data?.message || data?.errors) {
+        // Top-level error from Steadfast
+        let reason = data.message || "Bulk shipment failed";
+        if (data.errors && typeof data.errors === "object") {
+          const parts: string[] = [];
+          for (const [field, msgs] of Object.entries(data.errors as Record<string, unknown>)) {
+            const list = Array.isArray(msgs) ? msgs.join(", ") : String(msgs);
+            parts.push(`${field}: ${list}`);
+          }
+          if (parts.length) reason = parts.join(" | ");
+        }
+        toast.error(reason, { duration: 10000 });
       }
     },
     onError: (error: Error) => {
-      toast.error(`Bulk shipment failed: ${error.message}`);
+      toast.error(`Bulk shipment failed: ${error.message}`, { duration: 8000 });
     },
   });
 }

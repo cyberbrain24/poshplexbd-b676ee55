@@ -13,7 +13,7 @@ import {
   useBulkStockMovement, useStockReport,
   useInvCategories, useCreateInvCategory, useUpdateInvCategory, useDeleteInvCategory,
 } from "@/hooks/useIndependentInventory";
-import { StockReportRow } from "@/services/independent-inventory.service";
+
 import { InvProduct, InvProductInput, StockMovement, InvCategory } from "@/services/independent-inventory.service";
 import { AdminLoadingSpinner } from "@/components/admin";
 import { formatCurrency } from "@/lib/currency";

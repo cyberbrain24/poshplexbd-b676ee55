@@ -71,10 +71,9 @@ interface OrderDetailModalProps {
   onClose: () => void;
 }
 
-const statusOptions: OrderStatus[] = [
-  'pending', 'confirmed', 'processing', 'shipped', 'delivered', 
-  'partially_delivered', 'returned', 'cancelled', 'failed', 'rto'
-];
+import { ORDER_STATUS_LABELS, ALLOWED_ORDER_STATUSES } from "@/constants";
+
+const statusOptions: OrderStatus[] = ALLOWED_ORDER_STATUSES;
 
 const paymentOptions: PaymentStatus[] = [
   'unpaid', 'pending_verification', 'paid', 'partially_paid',

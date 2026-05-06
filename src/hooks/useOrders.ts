@@ -53,6 +53,9 @@ export interface Order {
   promo_discount: number | null;
   amount_approved_at: string | null;
   amount_approved_by: string | null;
+  customer_called_at: string | null;
+  call_center_notes: string | null;
+  consignment_id?: string | null;
   created_at: string;
   updated_at: string;
   customer?: {

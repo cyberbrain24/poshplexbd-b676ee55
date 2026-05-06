@@ -385,36 +385,60 @@ const AdminOrders = () => {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
           {orders?.map((order) => {
-            const firstItem = order.items?.[0] as any;
-            const imgs = firstItem?.product?.product_images || [];
-            const mainImg = imgs.find((i: any) => i.is_main) || imgs.sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))[0];
-            const imgUrl = mainImg?.image_url;
+            const items = (order.items || []) as any[];
+            const itemImages = items.map((it) => {
+              const imgs = it?.product?.product_images || [];
+              const main = imgs.find((i: any) => i.is_main) || imgs.sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))[0];
+              return { url: main?.image_url as string | undefined, name: it.product_name as string, qty: it.quantity as number };
+            });
             const paidAmount = (order as any).paid_amount ?? 0;
             const remaining = order.total_amount - paidAmount;
-            const itemCount = order.items?.length || 0;
+            const itemCount = items.length;
+            // Choose grid cols for the inner image collage
+            const innerCols = itemCount <= 1 ? 1 : itemCount === 2 ? 2 : itemCount <= 4 ? 2 : 3;
 
             return (
               <div
                 key={order.id}
                 className="border border-border bg-card flex flex-col overflow-hidden hover:shadow-md transition-shadow"
               >
-                {/* Image */}
+                {/* Images collage */}
                 <button
                   type="button"
                   onClick={() => setSelectedOrderId(order.id)}
                   className="relative aspect-square w-full bg-muted overflow-hidden"
                 >
-                  {imgUrl ? (
-                    <img src={imgUrl} alt={firstItem?.product_name || order.order_number} loading="lazy" className="h-full w-full object-cover" />
-                  ) : (
+                  {itemImages.length === 0 ? (
                     <div className="h-full w-full flex items-center justify-center text-muted-foreground">
                       <Package className="h-8 w-8" />
                     </div>
-                  )}
-                  {itemCount > 1 && (
-                    <span className="absolute top-1 right-1 bg-foreground text-background text-[10px] px-1.5 py-0.5 rounded-sm">
-                      +{itemCount - 1}
-                    </span>
+                  ) : (
+                    <div
+                      className="grid h-full w-full gap-px"
+                      style={{ gridTemplateColumns: `repeat(${innerCols}, minmax(0, 1fr))` }}
+                    >
+                      {itemImages.map((im, idx) => (
+                        <div key={idx} className="relative bg-muted overflow-hidden">
+                          {im.url ? (
+                            <img
+                              src={im.url}
+                              alt={im.name}
+                              loading="lazy"
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center text-muted-foreground">
+                              <Package className="h-4 w-4" />
+                            </div>
+                          )}
+                          {im.qty > 1 && (
+                            <span className="absolute bottom-0.5 right-0.5 bg-foreground/80 text-background text-[9px] leading-none px-1 py-0.5 rounded-sm">
+                              ×{im.qty}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   )}
                   {order.risk_level !== 'low' && (
                     <span className="absolute top-1 left-1">

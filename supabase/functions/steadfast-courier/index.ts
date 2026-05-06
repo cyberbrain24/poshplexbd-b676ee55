@@ -468,6 +468,84 @@ Deno.serve(async (req) => {
         );
       }
 
+      case "sync_status": {
+        const body = await req.json().catch(() => ({}));
+        const { order_id, order_ids } = body as { order_id?: string; order_ids?: string[] };
+        const ids = order_ids && order_ids.length ? order_ids : (order_id ? [order_id] : []);
+        if (ids.length === 0) {
+          return new Response(
+            JSON.stringify({ error: "order_id or order_ids is required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Map Steadfast delivery_status -> our order_status
+        const mapStatus = (s: string): string | null => {
+          switch (s) {
+            case "in_review": return "confirmed";
+            case "hold": return "confirmed";
+            case "pending": return "shipped";
+            case "delivered_approval_pending":
+            case "partial_delivered_approval_pending":
+            case "cancelled_approval_pending":
+            case "unknown_approval_pending":
+              return "processing";
+            case "delivered": return "delivered";
+            case "partial_delivered": return "partially_delivered";
+            case "cancelled": return "cancelled";
+            default: return null;
+          }
+        };
+
+        const { data: orders, error: fetchErr } = await supabase
+          .from("orders")
+          .select("id, consignment_id, tracking_number, order_number")
+          .in("id", ids);
+
+        if (fetchErr || !orders) {
+          return new Response(
+            JSON.stringify({ error: "Failed to fetch orders", details: fetchErr }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const results: Array<Record<string, unknown>> = [];
+        for (const o of orders) {
+          if (!o.consignment_id && !o.tracking_number) {
+            results.push({ order_id: o.id, skipped: true, reason: "no consignment" });
+            continue;
+          }
+          const endpoint = o.consignment_id
+            ? `/status_by_cid/${o.consignment_id}`
+            : `/status_by_trackingcode/${o.tracking_number}`;
+          const resp = await steadfastRequest(endpoint);
+          const courierStatus: string | undefined = resp.data?.delivery_status;
+          const mapped = courierStatus ? mapStatus(courierStatus) : null;
+          if (mapped) {
+            const update: Record<string, unknown> = { order_status: mapped };
+            if (mapped === "delivered") update.delivered_at = new Date().toISOString();
+            await supabase.from("orders").update(update).eq("id", o.id);
+            await supabase.from("order_status_history").insert({
+              order_id: o.id,
+              status_type: "order",
+              new_status: mapped,
+              notes: `Synced from Steadfast: ${courierStatus}`,
+            });
+          }
+          results.push({
+            order_id: o.id,
+            order_number: o.order_number,
+            courier_status: courierStatus,
+            mapped_status: mapped,
+          });
+        }
+
+        return new Response(
+          JSON.stringify({ status: 200, results }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       case "reset_shipping": {
         const body = await req.json();
         const { order_id } = body;

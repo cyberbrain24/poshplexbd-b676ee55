@@ -149,6 +149,7 @@ export {
   usePoliceStations,
   useSyncLocationsFromSteadfast,
   useResetShipping,
+  useSyncSteadfastStatus,
   STEADFAST_STATUS_MAP,
 } from './useSteadfast';
 

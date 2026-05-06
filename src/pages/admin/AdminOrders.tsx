@@ -50,11 +50,12 @@ import {
   Trash2,
   ShieldAlert,
   Banknote,
-  Download
+  Download,
+  RefreshCw
 } from "lucide-react";
 import { format } from "date-fns";
 import OrderDetailModal from "@/components/admin/OrderDetailModal";
-import { useCreateShipment, useResetShipping } from "@/hooks/useSteadfast";
+import { useCreateShipment, useResetShipping, useSyncSteadfastStatus } from "@/hooks/useSteadfast";
 import { formatCurrency } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -93,9 +94,10 @@ const ParcelIdCell = ({ order }: { order: { id: string; consignment_id: string |
   );
 };
 
-// Courier status component - simplified, shows Ship button or tracking number only
+// Courier status component - simplified, shows Ship button or tracking number with Sync
 const CourierStatusCell = ({ order }: { order: { id: string; tracking_number: string | null; courier_name: string | null } }) => {
   const createShipment = useCreateShipment();
+  const syncStatus = useSyncSteadfastStatus();
 
   if (!order.tracking_number) {
     return (
@@ -121,9 +123,28 @@ const CourierStatusCell = ({ order }: { order: { id: string; tracking_number: st
 
   return (
     <div className="flex flex-col gap-1">
-      <Badge className="bg-blue-100 text-blue-800" variant="outline">
-        {order.courier_name || "Steadfast"}
-      </Badge>
+      <div className="flex items-center gap-1">
+        <Badge className="bg-blue-100 text-blue-800" variant="outline">
+          {order.courier_name || "Steadfast"}
+        </Badge>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={(e) => {
+            e.stopPropagation();
+            syncStatus.mutate(order.id);
+          }}
+          disabled={syncStatus.isPending}
+          className="h-5 w-5 p-0"
+          title="Sync status from Steadfast"
+        >
+          {syncStatus.isPending ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <RefreshCw className="h-3 w-3" />
+          )}
+        </Button>
+      </div>
       <span className="text-xs text-muted-foreground font-mono">{order.tracking_number}</span>
     </div>
   );

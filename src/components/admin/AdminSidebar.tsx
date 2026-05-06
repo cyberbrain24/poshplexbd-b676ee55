@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { prefetchAdminRoute } from "@/lib/adminRoutePrefetch";
 
 const NAV_DEBOUNCE_MS = 150;
 

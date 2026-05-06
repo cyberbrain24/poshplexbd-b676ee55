@@ -84,6 +84,7 @@ export async function generatePackingListPdf(orders: Order[]) {
         variant,
         quantity: it.quantity || 1,
         parcelId,
+        callNote: (order as any).call_center_notes || null,
       });
     }
   }

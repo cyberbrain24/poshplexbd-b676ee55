@@ -138,7 +138,7 @@ export const useOrders = (filters?: {
           *,
           customer:customers(id, name, phone, email),
           payment_method:payment_methods(id, name, type),
-          items:order_items(*)
+          items:order_items(*, product:products(id, product_images(image_url, is_main, sort_order)))
         `)
         .order("created_at", { ascending: false })
         .limit(100);

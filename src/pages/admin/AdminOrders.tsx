@@ -51,8 +51,13 @@ import {
   ShieldAlert,
   Banknote,
   Download,
-  RefreshCw
+  RefreshCw,
+  Phone,
+  PhoneCall,
+  ExternalLink,
+  Save
 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import OrderDetailModal from "@/components/admin/OrderDetailModal";
 import { useCreateShipment, useResetShipping, useSyncSteadfastStatus } from "@/hooks/useSteadfast";

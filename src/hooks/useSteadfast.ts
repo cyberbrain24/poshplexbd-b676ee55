@@ -52,16 +52,26 @@ export function useCreateShipment() {
       return data;
     },
     onSuccess: (data) => {
-      if (data.consignment) {
+      if (data?.consignment) {
         toast.success(`Shipment created! Tracking: ${data.consignment.tracking_code}`);
         queryClient.invalidateQueries({ queryKey: ["orders"] });
         queryClient.invalidateQueries({ queryKey: ["orders-optimized"] });
       } else {
-        toast.error(data.message || "Failed to create shipment");
+        // Extract a human-readable reason from Steadfast's response shape
+        let reason = data?.message || "Failed to create shipment";
+        if (data?.errors && typeof data.errors === "object") {
+          const parts: string[] = [];
+          for (const [field, msgs] of Object.entries(data.errors as Record<string, unknown>)) {
+            const list = Array.isArray(msgs) ? msgs.join(", ") : String(msgs);
+            parts.push(`${field}: ${list}`);
+          }
+          if (parts.length) reason = parts.join(" | ");
+        }
+        toast.error(reason, { duration: 8000 });
       }
     },
     onError: (error: Error) => {
-      toast.error(`Failed to create shipment: ${error.message}`);
+      toast.error(`Failed to create shipment: ${error.message}`, { duration: 8000 });
     },
   });
 }

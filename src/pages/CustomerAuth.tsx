@@ -96,12 +96,9 @@ const CustomerAuth = () => {
 
           // Check if a customer already exists with this phone/email
           if (phone) {
-            const { data: existing } = await supabase
-              .from("customers")
-              .select("id")
-              .eq("phone", phone)
-              .maybeSingle();
-            customerId = existing?.id ?? null;
+            const { data: existingId } = await supabase
+              .rpc("find_customer_id_by_phone", { p_phone: phone });
+            customerId = (existingId as string | null) ?? null;
           }
 
           if (!customerId) {

@@ -42,6 +42,7 @@ import {
 } from "@/hooks/useCustomers";
 import CustomerModal from "@/components/admin/CustomerModal";
 import PromoUsageHistoryModal from "@/components/admin/PromoUsageHistoryModal";
+import CustomerDetailModal from "@/components/admin/CustomerDetailModal";
 
 const AdminCustomers = () => {
   const [modalOpen, setModalOpen] = useState(false);

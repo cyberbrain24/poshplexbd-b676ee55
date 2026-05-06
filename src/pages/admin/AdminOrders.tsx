@@ -94,10 +94,9 @@ const ParcelIdCell = ({ order }: { order: { id: string; consignment_id: string |
   );
 };
 
-// Courier status component - simplified, shows Ship button or tracking number with Sync
+// Courier status component - simplified, shows Ship button or tracking number
 const CourierStatusCell = ({ order }: { order: { id: string; tracking_number: string | null; courier_name: string | null } }) => {
   const createShipment = useCreateShipment();
-  const syncStatus = useSyncSteadfastStatus();
 
   if (!order.tracking_number) {
     return (

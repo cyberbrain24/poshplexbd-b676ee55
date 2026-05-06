@@ -468,6 +468,36 @@ Deno.serve(async (req) => {
         );
       }
 
+      case "reset_shipping": {
+        const body = await req.json();
+        const { order_id } = body;
+        if (!order_id) {
+          return new Response(
+            JSON.stringify({ error: "order_id is required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        const { error: resetError } = await supabase
+          .from("orders")
+          .update({
+            tracking_number: null,
+            consignment_id: null,
+            courier_name: null,
+            order_status: "pending",
+          })
+          .eq("id", order_id);
+        if (resetError) {
+          return new Response(
+            JSON.stringify({ error: "Failed to reset shipping", details: resetError }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        return new Response(
+          JSON.stringify({ message: "Shipping reset successfully. You can ship this order again." }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       default:
         return new Response(
           JSON.stringify({ error: `Unknown action: ${action}` }),

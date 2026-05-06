@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Pencil, Trash2, Search, Filter, Users, UserCheck, Gift, X, LogIn, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Filter, Users, UserCheck, Gift, X, LogIn, AlertTriangle, Eye } from "lucide-react";
 import {
   Table,
   TableBody,

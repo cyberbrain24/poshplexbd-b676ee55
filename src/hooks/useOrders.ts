@@ -515,7 +515,44 @@ export const useDeleteOrder = () => {
 };
 
 
-// Dashboard stats
+// Mark customer as called by call center (toggle)
+export const useMarkOrderCalled = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ orderId, called }: { orderId: string; called: boolean }) => {
+      const { error } = await supabase
+        .from("orders")
+        .update({ customer_called_at: called ? new Date().toISOString() : null })
+        .eq("id", orderId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
+    onError: (e: any) => toast.error(e?.message || "Failed to update"),
+  });
+};
+
+// Save call center notes
+export const useUpdateCallCenterNotes = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ orderId, notes }: { orderId: string; notes: string }) => {
+      const { error } = await supabase
+        .from("orders")
+        .update({ call_center_notes: notes })
+        .eq("id", orderId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      toast.success("Call notes saved");
+    },
+    onError: (e: any) => toast.error(e?.message || "Failed to save notes"),
+  });
+};
+
+
 export const useOrderStats = () => {
   return useQuery({
     queryKey: ["order-stats"],

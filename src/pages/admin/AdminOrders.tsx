@@ -187,8 +187,27 @@ const AdminOrders = () => {
     status: statusFilter !== "all" ? statusFilter : undefined,
     paymentStatus: paymentFilter !== "all" ? paymentFilter : undefined,
     search: search || undefined,
+    dateFrom: dateFrom ? new Date(dateFrom).toISOString() : undefined,
+    dateTo: dateTo ? new Date(new Date(dateTo).setHours(23, 59, 59, 999)).toISOString() : undefined,
   });
   const deleteOrder = useDeleteOrder();
+
+  const handleDownloadPdf = async () => {
+    if (!orders || orders.length === 0) {
+      toast.error("No orders to download");
+      return;
+    }
+    setDownloadingPdf(true);
+    try {
+      await generatePackingListPdf(orders);
+      toast.success("Packing list downloaded");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to generate PDF");
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
 
   const handleDeleteClick = async (orderId: string, orderNumber: string, paidAmount: number, paymentStatus: string, e: React.MouseEvent) => {
     e.stopPropagation();

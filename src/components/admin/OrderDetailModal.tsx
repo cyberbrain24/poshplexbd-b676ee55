@@ -693,7 +693,7 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
                     <SelectContent>
                       {statusOptions.map(s => (
                         <SelectItem key={s} value={s}>
-                          {s.replace('_', ' ')}
+                          {ORDER_STATUS_LABELS[s]}
                         </SelectItem>
                       ))}
                     </SelectContent>

@@ -28,7 +28,6 @@ const PrivacyPolicy = lazy(() => import("./pages/about/PrivacyPolicy"));
 const TermsConditions = lazy(() => import("./pages/about/TermsConditions"));
 const ShippingDelivery = lazy(() => import("./pages/about/ShippingDelivery"));
 const Auth = lazy(() => import("./pages/Auth"));
-const SteadfastTracking = lazy(() => import("./pages/SteadfastTracking"));
 import CustomerAuth from "./pages/CustomerAuth";
 import CustomerAccount from "./pages/CustomerAccount";
 import OrderTracking from "./pages/OrderTracking";

@@ -193,6 +193,18 @@ const AdminOrders = () => {
     dateTo: dateTo ? new Date(new Date(dateTo).setHours(23, 59, 59, 999)).toISOString() : undefined,
   });
   const deleteOrder = useDeleteOrder();
+  const syncAllSteadfast = useSyncSteadfastStatus();
+
+  const handleSyncAllSteadfast = () => {
+    const ids = (orders || [])
+      .filter((o: any) => o.tracking_number || o.consignment_id)
+      .map((o: any) => o.id);
+    if (ids.length === 0) {
+      toast.message("No shipped orders in current view to sync");
+      return;
+    }
+    syncAllSteadfast.mutate(ids);
+  };
 
   const handleDownloadPdf = async () => {
     if (!orders || orders.length === 0) {

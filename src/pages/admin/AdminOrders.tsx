@@ -614,6 +614,11 @@ const AdminOrders = () => {
                     </div>
                   </div>
 
+                  {/* Call center notes */}
+                  <div className="pt-1 border-t border-border">
+                    <CallNotesEditor order={order as any} />
+                  </div>
+
                   {/* Actions */}
                   <div className="flex items-center justify-end gap-1 mt-auto pt-1">
                     <Button

@@ -25,12 +25,10 @@ export const useFacebookPixel = () => {
 
     const load = async () => {
       try {
-        const { data } = await supabase
-          .from("site_settings")
-          .select("meta_pixel_id, meta_pixel_enabled, meta_test_mode, meta_advanced_matching")
-          .limit(1)
-          .maybeSingle();
+        const { data: rows } = await supabase
+          .rpc("get_public_site_settings");
 
+        const data = Array.isArray(rows) ? rows[0] : null;
         if (!data) return;
 
         setPixelConfig({

@@ -321,142 +321,148 @@ const AdminOrders = () => {
         </Select>
       </div>
 
-      {/* Orders Table */}
-      <div className="border border-border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Order</TableHead>
-              <TableHead>Customer</TableHead>
-              <TableHead>Items</TableHead>
-              <TableHead>Total</TableHead>
-              <TableHead>Paid</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Payment</TableHead>
-              <TableHead>Parcel ID</TableHead>
-              <TableHead>Courier</TableHead>
-              <TableHead>Risk</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead className="w-[50px]"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {ordersLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  {Array.from({ length: 12 }).map((_, j) => (
-                    <TableCell key={j}>
-                      <Skeleton className="h-4 w-full" />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : orders?.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
-                  No orders found
-                </TableCell>
-              </TableRow>
-            ) : (
-              orders?.map((order) => (
-                <TableRow key={order.id} className="cursor-pointer hover:bg-muted/50">
-                  <TableCell>
-                    <div className="font-medium">{order.order_number}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {order.payment_method?.name || 'Unknown'}
+      {/* Orders Grid */}
+      {ordersLoading ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
+          {Array.from({ length: 16 }).map((_, i) => (
+            <Skeleton key={i} className="h-64 w-full" />
+          ))}
+        </div>
+      ) : orders?.length === 0 ? (
+        <div className="border border-border p-12 text-center text-muted-foreground">
+          No orders found
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
+          {orders?.map((order) => {
+            const firstItem = order.items?.[0] as any;
+            const imgs = firstItem?.product?.product_images || [];
+            const mainImg = imgs.find((i: any) => i.is_main) || imgs.sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))[0];
+            const imgUrl = mainImg?.image_url;
+            const paidAmount = (order as any).paid_amount ?? 0;
+            const remaining = order.total_amount - paidAmount;
+            const itemCount = order.items?.length || 0;
+
+            return (
+              <div
+                key={order.id}
+                className="border border-border bg-card flex flex-col overflow-hidden hover:shadow-md transition-shadow"
+              >
+                {/* Image */}
+                <button
+                  type="button"
+                  onClick={() => setSelectedOrderId(order.id)}
+                  className="relative aspect-square w-full bg-muted overflow-hidden"
+                >
+                  {imgUrl ? (
+                    <img src={imgUrl} alt={firstItem?.product_name || order.order_number} loading="lazy" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center text-muted-foreground">
+                      <Package className="h-8 w-8" />
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium">
-                      {order.customer?.name || order.shipping_name}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {order.customer?.phone || order.shipping_phone}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm">{order.items?.length || 0} items</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-medium">{formatCurrency(order.total_amount)}</span>
-                  </TableCell>
-                  <TableCell>
-                    {(() => {
-                      const paidAmount = (order as any).paid_amount ?? 0;
-                      const remaining = order.total_amount - paidAmount;
-                      return (
-                        <div className="flex flex-col">
-                          <span className={`font-medium ${paidAmount > 0 ? 'text-green-600' : 'text-muted-foreground'}`}>
-                            {formatCurrency(paidAmount)}
-                          </span>
-                          {remaining > 0 && (
-                            <span className="text-xs text-destructive">
-                              Due: {formatCurrency(remaining)}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })()}
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={orderStatusColors[order.order_status]} variant="outline">
-                      {order.order_status.replace('_', ' ')}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={paymentStatusColors[order.payment_status]} variant="outline">
-                      {order.payment_status.replace('_', ' ')}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <ParcelIdCell order={order as any} />
-                  </TableCell>
-                  <TableCell>
-                    <CourierStatusCell order={order} />
-                  </TableCell>
-                  <TableCell>
-                    {order.risk_level !== 'low' && (
-                      <Badge className={riskColors[order.risk_level]} variant="outline">
-                        <AlertTriangle className="h-3 w-3 mr-1" />
+                  )}
+                  {itemCount > 1 && (
+                    <span className="absolute top-1 right-1 bg-foreground text-background text-[10px] px-1.5 py-0.5 rounded-sm">
+                      +{itemCount - 1}
+                    </span>
+                  )}
+                  {order.risk_level !== 'low' && (
+                    <span className="absolute top-1 left-1">
+                      <Badge className={`${riskColors[order.risk_level]} text-[10px] px-1.5 py-0`} variant="outline">
+                        <AlertTriangle className="h-2.5 w-2.5 mr-0.5" />
                         {order.risk_level}
                       </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-muted-foreground">
-                      {format(new Date(order.created_at), 'MMM d, yyyy')}
                     </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setSelectedOrderId(order.id)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        disabled={checkingPayments}
-                        onClick={(e) => handleDeleteClick(order.id, order.order_number, (order as any).paid_amount ?? 0, order.payment_status, e)}
-                      >
-                        {checkingPayments ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                      </Button>
+                  )}
+                </button>
+
+                {/* Details */}
+                <div className="p-2 flex flex-col gap-1.5 text-xs flex-1">
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="font-semibold truncate" title={order.order_number}>{order.order_number}</span>
+                    <span className="text-muted-foreground text-[10px] shrink-0">
+                      {format(new Date(order.created_at), 'MMM d')}
+                    </span>
+                  </div>
+
+                  <div className="truncate font-medium" title={order.customer?.name || order.shipping_name || ''}>
+                    {order.customer?.name || order.shipping_name}
+                  </div>
+                  <div className="truncate text-muted-foreground text-[11px]" title={order.customer?.phone || order.shipping_phone || ''}>
+                    {order.customer?.phone || order.shipping_phone}
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">{itemCount} item{itemCount !== 1 ? 's' : ''}</span>
+                    <span className="font-semibold">{formatCurrency(order.total_amount)}</span>
+                  </div>
+
+                  <div className="flex flex-col">
+                    <span className={`text-[11px] ${paidAmount > 0 ? 'text-green-600 font-medium' : 'text-muted-foreground'}`}>
+                      Paid: {formatCurrency(paidAmount)}
+                    </span>
+                    {remaining > 0 && (
+                      <span className="text-[11px] text-destructive">Due: {formatCurrency(remaining)}</span>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap gap-1">
+                    <Badge className={`${orderStatusColors[order.order_status]} text-[10px] px-1.5 py-0`} variant="outline">
+                      {order.order_status.replace('_', ' ')}
+                    </Badge>
+                    <Badge className={`${paymentStatusColors[order.payment_status]} text-[10px] px-1.5 py-0`} variant="outline">
+                      {order.payment_status.replace('_', ' ')}
+                    </Badge>
+                  </div>
+
+                  <div className="text-[10px] text-muted-foreground truncate">
+                    {order.payment_method?.name || 'Unknown'}
+                  </div>
+
+                  {/* Parcel + Courier */}
+                  <div className="space-y-1 pt-1 border-t border-border">
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-[10px] text-muted-foreground">Parcel:</span>
+                      <ParcelIdCell order={order as any} />
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-[10px] text-muted-foreground">Courier:</span>
+                      <CourierStatusCell order={order} />
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center justify-end gap-1 mt-auto pt-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => setSelectedOrderId(order.id)}
+                      title="View"
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      disabled={checkingPayments}
+                      onClick={(e) => handleDeleteClick(order.id, order.order_number, paidAmount, order.payment_status, e)}
+                      title="Delete"
+                    >
+                      {checkingPayments ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-3.5 w-3.5" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Order Detail Modal */}
       {selectedOrderId && (

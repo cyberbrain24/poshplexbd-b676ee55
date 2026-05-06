@@ -89,11 +89,11 @@ export async function generatePackingListPdf(orders: Order[]) {
   y += 10;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.setTextColor(120);
+  doc.setTextColor(120, 120, 120);
   doc.text(new Date().toLocaleString(), margin, y + 8);
   y += 30;
 
-  doc.setTextColor(0);
+  doc.setTextColor(0, 0, 0);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
   doc.text(`Total Ordered Persons: ${customerSet.size}`, margin, y);
@@ -157,7 +157,7 @@ export async function generatePackingListPdf(orders: Order[]) {
 
     // Caption
     let ty = rowY + imgH + 10;
-    doc.setTextColor(0);
+    doc.setTextColor(0, 0, 0);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(7.5);
     doc.text(`#${item.orderNumber} × ${item.quantity}`, x, ty);
@@ -167,7 +167,7 @@ export async function generatePackingListPdf(orders: Order[]) {
     const nameLine = doc.splitTextToSize(item.customerName, cellW)[0];
     doc.text(nameLine, x, ty);
     ty += 9;
-    doc.setTextColor(100);
+    doc.setTextColor(100, 100, 100);
     doc.text(item.phone, x, ty);
     if (item.variant) {
       ty += 9;

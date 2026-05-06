@@ -564,11 +564,20 @@ const ProductPickerModal = ({ isOpen, onClose, onSelect, products, categories, s
   );
 };
 
-/* ═══════════════════ Stock In/Out Tab ═══════════════════ */
+/* ═══════════════════ Stock In/Out Tab (with inline Report) ═══════════════════ */
 const StockTab = ({ allProducts, categories, isLoading }: { allProducts: InvProduct[]; categories: InvCategory[]; isLoading: boolean }) => {
   const [type, setType] = useState<"in" | "out">("in");
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [notes, setNotes] = useState("");
+
+  // Report range — defaults to current month
+  const [reportFrom, setReportFrom] = useState(format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), "yyyy-MM-dd"));
+  const [reportTo, setReportTo] = useState(format(new Date(), "yyyy-MM-dd"));
+  const { data: report = [], isLoading: reportLoading } = useStockReport(reportFrom, reportTo);
+  const filteredReport = useMemo(() => report.filter((r) => r.type === type), [report, type]);
+  const reportTotalQty = filteredReport.reduce((s, r) => s + r.quantity, 0);
+  const reportTotalValue = filteredReport.reduce((s, r) => s + r.line_total, 0);
+
   const [rows, setRows] = useState<(StockMovement & { name?: string; image_url?: string | null })[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const bulkMut = useBulkStockMovement();

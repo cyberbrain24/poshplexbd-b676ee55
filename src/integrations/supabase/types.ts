@@ -904,11 +904,13 @@ export type Database = {
         Row: {
           amount_approved_at: string | null
           amount_approved_by: string | null
+          call_center_notes: string | null
           collected_amount: number | null
           consignment_id: string | null
           courier_name: string | null
           created_at: string
           currency: string
+          customer_called_at: string | null
           customer_id: string | null
           customer_notes: string | null
           delivered_at: string | null
@@ -955,11 +957,13 @@ export type Database = {
         Insert: {
           amount_approved_at?: string | null
           amount_approved_by?: string | null
+          call_center_notes?: string | null
           collected_amount?: number | null
           consignment_id?: string | null
           courier_name?: string | null
           created_at?: string
           currency?: string
+          customer_called_at?: string | null
           customer_id?: string | null
           customer_notes?: string | null
           delivered_at?: string | null
@@ -1006,11 +1010,13 @@ export type Database = {
         Update: {
           amount_approved_at?: string | null
           amount_approved_by?: string | null
+          call_center_notes?: string | null
           collected_amount?: number | null
           consignment_id?: string | null
           courier_name?: string | null
           created_at?: string
           currency?: string
+          customer_called_at?: string | null
           customer_id?: string | null
           customer_notes?: string | null
           delivered_at?: string | null

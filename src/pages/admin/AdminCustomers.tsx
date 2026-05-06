@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Pencil, Trash2, Search, Filter, Users, UserCheck, Gift, X, LogIn, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Filter, Users, UserCheck, Gift, X, LogIn, AlertTriangle, Eye } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -42,6 +42,7 @@ import {
 } from "@/hooks/useCustomers";
 import CustomerModal from "@/components/admin/CustomerModal";
 import PromoUsageHistoryModal from "@/components/admin/PromoUsageHistoryModal";
+import CustomerDetailModal from "@/components/admin/CustomerDetailModal";
 
 const AdminCustomers = () => {
   const [modalOpen, setModalOpen] = useState(false);
@@ -49,6 +50,7 @@ const AdminCustomers = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteCustomerName, setDeleteCustomerName] = useState<string>("");
   const [promoHistoryCustomer, setPromoHistoryCustomer] = useState<Customer | null>(null);
+  const [viewCustomer, setViewCustomer] = useState<Customer | null>(null);
   const [impersonating, setImpersonating] = useState<string | null>(null);
 
   // Filters state
@@ -352,7 +354,10 @@ const AdminCustomers = () => {
                         >
                           <LogIn className="h-4 w-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" onClick={() => handleEdit(customer)}>
+                        <Button size="icon" variant="ghost" onClick={() => setViewCustomer(customer)} title="View details">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button size="icon" variant="ghost" onClick={() => handleEdit(customer)} title="Edit">
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button
@@ -381,6 +386,12 @@ const AdminCustomers = () => {
         open={modalOpen}
         onOpenChange={setModalOpen}
         customer={selectedCustomer}
+      />
+
+      <CustomerDetailModal
+        open={!!viewCustomer}
+        onOpenChange={(open) => !open && setViewCustomer(null)}
+        customer={viewCustomer}
       />
 
       {promoHistoryCustomer && (

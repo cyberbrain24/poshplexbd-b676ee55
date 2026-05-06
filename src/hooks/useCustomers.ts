@@ -386,20 +386,23 @@ export const useCustomers = (filters?: CustomerFilters) => {
         return [] as Customer[];
       }
 
-      const { data: promoData, error: promoError } = await supabase
-        .from("promo_code_usages")
-        .select("customer_id")
-        .in("customer_id", customerIds);
+      // Run secondary lookups in parallel for faster load
+      const [promoRes, accountsRes, orderRes] = await Promise.all([
+        supabase.from("promo_code_usages").select("customer_id").in("customer_id", customerIds),
+        supabase.from("customer_accounts").select("customer_id, auth_user_id").in("customer_id", customerIds),
+        supabase
+          .from("orders")
+          .select("customer_id, total_amount, order_status")
+          .in("customer_id", customerIds)
+          .not("order_status", "in", '("cancelled","failed","returned")'),
+      ]);
 
-      if (promoError) throw promoError;
-
-      // Fetch customer accounts to check which customers have login accounts
-      const { data: accountsData, error: accountsError } = await supabase
-        .from("customer_accounts")
-        .select("customer_id, auth_user_id")
-        .in("customer_id", customerIds);
-
-      if (accountsError) throw accountsError;
+      if (promoRes.error) throw promoRes.error;
+      if (accountsRes.error) throw accountsRes.error;
+      const promoData = promoRes.data || [];
+      const accountsData = accountsRes.data || [];
+      const orderStats = orderRes.data;
+      const orderError = orderRes.error;
 
       // Create a map of customer_id to account status
       const accountMap: Record<string, boolean> = {};
@@ -415,13 +418,7 @@ export const useCustomers = (filters?: CustomerFilters) => {
         promoCountMap[p.customer_id] = (promoCountMap[p.customer_id] || 0) + 1;
       });
 
-      // Add promo_usage_count, has_account, order stats to each customer
-      // Fetch order stats (count + total spent) per customer
-      const { data: orderStats, error: orderError } = await supabase
-        .from("orders")
-        .select("customer_id, total_amount, order_status")
-        .in("customer_id", customerIds)
-        .not("order_status", "in", '("cancelled","failed","returned")');
+      // Order stats fetched in parallel above
 
       const orderCountMap: Record<string, number> = {};
       const totalSpentMap: Record<string, number> = {};

@@ -36,15 +36,6 @@ export default function SteadfastTracking() {
       setLoading(true);
       setError(null);
       try {
-        const { data: res, error } = await supabase.functions.invoke(
-          "steadfast-courier",
-          {
-            body: null,
-            method: "GET",
-            // pass action via query
-          } as any
-        );
-        // Fallback: call via direct URL with query string
         const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/steadfast-courier?action=track_by_consignment&consignment_id=${consignmentId}`;
         const r = await fetch(url, {
           headers: {
@@ -55,7 +46,6 @@ export default function SteadfastTracking() {
         const json = await r.json();
         if (!r.ok) throw new Error(json?.error || "Failed to load tracking");
         setData(json);
-        void res; void error;
       } catch (e: any) {
         setError(e.message || "Failed to load tracking");
       } finally {

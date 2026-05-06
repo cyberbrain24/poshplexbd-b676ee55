@@ -55,7 +55,6 @@ const AdminIndependentInventory = () => {
           <TabsTrigger value="products">Products</TabsTrigger>
           <TabsTrigger value="categories">Categories</TabsTrigger>
           <TabsTrigger value="stock">Stock In / Out</TabsTrigger>
-          <TabsTrigger value="report">Report</TabsTrigger>
         </TabsList>
 
         <TabsContent value="products">
@@ -78,10 +77,6 @@ const AdminIndependentInventory = () => {
 
         <TabsContent value="stock">
           <StockTab allProducts={allProducts} categories={categories} isLoading={isLoading} />
-        </TabsContent>
-
-        <TabsContent value="report">
-          <ReportTab />
         </TabsContent>
       </Tabs>
     </div>

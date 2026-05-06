@@ -122,7 +122,7 @@ const App = () => (
                   <Route path="/shipping-delivery" element={<Suspense fallback={<LoadingFallback />}><ShippingDelivery /></Suspense>} />
                   <Route path="/auth" element={<Suspense fallback={<LoadingFallback />}><Auth /></Suspense>} />
                   <Route path="/login" element={<CustomerAuth />} />
-                  <Route path="/track/steadfast/:consignmentId" element={<Suspense fallback={<LoadingFallback />}><SteadfastTracking /></Suspense>} />
+                  
                   
                   {/* Admin Routes - Lazy loaded */}
                   <Route path="/admin" element={

@@ -479,7 +479,7 @@ const AdminOrders = () => {
 
                   <div className="flex flex-wrap gap-1">
                     <Badge className={`${orderStatusColors[order.order_status]} text-[10px] px-1.5 py-0`} variant="outline">
-                      {order.order_status.replace('_', ' ')}
+                      {ORDER_STATUS_LABELS[order.order_status] || order.order_status.replace('_', ' ')}
                     </Badge>
                     <Badge className={`${paymentStatusColors[order.payment_status]} text-[10px] px-1.5 py-0`} variant="outline">
                       {order.payment_status.replace('_', ' ')}

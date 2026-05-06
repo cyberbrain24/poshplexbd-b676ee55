@@ -354,7 +354,10 @@ const AdminCustomers = () => {
                         >
                           <LogIn className="h-4 w-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" onClick={() => handleEdit(customer)}>
+                        <Button size="icon" variant="ghost" onClick={() => setViewCustomer(customer)} title="View details">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button size="icon" variant="ghost" onClick={() => handleEdit(customer)} title="Edit">
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button

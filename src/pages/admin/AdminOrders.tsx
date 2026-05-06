@@ -123,28 +123,9 @@ const CourierStatusCell = ({ order }: { order: { id: string; tracking_number: st
 
   return (
     <div className="flex flex-col gap-1">
-      <div className="flex items-center gap-1">
-        <Badge className="bg-blue-100 text-blue-800" variant="outline">
-          {order.courier_name || "Steadfast"}
-        </Badge>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={(e) => {
-            e.stopPropagation();
-            syncStatus.mutate(order.id);
-          }}
-          disabled={syncStatus.isPending}
-          className="h-5 w-5 p-0"
-          title="Sync status from Steadfast"
-        >
-          {syncStatus.isPending ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
-          ) : (
-            <RefreshCw className="h-3 w-3" />
-          )}
-        </Button>
-      </div>
+      <Badge className="bg-blue-100 text-blue-800" variant="outline">
+        {order.courier_name || "Steadfast"}
+      </Badge>
       <span className="text-xs text-muted-foreground font-mono">{order.tracking_number}</span>
     </div>
   );

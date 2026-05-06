@@ -227,6 +227,19 @@ export async function generatePackingListPdf(orders: Order[]) {
         doc.setTextColor(160, 60, 60);
         doc.text("No Parcel", x, ty);
       }
+      ty += 9;
+
+      // Call center note
+      if (item.callNote) {
+        doc.setFont("helvetica", "italic");
+        doc.setFontSize(6.5);
+        doc.setTextColor(80, 60, 0);
+        const noteLines = doc.splitTextToSize(`Note: ${item.callNote}`, cellW).slice(0, 3);
+        for (const line of noteLines) {
+          doc.text(String(line), x, ty);
+          ty += 8;
+        }
+      }
 
       col++;
       if (col >= cols) {

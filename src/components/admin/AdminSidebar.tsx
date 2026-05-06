@@ -159,6 +159,9 @@ const AdminSidebar = () => {
                   key={item.path}
                   to={item.path}
                   onClick={(e) => handleNavClick(e, item.path)}
+                  onMouseEnter={() => prefetchAdminRoute(item.path)}
+                  onFocus={() => prefetchAdminRoute(item.path)}
+                  onTouchStart={() => prefetchAdminRoute(item.path)}
                   className={cn(
                     "flex items-center gap-3 px-3 py-2 text-sm transition-colors rounded-sm",
                     isActive ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground hover:bg-muted"

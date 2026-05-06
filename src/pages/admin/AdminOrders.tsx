@@ -54,7 +54,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import OrderDetailModal from "@/components/admin/OrderDetailModal";
-import { useCreateShipment, useResetShipping } from "@/hooks/useSteadfast";
+import { useCreateShipment, useResetShipping, useSyncSteadfastStatus } from "@/hooks/useSteadfast";
 import { formatCurrency } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";

@@ -48,7 +48,8 @@ import {
   Loader2,
   Trash2,
   ShieldAlert,
-  Banknote
+  Banknote,
+  Download
 } from "lucide-react";
 import { format } from "date-fns";
 import OrderDetailModal from "@/components/admin/OrderDetailModal";
@@ -56,6 +57,7 @@ import { useCreateShipment, useResetShipping } from "@/hooks/useSteadfast";
 import { formatCurrency } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { generatePackingListPdf } from "@/lib/orderPackingPdf";
 
 // Parcel ID cell component - simplified, no auto-fetch
 const ParcelIdCell = ({ order }: { order: { id: string; consignment_id: string | null; tracking_number: string | null } }) => {

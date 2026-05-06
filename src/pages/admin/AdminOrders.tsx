@@ -277,10 +277,24 @@ const AdminOrders = () => {
           <h1 className="text-2xl font-medium tracking-tight">Orders</h1>
           <p className="text-muted-foreground mt-1">Manage customer orders and fulfillment</p>
         </div>
-        <Button onClick={handleDownloadPdf} disabled={downloadingPdf || ordersLoading} variant="outline">
-          {downloadingPdf ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-          Download Packing PDF
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={handleSyncAllSteadfast}
+            disabled={syncAllSteadfast.isPending || ordersLoading}
+            variant="outline"
+          >
+            {syncAllSteadfast.isPending ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4 mr-2" />
+            )}
+            Sync Steadfast
+          </Button>
+          <Button onClick={handleDownloadPdf} disabled={downloadingPdf || ordersLoading} variant="outline">
+            {downloadingPdf ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+            Download Packing PDF
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}

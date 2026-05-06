@@ -94,10 +94,9 @@ const ParcelIdCell = ({ order }: { order: { id: string; consignment_id: string |
   );
 };
 
-// Courier status component - simplified, shows Ship button or tracking number with Sync
+// Courier status component - simplified, shows Ship button or tracking number
 const CourierStatusCell = ({ order }: { order: { id: string; tracking_number: string | null; courier_name: string | null } }) => {
   const createShipment = useCreateShipment();
-  const syncStatus = useSyncSteadfastStatus();
 
   if (!order.tracking_number) {
     return (
@@ -123,28 +122,9 @@ const CourierStatusCell = ({ order }: { order: { id: string; tracking_number: st
 
   return (
     <div className="flex flex-col gap-1">
-      <div className="flex items-center gap-1">
-        <Badge className="bg-blue-100 text-blue-800" variant="outline">
-          {order.courier_name || "Steadfast"}
-        </Badge>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={(e) => {
-            e.stopPropagation();
-            syncStatus.mutate(order.id);
-          }}
-          disabled={syncStatus.isPending}
-          className="h-5 w-5 p-0"
-          title="Sync status from Steadfast"
-        >
-          {syncStatus.isPending ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
-          ) : (
-            <RefreshCw className="h-3 w-3" />
-          )}
-        </Button>
-      </div>
+      <Badge className="bg-blue-100 text-blue-800" variant="outline">
+        {order.courier_name || "Steadfast"}
+      </Badge>
       <span className="text-xs text-muted-foreground font-mono">{order.tracking_number}</span>
     </div>
   );
@@ -213,6 +193,18 @@ const AdminOrders = () => {
     dateTo: dateTo ? new Date(new Date(dateTo).setHours(23, 59, 59, 999)).toISOString() : undefined,
   });
   const deleteOrder = useDeleteOrder();
+  const syncAllSteadfast = useSyncSteadfastStatus();
+
+  const handleSyncAllSteadfast = () => {
+    const ids = (orders || [])
+      .filter((o: any) => o.tracking_number || o.consignment_id)
+      .map((o: any) => o.id);
+    if (ids.length === 0) {
+      toast.message("No shipped orders in current view to sync");
+      return;
+    }
+    syncAllSteadfast.mutate(ids);
+  };
 
   const handleDownloadPdf = async () => {
     if (!orders || orders.length === 0) {
@@ -285,10 +277,24 @@ const AdminOrders = () => {
           <h1 className="text-2xl font-medium tracking-tight">Orders</h1>
           <p className="text-muted-foreground mt-1">Manage customer orders and fulfillment</p>
         </div>
-        <Button onClick={handleDownloadPdf} disabled={downloadingPdf || ordersLoading} variant="outline">
-          {downloadingPdf ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-          Download Packing PDF
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={handleSyncAllSteadfast}
+            disabled={syncAllSteadfast.isPending || ordersLoading}
+            variant="outline"
+          >
+            {syncAllSteadfast.isPending ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4 mr-2" />
+            )}
+            Sync Steadfast
+          </Button>
+          <Button onClick={handleDownloadPdf} disabled={downloadingPdf || ordersLoading} variant="outline">
+            {downloadingPdf ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+            Download Packing PDF
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}

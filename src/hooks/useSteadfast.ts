@@ -295,6 +295,37 @@ export function useResetShipping() {
   });
 }
 
+// Sync order status from Steadfast (manual, button-triggered)
+export function useSyncSteadfastStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (orderIds: string | string[]) => {
+      const ids = Array.isArray(orderIds) ? orderIds : [orderIds];
+      const { data, error } = await supabase.functions.invoke(
+        "steadfast-courier?action=sync_status",
+        { method: "POST", body: { order_ids: ids } }
+      );
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    onSuccess: (data) => {
+      const results = (data?.results || []) as Array<{ mapped_status?: string; courier_status?: string; skipped?: boolean }>;
+      const updated = results.filter(r => r.mapped_status).length;
+      const skipped = results.filter(r => r.skipped).length;
+      if (updated > 0) toast.success(`${updated} order(s) synced with Steadfast`);
+      else if (skipped > 0) toast.message(`No shipments to sync (${skipped} skipped)`);
+      else toast.message("Status unchanged");
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["orders-optimized"] });
+      queryClient.invalidateQueries({ queryKey: ["order"] });
+    },
+    onError: (error: Error) => {
+      toast.error(`Sync failed: ${error.message}`);
+    },
+  });
+}
+
 // Delivery status mapper
 export const STEADFAST_STATUS_MAP: Record<string, { label: string; color: string }> = {
   pending: { label: "Pending", color: "yellow" },

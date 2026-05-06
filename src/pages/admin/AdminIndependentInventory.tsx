@@ -13,6 +13,7 @@ import {
   useBulkStockMovement, useStockReport,
   useInvCategories, useCreateInvCategory, useUpdateInvCategory, useDeleteInvCategory,
 } from "@/hooks/useIndependentInventory";
+
 import { InvProduct, InvProductInput, StockMovement, InvCategory } from "@/services/independent-inventory.service";
 import { AdminLoadingSpinner } from "@/components/admin";
 import { formatCurrency } from "@/lib/currency";
@@ -54,7 +55,6 @@ const AdminIndependentInventory = () => {
           <TabsTrigger value="products">Products</TabsTrigger>
           <TabsTrigger value="categories">Categories</TabsTrigger>
           <TabsTrigger value="stock">Stock In / Out</TabsTrigger>
-          <TabsTrigger value="report">Report</TabsTrigger>
         </TabsList>
 
         <TabsContent value="products">
@@ -77,10 +77,6 @@ const AdminIndependentInventory = () => {
 
         <TabsContent value="stock">
           <StockTab allProducts={allProducts} categories={categories} isLoading={isLoading} />
-        </TabsContent>
-
-        <TabsContent value="report">
-          <ReportTab />
         </TabsContent>
       </Tabs>
     </div>
@@ -568,11 +564,20 @@ const ProductPickerModal = ({ isOpen, onClose, onSelect, products, categories, s
   );
 };
 
-/* ═══════════════════ Stock In/Out Tab ═══════════════════ */
+/* ═══════════════════ Stock In/Out Tab (with inline Report) ═══════════════════ */
 const StockTab = ({ allProducts, categories, isLoading }: { allProducts: InvProduct[]; categories: InvCategory[]; isLoading: boolean }) => {
   const [type, setType] = useState<"in" | "out">("in");
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [notes, setNotes] = useState("");
+
+  // Report range — defaults to current month
+  const [reportFrom, setReportFrom] = useState(format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), "yyyy-MM-dd"));
+  const [reportTo, setReportTo] = useState(format(new Date(), "yyyy-MM-dd"));
+  const { data: report = [], isLoading: reportLoading } = useStockReport(reportFrom, reportTo);
+  const filteredReport = useMemo(() => report.filter((r) => r.type === type), [report, type]);
+  const reportTotalQty = filteredReport.reduce((s, r) => s + r.quantity, 0);
+  const reportTotalValue = filteredReport.reduce((s, r) => s + r.line_total, 0);
+
   const [rows, setRows] = useState<(StockMovement & { name?: string; image_url?: string | null })[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const bulkMut = useBulkStockMovement();
@@ -703,75 +708,70 @@ const StockTab = ({ allProducts, categories, isLoading }: { allProducts: InvProd
         categories={categories}
         selectedIds={selectedIds}
       />
-    </div>
-  );
-};
 
-/* ═══════════════════ Report Tab ═══════════════════ */
-const ReportTab = () => {
-  const [from, setFrom] = useState(format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), "yyyy-MM-dd"));
-  const [to, setTo] = useState(format(new Date(), "yyyy-MM-dd"));
-  const { data: report = [], isLoading } = useStockReport(from, to);
-
-  const totalQty = report.reduce((s, r) => s + r.quantity, 0);
-  const totalValue = report.reduce((s, r) => s + r.line_total, 0);
-
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap gap-3 items-end">
-        <div><Label className="text-xs">From</Label><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-40" /></div>
-        <div><Label className="text-xs">To</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-40" /></div>
-      </div>
-
-      {isLoading ? (
-        <AdminLoadingSpinner />
-      ) : (
-        <div className="border rounded-md overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Product</TableHead>
-                <TableHead>SKU</TableHead>
-                <TableHead className="text-right">Qty</TableHead>
-                <TableHead className="text-right">Unit Price</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-                <TableHead>Notes</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {!report.length ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No stock movements in selected period</TableCell>
-                </TableRow>
-              ) : (
-                <>
-                  {report.map((r, i) => (
-                    <TableRow key={i}>
-                      <TableCell className="whitespace-nowrap">{r.date}</TableCell>
-                      <TableCell><Badge variant={r.type === "in" ? "default" : "secondary"}>{r.type === "in" ? "Stock In" : "Stock Out"}</Badge></TableCell>
-                      <TableCell className="font-medium">{r.product_name}</TableCell>
-                      <TableCell className="text-muted-foreground">{r.product_sku || "—"}</TableCell>
-                      <TableCell className="text-right">{r.quantity}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(r.purchase_price)}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(r.line_total)}</TableCell>
-                      <TableCell className="text-muted-foreground text-xs max-w-[200px] truncate">{r.notes || "—"}</TableCell>
-                    </TableRow>
-                  ))}
-                  <TableRow className="bg-muted/50 font-bold">
-                    <TableCell colSpan={4}>Grand Total</TableCell>
-                    <TableCell className="text-right">{totalQty}</TableCell>
-                    <TableCell />
-                    <TableCell className="text-right">{formatCurrency(totalValue)}</TableCell>
-                    <TableCell />
-                  </TableRow>
-                </>
-              )}
-            </TableBody>
-          </Table>
+      {/* ── Inline Report ── */}
+      <div className="pt-6 mt-2 border-t space-y-3">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h3 className="text-base font-semibold">Stock {type === "in" ? "In" : "Out"} Report</h3>
+            <p className="text-xs text-muted-foreground">Past entries within the selected date range</p>
+          </div>
+          <div className="flex flex-wrap gap-3 items-end">
+            <div><Label className="text-xs">From</Label><Input type="date" value={reportFrom} onChange={(e) => setReportFrom(e.target.value)} className="w-40" /></div>
+            <div><Label className="text-xs">To</Label><Input type="date" value={reportTo} onChange={(e) => setReportTo(e.target.value)} className="w-40" /></div>
+          </div>
         </div>
-      )}
+
+        {reportLoading ? (
+          <AdminLoadingSpinner />
+        ) : (
+          <div className="border rounded-md overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Product</TableHead>
+                  <TableHead>SKU</TableHead>
+                  <TableHead className="text-right">Qty</TableHead>
+                  <TableHead className="text-right">Unit Price</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                  <TableHead>Notes</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {!filteredReport.length ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      No stock {type === "in" ? "in" : "out"} entries in selected period
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  <>
+                    {filteredReport.map((r, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="whitespace-nowrap">{r.date}</TableCell>
+                        <TableCell className="font-medium">{r.product_name}</TableCell>
+                        <TableCell className="text-muted-foreground">{r.product_sku || "—"}</TableCell>
+                        <TableCell className="text-right">{r.quantity}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(r.purchase_price)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(r.line_total)}</TableCell>
+                        <TableCell className="text-muted-foreground text-xs max-w-[200px] truncate">{r.notes || "—"}</TableCell>
+                      </TableRow>
+                    ))}
+                    <TableRow className="bg-muted/50 font-bold">
+                      <TableCell colSpan={3}>Grand Total</TableCell>
+                      <TableCell className="text-right">{reportTotalQty}</TableCell>
+                      <TableCell />
+                      <TableCell className="text-right">{formatCurrency(reportTotalValue)}</TableCell>
+                      <TableCell />
+                    </TableRow>
+                  </>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

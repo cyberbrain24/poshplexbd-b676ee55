@@ -40,6 +40,7 @@ interface PackingItem {
   variant: string;
   quantity: number;
   parcelId: string | null;
+  callNote: string | null;
 }
 
 const UNSHIPPED_KEY = "__unshipped__";

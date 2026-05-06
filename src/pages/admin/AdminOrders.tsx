@@ -161,6 +161,9 @@ const AdminOrders = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
   const [paymentFilter, setPaymentFilter] = useState<PaymentStatus | "all">("all");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null);
   const [deleteOrderNumber, setDeleteOrderNumber] = useState<string>("");

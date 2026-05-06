@@ -4,6 +4,7 @@ import AdminSidebar from "./AdminSidebar";
 import { AdminErrorBoundary } from "./AdminErrorBoundary";
 import { AdminLoadingSpinner } from "./AdminLoadingState";
 import { useERPDataPrefetch } from "@/hooks/useERPPrefetch";
+import { adminRouteLoaders, prefetchAdminRoute } from "@/lib/adminRoutePrefetch";
 
 const ERP_ROUTES = ["/admin", "/admin/products", "/admin/orders", "/admin/inventory-in", "/admin/inventory-out", "/admin/customers"];
 
@@ -26,6 +27,19 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       });
     }
   }, [location.pathname]);
+
+  // Idle-prefetch all admin route chunks once admin shell mounts so future
+  // navigation is instant. Uses requestIdleCallback to avoid blocking initial paint.
+  useEffect(() => {
+    const ric: any = (window as any).requestIdleCallback || ((cb: any) => setTimeout(cb, 1200));
+    const handle = ric(() => {
+      Object.keys(adminRouteLoaders).forEach((p) => prefetchAdminRoute(p));
+    });
+    return () => {
+      const cic: any = (window as any).cancelIdleCallback || clearTimeout;
+      cic(handle);
+    };
+  }, []);
 
   return (
     <div className="flex min-h-screen bg-background">

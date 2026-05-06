@@ -22,17 +22,28 @@ export const ORDER_STATUSES = {
 export type OrderStatusType = typeof ORDER_STATUSES[keyof typeof ORDER_STATUSES];
 
 export const ORDER_STATUS_LABELS: Record<OrderStatusType, string> = {
-  pending: 'Pending',
-  confirmed: 'Confirmed',
-  processing: 'Processing',
-  shipped: 'Shipped',
+  pending: 'Order Placed',
+  confirmed: 'In Review',
+  shipped: 'Pending',
+  processing: 'Approval Pending',
   delivered: 'Delivered',
-  partially_delivered: 'Partially Delivered',
-  returned: 'Returned',
-  cancelled: 'Cancelled',
-  failed: 'Failed',
-  rto: 'RTO',
+  partially_delivered: 'Partly Delivered',
+  cancelled: 'Cancel',
+  returned: 'Cancel',
+  failed: 'Cancel',
+  rto: 'Cancel',
 };
+
+/** Statuses exposed in admin dropdowns (in workflow order) */
+export const ALLOWED_ORDER_STATUSES: OrderStatusType[] = [
+  'pending',
+  'confirmed',
+  'shipped',
+  'processing',
+  'delivered',
+  'partially_delivered',
+  'cancelled',
+];
 
 export const ORDER_STATUS_COLORS: Record<OrderStatusType, string> = {
   pending: 'bg-yellow-100 text-yellow-800',

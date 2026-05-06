@@ -568,8 +568,11 @@ const AdminOrders = () => {
                   <div className="truncate font-medium" title={order.customer?.name || order.shipping_name || ''}>
                     {order.customer?.name || order.shipping_name}
                   </div>
-                  <div className="truncate text-muted-foreground text-[11px]" title={order.customer?.phone || order.shipping_phone || ''}>
-                    {order.customer?.phone || order.shipping_phone}
+                  <div className="flex items-center justify-between gap-1 text-muted-foreground text-[11px]">
+                    <span className="truncate" title={order.customer?.phone || order.shipping_phone || ''}>
+                      {order.customer?.phone || order.shipping_phone}
+                    </span>
+                    <CallCustomerButton order={order as any} />
                   </div>
 
                   <div className="flex items-center justify-between">

@@ -219,7 +219,7 @@ Deno.serve(async (req) => {
               tracking_number: result.data.consignment.tracking_code,
               consignment_id: String(result.data.consignment.consignment_id),
               courier_name: "Steadfast",
-              order_status: "processing",
+              order_status: "confirmed",
             })
             .eq("id", order_id);
 
@@ -307,7 +307,7 @@ Deno.serve(async (req) => {
                     tracking_number: consignment.tracking_code,
                     consignment_id: String(consignment.consignment_id),
                     courier_name: "Steadfast",
-                    order_status: "processing",
+                    order_status: "confirmed",
                   })
                   .eq("id", order.id);
               }

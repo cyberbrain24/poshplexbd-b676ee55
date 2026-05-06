@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useOrders, useOrderStats, useDeleteOrder, OrderStatus, PaymentStatus } from "@/hooks/useOrders";
+import { ORDER_STATUS_LABELS, ALLOWED_ORDER_STATUSES } from "@/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -325,13 +326,9 @@ const AdminOrders = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="confirmed">Confirmed</SelectItem>
-            <SelectItem value="processing">Processing</SelectItem>
-            <SelectItem value="shipped">Shipped</SelectItem>
-            <SelectItem value="delivered">Delivered</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
-            <SelectItem value="returned">Returned</SelectItem>
+            {ALLOWED_ORDER_STATUSES.map(s => (
+              <SelectItem key={s} value={s}>{ORDER_STATUS_LABELS[s]}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Select value={paymentFilter} onValueChange={(v) => setPaymentFilter(v as PaymentStatus | "all")}>
@@ -482,7 +479,7 @@ const AdminOrders = () => {
 
                   <div className="flex flex-wrap gap-1">
                     <Badge className={`${orderStatusColors[order.order_status]} text-[10px] px-1.5 py-0`} variant="outline">
-                      {order.order_status.replace('_', ' ')}
+                      {ORDER_STATUS_LABELS[order.order_status] || order.order_status.replace('_', ' ')}
                     </Badge>
                     <Badge className={`${paymentStatusColors[order.payment_status]} text-[10px] px-1.5 py-0`} variant="outline">
                       {order.payment_status.replace('_', ' ')}

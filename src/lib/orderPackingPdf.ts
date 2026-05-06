@@ -173,7 +173,7 @@ export async function generatePackingListPdf(orders: Order[]) {
       ty += 9;
       doc.setFontSize(6.5);
       const v = doc.splitTextToSize(item.variant, cellW)[0];
-      doc.text(v, x, ty);
+      doc.text(String(v), x, ty);
     }
 
     col++;

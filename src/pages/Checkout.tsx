@@ -893,11 +893,23 @@ const Checkout = () => {
                 {/* Payment Instructions & Details for non-COD */}
                 {selectedPaymentMethod && selectedPaymentMethod.type !== 'cod' && (
                   <div className="mt-6 space-y-4">
-                    {selectedPaymentMethod.instructions && (
-                      <div className="bg-accent/50 border border-accent rounded-none p-4">
-                        <p className="text-sm text-foreground whitespace-pre-line">
-                          {selectedPaymentMethod.instructions}
-                        </p>
+                    {(selectedPaymentMethod.instructions || (selectedPaymentMethod.account_details && Object.keys(selectedPaymentMethod.account_details).length > 0)) && (
+                      <div className="bg-accent/50 border border-accent rounded-none p-4 space-y-2">
+                        {selectedPaymentMethod.instructions && (
+                          <p className="text-sm text-foreground whitespace-pre-line">
+                            {selectedPaymentMethod.instructions}
+                          </p>
+                        )}
+                        {selectedPaymentMethod.account_details && Object.keys(selectedPaymentMethod.account_details).length > 0 && (
+                          <div className="space-y-1 pt-1">
+                            {Object.entries(selectedPaymentMethod.account_details).map(([key, value]) => (
+                              <div key={key} className="flex items-center gap-2 text-sm">
+                                <span className="font-medium capitalize text-muted-foreground">{key.replace(/_/g, ' ')}:</span>
+                                <span className="font-semibold text-foreground">{String(value)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
 

@@ -19,8 +19,8 @@ const FeaturedProducts = () => {
     return (
       <section className="w-full px-4 md:px-8 py-8 md:py-12 bg-background">
         <div className="flex items-baseline gap-3 md:gap-4 mb-6 md:mb-8">
-          <span className="text-5xl md:text-8xl font-black text-muted-foreground/30">02</span>
-          <h2 className="text-xl md:text-3xl font-black tracking-tight text-foreground uppercase">Featured</h2>
+          <span className="text-5xl md:text-8xl font-normal text-muted-foreground/30">02</span>
+          <h2 className="text-xl md:text-3xl font-normal tracking-tight text-foreground uppercase">Featured</h2>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
           {Array.from({ length: 5 }, (_, i) => (
@@ -41,8 +41,8 @@ const FeaturedProducts = () => {
   return (
     <section className="w-full px-4 md:px-8 py-8 md:py-12 bg-background">
       <div className="flex items-baseline gap-3 md:gap-4 mb-6 md:mb-8">
-        <span className="text-5xl md:text-8xl font-black text-muted-foreground/30">02</span>
-        <h2 className="text-xl md:text-3xl font-black tracking-tight text-foreground uppercase">Featured</h2>
+        <span className="text-5xl md:text-8xl font-normal text-muted-foreground/30">02</span>
+        <h2 className="text-xl md:text-3xl font-normal tracking-tight text-foreground uppercase">Featured</h2>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">

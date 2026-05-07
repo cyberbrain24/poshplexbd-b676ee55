@@ -22,10 +22,10 @@ const ProductGrid = () => {
       <section className="w-full px-4 md:px-8 py-12 md:py-16 bg-background relative overflow-hidden" style={{ minHeight: 600 }}>
         <div className="flex items-end justify-between mb-8 md:mb-12">
           <div className="relative">
-            <span className="absolute -left-2 -top-8 text-[80px] md:text-[120px] font-black text-foreground/[0.03] leading-none select-none">
+            <span className="absolute -left-2 -top-8 text-[80px] md:text-[120px] font-normal text-foreground/[0.03] leading-none select-none">
               DROP
             </span>
-            <h2 className="text-xl md:text-2xl font-black tracking-[-0.02em] text-foreground uppercase">
+            <h2 className="text-xl md:text-2xl font-normal tracking-[-0.02em] text-foreground uppercase">
               New Arrivals
             </h2>
             <div className="h-[2px] w-12 bg-foreground mt-2" />
@@ -50,10 +50,10 @@ const ProductGrid = () => {
       <section className="w-full px-4 md:px-8 py-12 md:py-16 bg-background" style={{ minHeight: 600 }}>
         <div className="flex items-end justify-between mb-8 md:mb-12">
           <div className="relative">
-            <span className="absolute -left-2 -top-8 text-[80px] md:text-[120px] font-black text-foreground/[0.03] leading-none select-none">
+            <span className="absolute -left-2 -top-8 text-[80px] md:text-[120px] font-normal text-foreground/[0.03] leading-none select-none">
               DROP
             </span>
-            <h2 className="text-xl md:text-2xl font-black tracking-[-0.02em] text-foreground uppercase">
+            <h2 className="text-xl md:text-2xl font-normal tracking-[-0.02em] text-foreground uppercase">
               New Arrivals
             </h2>
             <div className="h-[2px] w-12 bg-foreground mt-2" />
@@ -69,7 +69,7 @@ const ProductGrid = () => {
       {/* Street culture background element — hidden on mobile to save GPU paint */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden hidden md:block" aria-hidden="true" style={{ contain: 'strict' }}>
         <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-muted/30 to-transparent" />
-        <div className="absolute bottom-0 left-0 text-[300px] font-black text-foreground/[0.015] leading-none select-none -translate-x-1/4 translate-y-1/4">
+        <div className="absolute bottom-0 left-0 text-[300px] font-normal text-foreground/[0.015] leading-none select-none -translate-x-1/4 translate-y-1/4">
           STREET
         </div>
       </div>
@@ -77,10 +77,10 @@ const ProductGrid = () => {
       {/* Section Header */}
       <div className="flex items-end justify-between mb-8 md:mb-12 relative z-10">
         <div className="relative">
-          <span className="absolute -left-2 -top-8 text-[80px] md:text-[120px] font-black text-foreground/[0.03] leading-none select-none">
+          <span className="absolute -left-2 -top-8 text-[80px] md:text-[120px] font-normal text-foreground/[0.03] leading-none select-none">
             DROP
           </span>
-          <h2 className="text-xl md:text-2xl font-black tracking-[-0.02em] text-foreground uppercase">
+          <h2 className="text-xl md:text-2xl font-normal tracking-[-0.02em] text-foreground uppercase">
             New Arrivals
           </h2>
           <div className="h-[2px] w-12 bg-foreground mt-2" />

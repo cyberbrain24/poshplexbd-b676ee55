@@ -308,23 +308,24 @@ const Checkout = () => {
   };
 
   // Create customer account via edge function and auto-login
-  const createCustomerAccount = async (customerId: string, phone: string, email?: string, name?: string) => {
+  const createCustomerAccount = async (customerId: string, phone: string, email?: string, name?: string, password?: string) => {
     try {
+      const pwd = password && password.length >= 6 ? password : DEFAULT_PASSWORD;
       const { error } = await supabase.functions.invoke('create-customer-account', {
-        body: { customerId, phone, email, name }
+        body: { customerId, phone, email, name, password: pwd }
       });
       if (error) {
         console.warn('Error creating customer account:', error);
         return;
       }
-      
+
       // Auto-login the customer after account creation
       const phoneEmail = `${phone}@phone.local`;
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: phoneEmail,
-        password: DEFAULT_PASSWORD,
+        password: pwd,
       });
-      
+
       if (signInError) {
         console.warn('Auto-login failed:', signInError);
       }
@@ -373,7 +374,7 @@ const Checkout = () => {
         }
         
         // Ensure customer has an account
-        await createCustomerAccount(existingCustomer.id, phone, customerDetails.email, customerDetails.name);
+        await createCustomerAccount(existingCustomer.id, phone, customerDetails.email, customerDetails.name, customerDetails.password);
         
         return existingCustomer.id;
       }
@@ -401,7 +402,7 @@ const Checkout = () => {
 
       // Create account for new customer
       if (newCustomer?.id) {
-        await createCustomerAccount(newCustomer.id, phone, customerDetails.email, customerDetails.name);
+        await createCustomerAccount(newCustomer.id, phone, customerDetails.email, customerDetails.name, customerDetails.password);
       }
 
       return newCustomer?.id || null;

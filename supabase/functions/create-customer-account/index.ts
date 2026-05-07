@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { customerId, phone, email, name } = await req.json();
+    const { customerId, phone, email, name, password } = await req.json();
 
     if (!customerId || !phone) {
       return new Response(
@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
 
     // Create auth user with phone-based email
     const phoneEmail = `${phone}@phone.local`;
-    const defaultPassword = "poshplex";
+    const defaultPassword = (typeof password === "string" && password.length >= 6) ? password : "poshplex";
 
     const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
       email: phoneEmail,

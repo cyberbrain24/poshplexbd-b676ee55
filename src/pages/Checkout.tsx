@@ -402,7 +402,7 @@ const Checkout = () => {
 
       // Create account for new customer
       if (newCustomer?.id) {
-        await createCustomerAccount(newCustomer.id, phone, customerDetails.email, customerDetails.name);
+        await createCustomerAccount(newCustomer.id, phone, customerDetails.email, customerDetails.name, customerDetails.password);
       }
 
       return newCustomer?.id || null;

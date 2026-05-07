@@ -36,6 +36,7 @@ export default {
       fontFamily: {
         sans: ['Inter', 'Helvetica Neue', 'Arial', 'sans-serif'],
         display: ['Bebas Neue', 'Impact', 'sans-serif'],
+        heading: ['"Street Culture"', 'Impact', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",

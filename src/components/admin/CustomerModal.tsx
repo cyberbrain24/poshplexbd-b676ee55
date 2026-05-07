@@ -144,7 +144,8 @@ const CustomerModal = ({ open, onOpenChange, customer }: CustomerModalProps) => 
       notes: values.notes || null,
       is_active: values.is_active,
       birthdate: values.birthdate ? format(values.birthdate, "yyyy-MM-dd") : null,
-      public_profile_visible: values.public_profile_visible,
+      // Auto-enable public visibility when a membership type is assigned
+      public_profile_visible: ((values.customer_type_id && values.customer_type_id !== "none") ? true : false) || values.public_profile_visible,
     };
 
     // Track membership assignment date when membership type changes

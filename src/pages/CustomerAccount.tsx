@@ -248,15 +248,21 @@ const CustomerAccount = () => {
   const handleProfileImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 300 * 1024) { toast.error("Image must be less than 300 KB"); return; }
-    if (!file.type.startsWith("image/")) { toast.error("Please select an image file"); return; }
+    const allowed = ["image/jpeg", "image/jpg", "image/png"];
+    if (!allowed.includes(file.type.toLowerCase())) {
+      toast.error("Only JPG, JPEG, or PNG files are allowed");
+      return;
+    }
     if (!accountData?.customer_id) return;
 
     setIsUploadingImage(true);
     try {
-      const ext = file.name.split(".").pop();
-      const filePath = `${accountData.customer_id}/profile.${ext}`;
-      const { error: uploadError } = await supabase.storage.from("profile-images").upload(filePath, file, { upsert: true });
+      const { compressProfileImage } = await import("@/lib/imageCompress");
+      const compressed = await compressProfileImage(file, 400, 100 * 1024);
+      const filePath = `${accountData.customer_id}/profile.jpg`;
+      const { error: uploadError } = await supabase.storage
+        .from("profile-images")
+        .upload(filePath, compressed, { upsert: true, contentType: "image/jpeg" });
       if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage.from("profile-images").getPublicUrl(filePath);
       const publicUrl = urlData.publicUrl + "?t=" + Date.now();
@@ -481,14 +487,14 @@ const CustomerAccount = () => {
                   </div>
                   <label className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center cursor-pointer hover:bg-primary/90">
                     <Camera className="h-3.5 w-3.5" />
-                    <input type="file" accept="image/*" className="hidden" onChange={handleProfileImageUpload} disabled={isUploadingImage} />
+                    <input type="file" accept="image/jpeg,image/jpg,image/png" className="hidden" onChange={handleProfileImageUpload} disabled={isUploadingImage} />
                   </label>
                 </div>
                 <div>
                   <p className="font-medium">{displayName}</p>
                   <p className="text-sm text-muted-foreground">{displayPhone}</p>
                   {isUploadingImage && <p className="text-xs text-muted-foreground">Uploading...</p>}
-                  <p className="text-xs text-muted-foreground">Max 300 KB</p>
+                  <p className="text-xs text-muted-foreground">JPG/PNG · auto-resized to 400×400</p>
                 </div>
               </div>
 

@@ -151,7 +151,12 @@
   /* Wood Chaos display font for top-level headings */
   h1, h2 {
     font-family: 'Wood Chaos', 'Anton', Impact, sans-serif;
-    font-size: 6em !important;
+  }
+  h1 {
+    font-size: 4em !important;
+  }
+  h2 {
+    font-size: 3em !important;
   }
   
   /* Reduced spacing for main content sections only */

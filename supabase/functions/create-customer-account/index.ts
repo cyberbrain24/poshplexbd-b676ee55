@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { customerId, phone, email, name } = await req.json();
+    const { customerId, phone, email, name, password } = await req.json();
 
     if (!customerId || !phone) {
       return new Response(

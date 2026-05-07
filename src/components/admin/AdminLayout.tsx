@@ -42,7 +42,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="admin-shell flex min-h-screen bg-background">
       <AdminSidebar />
       <main className="flex-1 p-4 pt-16 md:p-8 md:pt-8 min-w-0 relative">
         {isPending && (

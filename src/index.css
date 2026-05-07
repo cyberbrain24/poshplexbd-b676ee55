@@ -190,6 +190,25 @@
   main > section {
     @apply py-6 md:py-8;
   }
+
+  /* Admin panel: reset to default system font, no uppercase, normal sizes */
+  .admin-shell,
+  .admin-shell h1,
+  .admin-shell h2,
+  .admin-shell h3,
+  .admin-shell h4,
+  .admin-shell h5,
+  .admin-shell h6 {
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+  }
+  .admin-shell h1 { font-size: 1.5rem !important; }
+  .admin-shell h2 { font-size: 1.25rem !important; }
+  .admin-shell h3 { font-size: 1.125rem !important; }
+  .admin-shell h4 { font-size: 1rem !important; }
+  .admin-shell h5,
+  .admin-shell h6 { font-size: 0.875rem !important; }
   
   /* Tighter spacing utilities */
   .space-y-compact > * + * {

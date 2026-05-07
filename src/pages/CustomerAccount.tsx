@@ -259,7 +259,9 @@ const CustomerAccount = () => {
     try {
       const { compressProfileImage } = await import("@/lib/imageCompress");
       const compressed = await compressProfileImage(file, 400, 100 * 1024);
-      const filePath = `${accountData.customer_id}/profile.jpg`;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+      const filePath = `${user.id}/profile.jpg`;
       const { error: uploadError } = await supabase.storage
         .from("profile-images")
         .upload(filePath, compressed, { upsert: true, contentType: "image/jpeg" });

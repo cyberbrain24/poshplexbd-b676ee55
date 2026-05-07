@@ -374,7 +374,7 @@ const Checkout = () => {
         }
         
         // Ensure customer has an account
-        await createCustomerAccount(existingCustomer.id, phone, customerDetails.email, customerDetails.name);
+        await createCustomerAccount(existingCustomer.id, phone, customerDetails.email, customerDetails.name, customerDetails.password);
         
         return existingCustomer.id;
       }

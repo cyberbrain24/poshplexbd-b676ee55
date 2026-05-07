@@ -248,15 +248,21 @@ const CustomerAccount = () => {
   const handleProfileImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 300 * 1024) { toast.error("Image must be less than 300 KB"); return; }
-    if (!file.type.startsWith("image/")) { toast.error("Please select an image file"); return; }
+    const allowed = ["image/jpeg", "image/jpg", "image/png"];
+    if (!allowed.includes(file.type.toLowerCase())) {
+      toast.error("Only JPG, JPEG, or PNG files are allowed");
+      return;
+    }
     if (!accountData?.customer_id) return;
 
     setIsUploadingImage(true);
     try {
-      const ext = file.name.split(".").pop();
-      const filePath = `${accountData.customer_id}/profile.${ext}`;
-      const { error: uploadError } = await supabase.storage.from("profile-images").upload(filePath, file, { upsert: true });
+      const { compressProfileImage } = await import("@/lib/imageCompress");
+      const compressed = await compressProfileImage(file, 400, 100 * 1024);
+      const filePath = `${accountData.customer_id}/profile.jpg`;
+      const { error: uploadError } = await supabase.storage
+        .from("profile-images")
+        .upload(filePath, compressed, { upsert: true, contentType: "image/jpeg" });
       if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage.from("profile-images").getPublicUrl(filePath);
       const publicUrl = urlData.publicUrl + "?t=" + Date.now();

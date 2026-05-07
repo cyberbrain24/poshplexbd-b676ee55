@@ -147,6 +147,11 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading tracking-tight uppercase leading-tight;
   }
+
+  /* Wood Chaos display font for top-level headings */
+  h1, h2 {
+    font-family: 'Wood Chaos', 'Anton', Impact, sans-serif;
+  }
   
   /* Reduced spacing for main content sections only */
   main > section {

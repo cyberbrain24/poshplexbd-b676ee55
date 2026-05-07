@@ -9,7 +9,7 @@
   src: url('/fonts/Street_Culture.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 
 @font-face {
@@ -17,7 +17,7 @@
   src: url('/fonts/Wood_Chaos.otf') format('opentype');
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 
 @font-face {
@@ -25,7 +25,7 @@
   src: url('/fonts/This_is_Fire.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 
 @font-face {
@@ -33,7 +33,7 @@
   src: url('/fonts/NATOOR.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 
 /* Poshplex Design System - Industrial Minimalist Streetwear */

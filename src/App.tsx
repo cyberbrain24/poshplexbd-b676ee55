@@ -9,9 +9,11 @@ import ScrollToTop from "./components/ScrollToTop";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { CartProvider } from "./contexts/CartContext";
 import { FavoritesProvider } from "./contexts/FavoritesContext";
+import { MusicPlayerProvider } from "./contexts/MusicPlayerContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import MobileFooterNav from "./components/navigation/MobileFooterNav";
 import FacebookPixelTracker from "./components/tracking/FacebookPixelTracker";
+import FloatingMusicPlayer from "./components/music/FloatingMusicPlayer";
 
 // Storefront pages - eagerly loaded (critical path)
 import Index from "./pages/Index";
@@ -62,6 +64,7 @@ const AdminPromoCodes = lazy(() => import("./pages/admin/AdminPromoCodes"));
 const AdminSiteSettings = lazy(() => import("./pages/admin/AdminSiteSettings"));
 const AdminBulkUpload = lazy(() => import("./pages/admin/AdminBulkUpload"));
 const AdminIndependentInventory = lazy(() => import("./pages/admin/AdminIndependentInventory"));
+const AdminMusic = lazy(() => import("./pages/admin/AdminMusic"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -89,6 +92,7 @@ const App = () => (
       <QueryClientProvider client={queryClient}>
         <CartProvider>
           <FavoritesProvider>
+            <MusicPlayerProvider>
             <TooltipProvider>
               <Toaster />
               <Sonner />
@@ -156,14 +160,17 @@ const App = () => (
                     <Route path="promo-codes" element={<AdminPromoCodes />} />
                     <Route path="bulk-upload" element={<AdminBulkUpload />} />
                     <Route path="independent-inventory" element={<AdminIndependentInventory />} />
+                    <Route path="music" element={<AdminMusic />} />
                     <Route path="site-settings" element={<AdminSiteSettings />} />
                   </Route>
                   
                   <Route path="*" element={<NotFound />} />
                 </Routes>
                 <MobileFooterNav />
+                <FloatingMusicPlayer />
               </BrowserRouter>
             </TooltipProvider>
+            </MusicPlayerProvider>
           </FavoritesProvider>
         </CartProvider>
       </QueryClientProvider>

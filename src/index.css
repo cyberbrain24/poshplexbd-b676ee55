@@ -20,6 +20,14 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'This is Fire';
+  src: url('/fonts/This_is_Fire.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Poshplex Design System - Industrial Minimalist Streetwear */
 
 @layer base {
@@ -150,10 +158,10 @@
 
   /* Wood Chaos display font for top-level headings */
   h1, h2 {
-    font-family: 'Wood Chaos', 'Anton', Impact, sans-serif;
+    font-family: 'This is Fire', 'Anton', Impact, sans-serif;
   }
   h1 {
-    font-size: 4em !important;
+    font-size: 3em !important;
   }
   h2 {
     font-size: 3em !important;

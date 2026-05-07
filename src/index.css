@@ -135,7 +135,7 @@
   
   /* Industrial typography - heavy sans-serif */
   h1, h2, h3, h4, h5, h6 {
-    @apply font-bold tracking-tight uppercase leading-tight;
+    @apply font-heading tracking-tight uppercase leading-tight;
   }
   
   /* Reduced spacing for main content sections only */

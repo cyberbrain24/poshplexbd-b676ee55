@@ -34,9 +34,13 @@ export default {
         'section-lg': '3rem',
       },
       fontFamily: {
-        sans: ['Inter', 'Helvetica Neue', 'Arial', 'sans-serif'],
-        display: ['Bebas Neue', 'Impact', 'sans-serif'],
-        heading: ['"Street Culture"', 'Impact', 'sans-serif'],
+        sans: ['Poppins', 'Inter', 'Helvetica Neue', 'Arial', 'sans-serif'],
+        display: ['Anton', 'Impact', 'sans-serif'],
+        heading: ['Anton', 'Impact', 'sans-serif'],
+      },
+      letterSpacing: {
+        'premium': '0.02em',
+        'wider-premium': '0.08em',
       },
       colors: {
         border: "hsl(var(--border))",

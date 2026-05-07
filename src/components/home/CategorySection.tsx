@@ -49,8 +49,8 @@ const CategorySection = () => {
     return (
       <section className="w-full px-4 py-8">
         <div className="flex items-baseline gap-3 mb-6">
-          <span className="text-5xl font-black text-muted-foreground/30">01</span>
-          <h2 className="text-xl font-black tracking-tight text-foreground uppercase">Shop by Category</h2>
+          <span className="text-5xl font-normal text-muted-foreground/30">01</span>
+          <h2 className="text-xl font-normal tracking-tight text-foreground uppercase">Shop by Category</h2>
         </div>
         <Carousel opts={{ align: "start", loop: false }} setApi={setApi} className="w-full">
           <CarouselContent className="-ml-2">
@@ -93,8 +93,8 @@ const CategorySection = () => {
   return (
     <section className="w-full px-6 py-12">
       <div className="flex items-baseline gap-4 mb-8">
-        <span className="text-6xl md:text-8xl font-black text-muted-foreground/30">01</span>
-        <h2 className="text-2xl md:text-3xl font-black tracking-tight text-foreground uppercase">Shop by Category</h2>
+        <span className="text-6xl md:text-8xl font-normal text-muted-foreground/30">01</span>
+        <h2 className="text-2xl md:text-3xl font-normal tracking-tight text-foreground uppercase">Shop by Category</h2>
       </div>
       <div className="flex justify-center gap-4 md:gap-6">
         {mainCategories.map((category) => {

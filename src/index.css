@@ -28,6 +28,14 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'Natoor';
+  src: url('/fonts/NATOOR.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Poshplex Design System - Industrial Minimalist Streetwear */
 
 @layer base {
@@ -156,9 +164,12 @@
     @apply font-heading tracking-tight uppercase leading-tight;
   }
 
-  /* Wood Chaos display font for top-level headings */
-  h1, h2 {
+  /* Display fonts for top-level headings */
+  h1 {
     font-family: 'This is Fire', 'Anton', Impact, sans-serif;
+  }
+  h2 {
+    font-family: 'Natoor', 'This is Fire', 'Anton', Impact, sans-serif;
   }
   h1 {
     font-size: 1.75em !important;

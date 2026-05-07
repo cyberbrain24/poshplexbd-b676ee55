@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'Street Culture';
+  src: url('/fonts/Street_Culture.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Poshplex Design System - Industrial Minimalist Streetwear */
 
 @layer base {

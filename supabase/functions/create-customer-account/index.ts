@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
 
     // Create auth user with phone-based email
     const phoneEmail = `${phone}@phone.local`;
-    const defaultPassword = "poshplex";
+    const defaultPassword = (typeof password === "string" && password.length >= 6) ? password : "poshplex";
 
     const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
       email: phoneEmail,

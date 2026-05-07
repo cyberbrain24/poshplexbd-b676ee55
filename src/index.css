@@ -158,10 +158,10 @@
 
   /* Wood Chaos display font for top-level headings */
   h1, h2 {
-    font-family: 'Wood Chaos', 'Anton', Impact, sans-serif;
+    font-family: 'This is Fire', 'Anton', Impact, sans-serif;
   }
   h1 {
-    font-size: 4em !important;
+    font-size: 3em !important;
   }
   h2 {
     font-size: 3em !important;

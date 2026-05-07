@@ -487,14 +487,14 @@ const CustomerAccount = () => {
                   </div>
                   <label className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center cursor-pointer hover:bg-primary/90">
                     <Camera className="h-3.5 w-3.5" />
-                    <input type="file" accept="image/*" className="hidden" onChange={handleProfileImageUpload} disabled={isUploadingImage} />
+                    <input type="file" accept="image/jpeg,image/jpg,image/png" className="hidden" onChange={handleProfileImageUpload} disabled={isUploadingImage} />
                   </label>
                 </div>
                 <div>
                   <p className="font-medium">{displayName}</p>
                   <p className="text-sm text-muted-foreground">{displayPhone}</p>
                   {isUploadingImage && <p className="text-xs text-muted-foreground">Uploading...</p>}
-                  <p className="text-xs text-muted-foreground">Max 300 KB</p>
+                  <p className="text-xs text-muted-foreground">JPG/PNG · auto-resized to 400×400</p>
                 </div>
               </div>
 

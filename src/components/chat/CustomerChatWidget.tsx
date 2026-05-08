@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/currency";
+import ImageLightbox from "@/components/ui/image-lightbox";
 
 type Msg = { role: "user" | "assistant"; content: string };
 type ProductCard = { id: string; name: string; price: number; image?: string; url?: string };
@@ -94,9 +95,24 @@ const CustomerChatWidget = () => {
   });
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [lightbox, setLightbox] = useState<string | null>(null);
   const conversationIdRef = useRef<string | null>(localStorage.getItem(CONV_KEY));
   const scrollRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  const markdownComponents = useMemo(() => ({
+    img: ({ src, alt }: any) => (
+      <img
+        src={src}
+        alt={alt || ""}
+        loading="lazy"
+        decoding="async"
+        onClick={() => src && setLightbox(src)}
+        style={{ imageRendering: "auto" }}
+        className="max-w-[600px] w-full h-auto rounded-md cursor-zoom-in my-2 border border-border"
+      />
+    ),
+  }), []);
 
   useEffect(() => {
     const handler = () => setOpen(true);
@@ -225,7 +241,7 @@ const CustomerChatWidget = () => {
                     <div className="max-w-[92%] px-3 py-2 rounded-lg text-sm bg-muted text-foreground w-full">
                       {text && (
                         <div className="prose prose-sm max-w-none prose-p:my-1 prose-headings:my-1">
-                          <ReactMarkdown>{text}</ReactMarkdown>
+                          <ReactMarkdown components={markdownComponents}>{text}</ReactMarkdown>
                         </div>
                       )}
                       {products.length > 0 && (
@@ -284,6 +300,9 @@ const CustomerChatWidget = () => {
             </div>
           </div>
         </div>
+      )}
+      {lightbox && (
+        <ImageLightbox images={[lightbox]} isOpen={true} onClose={() => setLightbox(null)} />
       )}
     </>
   );

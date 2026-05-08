@@ -496,6 +496,46 @@ ${faqText ? "Reference FAQs (if a FAQ has an Image URL, ALWAYS include it in you
       break;
     }
 
+    // Enrich any ```products fenced JSON: re-fetch image/price/name by id from DB
+    // so the model never has to faithfully echo long image URLs.
+    if (finalText && /```products/i.test(finalText)) {
+      const fenceRe = /```products\s*([\s\S]*?)```/gi;
+      const blocks: { match: string; arr: any[] }[] = [];
+      const idSet = new Set<string>();
+      let m: RegExpExecArray | null;
+      while ((m = fenceRe.exec(finalText)) !== null) {
+        try {
+          const arr = JSON.parse(m[1].trim());
+          if (Array.isArray(arr)) {
+            blocks.push({ match: m[0], arr });
+            for (const it of arr) if (it?.id) idSet.add(String(it.id));
+          }
+        } catch {}
+      }
+      if (idSet.size > 0) {
+        const { data: dbProducts } = await supabase
+          .from("products")
+          .select(PRODUCT_LIST_SELECT)
+          .in("id", Array.from(idSet));
+        const byId = new Map<string, any>();
+        for (const p of dbProducts || []) byId.set(p.id, shapeProduct(p));
+        for (const b of blocks) {
+          const enriched = b.arr.map((it: any) => {
+            const dbp = it?.id ? byId.get(String(it.id)) : null;
+            if (!dbp) return it;
+            return {
+              id: dbp.id,
+              name: dbp.name || it.name,
+              price: dbp.price ?? it.price,
+              image: dbp.image || it.image || null,
+              url: dbp.url || it.url || `/product/${dbp.id}`,
+            };
+          });
+          finalText = finalText.replace(b.match, "```products\n" + JSON.stringify(enriched) + "\n```");
+        }
+      }
+    }
+
     if (conversationId && finalText) {
       await supabase.from("chatbot_messages").insert({
         conversation_id: conversationId, role: "assistant", content: finalText,

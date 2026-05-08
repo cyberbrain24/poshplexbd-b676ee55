@@ -130,6 +130,148 @@ export type Database = {
           },
         ]
       }
+      chatbot_conversations: {
+        Row: {
+          auth_user_id: string | null
+          created_at: string
+          customer_id: string | null
+          id: string
+          last_message_at: string
+          message_count: number
+          session_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          auth_user_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          last_message_at?: string
+          message_count?: number
+          session_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          auth_user_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          last_message_at?: string
+          message_count?: number
+          session_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chatbot_conversations_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chatbot_faqs: {
+        Row: {
+          answer: string
+          created_at: string
+          id: string
+          is_active: boolean
+          question: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          question: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          question?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      chatbot_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          feedback: string | null
+          id: string
+          metadata: Json | null
+          role: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          metadata?: Json | null
+          role: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          metadata?: Json | null
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chatbot_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chatbot_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chatbot_settings: {
+        Row: {
+          blocked_topics: Json
+          created_at: string
+          enabled: boolean
+          id: string
+          model: string
+          system_prompt: string
+          updated_at: string
+          welcome_message: string
+        }
+        Insert: {
+          blocked_topics?: Json
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          model?: string
+          system_prompt?: string
+          updated_at?: string
+          welcome_message?: string
+        }
+        Update: {
+          blocked_topics?: Json
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          model?: string
+          system_prompt?: string
+          updated_at?: string
+          welcome_message?: string
+        }
+        Relationships: []
+      }
       colors: {
         Row: {
           created_at: string

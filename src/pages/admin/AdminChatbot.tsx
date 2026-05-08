@@ -66,15 +66,39 @@ export default function AdminChatbot() {
 
   const [newQ, setNewQ] = useState("");
   const [newA, setNewA] = useState("");
+  const [newImage, setNewImage] = useState<string>("");
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) return toast.error("Max 5MB");
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `chatbot-faq/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error } = await supabase.storage.from("media").upload(path, file);
+      if (error) throw error;
+      const { data: { publicUrl } } = supabase.storage.from("media").getPublicUrl(path);
+      setNewImage(publicUrl);
+      toast.success("Image uploaded");
+    } catch (err: any) {
+      toast.error(err.message || "Upload failed");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
 
   const addFaq = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("chatbot_faqs").insert({
-        question: newQ, answer: newA, sort_order: faqs.length,
+        question: newQ, answer: newA, image_url: newImage || null, sort_order: faqs.length,
       });
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("FAQ added"); setNewQ(""); setNewA(""); qc.invalidateQueries({ queryKey: ["chatbot-faqs"] }); },
+    onSuccess: () => { toast.success("FAQ added"); setNewQ(""); setNewA(""); setNewImage(""); qc.invalidateQueries({ queryKey: ["chatbot-faqs"] }); },
     onError: (e: any) => toast.error(e.message),
   });
 

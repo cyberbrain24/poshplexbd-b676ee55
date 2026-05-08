@@ -425,6 +425,100 @@ async function executeTool(name: string, args: any, sb: any) {
       }
       case "get_site_branding": return { branding: (await sb.from("site_branding").select("*").maybeSingle()).data };
 
+      // ====== WRITE — Customers ======
+      case "create_customer": {
+        const { data, error } = await sb.from("customers").insert({
+          name: args.name, phone: args.phone, email: args.email || null,
+          gender: args.gender || "other", address: args.address || null,
+          division_id: args.division_id || null, thana_id: args.thana_id || null,
+          postal_code: args.postal_code || null, customer_type_id: args.customer_type_id || null,
+          notes: args.notes || null, is_active: args.is_active ?? true,
+        }).select().single();
+        if (error) throw error;
+        return { success: true, customer: data };
+      }
+      case "update_customer": {
+        const { customer_id, ...patch } = args;
+        const { data, error } = await sb.from("customers").update(patch).eq("id", customer_id).select().single();
+        if (error) throw error;
+        return { success: true, customer: data };
+      }
+      case "delete_customer": {
+        const { error } = await sb.from("customers").delete().eq("id", args.customer_id);
+        if (error) throw error;
+        return { success: true };
+      }
+      // ====== WRITE — Orders ======
+      case "update_order": {
+        const { order_id, ...patch } = args;
+        const { data, error } = await sb.from("orders").update(patch).eq("id", order_id).select().single();
+        if (error) throw error;
+        return { success: true, order: data };
+      }
+      case "set_order_status": {
+        const { data: prev } = await sb.from("orders").select("order_status").eq("id", args.order_id).maybeSingle();
+        const { data, error } = await sb.from("orders").update({ order_status: args.status }).eq("id", args.order_id).select().single();
+        if (error) throw error;
+        await sb.from("order_status_history").insert({
+          order_id: args.order_id, status_type: "order",
+          previous_status: prev?.order_status || null, new_status: args.status,
+          notes: args.notes || "Updated by AI assistant",
+        });
+        return { success: true, order: data };
+      }
+      case "set_payment_status": {
+        const { data: prev } = await sb.from("orders").select("payment_status").eq("id", args.order_id).maybeSingle();
+        const { data, error } = await sb.from("orders").update({ payment_status: args.payment_status }).eq("id", args.order_id).select().single();
+        if (error) throw error;
+        await sb.from("order_status_history").insert({
+          order_id: args.order_id, status_type: "payment",
+          previous_status: prev?.payment_status || null, new_status: args.payment_status,
+          notes: args.notes || "Updated by AI assistant",
+        });
+        return { success: true, order: data };
+      }
+      case "update_order_item": {
+        if (args.delete) {
+          const { error } = await sb.from("order_items").delete().eq("id", args.item_id);
+          if (error) throw error;
+          return { success: true, deleted: true };
+        }
+        const patch: any = {};
+        if (args.quantity !== undefined) patch.quantity = args.quantity;
+        if (args.unit_price !== undefined) patch.unit_price = args.unit_price;
+        if (args.fulfillment_status) patch.fulfillment_status = args.fulfillment_status;
+        if (patch.quantity !== undefined || patch.unit_price !== undefined) {
+          const { data: cur } = await sb.from("order_items").select("quantity, unit_price").eq("id", args.item_id).maybeSingle();
+          const qty = patch.quantity ?? cur?.quantity ?? 1;
+          const price = patch.unit_price ?? cur?.unit_price ?? 0;
+          patch.line_total = Number(qty) * Number(price);
+        }
+        const { data, error } = await sb.from("order_items").update(patch).eq("id", args.item_id).select().single();
+        if (error) throw error;
+        return { success: true, item: data };
+      }
+      case "add_order_payment": {
+        const { data, error } = await sb.from("order_payments").insert({
+          order_id: args.order_id, account_id: args.account_id,
+          amount: args.amount, payment_reference: args.payment_reference || null,
+        }).select().single();
+        if (error) throw error;
+        // Bump paid_amount
+        const { data: o } = await sb.from("orders").select("paid_amount, total_amount").eq("id", args.order_id).maybeSingle();
+        const newPaid = Number(o?.paid_amount || 0) + Number(args.amount);
+        const newStatus = newPaid >= Number(o?.total_amount || 0) ? "paid" : (newPaid > 0 ? "partial" : "unpaid");
+        await sb.from("orders").update({ paid_amount: newPaid, payment_status: newStatus }).eq("id", args.order_id);
+        return { success: true, payment: data, new_paid_amount: newPaid, new_payment_status: newStatus };
+      }
+      case "delete_order": {
+        await sb.from("order_items").delete().eq("order_id", args.order_id);
+        await sb.from("order_status_history").delete().eq("order_id", args.order_id);
+        await sb.from("order_payments").delete().eq("order_id", args.order_id);
+        const { error } = await sb.from("orders").delete().eq("id", args.order_id);
+        if (error) throw error;
+        return { success: true };
+      }
+
       default: return { error: `Unknown tool: ${name}` };
     }
   } catch (e: any) {

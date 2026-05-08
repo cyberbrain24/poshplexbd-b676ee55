@@ -20,6 +20,15 @@ const AdminSiteSettings = () => {
   const { data: pixelSettings, isLoading: loadingPixel } = usePixelSettings();
   const updatePixelMutation = useUpdatePixelSettings();
 
+  const { data: geminiStatus, isLoading: loadingGemini, refetch: refetchGemini } = useQuery({
+    queryKey: ["gemini-credentials-status"],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("gemini-credentials-status");
+      if (error) throw error;
+      return data as { gemini_configured: boolean; gemini_masked: string | null; lovable_ai_configured: boolean; active_provider: string };
+    },
+  });
+
   const [siteName, setSiteName] = useState("");
   const [slogan, setSlogan] = useState("");
   const [initialized, setInitialized] = useState(false);

@@ -46,31 +46,42 @@ const MobileFooterNav = () => {
       <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border lg:hidden">
         <div className="flex items-center justify-around h-16 px-4">
           {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive = item.path ? location.pathname === item.path : false;
             const Icon = item.icon;
 
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={cn(
-                  "flex flex-col items-center justify-center flex-1 h-full py-2 transition-colors",
-                  item.filled
-                    ? "text-red-500"
-                    : isActive
-                      ? "text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                )}
-              >
+            const inner = (
+              <>
                 <div className="relative">
-                  <Icon className="h-5 w-5" strokeWidth={1.5} fill={item.filled ? "currentColor" : "none"} />
+                  <Icon className="h-5 w-5" strokeWidth={1.5} />
                   {item.badge && (
                     <span className="absolute -top-1.5 -right-2 bg-foreground text-background text-[10px] font-medium rounded-full h-4 min-w-4 flex items-center justify-center px-1">
                       {item.badge > 99 ? "99+" : item.badge}
                     </span>
                   )}
                 </div>
-                <span className={cn("text-[10px] mt-1 font-light", item.filled && "text-foreground")}>{item.label}</span>
+                <span className="text-[10px] mt-1 font-light">{item.label}</span>
+              </>
+            );
+
+            const className = cn(
+              "flex flex-col items-center justify-center flex-1 h-full py-2 transition-colors",
+              item.highlight
+                ? "text-foreground"
+                : isActive
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+            );
+
+            if (item.onClick) {
+              return (
+                <button key={item.label} onClick={item.onClick} className={className} aria-label={item.label}>
+                  {inner}
+                </button>
+              );
+            }
+            return (
+              <Link key={item.path} to={item.path!} className={className}>
+                {inner}
               </Link>
             );
           })}

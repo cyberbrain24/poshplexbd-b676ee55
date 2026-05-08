@@ -208,6 +208,171 @@ async function executeTool(name: string, args: any, sb: any) {
         if (error) throw error;
         return { success: true };
       }
+      // ====== EXTENDED READ TOOLS (all modules) ======
+      case "list_orders": {
+        let q = sb.from("orders").select("id, order_number, customer_id, shipping_name, shipping_phone, order_status, payment_status, total_amount, paid_amount, created_at").order("created_at", { ascending: false }).limit(args.limit || 25);
+        if (args.status) q = q.eq("order_status", args.status);
+        if (args.payment_status) q = q.eq("payment_status", args.payment_status);
+        if (args.search) q = q.or(`order_number.ilike.%${args.search}%,shipping_phone.ilike.%${args.search}%,shipping_name.ilike.%${args.search}%`);
+        if (args.days) q = q.gte("created_at", new Date(Date.now() - args.days * 86400000).toISOString());
+        const { data, error } = await q;
+        if (error) throw error;
+        return { orders: data };
+      }
+      case "get_order": {
+        const id = args.identifier;
+        const isUuid = /^[0-9a-f]{8}-/i.test(id);
+        const { data: order } = isUuid
+          ? await sb.from("orders").select("*").eq("id", id).maybeSingle()
+          : await sb.from("orders").select("*").eq("order_number", id).maybeSingle();
+        if (!order) return { error: "Order not found" };
+        const [{ data: items }, { data: history }, { data: payments }] = await Promise.all([
+          sb.from("order_items").select("*").eq("order_id", order.id),
+          sb.from("order_status_history").select("*").eq("order_id", order.id).order("created_at", { ascending: false }).limit(20),
+          sb.from("order_payments").select("*").eq("order_id", order.id),
+        ]);
+        return { order, items, status_history: history, payments };
+      }
+      case "get_order_items": {
+        const { data, error } = await sb.from("order_items").select("*").eq("order_id", args.order_id);
+        if (error) throw error;
+        return { items: data };
+      }
+      case "list_customers": {
+        let q = sb.from("customers").select("id, name, phone, email, gender, division_id, thana_id, customer_type_id, is_active, created_at").order("created_at", { ascending: false }).limit(args.limit || 25);
+        if (args.search) q = q.or(`name.ilike.%${args.search}%,phone.ilike.%${args.search}%,email.ilike.%${args.search}%`);
+        const { data, error } = await q;
+        if (error) throw error;
+        return { customers: data };
+      }
+      case "get_customer": {
+        const id = args.identifier;
+        const isUuid = /^[0-9a-f]{8}-/i.test(id);
+        let { data: customer } = isUuid
+          ? await sb.from("customers").select("*").eq("id", id).maybeSingle()
+          : await sb.from("customers").select("*").or(`phone.eq.${id},email.eq.${id}`).maybeSingle();
+        if (!customer) return { error: "Customer not found" };
+        const [{ data: orders }, { data: risk }] = await Promise.all([
+          sb.from("orders").select("id, order_number, order_status, payment_status, total_amount, created_at").eq("customer_id", customer.id).order("created_at", { ascending: false }).limit(20),
+          sb.from("customer_risk_profiles").select("*").eq("customer_id", customer.id).maybeSingle(),
+        ]);
+        return { customer, orders, risk_profile: risk };
+      }
+      case "list_customer_types": return { customer_types: (await sb.from("customer_types").select("id, name, is_active, show_on_public_page")).data };
+      case "list_reviews": {
+        let q = sb.from("reviews").select("id, product_id, customer_id, rating, title, content, is_approved, created_at").order("created_at", { ascending: false }).limit(args.limit || 25);
+        if (args.is_approved !== undefined) q = q.eq("is_approved", args.is_approved);
+        if (args.product_id) q = q.eq("product_id", args.product_id);
+        const { data, error } = await q;
+        if (error) throw error;
+        return { reviews: data };
+      }
+      case "list_inventory_products": {
+        let q = sb.from("inventory_products").select("id, name, sku, current_stock, unit, purchase_price, is_active").order("name").limit(args.limit || 50);
+        if (args.search) q = q.or(`name.ilike.%${args.search}%,sku.ilike.%${args.search}%`);
+        const { data, error } = await q;
+        if (error) throw error;
+        return { inventory_products: data };
+      }
+      case "list_low_stock_variants": {
+        const { data, error } = await sb.from("product_variants").select("id, product_id, sku, stock_quantity, low_stock_threshold, selling_price").eq("is_active", true).limit(args.limit || 50);
+        if (error) throw error;
+        const low = (data || []).filter((v: any) => v.stock_quantity <= (v.low_stock_threshold ?? 5));
+        return { low_stock_variants: low };
+      }
+      case "list_inventory_entries": {
+        let q = sb.from("inventory_entries").select("id, type, date, notes, created_at, account_id").order("created_at", { ascending: false }).limit(args.limit || 25);
+        if (args.type) q = q.eq("type", args.type);
+        const { data, error } = await q;
+        if (error) throw error;
+        return { entries: data };
+      }
+      case "list_accounts": {
+        const { data, error } = await sb.from("accounts").select("id, name, current_balance, initial_balance, is_active, description").order("name");
+        if (error) throw error;
+        return { accounts: data };
+      }
+      case "list_transactions": {
+        let q = sb.from("transactions").select("*").order("date", { ascending: false }).limit(args.limit || 25);
+        if (args.type) q = q.eq("type", args.type);
+        if (args.account_id) q = q.eq("account_id", args.account_id);
+        if (args.days) q = q.gte("date", new Date(Date.now() - args.days * 86400000).toISOString().slice(0, 10));
+        const { data, error } = await q;
+        if (error) throw error;
+        return { transactions: data };
+      }
+      case "list_order_payments": {
+        let q = sb.from("order_payments").select("id, order_id, account_id, amount, payment_reference, recorded_at").order("recorded_at", { ascending: false }).limit(args.limit || 25);
+        if (args.order_id) q = q.eq("order_id", args.order_id);
+        const { data, error } = await q;
+        if (error) throw error;
+        return { payments: data };
+      }
+      case "list_promo_codes": {
+        let q = sb.from("promo_codes").select("id, code, description, discount_type, discount_value, usage_count, usage_limit, is_active, expires_at, starts_at");
+        if (args.is_active !== undefined) q = q.eq("is_active", args.is_active);
+        const { data, error } = await q;
+        if (error) throw error;
+        return { promo_codes: data };
+      }
+      case "list_payment_methods": return { payment_methods: (await sb.from("payment_methods").select("id, name, type, is_active, instructions, account_details")).data };
+      case "list_divisions": return { divisions: (await sb.from("divisions").select("id, name, is_active").order("name")).data };
+      case "list_thanas": {
+        let q = sb.from("thanas").select("id, name, division_id").order("name");
+        if (args.division_id) q = q.eq("division_id", args.division_id);
+        const { data, error } = await q;
+        if (error) throw error;
+        return { thanas: data };
+      }
+      case "get_sales_analytics": {
+        const days = args.days || 30;
+        const since = new Date(Date.now() - days * 86400000).toISOString();
+        const { data: orders } = await sb.from("orders").select("total_amount, payment_status, order_status, created_at").gte("created_at", since);
+        const list = orders || [];
+        const paid = list.filter((o: any) => o.payment_status === "paid");
+        const revenue = paid.reduce((s: number, o: any) => s + Number(o.total_amount || 0), 0);
+        const aov = paid.length ? revenue / paid.length : 0;
+        return {
+          window_days: days,
+          total_orders: list.length,
+          paid_orders: paid.length,
+          revenue_bdt: Math.round(revenue),
+          average_order_value_bdt: Math.round(aov),
+          cancelled: list.filter((o: any) => o.order_status === "cancelled").length,
+        };
+      }
+      case "get_top_products": {
+        const days = args.days || 30;
+        const since = new Date(Date.now() - days * 86400000).toISOString();
+        const { data } = await sb.from("order_items").select("product_id, product_name, quantity, line_total, orders!inner(created_at)").gte("orders.created_at", since).limit(2000);
+        const agg: Record<string, any> = {};
+        for (const it of data || []) {
+          const k = it.product_id || it.product_name;
+          if (!agg[k]) agg[k] = { product_id: it.product_id, name: it.product_name, qty: 0, revenue: 0 };
+          agg[k].qty += Number(it.quantity || 0);
+          agg[k].revenue += Number(it.line_total || 0);
+        }
+        const top = Object.values(agg).sort((a: any, b: any) => b.qty - a.qty).slice(0, args.limit || 10);
+        return { top_products: top };
+      }
+      case "get_top_customers": {
+        const { data } = await sb.from("orders").select("customer_id, total_amount, shipping_name").eq("payment_status", "paid").not("customer_id", "is", null);
+        const agg: Record<string, any> = {};
+        for (const o of data || []) {
+          const k = o.customer_id;
+          if (!agg[k]) agg[k] = { customer_id: k, name: o.shipping_name, orders: 0, total: 0 };
+          agg[k].orders += 1;
+          agg[k].total += Number(o.total_amount || 0);
+        }
+        const top = Object.values(agg).sort((a: any, b: any) => b.total - a.total).slice(0, args.limit || 10);
+        return { top_customers: top };
+      }
+      case "get_site_settings": {
+        const { data } = await sb.rpc("get_public_site_settings");
+        return { site_settings: data?.[0] || null };
+      }
+      case "get_site_branding": return { branding: (await sb.from("site_branding").select("*").maybeSingle()).data };
+
       default: return { error: `Unknown tool: ${name}` };
     }
   } catch (e: any) {

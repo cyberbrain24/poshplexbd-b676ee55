@@ -39,9 +39,15 @@ const READ_TOOLS = new Set([
 ]);
 
 const WRITE_TOOLS = new Set([
+  // Products
   "create_product", "update_product", "delete_product",
   "add_product_image", "delete_product_image", "set_product_active",
   "set_product_featured",
+  // Customers
+  "create_customer", "update_customer", "delete_customer",
+  // Orders
+  "update_order", "delete_order", "set_order_status", "set_payment_status",
+  "update_order_item", "add_order_payment",
 ]);
 
 const tools = [

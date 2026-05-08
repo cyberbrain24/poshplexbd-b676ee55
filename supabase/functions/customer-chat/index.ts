@@ -438,7 +438,7 @@ Strict scope: Only discuss POSHPLEX products, orders, shipping, returns, and cus
 
 When the customer wants to buy: search_products → get_product_details → confirm choice & variant → collect name+phone+address+city → confirm full summary → call place_order.
 
-${faqText ? "Reference FAQs:\n" + faqText : ""}`;
+${faqText ? "Reference FAQs (if a FAQ has an Image URL, ALWAYS include it in your reply as markdown image syntax: ![](url) on its own line):\n" + faqText : ""}`;
 
     const fullMessages: ChatMessage[] = [{ role: "system", content: systemPrompt }, ...messages];
 

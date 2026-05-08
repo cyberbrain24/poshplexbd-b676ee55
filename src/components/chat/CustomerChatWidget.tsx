@@ -22,17 +22,38 @@ const getSessionId = () => {
   return id;
 };
 
-// Parse out ```products [...] ``` blocks from assistant content
+// Parse product blocks. Accepts ```products, ```json, any ``` fence,
+// or a bare top-level JSON array — anything whose body parses to product-shaped objects.
+const isProductArray = (val: any): val is ProductCard[] =>
+  Array.isArray(val) && val.length > 0 && val.every(
+    (x) => x && typeof x === "object" && "id" in x && "name" in x && "price" in x
+  );
+
 const parseAssistant = (content: string): { text: string; products: ProductCard[] } => {
   const products: ProductCard[] = [];
-  const text = content.replace(/```products\s*([\s\S]*?)```/gi, (_, json) => {
+  let text = content.replace(/```(?:products|json)?\s*([\s\S]*?)```/gi, (full, body) => {
     try {
-      const arr = JSON.parse(json.trim());
-      if (Array.isArray(arr)) products.push(...arr);
+      const parsed = JSON.parse(body.trim());
+      if (isProductArray(parsed)) {
+        products.push(...parsed);
+        return "";
+      }
     } catch {}
-    return "";
-  }).trim();
-  return { text, products };
+    return full;
+  });
+  if (products.length === 0) {
+    const m = text.match(/(\[\s*\{[\s\S]*?\}\s*\])/);
+    if (m) {
+      try {
+        const parsed = JSON.parse(m[1]);
+        if (isProductArray(parsed)) {
+          products.push(...parsed);
+          text = text.replace(m[1], "");
+        }
+      } catch {}
+    }
+  }
+  return { text: text.trim(), products };
 };
 
 const ProductSlider = ({ products, onPick }: { products: ProductCard[]; onPick: (p: ProductCard) => void }) => (

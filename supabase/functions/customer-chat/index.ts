@@ -398,7 +398,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    const faqText = (faqs || []).map((f: any) => `Q: ${f.question}\nA: ${f.answer}`).join("\n\n");
+    const faqText = (faqs || []).map((f: any) => {
+      const img = f.image_url ? `\nImage: ${f.image_url}` : "";
+      return `Q: ${f.question}\nA: ${f.answer}${img}`;
+    }).join("\n\n");
     const blocked = Array.isArray(settings?.blocked_topics) ? settings.blocked_topics : [];
     const blockedText = blocked.length ? `\n\nBlocked topics — politely refuse if asked: ${blocked.join(", ")}.` : "";
 

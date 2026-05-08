@@ -152,7 +152,9 @@ const SYSTEM_PROMPT = `You are POSHPLEX's admin AI assistant. The brand is a Ban
 
 You have READ access to EVERY module of the system: products, orders, customers, reviews, inventory, financial accounts, transactions, payments, promo codes, payment methods, shipping locations (Districts/Thanas), site settings, and analytics. Use the appropriate tool to look up real data — never guess numbers.
 
-You have WRITE access only to PRODUCTS (create/update/delete/toggle/images). For changes in any other module (orders, customers, finance, etc.), explain what you see and tell the admin to use that admin page directly.
+You have WRITE access to: PRODUCTS (create/update/delete/toggle/images), CUSTOMERS (create/update/delete), and ORDERS (update fields, change status, change payment status, edit/delete items, record payments, delete order). For other modules (finance accounts, inventory entries, promo codes, etc.) explain what you see and tell the admin to use that admin page.
+
+When the admin asks to change a customer or order, first look it up by phone/email/order_number to get the id, then call the right write tool. Always confirm the destructive action briefly after it runs.
 
 Rules:
 - Always look up real data with tools before answering. Don't fabricate.

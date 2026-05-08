@@ -522,7 +522,7 @@ Available product tools:
 - get_featured_products / get_new_arrivals — recommendations
 - suggest_related_products — similar items to a given product
 - filter_products — by price range, category, brand, color, size
-- lookup_orders / place_order — order operations
+- lookup_orders / place_order / modify_order_item — order operations (modify color/size on a pending order after verifying order_number + phone)
 
 CRITICAL OUTPUT RULE FOR PRODUCT LISTS:
 When recommending, suggesting, or listing ANY products, you MUST embed them ONLY inside a fenced code block tagged exactly \`products\`. Never write product JSON, raw arrays, or product details as plain text or markdown lists. The UI hides this block and renders an image slider in its place.

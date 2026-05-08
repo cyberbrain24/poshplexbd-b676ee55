@@ -156,6 +156,24 @@ const tools = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "modify_order_item",
+      description: "Change the color and/or size variant of an item on an existing pending order. Requires order_number + customer phone for verification. Only works while order_status is 'pending'.",
+      parameters: {
+        type: "object",
+        properties: {
+          order_number: { type: "string", description: "Order number e.g. PO-19" },
+          phone: { type: "string", description: "Customer phone for verification" },
+          item_id: { type: "string", description: "Optional: specific order_item id. If omitted and order has 1 item, that item is used." },
+          color: { type: "string", description: "New color name (optional)" },
+          size: { type: "string", description: "New size label (optional)" },
+        },
+        required: ["order_number", "phone"],
+      },
+    },
+  },
 ];
 
 const PRODUCT_LIST_SELECT = `
@@ -360,6 +378,93 @@ async function executeTool(name: string, args: any, supabase: any) {
       return { success: true, ...result };
     }
 
+    if (name === "modify_order_item") {
+      const orderNum = String(args.order_number || "").trim();
+      const phone = String(args.phone || "").trim();
+      if (!orderNum || !phone) return { error: "order_number and phone are required" };
+
+      const { data: order } = await supabase.from("orders")
+        .select("id, order_status, shipping_phone, guest_phone, customer_id")
+        .eq("order_number", orderNum).maybeSingle();
+      if (!order) return { error: "Order not found" };
+
+      // Verify phone matches order or its customer
+      let phoneOk = order.shipping_phone === phone || order.guest_phone === phone;
+      if (!phoneOk && order.customer_id) {
+        const { data: cust } = await supabase.from("customers").select("phone").eq("id", order.customer_id).maybeSingle();
+        if (cust?.phone === phone) phoneOk = true;
+      }
+      if (!phoneOk) return { error: "Phone does not match this order" };
+      if (order.order_status !== "pending") {
+        return { error: `Order is already ${order.order_status} and can no longer be modified. Please contact support.` };
+      }
+
+      // Find the target item
+      const { data: items } = await supabase.from("order_items")
+        .select("id, product_id, variant_id, product_name, unit_price, quantity")
+        .eq("order_id", order.id);
+      if (!items || items.length === 0) return { error: "No items on this order" };
+      const target = args.item_id
+        ? items.find((i: any) => i.id === args.item_id)
+        : (items.length === 1 ? items[0] : null);
+      if (!target) return { error: "Multiple items on order — specify item_id" };
+      if (!target.product_id) return { error: "Item has no linked product" };
+
+      // Load all active variants of that product
+      const { data: variants } = await supabase.from("product_variants")
+        .select("id, sku, selling_price, is_active, color:colors(name), size:sizes(label)")
+        .eq("product_id", target.product_id).eq("is_active", true);
+
+      // Determine target color/size: keep current if not provided
+      let curColor: string | null = null, curSize: string | null = null;
+      if (target.variant_id) {
+        const cur: any = (variants || []).find((v: any) => v.id === target.variant_id);
+        curColor = cur?.color?.name || null; curSize = cur?.size?.label || null;
+      }
+      const wantColor = args.color ? String(args.color) : curColor;
+      const wantSize = args.size ? String(args.size) : curSize;
+
+      const match: any = (variants || []).find((v: any) => {
+        const c = !wantColor || v.color?.name?.toLowerCase() === wantColor.toLowerCase();
+        const s = !wantSize || v.size?.label?.toLowerCase() === wantSize.toLowerCase();
+        return c && s;
+      });
+      if (!match) {
+        const avail = (variants || []).map((v: any) => `${v.color?.name || "-"}/${v.size?.label || "-"}`).join(", ");
+        return { error: `No variant matches color="${wantColor}" size="${wantSize}". Available: ${avail}` };
+      }
+
+      const newPrice = Number(match.selling_price) || Number(target.unit_price);
+      const newLine = newPrice * Number(target.quantity);
+      const variant_details: any = {};
+      if (match.color?.name) variant_details.color = match.color.name;
+      if (match.size?.label) variant_details.size = match.size.label;
+
+      const { error: upErr } = await supabase.from("order_items").update({
+        variant_id: match.id, variant_sku: match.sku,
+        unit_price: newPrice, line_total: newLine, variant_details,
+      }).eq("id", target.id);
+      if (upErr) return { error: upErr.message };
+
+      // Recalculate order totals
+      const { data: allItems } = await supabase.from("order_items").select("line_total").eq("order_id", order.id);
+      const subtotal = (allItems || []).reduce((s: number, i: any) => s + Number(i.line_total), 0);
+      const { data: ord2 } = await supabase.from("orders")
+        .select("shipping_cost, discount_amount, tax_amount").eq("id", order.id).single();
+      const total = subtotal - Number(ord2!.discount_amount) + Number(ord2!.shipping_cost) + Number(ord2!.tax_amount);
+      await supabase.from("orders").update({ subtotal, total_amount: total }).eq("id", order.id);
+
+      return {
+        success: true,
+        order_number: orderNum,
+        product: target.product_name,
+        new_color: match.color?.name || null,
+        new_size: match.size?.label || null,
+        new_unit_price: newPrice,
+        new_total: total,
+      };
+    }
+
     return { error: "Unknown tool" };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Tool error" };
@@ -417,7 +522,7 @@ Available product tools:
 - get_featured_products / get_new_arrivals — recommendations
 - suggest_related_products — similar items to a given product
 - filter_products — by price range, category, brand, color, size
-- lookup_orders / place_order — order operations
+- lookup_orders / place_order / modify_order_item — order operations (modify color/size on a pending order after verifying order_number + phone)
 
 CRITICAL OUTPUT RULE FOR PRODUCT LISTS:
 When recommending, suggesting, or listing ANY products, you MUST embed them ONLY inside a fenced code block tagged exactly \`products\`. Never write product JSON, raw arrays, or product details as plain text or markdown lists. The UI hides this block and renders an image slider in its place.

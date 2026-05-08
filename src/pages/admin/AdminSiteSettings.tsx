@@ -25,7 +25,7 @@ const AdminSiteSettings = () => {
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke("gemini-credentials-status");
       if (error) throw error;
-      return data as { gemini_configured: boolean; gemini_masked: string | null; gemini_source: string | null; lovable_ai_configured: boolean; active_provider: string };
+      return data as { gemini_configured: boolean; gemini_enabled: boolean; gemini_masked: string | null; gemini_source: string | null; lovable_ai_configured: boolean; active_provider: string };
     },
   });
 
@@ -56,6 +56,15 @@ const AdminSiteSettings = () => {
     setSavingGemini(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Gemini API key removed");
+    refetchGemini();
+  };
+
+  const handleToggleGemini = async (next: boolean) => {
+    const { data: row } = await supabase.from("site_settings").select("id").limit(1).maybeSingle();
+    if (!row) { toast.error("Site settings row not found"); return; }
+    const { error } = await supabase.from("site_settings").update({ gemini_enabled: next }).eq("id", row.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(next ? "Gemini AI enabled" : "Gemini AI disabled");
     refetchGemini();
   };
 
@@ -439,6 +448,22 @@ const AdminSiteSettings = () => {
           <Skeleton className="h-20 w-full" />
         ) : (
           <div className="space-y-4">
+            {/* Enable/Disable toggle */}
+            <div className="flex items-center justify-between border border-border p-3">
+              <div>
+                <p className="text-sm font-medium">Gemini AI</p>
+                <p className="text-xs text-muted-foreground">
+                  {geminiStatus?.gemini_enabled
+                    ? "AI features are active across the site"
+                    : "AI features are turned off"}
+                </p>
+              </div>
+              <Switch
+                checked={!!geminiStatus?.gemini_enabled}
+                onCheckedChange={handleToggleGemini}
+              />
+            </div>
+
             {/* Gemini Key status */}
             <div className="flex items-center justify-between border border-border p-3">
               <div className="flex items-center gap-3">
@@ -457,7 +482,9 @@ const AdminSiteSettings = () => {
                 </div>
               </div>
               <span className="text-xs font-mono text-muted-foreground">
-                {geminiStatus?.gemini_configured ? "Active" : "—"}
+                {!geminiStatus?.gemini_enabled
+                  ? "Disabled"
+                  : geminiStatus?.gemini_configured ? "Active" : "—"}
               </span>
             </div>
 

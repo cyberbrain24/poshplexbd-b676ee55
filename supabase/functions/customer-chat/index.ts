@@ -375,7 +375,7 @@ Deno.serve(async (req) => {
 
     const [{ data: settings }, { data: faqs }] = await Promise.all([
       supabase.from("chatbot_settings").select("*").maybeSingle(),
-      supabase.from("chatbot_faqs").select("question, answer").eq("is_active", true).order("sort_order"),
+      supabase.from("chatbot_faqs").select("question, answer, image_url").eq("is_active", true).order("sort_order"),
     ]);
 
     if (settings && !settings.enabled) {

@@ -15,9 +15,27 @@ const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const MODEL = "google/gemini-2.5-flash";
 
 const READ_TOOLS = new Set([
+  // Catalog
   "list_products", "get_product", "list_categories", "list_brands",
   "list_colors", "list_sizes", "list_materials", "list_size_guides",
-  "list_care_instructions", "get_site_overview",
+  "list_care_instructions",
+  // Orders
+  "list_orders", "get_order", "get_order_items",
+  // Customers
+  "list_customers", "get_customer", "list_customer_types",
+  // Reviews
+  "list_reviews",
+  // Inventory
+  "list_inventory_products", "list_low_stock_variants", "list_inventory_entries",
+  // Finance
+  "list_accounts", "list_transactions", "list_order_payments",
+  // Marketing
+  "list_promo_codes", "list_payment_methods",
+  // Locations
+  "list_divisions", "list_thanas",
+  // Site / Analytics
+  "get_site_overview", "get_sales_analytics", "get_top_products", "get_top_customers",
+  "get_site_settings", "get_site_branding",
 ]);
 
 const WRITE_TOOLS = new Set([

@@ -175,7 +175,7 @@ const SearchOverlay = ({ onClose }: SearchOverlayProps) => {
         )}
 
         {/* No results */}
-        {showResults && !showLoading && results.length === 0 && !aiSuggest?.products?.length && !aiFetching && (
+        {showResults && !showLoading && results.length === 0 && aiExtras.length === 0 && !aiFetching && (
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
               No products found for "<span className="text-foreground font-medium">{query}</span>"

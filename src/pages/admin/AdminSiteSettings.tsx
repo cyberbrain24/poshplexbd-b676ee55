@@ -25,7 +25,7 @@ const AdminSiteSettings = () => {
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke("gemini-credentials-status");
       if (error) throw error;
-      return data as { gemini_configured: boolean; gemini_masked: string | null; gemini_source: string | null; lovable_ai_configured: boolean; active_provider: string };
+      return data as { gemini_configured: boolean; gemini_enabled: boolean; gemini_masked: string | null; gemini_source: string | null; lovable_ai_configured: boolean; active_provider: string };
     },
   });
 

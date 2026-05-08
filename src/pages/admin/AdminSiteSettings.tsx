@@ -433,7 +433,6 @@ const AdminSiteSettings = () => {
         </div>
         <p className="text-xs text-muted-foreground mb-6">
           Powers the Admin AI Assistant, AI search suggestions, and AI product description generator.
-          Lovable AI Gateway is used by default. Optionally provide your own Google Gemini API key for direct access.
         </p>
 
         {loadingGemini ? (

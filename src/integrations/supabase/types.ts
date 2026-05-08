@@ -1913,6 +1913,7 @@ export type Database = {
           ga4_enabled: boolean
           ga4_measurement_id: string | null
           gemini_api_key: string | null
+          gemini_enabled: boolean
           id: string
           meta_advanced_matching: boolean
           meta_capi_access_token: string | null
@@ -1928,6 +1929,7 @@ export type Database = {
           ga4_enabled?: boolean
           ga4_measurement_id?: string | null
           gemini_api_key?: string | null
+          gemini_enabled?: boolean
           id?: string
           meta_advanced_matching?: boolean
           meta_capi_access_token?: string | null
@@ -1943,6 +1945,7 @@ export type Database = {
           ga4_enabled?: boolean
           ga4_measurement_id?: string | null
           gemini_api_key?: string | null
+          gemini_enabled?: boolean
           id?: string
           meta_advanced_matching?: boolean
           meta_capi_access_token?: string | null

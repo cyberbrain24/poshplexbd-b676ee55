@@ -15,6 +15,8 @@ const SearchOverlay = ({ onClose }: SearchOverlayProps) => {
   const navigate = useNavigate();
   const { data: results = [], isLoading, isFetching } = useProductSearch(query);
   const { data: categories = [] } = usePopularCategories();
+  const hasExactResults = results.length > 0;
+  const { data: aiSuggest, isFetching: aiFetching } = useAISearchSuggest(query, hasExactResults);
 
   const getMainImage = (images: { image_url: string; is_main: boolean }[]) => {
     const main = images.find((i) => i.is_main);

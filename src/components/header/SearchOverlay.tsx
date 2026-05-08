@@ -131,7 +131,7 @@ const SearchOverlay = ({ onClose }: SearchOverlayProps) => {
         )}
 
         {/* AI suggestions: show when query has results to enrich, OR when no exact results */}
-        {showResults && !showLoading && (aiSuggest?.products?.length || aiSuggest?.message) && (
+        {showResults && !showLoading && (aiExtras.length > 0 || (!hasExactResults && aiSuggest?.message)) && (
           <div className="mt-5 pt-4 border-t border-border">
             <div className="flex items-center gap-1.5 mb-2">
               <Sparkles size={14} className="text-foreground" strokeWidth={1.5} />

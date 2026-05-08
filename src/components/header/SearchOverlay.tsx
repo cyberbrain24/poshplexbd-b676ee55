@@ -143,7 +143,7 @@ const SearchOverlay = ({ onClose }: SearchOverlayProps) => {
               <p className="text-sm text-foreground mb-2">{aiSuggest.message}</p>
             )}
             <div className="space-y-1">
-              {aiSuggest?.products?.map((product) => (
+              {aiExtras.map((product) => (
                 <button
                   key={product.id}
                   onClick={() => handleProductClick(product)}

@@ -375,7 +375,7 @@ Deno.serve(async (req) => {
 
     const [{ data: settings }, { data: faqs }] = await Promise.all([
       supabase.from("chatbot_settings").select("*").maybeSingle(),
-      supabase.from("chatbot_faqs").select("question, answer").eq("is_active", true).order("sort_order"),
+      supabase.from("chatbot_faqs").select("question, answer, image_url").eq("is_active", true).order("sort_order"),
     ]);
 
     if (settings && !settings.enabled) {
@@ -398,7 +398,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    const faqText = (faqs || []).map((f: any) => `Q: ${f.question}\nA: ${f.answer}`).join("\n\n");
+    const faqText = (faqs || []).map((f: any) => {
+      const img = f.image_url ? `\nImage: ${f.image_url}` : "";
+      return `Q: ${f.question}\nA: ${f.answer}${img}`;
+    }).join("\n\n");
     const blocked = Array.isArray(settings?.blocked_topics) ? settings.blocked_topics : [];
     const blockedText = blocked.length ? `\n\nBlocked topics — politely refuse if asked: ${blocked.join(", ")}.` : "";
 
@@ -435,7 +438,7 @@ Strict scope: Only discuss POSHPLEX products, orders, shipping, returns, and cus
 
 When the customer wants to buy: search_products → get_product_details → confirm choice & variant → collect name+phone+address+city → confirm full summary → call place_order.
 
-${faqText ? "Reference FAQs:\n" + faqText : ""}`;
+${faqText ? "Reference FAQs (if a FAQ has an Image URL, ALWAYS include it in your reply as markdown image syntax: ![](url) on its own line):\n" + faqText : ""}`;
 
     const fullMessages: ChatMessage[] = [{ role: "system", content: systemPrompt }, ...messages];
 

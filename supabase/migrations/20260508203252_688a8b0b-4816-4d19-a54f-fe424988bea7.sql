@@ -1,0 +1,1 @@
+ALTER TABLE public.chatbot_faqs ADD COLUMN IF NOT EXISTS image_url text;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Plus, Trash2, MessageSquare, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Plus, Trash2, MessageSquare, ThumbsUp, ThumbsDown, ImagePlus, Loader2, X } from "lucide-react";
 
 export default function AdminChatbot() {
   const qc = useQueryClient();
@@ -66,15 +66,39 @@ export default function AdminChatbot() {
 
   const [newQ, setNewQ] = useState("");
   const [newA, setNewA] = useState("");
+  const [newImage, setNewImage] = useState<string>("");
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) return toast.error("Max 5MB");
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `chatbot-faq/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error } = await supabase.storage.from("media").upload(path, file);
+      if (error) throw error;
+      const { data: { publicUrl } } = supabase.storage.from("media").getPublicUrl(path);
+      setNewImage(publicUrl);
+      toast.success("Image uploaded");
+    } catch (err: any) {
+      toast.error(err.message || "Upload failed");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
 
   const addFaq = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("chatbot_faqs").insert({
-        question: newQ, answer: newA, sort_order: faqs.length,
+        question: newQ, answer: newA, image_url: newImage || null, sort_order: faqs.length,
       });
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("FAQ added"); setNewQ(""); setNewA(""); qc.invalidateQueries({ queryKey: ["chatbot-faqs"] }); },
+    onSuccess: () => { toast.success("FAQ added"); setNewQ(""); setNewA(""); setNewImage(""); qc.invalidateQueries({ queryKey: ["chatbot-faqs"] }); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -196,7 +220,30 @@ export default function AdminChatbot() {
             <h3 className="font-medium text-sm uppercase tracking-wider">Add Knowledge / FAQ</h3>
             <Input placeholder="Question" value={newQ} onChange={(e) => setNewQ(e.target.value)} />
             <Textarea placeholder="Answer the bot should give" value={newA} onChange={(e) => setNewA(e.target.value)} rows={3} />
-            <Button onClick={() => addFaq.mutate()} disabled={!newQ || !newA}>
+
+            <div className="space-y-2">
+              <Label className="text-xs">Image (optional — bot will reply with this image)</Label>
+              {newImage ? (
+                <div className="relative inline-block">
+                  <img src={newImage} alt="FAQ" className="h-24 w-24 object-cover rounded border border-border" />
+                  <button
+                    type="button"
+                    onClick={() => setNewImage("")}
+                    className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-0.5"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ) : (
+                <label className="inline-flex items-center gap-2 px-3 py-2 border border-dashed border-border rounded-md text-xs cursor-pointer hover:bg-muted">
+                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
+                  {uploading ? "Uploading..." : "Upload Image"}
+                  <input ref={fileRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" disabled={uploading} />
+                </label>
+              )}
+            </div>
+
+            <Button onClick={() => addFaq.mutate()} disabled={!newQ || !newA || uploading}>
               <Plus className="h-4 w-4 mr-1" /> Add FAQ
             </Button>
           </Card>
@@ -204,9 +251,14 @@ export default function AdminChatbot() {
           <div className="space-y-2">
             {faqs.map((f: any) => (
               <Card key={f.id} className="p-4 flex justify-between gap-3">
-                <div className="flex-1">
-                  <p className="font-medium text-sm">{f.question}</p>
-                  <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{f.answer}</p>
+                <div className="flex-1 flex gap-3">
+                  {f.image_url && (
+                    <img src={f.image_url} alt="" className="h-16 w-16 object-cover rounded border border-border shrink-0" />
+                  )}
+                  <div>
+                    <p className="font-medium text-sm">{f.question}</p>
+                    <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{f.answer}</p>
+                  </div>
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <Switch checked={f.is_active} onCheckedChange={(v) => toggleFaq(f.id, v)} />

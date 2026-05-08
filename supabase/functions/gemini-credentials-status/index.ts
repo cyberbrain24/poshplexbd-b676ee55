@@ -1,4 +1,4 @@
-// Returns whether GEMINI_API_KEY (and Lovable AI) is configured. Admin-only.
+// Returns whether a Gemini API key is configured (DB-stored). Admin-only.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -15,10 +15,10 @@ Deno.serve(async (req) => {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { data: userData } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
+    const token = authHeader.replace("Bearer ", "");
+    const { data: userData } = await supabase.auth.getUser(token);
     if (!userData?.user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -28,15 +28,24 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const geminiKey = Deno.env.get("GEMINI_API_KEY");
+    const { data: settings } = await supabase
+      .from("site_settings")
+      .select("gemini_api_key")
+      .limit(1)
+      .maybeSingle();
+
+    const dbKey = settings?.gemini_api_key as string | null;
+    const envKey = Deno.env.get("GEMINI_API_KEY");
     const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+    const activeKey = dbKey || envKey;
 
     return new Response(
       JSON.stringify({
-        gemini_configured: !!geminiKey,
-        gemini_masked: geminiKey ? `${geminiKey.slice(0, 4)}••••${geminiKey.slice(-4)}` : null,
+        gemini_configured: !!activeKey,
+        gemini_masked: activeKey ? `${activeKey.slice(0, 4)}••••${activeKey.slice(-4)}` : null,
+        gemini_source: dbKey ? "database" : envKey ? "secret" : null,
         lovable_ai_configured: !!lovableKey,
-        active_provider: geminiKey ? "gemini_direct" : (lovableKey ? "lovable_gateway" : "none"),
+        active_provider: activeKey ? "gemini_direct" : (lovableKey ? "lovable_gateway" : "none"),
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

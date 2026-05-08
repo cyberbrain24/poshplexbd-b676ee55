@@ -25,9 +25,39 @@ const AdminSiteSettings = () => {
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke("gemini-credentials-status");
       if (error) throw error;
-      return data as { gemini_configured: boolean; gemini_masked: string | null; lovable_ai_configured: boolean; active_provider: string };
+      return data as { gemini_configured: boolean; gemini_masked: string | null; gemini_source: string | null; lovable_ai_configured: boolean; active_provider: string };
     },
   });
+
+  const [geminiKeyInput, setGeminiKeyInput] = useState("");
+  const [savingGemini, setSavingGemini] = useState(false);
+
+  const handleSaveGeminiKey = async () => {
+    const key = geminiKeyInput.trim();
+    if (!key) { toast.error("Please enter a Gemini API key"); return; }
+    if (key.length < 20) { toast.error("That doesn't look like a valid API key"); return; }
+    setSavingGemini(true);
+    const { data: row } = await supabase.from("site_settings").select("id").limit(1).maybeSingle();
+    if (!row) { toast.error("Site settings row not found"); setSavingGemini(false); return; }
+    const { error } = await supabase.from("site_settings").update({ gemini_api_key: key }).eq("id", row.id);
+    setSavingGemini(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Gemini API key saved");
+    setGeminiKeyInput("");
+    refetchGemini();
+  };
+
+  const handleClearGeminiKey = async () => {
+    if (!confirm("Remove the saved Gemini API key? AI will fall back to Lovable AI Gateway.")) return;
+    setSavingGemini(true);
+    const { data: row } = await supabase.from("site_settings").select("id").limit(1).maybeSingle();
+    if (!row) { setSavingGemini(false); return; }
+    const { error } = await supabase.from("site_settings").update({ gemini_api_key: null }).eq("id", row.id);
+    setSavingGemini(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Gemini API key removed");
+    refetchGemini();
+  };
 
   const [siteName, setSiteName] = useState("");
   const [slogan, setSlogan] = useState("");
@@ -464,21 +494,61 @@ const AdminSiteSettings = () => {
               </p>
             </div>
 
-            <div className="text-xs text-muted-foreground space-y-1 leading-relaxed">
-              <p className="font-medium text-foreground">To add or update your Google Gemini API Key:</p>
-              <p>1. Get a key at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" className="underline">aistudio.google.com/app/apikey</a></p>
-              <p>2. Ask the AI assistant: <span className="font-mono bg-muted px-1">"Update GEMINI_API_KEY secret"</span></p>
-              <p>3. Paste the key in the secure form. It will be available immediately.</p>
+            {/* Inline credential form */}
+            <div className="border border-border p-4 space-y-3">
+              <Label className="text-sm font-medium">
+                {geminiStatus?.gemini_configured ? "Update Gemini API Key" : "Set Gemini API Key"}
+              </Label>
+              <Input
+                type="password"
+                value={geminiKeyInput}
+                onChange={(e) => setGeminiKeyInput(e.target.value)}
+                className="rounded-none font-mono"
+                placeholder="AIza..."
+                autoComplete="off"
+              />
+              <p className="text-xs text-muted-foreground">
+                Get a free key at{" "}
+                <a
+                  href="https://aistudio.google.com/app/apikey"
+                  target="_blank"
+                  rel="noopener"
+                  className="underline"
+                >
+                  aistudio.google.com/app/apikey
+                </a>
+                . Stored securely; only admins can view or change it.
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  className="rounded-none"
+                  onClick={handleSaveGeminiKey}
+                  disabled={savingGemini || !geminiKeyInput.trim()}
+                >
+                  {savingGemini ? "Saving…" : "Save Key"}
+                </Button>
+                {geminiStatus?.gemini_configured && geminiStatus?.gemini_source === "database" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-none text-destructive"
+                    onClick={handleClearGeminiKey}
+                    disabled={savingGemini}
+                  >
+                    <X className="h-4 w-4 mr-1" /> Remove Key
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-none ml-auto"
+                  onClick={() => refetchGemini()}
+                >
+                  Refresh
+                </Button>
+              </div>
             </div>
-
-            <Button
-              size="sm"
-              variant="outline"
-              className="rounded-none"
-              onClick={() => refetchGemini()}
-            >
-              Refresh Status
-            </Button>
           </div>
         )}
       </section>

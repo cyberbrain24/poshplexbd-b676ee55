@@ -440,27 +440,7 @@ const AdminSiteSettings = () => {
           <Skeleton className="h-20 w-full" />
         ) : (
           <div className="space-y-4">
-            {/* Lovable AI status */}
-            <div className="flex items-center justify-between border border-border p-3">
-              <div className="flex items-center gap-3">
-                {geminiStatus?.lovable_ai_configured ? (
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
-                ) : (
-                  <AlertCircle className="h-4 w-4 text-amber-600" />
-                )}
-                <div>
-                  <p className="text-sm font-medium">Lovable AI Gateway</p>
-                  <p className="text-xs text-muted-foreground">
-                    Built-in Gemini access — no setup required
-                  </p>
-                </div>
-              </div>
-              <span className="text-xs font-mono text-muted-foreground">
-                {geminiStatus?.lovable_ai_configured ? "Active" : "Unavailable"}
-              </span>
-            </div>
-
-            {/* Custom Gemini Key status */}
+            {/* Gemini Key status */}
             <div className="flex items-center justify-between border border-border p-3">
               <div className="flex items-center gap-3">
                 {geminiStatus?.gemini_configured ? (
@@ -469,29 +449,17 @@ const AdminSiteSettings = () => {
                   <AlertCircle className="h-4 w-4 text-muted-foreground" />
                 )}
                 <div>
-                  <p className="text-sm font-medium">Custom Gemini API Key</p>
+                  <p className="text-sm font-medium">Gemini API Key</p>
                   <p className="text-xs text-muted-foreground">
                     {geminiStatus?.gemini_configured
                       ? `Configured: ${geminiStatus.gemini_masked}`
-                      : "Not configured — using Lovable AI Gateway"}
+                      : "Not configured"}
                   </p>
                 </div>
               </div>
               <span className="text-xs font-mono text-muted-foreground">
-                {geminiStatus?.gemini_configured ? "Set" : "—"}
+                {geminiStatus?.gemini_configured ? "Active" : "—"}
               </span>
-            </div>
-
-            {/* Active provider */}
-            <div className="bg-muted/30 border border-border p-3">
-              <p className="text-xs text-muted-foreground">
-                <span className="font-medium text-foreground">Active provider: </span>
-                {geminiStatus?.active_provider === "gemini_direct"
-                  ? "Custom Gemini API Key (direct)"
-                  : geminiStatus?.active_provider === "lovable_gateway"
-                  ? "Lovable AI Gateway (default)"
-                  : "None — AI features disabled"}
-              </p>
             </div>
 
             {/* Inline credential form */}

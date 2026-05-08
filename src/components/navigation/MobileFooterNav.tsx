@@ -1,13 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, LayoutGrid, Heart, ShoppingBag, User } from "lucide-react";
+import { Home, LayoutGrid, MessageCircle, ShoppingBag, User } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
-import { useFavorites } from "@/contexts/FavoritesContext";
 import { cn } from "@/lib/utils";
 
 const MobileFooterNav = () => {
   const location = useLocation();
   const { cartCount } = useCart();
-  const { favCount } = useFavorites();
 
   // Don't show on admin pages or checkout
   const hiddenPaths = ["/admin", "/checkout", "/auth"];
@@ -17,35 +15,26 @@ const MobileFooterNav = () => {
     return null;
   }
 
-  const navItems = [
-    {
-      icon: Home,
-      label: "Home",
-      path: "/",
-    },
-    {
-      icon: LayoutGrid,
-      label: "Category",
-      path: "/categories",
-    },
-    {
-      icon: Heart,
-      label: "Favorites",
-      path: "/favorites",
-      badge: favCount > 0 ? favCount : undefined,
-      filled: true,
-    },
+  const openChat = () => window.dispatchEvent(new Event("open-customer-chat"));
+
+  const navItems: Array<{
+    icon: typeof Home;
+    label: string;
+    path?: string;
+    onClick?: () => void;
+    badge?: number;
+    highlight?: boolean;
+  }> = [
+    { icon: Home, label: "Home", path: "/" },
+    { icon: LayoutGrid, label: "Category", path: "/categories" },
+    { icon: MessageCircle, label: "Chat", onClick: openChat, highlight: true },
     {
       icon: ShoppingBag,
       label: "Cart",
       path: "/checkout",
       badge: cartCount > 0 ? cartCount : undefined,
     },
-    {
-      icon: User,
-      label: "Account",
-      path: "/account",
-    },
+    { icon: User, label: "Account", path: "/account" },
   ];
 
   return (

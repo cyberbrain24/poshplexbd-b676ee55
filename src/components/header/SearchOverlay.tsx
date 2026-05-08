@@ -128,12 +128,64 @@ const SearchOverlay = ({ onClose }: SearchOverlayProps) => {
           </div>
         )}
 
+        {/* AI suggestions: show when query has results to enrich, OR when no exact results */}
+        {showResults && !showLoading && (aiSuggest?.products?.length || aiSuggest?.message) && (
+          <div className="mt-5 pt-4 border-t border-border">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Sparkles size={14} className="text-foreground" strokeWidth={1.5} />
+              <p className="text-xs font-medium tracking-wider text-muted-foreground">
+                {hasExactResults ? "YOU MIGHT ALSO LIKE" : "DID YOU MEAN"}
+              </p>
+            </div>
+            {aiSuggest?.message && !hasExactResults && (
+              <p className="text-sm text-foreground mb-2">{aiSuggest.message}</p>
+            )}
+            <div className="space-y-1">
+              {aiSuggest?.products?.map((product) => (
+                <button
+                  key={product.id}
+                  onClick={() => handleProductClick(product)}
+                  className="flex items-center gap-3 w-full p-2 hover:bg-muted/50 transition-colors text-left rounded"
+                >
+                  <img
+                    src={getMainImage(product.images)}
+                    alt={product.name}
+                    className="w-12 h-12 object-cover bg-muted shrink-0"
+                    loading="lazy"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {product.name}
+                    </p>
+                    {product.category && (
+                      <p className="text-xs text-muted-foreground truncate">
+                        {product.category.name}
+                      </p>
+                    )}
+                  </div>
+                  <span className="text-sm font-semibold text-foreground shrink-0">
+                    {getDisplayPrice(product)}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* No results */}
-        {showResults && !showLoading && results.length === 0 && (
+        {showResults && !showLoading && results.length === 0 && !aiSuggest?.products?.length && !aiFetching && (
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
               No products found for "<span className="text-foreground font-medium">{query}</span>"
             </p>
+          </div>
+        )}
+
+        {/* AI loading hint when no exact results yet */}
+        {showResults && !showLoading && results.length === 0 && aiFetching && (
+          <div className="mt-6 text-center flex items-center justify-center gap-2 text-muted-foreground">
+            <Sparkles size={14} className="animate-pulse" />
+            <span className="text-sm">Searching with AI...</span>
           </div>
         )}
 

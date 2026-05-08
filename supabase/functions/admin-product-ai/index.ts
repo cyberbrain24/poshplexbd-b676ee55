@@ -39,9 +39,15 @@ const READ_TOOLS = new Set([
 ]);
 
 const WRITE_TOOLS = new Set([
+  // Products
   "create_product", "update_product", "delete_product",
   "add_product_image", "delete_product_image", "set_product_active",
   "set_product_featured",
+  // Customers
+  "create_customer", "update_customer", "delete_customer",
+  // Orders
+  "update_order", "delete_order", "set_order_status", "set_payment_status",
+  "update_order_item", "add_order_payment",
 ]);
 
 const tools = [
@@ -96,13 +102,59 @@ const tools = [
   { type: "function", function: { name: "get_top_customers", description: "Top customers by total spent.", parameters: { type: "object", properties: { limit: { type: "number" } } } } },
   { type: "function", function: { name: "get_site_settings", description: "Public site settings (analytics, pixel ids).", parameters: { type: "object", properties: {} } } },
   { type: "function", function: { name: "get_site_branding", description: "Site branding info (name, slogan, hero).", parameters: { type: "object", properties: {} } } },
+  // WRITE — Customers
+  { type: "function", function: { name: "create_customer", description: "Create a new customer. Phone is required.", parameters: { type: "object", properties: {
+    name: { type: "string" }, phone: { type: "string" }, email: { type: "string" },
+    gender: { type: "string", description: "male|female|other" }, address: { type: "string" },
+    division_id: { type: "string" }, thana_id: { type: "string" }, postal_code: { type: "string" },
+    customer_type_id: { type: "string" }, notes: { type: "string" }, is_active: { type: "boolean" },
+  }, required: ["name", "phone"] } } },
+  { type: "function", function: { name: "update_customer", description: "Update customer fields. Pass customer_id and any fields.", parameters: { type: "object", properties: {
+    customer_id: { type: "string" }, name: { type: "string" }, phone: { type: "string" },
+    email: { type: "string" }, gender: { type: "string" }, address: { type: "string" },
+    division_id: { type: "string" }, thana_id: { type: "string" }, postal_code: { type: "string" },
+    customer_type_id: { type: "string" }, notes: { type: "string" }, is_active: { type: "boolean" },
+    birthdate: { type: "string" },
+  }, required: ["customer_id"] } } },
+  { type: "function", function: { name: "delete_customer", description: "Delete a customer by id. Will fail if linked orders exist.", parameters: { type: "object", properties: { customer_id: { type: "string" } }, required: ["customer_id"] } } },
+  // WRITE — Orders
+  { type: "function", function: { name: "update_order", description: "Update mutable order fields (shipping info, notes, tracking, courier, amounts).", parameters: { type: "object", properties: {
+    order_id: { type: "string" }, shipping_name: { type: "string" }, shipping_phone: { type: "string" },
+    shipping_email: { type: "string" }, shipping_address: { type: "string" }, shipping_city: { type: "string" },
+    shipping_division_id: { type: "string" }, shipping_thana_id: { type: "string" }, shipping_postal_code: { type: "string" },
+    tracking_number: { type: "string" }, courier_name: { type: "string" },
+    customer_notes: { type: "string" }, internal_notes: { type: "string" },
+    discount_amount: { type: "number" }, shipping_cost: { type: "number" }, total_amount: { type: "number" },
+  }, required: ["order_id"] } } },
+  { type: "function", function: { name: "set_order_status", description: "Change order_status. Logs status history.", parameters: { type: "object", properties: {
+    order_id: { type: "string" },
+    status: { type: "string", description: "pending|confirmed|processing|shipped|delivered|partially_delivered|cancelled|returned" },
+    notes: { type: "string" },
+  }, required: ["order_id", "status"] } } },
+  { type: "function", function: { name: "set_payment_status", description: "Change payment_status of an order.", parameters: { type: "object", properties: {
+    order_id: { type: "string" },
+    payment_status: { type: "string", description: "unpaid|partial|paid|refunded" },
+    notes: { type: "string" },
+  }, required: ["order_id", "payment_status"] } } },
+  { type: "function", function: { name: "update_order_item", description: "Update an order item: quantity, unit_price, fulfillment_status, or delete.", parameters: { type: "object", properties: {
+    item_id: { type: "string" }, quantity: { type: "number" }, unit_price: { type: "number" },
+    fulfillment_status: { type: "string", description: "pending|processing|shipped|delivered|cancelled|out_of_stock|returned" },
+    delete: { type: "boolean", description: "If true, delete the item." },
+  }, required: ["item_id"] } } },
+  { type: "function", function: { name: "add_order_payment", description: "Record a manual payment against an order into a financial account.", parameters: { type: "object", properties: {
+    order_id: { type: "string" }, account_id: { type: "string" }, amount: { type: "number" },
+    payment_reference: { type: "string" },
+  }, required: ["order_id", "account_id", "amount"] } } },
+  { type: "function", function: { name: "delete_order", description: "Delete an order by id (irreversible).", parameters: { type: "object", properties: { order_id: { type: "string" } }, required: ["order_id"] } } },
 ];
 
 const SYSTEM_PROMPT = `You are POSHPLEX's admin AI assistant. The brand is a Bangladesh streetwear store ("BE POSH WITH POSHPLEX"). Currency is Taka (৳), locale en-BD.
 
 You have READ access to EVERY module of the system: products, orders, customers, reviews, inventory, financial accounts, transactions, payments, promo codes, payment methods, shipping locations (Districts/Thanas), site settings, and analytics. Use the appropriate tool to look up real data — never guess numbers.
 
-You have WRITE access only to PRODUCTS (create/update/delete/toggle/images). For changes in any other module (orders, customers, finance, etc.), explain what you see and tell the admin to use that admin page directly.
+You have WRITE access to: PRODUCTS (create/update/delete/toggle/images), CUSTOMERS (create/update/delete), and ORDERS (update fields, change status, change payment status, edit/delete items, record payments, delete order). For other modules (finance accounts, inventory entries, promo codes, etc.) explain what you see and tell the admin to use that admin page.
+
+When the admin asks to change a customer or order, first look it up by phone/email/order_number to get the id, then call the right write tool. Always confirm the destructive action briefly after it runs.
 
 Rules:
 - Always look up real data with tools before answering. Don't fabricate.
@@ -372,6 +424,100 @@ async function executeTool(name: string, args: any, sb: any) {
         return { site_settings: data?.[0] || null };
       }
       case "get_site_branding": return { branding: (await sb.from("site_branding").select("*").maybeSingle()).data };
+
+      // ====== WRITE — Customers ======
+      case "create_customer": {
+        const { data, error } = await sb.from("customers").insert({
+          name: args.name, phone: args.phone, email: args.email || null,
+          gender: args.gender || "other", address: args.address || null,
+          division_id: args.division_id || null, thana_id: args.thana_id || null,
+          postal_code: args.postal_code || null, customer_type_id: args.customer_type_id || null,
+          notes: args.notes || null, is_active: args.is_active ?? true,
+        }).select().single();
+        if (error) throw error;
+        return { success: true, customer: data };
+      }
+      case "update_customer": {
+        const { customer_id, ...patch } = args;
+        const { data, error } = await sb.from("customers").update(patch).eq("id", customer_id).select().single();
+        if (error) throw error;
+        return { success: true, customer: data };
+      }
+      case "delete_customer": {
+        const { error } = await sb.from("customers").delete().eq("id", args.customer_id);
+        if (error) throw error;
+        return { success: true };
+      }
+      // ====== WRITE — Orders ======
+      case "update_order": {
+        const { order_id, ...patch } = args;
+        const { data, error } = await sb.from("orders").update(patch).eq("id", order_id).select().single();
+        if (error) throw error;
+        return { success: true, order: data };
+      }
+      case "set_order_status": {
+        const { data: prev } = await sb.from("orders").select("order_status").eq("id", args.order_id).maybeSingle();
+        const { data, error } = await sb.from("orders").update({ order_status: args.status }).eq("id", args.order_id).select().single();
+        if (error) throw error;
+        await sb.from("order_status_history").insert({
+          order_id: args.order_id, status_type: "order",
+          previous_status: prev?.order_status || null, new_status: args.status,
+          notes: args.notes || "Updated by AI assistant",
+        });
+        return { success: true, order: data };
+      }
+      case "set_payment_status": {
+        const { data: prev } = await sb.from("orders").select("payment_status").eq("id", args.order_id).maybeSingle();
+        const { data, error } = await sb.from("orders").update({ payment_status: args.payment_status }).eq("id", args.order_id).select().single();
+        if (error) throw error;
+        await sb.from("order_status_history").insert({
+          order_id: args.order_id, status_type: "payment",
+          previous_status: prev?.payment_status || null, new_status: args.payment_status,
+          notes: args.notes || "Updated by AI assistant",
+        });
+        return { success: true, order: data };
+      }
+      case "update_order_item": {
+        if (args.delete) {
+          const { error } = await sb.from("order_items").delete().eq("id", args.item_id);
+          if (error) throw error;
+          return { success: true, deleted: true };
+        }
+        const patch: any = {};
+        if (args.quantity !== undefined) patch.quantity = args.quantity;
+        if (args.unit_price !== undefined) patch.unit_price = args.unit_price;
+        if (args.fulfillment_status) patch.fulfillment_status = args.fulfillment_status;
+        if (patch.quantity !== undefined || patch.unit_price !== undefined) {
+          const { data: cur } = await sb.from("order_items").select("quantity, unit_price").eq("id", args.item_id).maybeSingle();
+          const qty = patch.quantity ?? cur?.quantity ?? 1;
+          const price = patch.unit_price ?? cur?.unit_price ?? 0;
+          patch.line_total = Number(qty) * Number(price);
+        }
+        const { data, error } = await sb.from("order_items").update(patch).eq("id", args.item_id).select().single();
+        if (error) throw error;
+        return { success: true, item: data };
+      }
+      case "add_order_payment": {
+        const { data, error } = await sb.from("order_payments").insert({
+          order_id: args.order_id, account_id: args.account_id,
+          amount: args.amount, payment_reference: args.payment_reference || null,
+        }).select().single();
+        if (error) throw error;
+        // Bump paid_amount
+        const { data: o } = await sb.from("orders").select("paid_amount, total_amount").eq("id", args.order_id).maybeSingle();
+        const newPaid = Number(o?.paid_amount || 0) + Number(args.amount);
+        const newStatus = newPaid >= Number(o?.total_amount || 0) ? "paid" : (newPaid > 0 ? "partial" : "unpaid");
+        await sb.from("orders").update({ paid_amount: newPaid, payment_status: newStatus }).eq("id", args.order_id);
+        return { success: true, payment: data, new_paid_amount: newPaid, new_payment_status: newStatus };
+      }
+      case "delete_order": {
+        await sb.from("order_items").delete().eq("order_id", args.order_id);
+        await sb.from("order_status_history").delete().eq("order_id", args.order_id);
+        await sb.from("order_payments").delete().eq("order_id", args.order_id);
+        const { error } = await sb.from("orders").delete().eq("id", args.order_id);
+        if (error) throw error;
+        return { success: true };
+      }
 
       default: return { error: `Unknown tool: ${name}` };
     }

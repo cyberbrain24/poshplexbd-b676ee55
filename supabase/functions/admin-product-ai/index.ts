@@ -102,6 +102,50 @@ const tools = [
   { type: "function", function: { name: "get_top_customers", description: "Top customers by total spent.", parameters: { type: "object", properties: { limit: { type: "number" } } } } },
   { type: "function", function: { name: "get_site_settings", description: "Public site settings (analytics, pixel ids).", parameters: { type: "object", properties: {} } } },
   { type: "function", function: { name: "get_site_branding", description: "Site branding info (name, slogan, hero).", parameters: { type: "object", properties: {} } } },
+  // WRITE — Customers
+  { type: "function", function: { name: "create_customer", description: "Create a new customer. Phone is required.", parameters: { type: "object", properties: {
+    name: { type: "string" }, phone: { type: "string" }, email: { type: "string" },
+    gender: { type: "string", description: "male|female|other" }, address: { type: "string" },
+    division_id: { type: "string" }, thana_id: { type: "string" }, postal_code: { type: "string" },
+    customer_type_id: { type: "string" }, notes: { type: "string" }, is_active: { type: "boolean" },
+  }, required: ["name", "phone"] } } },
+  { type: "function", function: { name: "update_customer", description: "Update customer fields. Pass customer_id and any fields.", parameters: { type: "object", properties: {
+    customer_id: { type: "string" }, name: { type: "string" }, phone: { type: "string" },
+    email: { type: "string" }, gender: { type: "string" }, address: { type: "string" },
+    division_id: { type: "string" }, thana_id: { type: "string" }, postal_code: { type: "string" },
+    customer_type_id: { type: "string" }, notes: { type: "string" }, is_active: { type: "boolean" },
+    birthdate: { type: "string" },
+  }, required: ["customer_id"] } } },
+  { type: "function", function: { name: "delete_customer", description: "Delete a customer by id. Will fail if linked orders exist.", parameters: { type: "object", properties: { customer_id: { type: "string" } }, required: ["customer_id"] } } },
+  // WRITE — Orders
+  { type: "function", function: { name: "update_order", description: "Update mutable order fields (shipping info, notes, tracking, courier, amounts).", parameters: { type: "object", properties: {
+    order_id: { type: "string" }, shipping_name: { type: "string" }, shipping_phone: { type: "string" },
+    shipping_email: { type: "string" }, shipping_address: { type: "string" }, shipping_city: { type: "string" },
+    shipping_division_id: { type: "string" }, shipping_thana_id: { type: "string" }, shipping_postal_code: { type: "string" },
+    tracking_number: { type: "string" }, courier_name: { type: "string" },
+    customer_notes: { type: "string" }, internal_notes: { type: "string" },
+    discount_amount: { type: "number" }, shipping_cost: { type: "number" }, total_amount: { type: "number" },
+  }, required: ["order_id"] } } },
+  { type: "function", function: { name: "set_order_status", description: "Change order_status. Logs status history.", parameters: { type: "object", properties: {
+    order_id: { type: "string" },
+    status: { type: "string", description: "pending|confirmed|processing|shipped|delivered|partially_delivered|cancelled|returned" },
+    notes: { type: "string" },
+  }, required: ["order_id", "status"] } } },
+  { type: "function", function: { name: "set_payment_status", description: "Change payment_status of an order.", parameters: { type: "object", properties: {
+    order_id: { type: "string" },
+    payment_status: { type: "string", description: "unpaid|partial|paid|refunded" },
+    notes: { type: "string" },
+  }, required: ["order_id", "payment_status"] } } },
+  { type: "function", function: { name: "update_order_item", description: "Update an order item: quantity, unit_price, fulfillment_status, or delete.", parameters: { type: "object", properties: {
+    item_id: { type: "string" }, quantity: { type: "number" }, unit_price: { type: "number" },
+    fulfillment_status: { type: "string", description: "pending|processing|shipped|delivered|cancelled|out_of_stock|returned" },
+    delete: { type: "boolean", description: "If true, delete the item." },
+  }, required: ["item_id"] } } },
+  { type: "function", function: { name: "add_order_payment", description: "Record a manual payment against an order into a financial account.", parameters: { type: "object", properties: {
+    order_id: { type: "string" }, account_id: { type: "string" }, amount: { type: "number" },
+    payment_reference: { type: "string" },
+  }, required: ["order_id", "account_id", "amount"] } } },
+  { type: "function", function: { name: "delete_order", description: "Delete an order by id (irreversible).", parameters: { type: "object", properties: { order_id: { type: "string" } }, required: ["order_id"] } } },
 ];
 
 const SYSTEM_PROMPT = `You are POSHPLEX's admin AI assistant. The brand is a Bangladesh streetwear store ("BE POSH WITH POSHPLEX"). Currency is Taka (৳), locale en-BD.

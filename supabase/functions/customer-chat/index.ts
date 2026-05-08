@@ -156,6 +156,24 @@ const tools = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "modify_order_item",
+      description: "Change the color and/or size variant of an item on an existing pending order. Requires order_number + customer phone for verification. Only works while order_status is 'pending'.",
+      parameters: {
+        type: "object",
+        properties: {
+          order_number: { type: "string", description: "Order number e.g. PO-19" },
+          phone: { type: "string", description: "Customer phone for verification" },
+          item_id: { type: "string", description: "Optional: specific order_item id. If omitted and order has 1 item, that item is used." },
+          color: { type: "string", description: "New color name (optional)" },
+          size: { type: "string", description: "New size label (optional)" },
+        },
+        required: ["order_number", "phone"],
+      },
+    },
+  },
 ];
 
 const PRODUCT_LIST_SELECT = `

@@ -1,7 +1,8 @@
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, X, Loader2 } from "lucide-react";
+import { Search, X, Loader2, Sparkles } from "lucide-react";
 import { useProductSearch, usePopularCategories } from "@/hooks/useProductSearch";
+import { useAISearchSuggest } from "@/hooks/useAISearchSuggest";
 import { generateProductSlug } from "@/lib/slug";
 import { formatCurrency } from "@/lib/currency";
 

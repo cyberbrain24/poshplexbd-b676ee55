@@ -494,21 +494,61 @@ const AdminSiteSettings = () => {
               </p>
             </div>
 
-            <div className="text-xs text-muted-foreground space-y-1 leading-relaxed">
-              <p className="font-medium text-foreground">To add or update your Google Gemini API Key:</p>
-              <p>1. Get a key at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" className="underline">aistudio.google.com/app/apikey</a></p>
-              <p>2. Ask the AI assistant: <span className="font-mono bg-muted px-1">"Update GEMINI_API_KEY secret"</span></p>
-              <p>3. Paste the key in the secure form. It will be available immediately.</p>
+            {/* Inline credential form */}
+            <div className="border border-border p-4 space-y-3">
+              <Label className="text-sm font-medium">
+                {geminiStatus?.gemini_configured ? "Update Gemini API Key" : "Set Gemini API Key"}
+              </Label>
+              <Input
+                type="password"
+                value={geminiKeyInput}
+                onChange={(e) => setGeminiKeyInput(e.target.value)}
+                className="rounded-none font-mono"
+                placeholder="AIza..."
+                autoComplete="off"
+              />
+              <p className="text-xs text-muted-foreground">
+                Get a free key at{" "}
+                <a
+                  href="https://aistudio.google.com/app/apikey"
+                  target="_blank"
+                  rel="noopener"
+                  className="underline"
+                >
+                  aistudio.google.com/app/apikey
+                </a>
+                . Stored securely; only admins can view or change it.
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  className="rounded-none"
+                  onClick={handleSaveGeminiKey}
+                  disabled={savingGemini || !geminiKeyInput.trim()}
+                >
+                  {savingGemini ? "Saving…" : "Save Key"}
+                </Button>
+                {geminiStatus?.gemini_configured && geminiStatus?.gemini_source === "database" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-none text-destructive"
+                    onClick={handleClearGeminiKey}
+                    disabled={savingGemini}
+                  >
+                    <X className="h-4 w-4 mr-1" /> Remove Key
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-none ml-auto"
+                  onClick={() => refetchGemini()}
+                >
+                  Refresh
+                </Button>
+              </div>
             </div>
-
-            <Button
-              size="sm"
-              variant="outline"
-              className="rounded-none"
-              onClick={() => refetchGemini()}
-            >
-              Refresh Status
-            </Button>
           </div>
         )}
       </section>

@@ -301,6 +301,9 @@ const CustomerChatWidget = () => {
           </div>
         </div>
       )}
+      {lightbox && (
+        <ImageLightbox images={[lightbox]} isOpen={true} onClose={() => setLightbox(null)} />
+      )}
     </>
   );
 };

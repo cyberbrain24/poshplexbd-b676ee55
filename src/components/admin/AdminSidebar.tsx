@@ -201,6 +201,7 @@ const AdminSidebar = () => {
         {renderNavLink("/admin/independent-inventory", Warehouse, "Independent Inventory")}
         {renderNavLink("/admin/media", Image, "Media")}
         {renderNavLink("/admin/music", Music, "Music Player")}
+        {renderNavLink("/admin/chatbot", MessageSquare, "Customer Chatbot")}
         {renderNavLink("/admin/site-settings", Settings, "Site Settings")}
       </nav>
 

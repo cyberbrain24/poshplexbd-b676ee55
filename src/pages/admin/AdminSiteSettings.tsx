@@ -448,6 +448,22 @@ const AdminSiteSettings = () => {
           <Skeleton className="h-20 w-full" />
         ) : (
           <div className="space-y-4">
+            {/* Enable/Disable toggle */}
+            <div className="flex items-center justify-between border border-border p-3">
+              <div>
+                <p className="text-sm font-medium">Gemini AI</p>
+                <p className="text-xs text-muted-foreground">
+                  {geminiStatus?.gemini_enabled
+                    ? "AI features are active across the site"
+                    : "AI features are turned off"}
+                </p>
+              </div>
+              <Switch
+                checked={!!geminiStatus?.gemini_enabled}
+                onCheckedChange={handleToggleGemini}
+              />
+            </div>
+
             {/* Gemini Key status */}
             <div className="flex items-center justify-between border border-border p-3">
               <div className="flex items-center gap-3">
@@ -466,7 +482,9 @@ const AdminSiteSettings = () => {
                 </div>
               </div>
               <span className="text-xs font-mono text-muted-foreground">
-                {geminiStatus?.gemini_configured ? "Active" : "—"}
+                {!geminiStatus?.gemini_enabled
+                  ? "Disabled"
+                  : geminiStatus?.gemini_configured ? "Active" : "—"}
               </span>
             </div>
 

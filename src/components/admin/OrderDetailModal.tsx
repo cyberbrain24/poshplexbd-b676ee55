@@ -105,6 +105,8 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<PaymentStatus | "">("");
   const [editingItem, setEditingItem] = useState<{
     id: string;
+    product_id: string | null;
+    variant_id: string | null;
     product_name: string;
     variant_sku: string | null;
     quantity: number;
@@ -795,6 +797,8 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
                           className="h-7 w-7"
                           onClick={() => setEditingItem({
                             id: item.id,
+                            product_id: (item as any).product_id ?? null,
+                            variant_id: (item as any).variant_id ?? null,
                             product_name: item.product_name,
                             variant_sku: item.variant_sku,
                             quantity: item.quantity,

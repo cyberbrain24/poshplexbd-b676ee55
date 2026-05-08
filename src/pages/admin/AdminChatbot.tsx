@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Plus, Trash2, MessageSquare, ThumbsUp, ThumbsDown, ImagePlus, Loader2, X } from "lucide-react";
+import { Plus, Trash2, MessageSquare, ThumbsUp, ThumbsDown, ImagePlus, Loader2, X, Pencil, Save } from "lucide-react";
 
 export default function AdminChatbot() {
   const qc = useQueryClient();
@@ -111,6 +111,54 @@ export default function AdminChatbot() {
 
   const toggleFaq = async (id: string, is_active: boolean) => {
     await supabase.from("chatbot_faqs").update({ is_active }).eq("id", id);
+    qc.invalidateQueries({ queryKey: ["chatbot-faqs"] });
+  };
+
+  // ====== Edit FAQ ======
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editQ, setEditQ] = useState("");
+  const [editA, setEditA] = useState("");
+  const [editImage, setEditImage] = useState<string>("");
+  const [editUploading, setEditUploading] = useState(false);
+  const editFileRef = useRef<HTMLInputElement>(null);
+
+  const startEdit = (f: any) => {
+    setEditingId(f.id);
+    setEditQ(f.question);
+    setEditA(f.answer);
+    setEditImage(f.image_url || "");
+  };
+  const cancelEdit = () => { setEditingId(null); setEditQ(""); setEditA(""); setEditImage(""); };
+
+  const handleEditImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) return toast.error("Max 5MB");
+    setEditUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `chatbot-faq/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error } = await supabase.storage.from("media").upload(path, file);
+      if (error) throw error;
+      const { data: { publicUrl } } = supabase.storage.from("media").getPublicUrl(path);
+      setEditImage(publicUrl);
+      toast.success("Image uploaded");
+    } catch (err: any) {
+      toast.error(err.message || "Upload failed");
+    } finally {
+      setEditUploading(false);
+      if (editFileRef.current) editFileRef.current.value = "";
+    }
+  };
+
+  const saveEdit = async () => {
+    if (!editingId) return;
+    const { error } = await supabase.from("chatbot_faqs").update({
+      question: editQ, answer: editA, image_url: editImage || null,
+    }).eq("id", editingId);
+    if (error) return toast.error(error.message);
+    toast.success("FAQ updated");
+    cancelEdit();
     qc.invalidateQueries({ queryKey: ["chatbot-faqs"] });
   };
 
@@ -249,25 +297,64 @@ export default function AdminChatbot() {
           </Card>
 
           <div className="space-y-2">
-            {faqs.map((f: any) => (
-              <Card key={f.id} className="p-4 flex justify-between gap-3">
-                <div className="flex-1 flex gap-3">
-                  {f.image_url && (
-                    <img src={f.image_url} alt="" className="h-16 w-16 object-cover rounded border border-border shrink-0" />
-                  )}
-                  <div>
-                    <p className="font-medium text-sm">{f.question}</p>
-                    <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{f.answer}</p>
+            {faqs.map((f: any) => {
+              const isEditing = editingId === f.id;
+              if (isEditing) {
+                return (
+                  <Card key={f.id} className="p-4 space-y-3 border-foreground">
+                    <Input value={editQ} onChange={(e) => setEditQ(e.target.value)} placeholder="Question" />
+                    <Textarea value={editA} onChange={(e) => setEditA(e.target.value)} rows={3} placeholder="Answer" />
+                    <div className="space-y-2">
+                      <Label className="text-xs">Image (optional)</Label>
+                      {editImage ? (
+                        <div className="relative inline-block">
+                          <img src={editImage} alt="FAQ" className="h-24 w-24 object-cover rounded border border-border" />
+                          <button type="button" onClick={() => setEditImage("")} className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-0.5">
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="inline-flex items-center gap-2 px-3 py-2 border border-dashed border-border rounded-md text-xs cursor-pointer hover:bg-muted">
+                          {editUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
+                          {editUploading ? "Uploading..." : "Upload Image"}
+                          <input ref={editFileRef} type="file" accept="image/*" onChange={handleEditImageUpload} className="hidden" disabled={editUploading} />
+                        </label>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button onClick={saveEdit} disabled={!editQ || !editA || editUploading} size="sm">
+                        <Save className="h-4 w-4 mr-1" /> Save
+                      </Button>
+                      <Button onClick={cancelEdit} variant="outline" size="sm">Cancel</Button>
+                    </div>
+                  </Card>
+                );
+              }
+              return (
+                <Card key={f.id} className="p-4 flex justify-between gap-3">
+                  <div className="flex-1 flex gap-3">
+                    {f.image_url && (
+                      <img src={f.image_url} alt="" className="h-16 w-16 object-cover rounded border border-border shrink-0" />
+                    )}
+                    <div>
+                      <p className="font-medium text-sm">{f.question}</p>
+                      <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{f.answer}</p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                  <Switch checked={f.is_active} onCheckedChange={(v) => toggleFaq(f.id, v)} />
-                  <button onClick={() => deleteFaq(f.id)} className="text-destructive hover:opacity-70">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </Card>
-            ))}
+                  <div className="flex flex-col items-end gap-2">
+                    <Switch checked={f.is_active} onCheckedChange={(v) => toggleFaq(f.id, v)} />
+                    <div className="flex gap-2">
+                      <button onClick={() => startEdit(f)} className="text-muted-foreground hover:text-foreground" title="Edit">
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button onClick={() => deleteFaq(f.id)} className="text-destructive hover:opacity-70" title="Delete">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
             {faqs.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">No FAQs yet. Add the first one above.</p>}
           </div>
         </TabsContent>

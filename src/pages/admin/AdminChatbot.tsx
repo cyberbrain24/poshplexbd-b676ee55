@@ -297,25 +297,64 @@ export default function AdminChatbot() {
           </Card>
 
           <div className="space-y-2">
-            {faqs.map((f: any) => (
-              <Card key={f.id} className="p-4 flex justify-between gap-3">
-                <div className="flex-1 flex gap-3">
-                  {f.image_url && (
-                    <img src={f.image_url} alt="" className="h-16 w-16 object-cover rounded border border-border shrink-0" />
-                  )}
-                  <div>
-                    <p className="font-medium text-sm">{f.question}</p>
-                    <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{f.answer}</p>
+            {faqs.map((f: any) => {
+              const isEditing = editingId === f.id;
+              if (isEditing) {
+                return (
+                  <Card key={f.id} className="p-4 space-y-3 border-foreground">
+                    <Input value={editQ} onChange={(e) => setEditQ(e.target.value)} placeholder="Question" />
+                    <Textarea value={editA} onChange={(e) => setEditA(e.target.value)} rows={3} placeholder="Answer" />
+                    <div className="space-y-2">
+                      <Label className="text-xs">Image (optional)</Label>
+                      {editImage ? (
+                        <div className="relative inline-block">
+                          <img src={editImage} alt="FAQ" className="h-24 w-24 object-cover rounded border border-border" />
+                          <button type="button" onClick={() => setEditImage("")} className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-0.5">
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="inline-flex items-center gap-2 px-3 py-2 border border-dashed border-border rounded-md text-xs cursor-pointer hover:bg-muted">
+                          {editUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
+                          {editUploading ? "Uploading..." : "Upload Image"}
+                          <input ref={editFileRef} type="file" accept="image/*" onChange={handleEditImageUpload} className="hidden" disabled={editUploading} />
+                        </label>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button onClick={saveEdit} disabled={!editQ || !editA || editUploading} size="sm">
+                        <Save className="h-4 w-4 mr-1" /> Save
+                      </Button>
+                      <Button onClick={cancelEdit} variant="outline" size="sm">Cancel</Button>
+                    </div>
+                  </Card>
+                );
+              }
+              return (
+                <Card key={f.id} className="p-4 flex justify-between gap-3">
+                  <div className="flex-1 flex gap-3">
+                    {f.image_url && (
+                      <img src={f.image_url} alt="" className="h-16 w-16 object-cover rounded border border-border shrink-0" />
+                    )}
+                    <div>
+                      <p className="font-medium text-sm">{f.question}</p>
+                      <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{f.answer}</p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                  <Switch checked={f.is_active} onCheckedChange={(v) => toggleFaq(f.id, v)} />
-                  <button onClick={() => deleteFaq(f.id)} className="text-destructive hover:opacity-70">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </Card>
-            ))}
+                  <div className="flex flex-col items-end gap-2">
+                    <Switch checked={f.is_active} onCheckedChange={(v) => toggleFaq(f.id, v)} />
+                    <div className="flex gap-2">
+                      <button onClick={() => startEdit(f)} className="text-muted-foreground hover:text-foreground" title="Edit">
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button onClick={() => deleteFaq(f.id)} className="text-destructive hover:opacity-70" title="Delete">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
             {faqs.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">No FAQs yet. Add the first one above.</p>}
           </div>
         </TabsContent>

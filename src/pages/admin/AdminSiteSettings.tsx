@@ -6,8 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { Upload, X, Image as ImageIcon, Monitor, Smartphone, Activity } from "lucide-react";
+import { Upload, X, Image as ImageIcon, Monitor, Smartphone, Activity, Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
@@ -17,6 +19,15 @@ const AdminSiteSettings = () => {
   const uploadMutation = useUploadBrandingAsset();
   const { data: pixelSettings, isLoading: loadingPixel } = usePixelSettings();
   const updatePixelMutation = useUpdatePixelSettings();
+
+  const { data: geminiStatus, isLoading: loadingGemini, refetch: refetchGemini } = useQuery({
+    queryKey: ["gemini-credentials-status"],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("gemini-credentials-status");
+      if (error) throw error;
+      return data as { gemini_configured: boolean; gemini_masked: string | null; lovable_ai_configured: boolean; active_provider: string };
+    },
+  });
 
   const [siteName, setSiteName] = useState("");
   const [slogan, setSlogan] = useState("");
@@ -379,6 +390,94 @@ const AdminSiteSettings = () => {
               size="sm"
             >
               {updatePixelMutation.isPending ? "Saving…" : "Save Pixel Settings"}
+            </Button>
+          </div>
+        )}
+      </section>
+
+      {/* ── Gemini AI Credentials ───────────────────────────── */}
+      <section className="border border-border p-6 mb-8">
+        <div className="flex items-center gap-2 mb-1">
+          <Sparkles className="h-5 w-5 text-muted-foreground" />
+          <h2 className="text-base font-medium">Gemini AI Credentials</h2>
+        </div>
+        <p className="text-xs text-muted-foreground mb-6">
+          Powers the Admin AI Assistant, AI search suggestions, and AI product description generator.
+          Lovable AI Gateway is used by default. Optionally provide your own Google Gemini API key for direct access.
+        </p>
+
+        {loadingGemini ? (
+          <Skeleton className="h-20 w-full" />
+        ) : (
+          <div className="space-y-4">
+            {/* Lovable AI status */}
+            <div className="flex items-center justify-between border border-border p-3">
+              <div className="flex items-center gap-3">
+                {geminiStatus?.lovable_ai_configured ? (
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                ) : (
+                  <AlertCircle className="h-4 w-4 text-amber-600" />
+                )}
+                <div>
+                  <p className="text-sm font-medium">Lovable AI Gateway</p>
+                  <p className="text-xs text-muted-foreground">
+                    Built-in Gemini access — no setup required
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs font-mono text-muted-foreground">
+                {geminiStatus?.lovable_ai_configured ? "Active" : "Unavailable"}
+              </span>
+            </div>
+
+            {/* Custom Gemini Key status */}
+            <div className="flex items-center justify-between border border-border p-3">
+              <div className="flex items-center gap-3">
+                {geminiStatus?.gemini_configured ? (
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                ) : (
+                  <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                )}
+                <div>
+                  <p className="text-sm font-medium">Custom Gemini API Key</p>
+                  <p className="text-xs text-muted-foreground">
+                    {geminiStatus?.gemini_configured
+                      ? `Configured: ${geminiStatus.gemini_masked}`
+                      : "Not configured — using Lovable AI Gateway"}
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs font-mono text-muted-foreground">
+                {geminiStatus?.gemini_configured ? "Set" : "—"}
+              </span>
+            </div>
+
+            {/* Active provider */}
+            <div className="bg-muted/30 border border-border p-3">
+              <p className="text-xs text-muted-foreground">
+                <span className="font-medium text-foreground">Active provider: </span>
+                {geminiStatus?.active_provider === "gemini_direct"
+                  ? "Custom Gemini API Key (direct)"
+                  : geminiStatus?.active_provider === "lovable_gateway"
+                  ? "Lovable AI Gateway (default)"
+                  : "None — AI features disabled"}
+              </p>
+            </div>
+
+            <div className="text-xs text-muted-foreground space-y-1 leading-relaxed">
+              <p className="font-medium text-foreground">To add or update your Google Gemini API Key:</p>
+              <p>1. Get a key at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" className="underline">aistudio.google.com/app/apikey</a></p>
+              <p>2. Ask the AI assistant: <span className="font-mono bg-muted px-1">"Update GEMINI_API_KEY secret"</span></p>
+              <p>3. Paste the key in the secure form. It will be available immediately.</p>
+            </div>
+
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-none"
+              onClick={() => refetchGemini()}
+            >
+              Refresh Status
             </Button>
           </div>
         )}

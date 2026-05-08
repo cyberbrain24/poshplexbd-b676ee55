@@ -241,7 +241,7 @@ const CustomerChatWidget = () => {
                     <div className="max-w-[92%] px-3 py-2 rounded-lg text-sm bg-muted text-foreground w-full">
                       {text && (
                         <div className="prose prose-sm max-w-none prose-p:my-1 prose-headings:my-1">
-                          <ReactMarkdown>{text}</ReactMarkdown>
+                          <ReactMarkdown components={markdownComponents}>{text}</ReactMarkdown>
                         </div>
                       )}
                       {products.length > 0 && (

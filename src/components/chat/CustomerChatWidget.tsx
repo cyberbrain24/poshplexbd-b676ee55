@@ -95,9 +95,24 @@ const CustomerChatWidget = () => {
   });
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [lightbox, setLightbox] = useState<string | null>(null);
   const conversationIdRef = useRef<string | null>(localStorage.getItem(CONV_KEY));
   const scrollRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  const markdownComponents = useMemo(() => ({
+    img: ({ src, alt }: any) => (
+      <img
+        src={src}
+        alt={alt || ""}
+        loading="lazy"
+        decoding="async"
+        onClick={() => src && setLightbox(src)}
+        style={{ imageRendering: "auto" }}
+        className="max-w-[600px] w-full h-auto rounded-md cursor-zoom-in my-2 border border-border"
+      />
+    ),
+  }), []);
 
   useEffect(() => {
     const handler = () => setOpen(true);

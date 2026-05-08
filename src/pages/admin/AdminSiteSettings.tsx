@@ -59,6 +59,15 @@ const AdminSiteSettings = () => {
     refetchGemini();
   };
 
+  const handleToggleGemini = async (next: boolean) => {
+    const { data: row } = await supabase.from("site_settings").select("id").limit(1).maybeSingle();
+    if (!row) { toast.error("Site settings row not found"); return; }
+    const { error } = await supabase.from("site_settings").update({ gemini_enabled: next }).eq("id", row.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(next ? "Gemini AI enabled" : "Gemini AI disabled");
+    refetchGemini();
+  };
+
   const [siteName, setSiteName] = useState("");
   const [slogan, setSlogan] = useState("");
   const [initialized, setInitialized] = useState(false);

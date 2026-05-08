@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Plus, Trash2, MessageSquare, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Plus, Trash2, MessageSquare, ThumbsUp, ThumbsDown, ImagePlus, Loader2, X } from "lucide-react";
 
 export default function AdminChatbot() {
   const qc = useQueryClient();

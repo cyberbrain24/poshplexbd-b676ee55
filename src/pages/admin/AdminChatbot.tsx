@@ -220,7 +220,30 @@ export default function AdminChatbot() {
             <h3 className="font-medium text-sm uppercase tracking-wider">Add Knowledge / FAQ</h3>
             <Input placeholder="Question" value={newQ} onChange={(e) => setNewQ(e.target.value)} />
             <Textarea placeholder="Answer the bot should give" value={newA} onChange={(e) => setNewA(e.target.value)} rows={3} />
-            <Button onClick={() => addFaq.mutate()} disabled={!newQ || !newA}>
+
+            <div className="space-y-2">
+              <Label className="text-xs">Image (optional — bot will reply with this image)</Label>
+              {newImage ? (
+                <div className="relative inline-block">
+                  <img src={newImage} alt="FAQ" className="h-24 w-24 object-cover rounded border border-border" />
+                  <button
+                    type="button"
+                    onClick={() => setNewImage("")}
+                    className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-0.5"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ) : (
+                <label className="inline-flex items-center gap-2 px-3 py-2 border border-dashed border-border rounded-md text-xs cursor-pointer hover:bg-muted">
+                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
+                  {uploading ? "Uploading..." : "Upload Image"}
+                  <input ref={fileRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" disabled={uploading} />
+                </label>
+              )}
+            </div>
+
+            <Button onClick={() => addFaq.mutate()} disabled={!newQ || !newA || uploading}>
               <Plus className="h-4 w-4 mr-1" /> Add FAQ
             </Button>
           </Card>
@@ -228,9 +251,14 @@ export default function AdminChatbot() {
           <div className="space-y-2">
             {faqs.map((f: any) => (
               <Card key={f.id} className="p-4 flex justify-between gap-3">
-                <div className="flex-1">
-                  <p className="font-medium text-sm">{f.question}</p>
-                  <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{f.answer}</p>
+                <div className="flex-1 flex gap-3">
+                  {f.image_url && (
+                    <img src={f.image_url} alt="" className="h-16 w-16 object-cover rounded border border-border shrink-0" />
+                  )}
+                  <div>
+                    <p className="font-medium text-sm">{f.question}</p>
+                    <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{f.answer}</p>
+                  </div>
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <Switch checked={f.is_active} onCheckedChange={(v) => toggleFaq(f.id, v)} />

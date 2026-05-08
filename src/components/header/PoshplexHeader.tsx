@@ -191,7 +191,7 @@ const PoshplexHeader = () => {
           </button>
           <Link
             to="/favorites"
-            className="hidden lg:block p-2 text-foreground hover:text-nav-hover transition-colors relative"
+            className="p-2 text-foreground hover:text-nav-hover transition-colors relative"
             aria-label="Favorites"
           >
             <Heart size={20} strokeWidth={1.5} />

@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Plus, Trash2, MessageSquare, ThumbsUp, ThumbsDown, ImagePlus, Loader2, X } from "lucide-react";
+import { Plus, Trash2, MessageSquare, ThumbsUp, ThumbsDown, ImagePlus, Loader2, X, Pencil, Save } from "lucide-react";
 
 export default function AdminChatbot() {
   const qc = useQueryClient();

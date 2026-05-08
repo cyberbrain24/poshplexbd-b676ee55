@@ -25,9 +25,39 @@ const AdminSiteSettings = () => {
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke("gemini-credentials-status");
       if (error) throw error;
-      return data as { gemini_configured: boolean; gemini_masked: string | null; lovable_ai_configured: boolean; active_provider: string };
+      return data as { gemini_configured: boolean; gemini_masked: string | null; gemini_source: string | null; lovable_ai_configured: boolean; active_provider: string };
     },
   });
+
+  const [geminiKeyInput, setGeminiKeyInput] = useState("");
+  const [savingGemini, setSavingGemini] = useState(false);
+
+  const handleSaveGeminiKey = async () => {
+    const key = geminiKeyInput.trim();
+    if (!key) { toast.error("Please enter a Gemini API key"); return; }
+    if (key.length < 20) { toast.error("That doesn't look like a valid API key"); return; }
+    setSavingGemini(true);
+    const { data: row } = await supabase.from("site_settings").select("id").limit(1).maybeSingle();
+    if (!row) { toast.error("Site settings row not found"); setSavingGemini(false); return; }
+    const { error } = await supabase.from("site_settings").update({ gemini_api_key: key }).eq("id", row.id);
+    setSavingGemini(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Gemini API key saved");
+    setGeminiKeyInput("");
+    refetchGemini();
+  };
+
+  const handleClearGeminiKey = async () => {
+    if (!confirm("Remove the saved Gemini API key? AI will fall back to Lovable AI Gateway.")) return;
+    setSavingGemini(true);
+    const { data: row } = await supabase.from("site_settings").select("id").limit(1).maybeSingle();
+    if (!row) { setSavingGemini(false); return; }
+    const { error } = await supabase.from("site_settings").update({ gemini_api_key: null }).eq("id", row.id);
+    setSavingGemini(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Gemini API key removed");
+    refetchGemini();
+  };
 
   const [siteName, setSiteName] = useState("");
   const [slogan, setSlogan] = useState("");

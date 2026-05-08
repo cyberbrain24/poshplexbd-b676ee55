@@ -30,11 +30,12 @@ Deno.serve(async (req) => {
 
     const { data: settings } = await supabase
       .from("site_settings")
-      .select("gemini_api_key")
+      .select("gemini_api_key, gemini_enabled")
       .limit(1)
       .maybeSingle();
 
     const dbKey = settings?.gemini_api_key as string | null;
+    const enabled = settings?.gemini_enabled !== false;
     const envKey = Deno.env.get("GEMINI_API_KEY");
     const lovableKey = Deno.env.get("LOVABLE_API_KEY");
     const activeKey = dbKey || envKey;
@@ -42,10 +43,11 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         gemini_configured: !!activeKey,
+        gemini_enabled: enabled,
         gemini_masked: activeKey ? `${activeKey.slice(0, 4)}••••${activeKey.slice(-4)}` : null,
         gemini_source: dbKey ? "database" : envKey ? "secret" : null,
         lovable_ai_configured: !!lovableKey,
-        active_provider: activeKey ? "gemini_direct" : (lovableKey ? "lovable_gateway" : "none"),
+        active_provider: !enabled ? "disabled" : (activeKey ? "gemini_direct" : (lovableKey ? "lovable_gateway" : "none")),
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

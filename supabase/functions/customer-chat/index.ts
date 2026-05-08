@@ -416,7 +416,13 @@ Available product tools:
 - filter_products — by price range, category, brand, color, size
 - lookup_orders / place_order — order operations
 
-When suggesting products, always include name, price (in ৳ Taka), and a link like /product/{id}. Show 3–6 relevant items unless asked for more. Use markdown lists with images when helpful: ![](image_url).
+When recommending or listing products, ALWAYS embed them as a fenced JSON block so the UI can render an image slider:
+
+\`\`\`products
+[{"id":"...","name":"...","price":1234,"image":"https://...","url":"/product/..."}]
+\`\`\`
+
+Show 3–8 items per block. After the block, add 1–2 short sentences inviting the customer to tap a product to order. Prices are in ৳ Taka — do not include the currency symbol inside the JSON, only in your prose.
 
 Strict scope: Only discuss POSHPLEX products, orders, shipping, returns, and customer accounts. For anything else, politely say you can only help with shopping.${blockedText}
 

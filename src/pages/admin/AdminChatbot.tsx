@@ -114,6 +114,54 @@ export default function AdminChatbot() {
     qc.invalidateQueries({ queryKey: ["chatbot-faqs"] });
   };
 
+  // ====== Edit FAQ ======
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editQ, setEditQ] = useState("");
+  const [editA, setEditA] = useState("");
+  const [editImage, setEditImage] = useState<string>("");
+  const [editUploading, setEditUploading] = useState(false);
+  const editFileRef = useRef<HTMLInputElement>(null);
+
+  const startEdit = (f: any) => {
+    setEditingId(f.id);
+    setEditQ(f.question);
+    setEditA(f.answer);
+    setEditImage(f.image_url || "");
+  };
+  const cancelEdit = () => { setEditingId(null); setEditQ(""); setEditA(""); setEditImage(""); };
+
+  const handleEditImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) return toast.error("Max 5MB");
+    setEditUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `chatbot-faq/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error } = await supabase.storage.from("media").upload(path, file);
+      if (error) throw error;
+      const { data: { publicUrl } } = supabase.storage.from("media").getPublicUrl(path);
+      setEditImage(publicUrl);
+      toast.success("Image uploaded");
+    } catch (err: any) {
+      toast.error(err.message || "Upload failed");
+    } finally {
+      setEditUploading(false);
+      if (editFileRef.current) editFileRef.current.value = "";
+    }
+  };
+
+  const saveEdit = async () => {
+    if (!editingId) return;
+    const { error } = await supabase.from("chatbot_faqs").update({
+      question: editQ, answer: editA, image_url: editImage || null,
+    }).eq("id", editingId);
+    if (error) return toast.error(error.message);
+    toast.success("FAQ updated");
+    cancelEdit();
+    qc.invalidateQueries({ queryKey: ["chatbot-faqs"] });
+  };
+
   // ====== Conversations ======
   const { data: conversations = [] } = useQuery({
     queryKey: ["chatbot-conversations"],

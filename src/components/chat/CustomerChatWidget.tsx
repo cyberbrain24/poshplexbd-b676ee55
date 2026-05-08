@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/currency";
+import ImageLightbox from "@/components/ui/image-lightbox";
 
 type Msg = { role: "user" | "assistant"; content: string };
 type ProductCard = { id: string; name: string; price: number; image?: string; url?: string };

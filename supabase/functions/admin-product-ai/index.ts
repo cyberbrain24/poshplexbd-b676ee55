@@ -38,6 +38,8 @@ const READ_TOOLS = new Set([
   "get_site_settings", "get_site_branding",
   // Chatbot
   "get_chatbot_settings", "list_chatbot_faqs",
+  // SMS
+  "get_sms_settings", "list_sms_templates", "list_sms_campaigns", "list_sms_messages",
 ]);
 
 const WRITE_TOOLS = new Set([
@@ -52,6 +54,9 @@ const WRITE_TOOLS = new Set([
   "update_order_item", "add_order_payment",
   // Chatbot training
   "update_chatbot_settings", "create_chatbot_faq", "update_chatbot_faq", "delete_chatbot_faq",
+  // SMS Marketing
+  "update_sms_settings", "update_sms_template", "create_sms_template", "delete_sms_template",
+  "send_sms", "send_bulk_sms",
 ]);
 
 const tools = [

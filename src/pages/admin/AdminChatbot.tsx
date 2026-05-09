@@ -167,21 +167,57 @@ export default function AdminChatbot() {
     qc.invalidateQueries({ queryKey: ["chatbot-faqs"] });
   };
 
-  // ====== Conversations ======
+  // ====== Conversations + filters ======
+  const [filterTag, setFilterTag] = useState<string>("all");
+  const [filterChannel, setFilterChannel] = useState<string>("all");
+  const [filterFrom, setFilterFrom] = useState<string>("");
+  const [filterTo, setFilterTo] = useState<string>("");
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [debouncedSearch, setDebouncedSearch] = useState<string>("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchTerm.trim()), 350);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
+
   const { data: conversations = [] } = useQuery({
-    queryKey: ["chatbot-conversations"],
+    queryKey: ["chatbot-conversations", filterTag, filterChannel, filterFrom, filterTo, debouncedSearch],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // If searching message text, first find matching conversation IDs
+      let convIdFilter: string[] | null = null;
+      if (debouncedSearch) {
+        const { data: matches } = await supabase
+          .from("chatbot_messages")
+          .select("conversation_id")
+          .ilike("content", `%${debouncedSearch}%`)
+          .limit(500);
+        convIdFilter = Array.from(new Set((matches || []).map((m: any) => m.conversation_id)));
+        if (convIdFilter.length === 0) return [];
+      }
+
+      let q = supabase
         .from("chatbot_conversations")
-        .select("*, customer:customers(name, phone)")
+        .select("*, customer:customers(name, phone), meta:meta_conversations(display_name)")
         .order("last_message_at", { ascending: false })
-        .limit(100);
+        .limit(200);
+
+      if (filterTag !== "all") q = q.eq("tag", filterTag);
+      if (filterChannel !== "all") q = q.eq("channel", filterChannel);
+      if (filterFrom) q = q.gte("last_message_at", new Date(filterFrom).toISOString());
+      if (filterTo) {
+        const to = new Date(filterTo); to.setHours(23, 59, 59, 999);
+        q = q.lte("last_message_at", to.toISOString());
+      }
+      if (convIdFilter) q = q.in("id", convIdFilter);
+
+      const { data, error } = await q;
       if (error) throw error;
       return data || [];
     },
   });
 
   const [selectedConv, setSelectedConv] = useState<string | null>(null);
+  const selectedConvData = conversations.find((c: any) => c.id === selectedConv);
+
   const { data: convMessages = [] } = useQuery({
     queryKey: ["chatbot-messages", selectedConv],
     enabled: !!selectedConv,
@@ -195,6 +231,13 @@ export default function AdminChatbot() {
       return data || [];
     },
   });
+
+  const updateConvTag = async (id: string, tag: string) => {
+    const { error } = await supabase.from("chatbot_conversations").update({ tag }).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success(tag === "none" ? "Cleared tag" : `Marked as ${tag}`);
+    qc.invalidateQueries({ queryKey: ["chatbot-conversations"] });
+  };
 
   const setFeedback = async (id: string, feedback: "good" | "bad") => {
     await supabase.from("chatbot_messages").update({ feedback }).eq("id", id);

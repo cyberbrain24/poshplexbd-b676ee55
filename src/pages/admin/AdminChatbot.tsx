@@ -207,6 +207,47 @@ export default function AdminChatbot() {
   const today = new Date(); today.setHours(0,0,0,0);
   const todayConvs = conversations.filter((c: any) => new Date(c.created_at) >= today).length;
 
+  // ====== Meta Channels (WhatsApp / Messenger / Instagram) ======
+  const { data: metaChannels = [] } = useQuery({
+    queryKey: ["meta-channels"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("meta_channels").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const [newCh, setNewCh] = useState<{ channel: string; display_name: string; verify_token: string }>({
+    channel: "whatsapp", display_name: "", verify_token: randomToken(),
+  });
+
+  const addChannel = async () => {
+    if (!newCh.display_name || !newCh.verify_token) return toast.error("Name and verify token required");
+    const { error } = await supabase.from("meta_channels").insert({
+      channel: newCh.channel, display_name: newCh.display_name, verify_token: newCh.verify_token, is_active: true,
+    });
+    if (error) return toast.error(error.message);
+    toast.success("Channel created — now paste the credentials below");
+    setNewCh({ channel: "whatsapp", display_name: "", verify_token: randomToken() });
+    qc.invalidateQueries({ queryKey: ["meta-channels"] });
+  };
+
+  const updateChannel = async (id: string, patch: any) => {
+    const { error } = await supabase.from("meta_channels").update(patch).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Saved");
+    qc.invalidateQueries({ queryKey: ["meta-channels"] });
+  };
+
+  const deleteChannel = async (id: string) => {
+    if (!confirm("Delete this channel? Existing conversation mappings will be removed.")) return;
+    const { error } = await supabase.from("meta_channels").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    qc.invalidateQueries({ queryKey: ["meta-channels"] });
+  };
+
+  const copyText = (s: string) => { navigator.clipboard.writeText(s); toast.success("Copied"); };
+
   return (
     <div className="p-4 md:p-6 max-w-6xl mx-auto">
       <div className="mb-4">

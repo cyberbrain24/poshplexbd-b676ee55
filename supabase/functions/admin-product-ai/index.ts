@@ -40,6 +40,8 @@ const READ_TOOLS = new Set([
   "get_chatbot_settings", "list_chatbot_faqs",
   // SMS
   "get_sms_settings", "list_sms_templates", "list_sms_campaigns", "list_sms_messages",
+  // Universal DB introspection (auto-discovers any new module)
+  "db_list_tables", "db_query_table", "db_count_table",
 ]);
 
 const WRITE_TOOLS = new Set([

@@ -136,11 +136,14 @@ export type Database = {
           channel: string
           created_at: string
           customer_id: string | null
+          display_name: string | null
           external_user_id: string | null
+          guest_number: number | null
           id: string
           last_message_at: string
           message_count: number
           session_id: string
+          tag: string
           user_agent: string | null
         }
         Insert: {
@@ -148,11 +151,14 @@ export type Database = {
           channel?: string
           created_at?: string
           customer_id?: string | null
+          display_name?: string | null
           external_user_id?: string | null
+          guest_number?: number | null
           id?: string
           last_message_at?: string
           message_count?: number
           session_id: string
+          tag?: string
           user_agent?: string | null
         }
         Update: {
@@ -160,11 +166,14 @@ export type Database = {
           channel?: string
           created_at?: string
           customer_id?: string | null
+          display_name?: string | null
           external_user_id?: string | null
+          guest_number?: number | null
           id?: string
           last_message_at?: string
           message_count?: number
           session_id?: string
+          tag?: string
           user_agent?: string | null
         }
         Relationships: [

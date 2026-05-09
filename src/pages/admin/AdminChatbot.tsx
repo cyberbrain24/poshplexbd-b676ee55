@@ -263,6 +263,7 @@ export default function AdminChatbot() {
           <TabsTrigger value="faqs">FAQs ({faqs.length})</TabsTrigger>
           <TabsTrigger value="conversations">Conversations</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="meta">Meta DM ({metaChannels.length})</TabsTrigger>
         </TabsList>
 
         {/* Settings */}

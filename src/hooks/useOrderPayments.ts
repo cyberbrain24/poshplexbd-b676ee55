@@ -62,88 +62,30 @@ export const useRecordPayment = () => {
       currentPaidAmount: number;
       idempotencyKey?: string;
     }) => {
-      // Generate idempotency key if not provided
-      const idemKey = idempotencyKey || `${orderId}-${amount}-${Date.now()}`;
-
-      // Check for duplicate payment using idempotency key
-      const { data: existing } = await supabase
-        .from("order_payments")
-        .select("id")
-        .eq("idempotency_key", idemKey)
-        .maybeSingle();
-
-      if (existing) {
-        throw new Error("This payment has already been recorded");
-      }
-      // Validate amount
+      // Client-side guards (server enforces too)
       const remainingBalance = totalAmount - currentPaidAmount;
-      if (amount <= 0) {
-        throw new Error("Payment amount must be greater than 0");
-      }
+      if (amount <= 0) throw new Error("Payment amount must be greater than 0");
       if (amount > remainingBalance) {
         throw new Error(`Payment amount cannot exceed remaining balance of ${formatCurrency(remainingBalance)}`);
       }
 
-      // 1. Create income transaction
-      const { data: transaction, error: transactionError } = await supabase
-        .from("transactions")
-        .insert({
-          account_id: accountId,
-          type: "income",
-          amount: amount,
-          notes: `Payment for order - Ref: ${paymentReference || 'N/A'}`,
-          date: new Date().toISOString().split('T')[0],
-        })
-        .select()
-        .single();
+      const idemKey = idempotencyKey || `${orderId}-${amount}-${Date.now()}`;
 
-      if (transactionError) throw transactionError;
+      // Atomic server-side write: transaction + order_payment + order update + history
+      const { data, error } = await supabase.rpc("record_order_payment_atomic", {
+        p_order_id: orderId,
+        p_amount: amount,
+        p_account_id: accountId,
+        p_payment_reference: paymentReference || null,
+        p_idempotency_key: idemKey,
+      });
 
-      // 2. Insert order payment record with idempotency key
-      const { error: paymentError } = await supabase
-        .from("order_payments")
-        .insert({
-          order_id: orderId,
-          amount: amount,
-          account_id: accountId,
-          transaction_id: transaction.id,
-          payment_reference: paymentReference || null,
-          idempotency_key: idemKey,
-        });
-
-      if (paymentError) throw paymentError;
-
-      // 3. Calculate new paid amount and determine payment status
-      const newPaidAmount = currentPaidAmount + amount;
-      const newPaymentStatus = newPaidAmount >= totalAmount ? "paid" : "partially_paid";
-
-      // 4. Update order with new paid_amount and payment_status
-      const { error: orderError } = await supabase
-        .from("orders")
-        .update({
-          paid_amount: newPaidAmount,
-          payment_status: newPaymentStatus,
-          ...(newPaymentStatus === "paid" && { payment_verified_at: new Date().toISOString() }),
-        })
-        .eq("id", orderId);
-
-      if (orderError) throw orderError;
-
-      // 5. Add to order status history
-      const { error: historyError } = await supabase
-        .from("order_status_history")
-        .insert({
-          order_id: orderId,
-          previous_status: currentPaidAmount > 0 ? "partially_paid" : "unpaid",
-          new_status: newPaymentStatus,
-          status_type: "payment",
-          notes: `Payment of ${formatCurrency(amount)} recorded. ${paymentReference ? `Ref: ${paymentReference}` : ''}`,
-          metadata: { amount, account_id: accountId, transaction_id: transaction.id },
-        });
-
-      if (historyError) throw historyError;
-
-      return { newPaidAmount, newPaymentStatus };
+      if (error) throw new Error(error.message);
+      const result = data as { new_paid_amount: number; new_payment_status: string };
+      return {
+        newPaidAmount: Number(result.new_paid_amount),
+        newPaymentStatus: result.new_payment_status,
+      };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });

@@ -465,7 +465,98 @@ export default function AdminChatbot() {
             <Card className="p-4"><p className="text-xs text-muted-foreground uppercase">Total Messages</p><p className="text-2xl font-bold mt-1">{totalMsgs}</p></Card>
           </div>
         </TabsContent>
+
+        {/* Meta DM Channels */}
+        <TabsContent value="meta" className="space-y-4">
+          <Card className="p-4 space-y-3">
+            <h3 className="font-medium text-sm uppercase tracking-wider">How to connect</h3>
+            <ol className="text-xs text-muted-foreground space-y-1 list-decimal pl-4">
+              <li>Create a Meta App at developers.facebook.com → add WhatsApp / Messenger / Instagram product.</li>
+              <li>Add a channel below for each platform — pick a Display name, copy the auto-generated Verify Token.</li>
+              <li>In the Meta App's Webhooks section, paste the Webhook URL and Verify Token shown on each card.</li>
+              <li>Subscribe to <code>messages</code> (WhatsApp) or <code>messages</code> + <code>messaging_postbacks</code> (Messenger/Instagram).</li>
+              <li>Paste your Page Access Token / Phone Number ID / App Secret into the channel card and save.</li>
+            </ol>
+            <div className="flex items-center gap-2 text-xs bg-muted/50 px-3 py-2 rounded">
+              <span className="font-mono break-all flex-1">{WEBHOOK_URL}</span>
+              <Button size="sm" variant="ghost" onClick={() => copyText(WEBHOOK_URL)}><Copy className="h-3 w-3" /></Button>
+            </div>
+          </Card>
+
+          <Card className="p-4 space-y-3">
+            <h3 className="font-medium text-sm uppercase tracking-wider">Add Channel</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+              <select
+                className="border border-border rounded-md px-3 py-2 text-sm bg-background"
+                value={newCh.channel}
+                onChange={(e) => setNewCh({ ...newCh, channel: e.target.value })}
+              >
+                <option value="whatsapp">WhatsApp</option>
+                <option value="messenger">Messenger</option>
+                <option value="instagram">Instagram</option>
+              </select>
+              <Input
+                placeholder="Display name (e.g. POSHPLEX WhatsApp)"
+                value={newCh.display_name}
+                onChange={(e) => setNewCh({ ...newCh, display_name: e.target.value })}
+              />
+              <div className="flex gap-1">
+                <Input
+                  placeholder="Verify token"
+                  value={newCh.verify_token}
+                  onChange={(e) => setNewCh({ ...newCh, verify_token: e.target.value })}
+                />
+                <Button variant="outline" size="icon" onClick={() => setNewCh({ ...newCh, verify_token: randomToken() })} title="Regenerate">
+                  <RefreshCcw className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <Button onClick={addChannel} disabled={!newCh.display_name}>
+              <Plus className="h-4 w-4 mr-1" /> Add Channel
+            </Button>
+          </Card>
+
+          <div className="space-y-3">
+            {metaChannels.map((c: any) => (
+              <Card key={c.id} className="p-4 space-y-3">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div>
+                    <div className="font-semibold uppercase text-sm">{CHANNEL_LABEL[c.channel] || c.channel} · {c.display_name}</div>
+                    <div className="text-xs text-muted-foreground">Created {new Date(c.created_at).toLocaleDateString()}</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch checked={c.is_active} onCheckedChange={(v) => updateChannel(c.id, { is_active: v })} />
+                    <button onClick={() => deleteChannel(c.id)} className="text-destructive hover:opacity-70" title="Delete">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                  <div className="space-y-1">
+                    <Label className="text-[10px] uppercase">Webhook URL</Label>
+                    <div className="flex gap-1">
+                      <Input readOnly value={WEBHOOK_URL} className="font-mono text-[11px]" />
+                      <Button variant="outline" size="icon" onClick={() => copyText(WEBHOOK_URL)}><Copy className="h-3 w-3" /></Button>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[10px] uppercase">Verify Token</Label>
+                    <div className="flex gap-1">
+                      <Input readOnly value={c.verify_token} className="font-mono text-[11px]" />
+                      <Button variant="outline" size="icon" onClick={() => copyText(c.verify_token)}><Copy className="h-3 w-3" /></Button>
+                    </div>
+                  </div>
+                </div>
+
+                <ChannelCredentialsForm channel={c} onSave={updateChannel} />
+              </Card>
+            ))}
+            {metaChannels.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-8">No Meta channels yet. Add one above to start receiving DMs.</p>
+            )}
+          </div>
+        </TabsContent>
       </Tabs>
-    </div>
   );
 }

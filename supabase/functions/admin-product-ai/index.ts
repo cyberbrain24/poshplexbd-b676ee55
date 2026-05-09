@@ -175,6 +175,31 @@ const tools = [
     image_url: { type: "string" }, sort_order: { type: "number" }, is_active: { type: "boolean" },
   }, required: ["faq_id"] } } },
   { type: "function", function: { name: "delete_chatbot_faq", description: "Delete a Customer Chatbot FAQ by id.", parameters: { type: "object", properties: { faq_id: { type: "string" } }, required: ["faq_id"] } } },
+
+  // ====== SMS Marketing ======
+  { type: "function", function: { name: "get_sms_settings", description: "Get the SMS provider settings: endpoint URL, sender ID, enabled flag, request template.", parameters: { type: "object", properties: {} } } },
+  { type: "function", function: { name: "list_sms_templates", description: "List SMS templates (account_created, order_placed, order_shipped, order_delivered, custom). Returns id, event_key, name, body, enabled.", parameters: { type: "object", properties: {} } } },
+  { type: "function", function: { name: "list_sms_campaigns", description: "List recent bulk SMS campaigns with name, recipient/sent/failed counts, status, date.", parameters: { type: "object", properties: { limit: { type: "number" } } } } },
+  { type: "function", function: { name: "list_sms_messages", description: "List individual SMS send log. Optional filter by status (sent|failed|pending) or trigger_event.", parameters: { type: "object", properties: { limit: { type: "number" }, status: { type: "string" }, trigger_event: { type: "string" } } } } },
+  { type: "function", function: { name: "update_sms_settings", description: "Update SMS provider settings. Pass any subset: provider_name, endpoint_url, http_method (GET/POST), request_template (JSON), headers (JSON), api_key, sender_id, success_keyword, enabled, notes.", parameters: { type: "object", properties: {
+    provider_name: { type: "string" }, endpoint_url: { type: "string" }, http_method: { type: "string" },
+    request_template: { type: "object" }, headers: { type: "object" },
+    api_key: { type: "string" }, sender_id: { type: "string" },
+    success_keyword: { type: "string" }, enabled: { type: "boolean" }, notes: { type: "string" },
+  } } } },
+  { type: "function", function: { name: "update_sms_template", description: "Update an SMS template by event_key (account_created/order_placed/order_shipped/order_delivered or a custom slug). Pass body (with {name},{phone},{order_number},{total},{tracking} placeholders), enabled, name.", parameters: { type: "object", properties: {
+    event_key: { type: "string" }, body: { type: "string" }, enabled: { type: "boolean" }, name: { type: "string" },
+  }, required: ["event_key"] } } },
+  { type: "function", function: { name: "create_sms_template", description: "Create a new custom SMS template. Provide a unique event_key slug, name, body, enabled.", parameters: { type: "object", properties: {
+    event_key: { type: "string" }, name: { type: "string" }, body: { type: "string" }, enabled: { type: "boolean" },
+  }, required: ["event_key", "name", "body"] } } },
+  { type: "function", function: { name: "delete_sms_template", description: "Delete a custom (non-system) SMS template by event_key.", parameters: { type: "object", properties: { event_key: { type: "string" } }, required: ["event_key"] } } },
+  { type: "function", function: { name: "send_sms", description: "Send a one-off SMS to a single phone number now.", parameters: { type: "object", properties: {
+    phone: { type: "string" }, message: { type: "string" },
+  }, required: ["phone", "message"] } } },
+  { type: "function", function: { name: "send_bulk_sms", description: "Run a bulk SMS campaign. audience_filter is one of: {type:'all'} | {type:'membership',ids:[customer_type_id...]} | {type:'division',ids:[division_id...]} | {type:'thana',ids:[thana_id...]} | {type:'manual',phones:[]}. Body supports {name},{phone}.", parameters: { type: "object", properties: {
+    name: { type: "string" }, message: { type: "string" }, audience_filter: { type: "object" },
+  }, required: ["message"] } } },
 ];
 
 const SYSTEM_PROMPT = `You are POSHPLEX's admin AI assistant. The brand is a Bangladesh streetwear store ("BE POSH WITH POSHPLEX"). Currency is Taka (৳), locale en-BD.

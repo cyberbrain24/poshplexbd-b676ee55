@@ -136,11 +136,14 @@ export type Database = {
           channel: string
           created_at: string
           customer_id: string | null
+          display_name: string | null
           external_user_id: string | null
+          guest_number: number | null
           id: string
           last_message_at: string
           message_count: number
           session_id: string
+          tag: string
           user_agent: string | null
         }
         Insert: {
@@ -148,11 +151,14 @@ export type Database = {
           channel?: string
           created_at?: string
           customer_id?: string | null
+          display_name?: string | null
           external_user_id?: string | null
+          guest_number?: number | null
           id?: string
           last_message_at?: string
           message_count?: number
           session_id: string
+          tag?: string
           user_agent?: string | null
         }
         Update: {
@@ -160,11 +166,14 @@ export type Database = {
           channel?: string
           created_at?: string
           customer_id?: string | null
+          display_name?: string | null
           external_user_id?: string | null
+          guest_number?: number | null
           id?: string
           last_message_at?: string
           message_count?: number
           session_id?: string
+          tag?: string
           user_agent?: string | null
         }
         Relationships: [
@@ -2465,6 +2474,8 @@ export type Database = {
         Returns: undefined
       }
       is_admin: { Args: never; Returns: boolean }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       track_orders_lookup: {
         Args: { p_email?: string; p_order_number?: string; p_phone?: string }
         Returns: Json

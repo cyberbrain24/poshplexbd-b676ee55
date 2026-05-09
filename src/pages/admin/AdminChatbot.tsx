@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Plus, Trash2, MessageSquare, ThumbsUp, ThumbsDown, ImagePlus, Loader2, X, Pencil, Save, Copy, RefreshCcw } from "lucide-react";
+import { Plus, Trash2, MessageSquare, ThumbsUp, ThumbsDown, ImagePlus, Loader2, X, Pencil, Save, Copy, RefreshCcw, Search, ShoppingCart, AlertTriangle, CheckCircle2, Globe, Facebook, Instagram, MessageCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 const WEBHOOK_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/meta-webhook`;
 const CHANNEL_LABEL: Record<string, string> = { whatsapp: "WhatsApp", messenger: "Messenger", instagram: "Instagram" };
@@ -166,21 +167,57 @@ export default function AdminChatbot() {
     qc.invalidateQueries({ queryKey: ["chatbot-faqs"] });
   };
 
-  // ====== Conversations ======
+  // ====== Conversations + filters ======
+  const [filterTag, setFilterTag] = useState<string>("all");
+  const [filterChannel, setFilterChannel] = useState<string>("all");
+  const [filterFrom, setFilterFrom] = useState<string>("");
+  const [filterTo, setFilterTo] = useState<string>("");
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [debouncedSearch, setDebouncedSearch] = useState<string>("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchTerm.trim()), 350);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
+
   const { data: conversations = [] } = useQuery({
-    queryKey: ["chatbot-conversations"],
+    queryKey: ["chatbot-conversations", filterTag, filterChannel, filterFrom, filterTo, debouncedSearch],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // If searching message text, first find matching conversation IDs
+      let convIdFilter: string[] | null = null;
+      if (debouncedSearch) {
+        const { data: matches } = await supabase
+          .from("chatbot_messages")
+          .select("conversation_id")
+          .ilike("content", `%${debouncedSearch}%`)
+          .limit(500);
+        convIdFilter = Array.from(new Set((matches || []).map((m: any) => m.conversation_id)));
+        if (convIdFilter.length === 0) return [];
+      }
+
+      let q = supabase
         .from("chatbot_conversations")
-        .select("*, customer:customers(name, phone)")
+        .select("*, customer:customers(name, phone), meta:meta_conversations(display_name)")
         .order("last_message_at", { ascending: false })
-        .limit(100);
+        .limit(200);
+
+      if (filterTag !== "all") q = q.eq("tag", filterTag);
+      if (filterChannel !== "all") q = q.eq("channel", filterChannel);
+      if (filterFrom) q = q.gte("last_message_at", new Date(filterFrom).toISOString());
+      if (filterTo) {
+        const to = new Date(filterTo); to.setHours(23, 59, 59, 999);
+        q = q.lte("last_message_at", to.toISOString());
+      }
+      if (convIdFilter) q = q.in("id", convIdFilter);
+
+      const { data, error } = await q;
       if (error) throw error;
       return data || [];
     },
   });
 
   const [selectedConv, setSelectedConv] = useState<string | null>(null);
+  const selectedConvData = conversations.find((c: any) => c.id === selectedConv);
+
   const { data: convMessages = [] } = useQuery({
     queryKey: ["chatbot-messages", selectedConv],
     enabled: !!selectedConv,
@@ -194,6 +231,13 @@ export default function AdminChatbot() {
       return data || [];
     },
   });
+
+  const updateConvTag = async (id: string, tag: string) => {
+    const { error } = await supabase.from("chatbot_conversations").update({ tag }).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success(tag === "none" ? "Cleared tag" : `Marked as ${tag}`);
+    qc.invalidateQueries({ queryKey: ["chatbot-conversations"] });
+  };
 
   const setFeedback = async (id: string, feedback: "good" | "bad") => {
     await supabase.from("chatbot_messages").update({ feedback }).eq("id", id);
@@ -406,48 +450,132 @@ export default function AdminChatbot() {
         </TabsContent>
 
         {/* Conversations */}
-        <TabsContent value="conversations">
+        <TabsContent value="conversations" className="space-y-3">
+          {/* Filters */}
+          <Card className="p-3 grid grid-cols-1 md:grid-cols-6 gap-2 items-end">
+            <div className="md:col-span-2 relative">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search messages…"
+                className="pl-8 h-9"
+              />
+            </div>
+            <div>
+              <Label className="text-[10px] uppercase">Tag</Label>
+              <select className="w-full border border-border rounded-md px-2 h-9 text-sm bg-background"
+                value={filterTag} onChange={(e) => setFilterTag(e.target.value)}>
+                <option value="all">All</option>
+                <option value="none">Untagged</option>
+                <option value="order">Orders</option>
+                <option value="complaint">Complaints (open)</option>
+                <option value="resolved">Resolved</option>
+              </select>
+            </div>
+            <div>
+              <Label className="text-[10px] uppercase">Channel</Label>
+              <select className="w-full border border-border rounded-md px-2 h-9 text-sm bg-background"
+                value={filterChannel} onChange={(e) => setFilterChannel(e.target.value)}>
+                <option value="all">All</option>
+                <option value="web">Website</option>
+                <option value="messenger">Facebook</option>
+                <option value="instagram">Instagram</option>
+                <option value="whatsapp">WhatsApp</option>
+              </select>
+            </div>
+            <div>
+              <Label className="text-[10px] uppercase">From</Label>
+              <Input type="date" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)} className="h-9" />
+            </div>
+            <div>
+              <Label className="text-[10px] uppercase">To</Label>
+              <Input type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} className="h-9" />
+            </div>
+            {(filterTag !== "all" || filterChannel !== "all" || filterFrom || filterTo || searchTerm) && (
+              <Button variant="ghost" size="sm" className="md:col-span-6 justify-self-end h-7"
+                onClick={() => { setFilterTag("all"); setFilterChannel("all"); setFilterFrom(""); setFilterTo(""); setSearchTerm(""); }}>
+                <X className="h-3 w-3 mr-1" /> Clear filters
+              </Button>
+            )}
+          </Card>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-1 space-y-1 max-h-[600px] overflow-y-auto">
-              {conversations.map((c: any) => (
-                <button
-                  key={c.id}
-                  onClick={() => setSelectedConv(c.id)}
-                  className={`w-full text-left p-3 border rounded-md text-xs ${selectedConv === c.id ? "bg-muted border-foreground" : "border-border hover:bg-muted/40"}`}
-                >
-                  <div className="font-medium">
-                    {c.customer?.name || c.customer?.phone || "Guest"}
-                  </div>
-                  <div className="text-muted-foreground">
-                    {c.message_count} msgs · {new Date(c.last_message_at).toLocaleDateString()}
-                  </div>
-                </button>
-              ))}
-              {conversations.length === 0 && <p className="text-sm text-muted-foreground p-4">No conversations yet.</p>}
+              {conversations.map((c: any) => {
+                const name = displayNameFor(c);
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => setSelectedConv(c.id)}
+                    className={`w-full text-left p-3 border rounded-md text-xs ${selectedConv === c.id ? "bg-muted border-foreground" : "border-border hover:bg-muted/40"}`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="font-medium truncate">{name}</div>
+                      <ChannelIcon channel={c.channel} />
+                    </div>
+                    <div className="text-muted-foreground mt-0.5">
+                      {c.message_count} msgs · {new Date(c.last_message_at).toLocaleDateString()}
+                    </div>
+                    {c.tag && c.tag !== "none" && (
+                      <div className="mt-1"><TagBadge tag={c.tag} /></div>
+                    )}
+                  </button>
+                );
+              })}
+              {conversations.length === 0 && <p className="text-sm text-muted-foreground p-4">No conversations match.</p>}
             </div>
 
             <div className="md:col-span-2">
-              {selectedConv ? (
-                <Card className="p-4 max-h-[600px] overflow-y-auto space-y-3">
-                  {convMessages.map((m: any) => (
-                    <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                      <div className={`max-w-[80%] p-3 rounded-lg text-sm ${m.role === "user" ? "bg-foreground text-background" : "bg-muted"}`}>
-                        <div className="text-[10px] uppercase opacity-60 mb-1">{m.role}</div>
-                        <div className="whitespace-pre-wrap">{m.content}</div>
-                        {m.role === "assistant" && (
-                          <div className="flex gap-2 mt-2">
-                            <button onClick={() => setFeedback(m.id, "good")} className={m.feedback === "good" ? "text-green-600" : "opacity-50"}>
-                              <ThumbsUp size={12} />
-                            </button>
-                            <button onClick={() => setFeedback(m.id, "bad")} className={m.feedback === "bad" ? "text-red-600" : "opacity-50"}>
-                              <ThumbsDown size={12} />
-                            </button>
-                          </div>
-                        )}
-                      </div>
+              {selectedConv && selectedConvData ? (
+                <div className="space-y-2">
+                  <Card className="p-3 flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2 text-sm">
+                      <ChannelIcon channel={selectedConvData.channel} />
+                      <span className="font-semibold">{displayNameFor(selectedConvData)}</span>
+                      {selectedConvData.tag !== "none" && <TagBadge tag={selectedConvData.tag} />}
                     </div>
-                  ))}
-                </Card>
+                    <div className="flex items-center gap-1 flex-wrap">
+                      <Button size="sm" variant={selectedConvData.tag === "order" ? "default" : "outline"}
+                        onClick={() => updateConvTag(selectedConv!, "order")}>
+                        <ShoppingCart className="h-3 w-3 mr-1" /> Order
+                      </Button>
+                      <Button size="sm" variant={selectedConvData.tag === "complaint" ? "default" : "outline"}
+                        onClick={() => updateConvTag(selectedConv!, "complaint")}>
+                        <AlertTriangle className="h-3 w-3 mr-1" /> Complaint
+                      </Button>
+                      <Button size="sm" variant={selectedConvData.tag === "resolved" ? "default" : "outline"}
+                        onClick={() => updateConvTag(selectedConv!, "resolved")}>
+                        <CheckCircle2 className="h-3 w-3 mr-1" /> Resolved
+                      </Button>
+                      {selectedConvData.tag !== "none" && (
+                        <Button size="sm" variant="ghost" onClick={() => updateConvTag(selectedConv!, "none")}>
+                          <X className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </Card>
+                  <Card className="p-4 max-h-[540px] overflow-y-auto space-y-3">
+                    {convMessages.map((m: any) => (
+                      <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                        <div className={`max-w-[80%] p-3 rounded-lg text-sm ${m.role === "user" ? "bg-foreground text-background" : "bg-muted"}`}>
+                          <div className="text-[10px] uppercase opacity-60 mb-1">{m.role}</div>
+                          <div className="whitespace-pre-wrap">{m.content}</div>
+                          {m.role === "assistant" && (
+                            <div className="flex gap-2 mt-2">
+                              <button onClick={() => setFeedback(m.id, "good")} className={m.feedback === "good" ? "text-green-600" : "opacity-50"}>
+                                <ThumbsUp size={12} />
+                              </button>
+                              <button onClick={() => setFeedback(m.id, "bad")} className={m.feedback === "bad" ? "text-red-600" : "opacity-50"}>
+                                <ThumbsDown size={12} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </Card>
+                </div>
               ) : (
                 <div className="flex items-center justify-center h-64 text-muted-foreground text-sm border border-dashed border-border rounded-md">
                   <MessageSquare className="h-5 w-5 mr-2" /> Select a conversation
@@ -606,4 +734,30 @@ function LabeledInput({ label, value, onChange, type = "text" }: { label: string
       <Input type={type} value={value} onChange={(e) => onChange(e.target.value)} className="font-mono text-[11px]" />
     </div>
   );
+}
+
+function displayNameFor(c: any): string {
+  if (c?.customer?.name) return c.customer.name;
+  if (c?.customer?.phone) return c.customer.phone;
+  const metaName = Array.isArray(c?.meta) ? c.meta[0]?.display_name : c?.meta?.display_name;
+  if (metaName) return metaName;
+  if (c?.display_name) return c.display_name;
+  if (c?.guest_number) return `Guest ${c.guest_number}`;
+  if (c?.external_user_id) return c.external_user_id;
+  return "Guest";
+}
+
+function ChannelIcon({ channel }: { channel: string }) {
+  const cls = "h-3.5 w-3.5";
+  if (channel === "whatsapp") return <MessageCircle className={cls + " text-green-600"} aria-label="WhatsApp" />;
+  if (channel === "messenger") return <Facebook className={cls + " text-blue-600"} aria-label="Facebook" />;
+  if (channel === "instagram") return <Instagram className={cls + " text-pink-600"} aria-label="Instagram" />;
+  return <Globe className={cls + " text-muted-foreground"} aria-label="Website" />;
+}
+
+function TagBadge({ tag }: { tag: string }) {
+  if (tag === "order") return <Badge className="bg-blue-600 hover:bg-blue-600 text-white"><ShoppingCart className="h-3 w-3 mr-1" />Order</Badge>;
+  if (tag === "complaint") return <Badge variant="destructive"><AlertTriangle className="h-3 w-3 mr-1" />Complaint</Badge>;
+  if (tag === "resolved") return <Badge className="bg-green-600 hover:bg-green-600 text-white"><CheckCircle2 className="h-3 w-3 mr-1" />Resolved</Badge>;
+  return null;
 }

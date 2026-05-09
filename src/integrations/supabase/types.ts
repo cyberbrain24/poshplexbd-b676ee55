@@ -2465,6 +2465,8 @@ export type Database = {
         Returns: undefined
       }
       is_admin: { Args: never; Returns: boolean }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       track_orders_lookup: {
         Args: { p_email?: string; p_order_number?: string; p_phone?: string }
         Returns: Json

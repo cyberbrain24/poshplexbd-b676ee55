@@ -5,7 +5,7 @@ import {
   Package, Palette, Ruler, Shirt, BookOpen, Sparkles, FolderTree, Building2,
   LayoutDashboard, ArrowLeft, ChevronDown, Wallet, CreditCard, TrendingUp,
   TrendingDown, Users, MapPin, Map, Crown, ShoppingCart, ExternalLink,
-  LucideIcon, RefreshCw, MessageSquare, Image, Tag, Settings,
+  LucideIcon, RefreshCw, MessageSquare, Image, Tag, Settings, Send,
   Upload, Menu, X, Warehouse, Music,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -194,6 +194,7 @@ const AdminSidebar = () => {
         {renderNavLink("/admin", LayoutDashboard, "Business Intelligence")}
         {renderNavLink("/admin/ai-assistant", Sparkles, "AI Assistant")}
         {renderNavLink("/admin/chatbot", MessageSquare, "Customer Chatbot")}
+        {renderNavLink("/admin/sms", Send, "SMS Marketing")}
         {renderCollapsible(Package, "Product Management", productManagementItems, openGroup === 'product', () => toggleGroup('product'), isProductMgmtActive)}
         {renderCollapsible(ShoppingCart, "Order Management", orderItems, openGroup === 'orders', () => toggleGroup('orders'), isOrdersActive)}
         

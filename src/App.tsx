@@ -68,6 +68,7 @@ const AdminBulkUpload = lazy(() => import("./pages/admin/AdminBulkUpload"));
 const AdminIndependentInventory = lazy(() => import("./pages/admin/AdminIndependentInventory"));
 const AdminMusic = lazy(() => import("./pages/admin/AdminMusic"));
 const AdminChatbot = lazy(() => import("./pages/admin/AdminChatbot"));
+const AdminSMS = lazy(() => import("./pages/admin/AdminSMS"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -166,6 +167,7 @@ const App = () => (
                     <Route path="independent-inventory" element={<AdminIndependentInventory />} />
                     <Route path="music" element={<AdminMusic />} />
                     <Route path="chatbot" element={<AdminChatbot />} />
+                    <Route path="sms" element={<AdminSMS />} />
                     <Route path="site-settings" element={<AdminSiteSettings />} />
                   </Route>
                   

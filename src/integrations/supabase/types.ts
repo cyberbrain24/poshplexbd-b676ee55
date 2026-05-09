@@ -2661,6 +2661,16 @@ export type Database = {
         Returns: undefined
       }
       is_admin: { Args: never; Returns: boolean }
+      record_order_payment_atomic: {
+        Args: {
+          p_account_id: string
+          p_amount: number
+          p_idempotency_key: string
+          p_order_id: string
+          p_payment_reference: string
+        }
+        Returns: Json
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       track_orders_lookup: {

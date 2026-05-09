@@ -2,6 +2,7 @@
 // Only sends if the order was created in the last 5 minutes (anti-abuse).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { sendByEvent } from "../_shared/sms.ts";
+import { checkRateLimit, getClientIP, rateLimitResponse } from "../_shared/rate-limiter.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,6 +15,12 @@ const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  // IP rate limit (10 req/min, 15-min block on abuse) — endpoint is public (verify_jwt=false)
+  const ip = getClientIP(req);
+  const { allowed, retryAfter } = checkRateLimit(ip);
+  if (!allowed) return rateLimitResponse(corsHeaders, retryAfter);
+
   try {
     const { order_id } = await req.json();
     if (!order_id) return new Response(JSON.stringify({ error: "order_id required" }), { status: 400, headers: corsHeaders });

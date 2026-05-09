@@ -202,6 +202,15 @@ const tools = [
   { type: "function", function: { name: "send_bulk_sms", description: "Run a bulk SMS campaign. audience_filter is one of: {type:'all'} | {type:'membership',ids:[customer_type_id...]} | {type:'division',ids:[division_id...]} | {type:'thana',ids:[thana_id...]} | {type:'manual',phones:[]}. Body supports {name},{phone}.", parameters: { type: "object", properties: {
     name: { type: "string" }, message: { type: "string" }, audience_filter: { type: "object" },
   }, required: ["message"] } } },
+  // UNIVERSAL DB ACCESS — works for ANY current or future module/table in the public schema
+  { type: "function", function: { name: "db_list_tables", description: "List EVERY table in the database with all columns (name, type, nullable, default). Use this first to discover any module — including newly added ones — when you don't already have a dedicated tool for it.", parameters: { type: "object", properties: {} } } },
+  { type: "function", function: { name: "db_query_table", description: "Read rows from ANY public table. Use only when no dedicated list_/get_ tool exists for that module. Args: table (required), columns (default '*'), filters (object of column=value equals matches), search (object {column,value} for ilike), order_by, ascending, limit (default 25, max 200).", parameters: { type: "object", properties: {
+    table: { type: "string" }, columns: { type: "string" }, filters: { type: "object" },
+    search: { type: "object" }, order_by: { type: "string" }, ascending: { type: "boolean" }, limit: { type: "number" },
+  }, required: ["table"] } } },
+  { type: "function", function: { name: "db_count_table", description: "Count rows in any public table with optional equality filters.", parameters: { type: "object", properties: {
+    table: { type: "string" }, filters: { type: "object" },
+  }, required: ["table"] } } },
 ];
 
 const SYSTEM_PROMPT = `You are POSHPLEX's admin AI assistant. The brand is a Bangladesh streetwear store ("BE POSH WITH POSHPLEX"). Currency is Taka (৳), locale en-BD.

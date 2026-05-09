@@ -193,6 +193,7 @@ const AdminSidebar = () => {
       <nav className="flex-1 p-3 md:p-4 space-y-0.5 overflow-y-auto">
         {renderNavLink("/admin", LayoutDashboard, "Business Intelligence")}
         {renderNavLink("/admin/ai-assistant", Sparkles, "AI Assistant")}
+        {renderNavLink("/admin/chatbot", MessageSquare, "Customer Chatbot")}
         {renderCollapsible(Package, "Product Management", productManagementItems, openGroup === 'product', () => toggleGroup('product'), isProductMgmtActive)}
         {renderCollapsible(ShoppingCart, "Order Management", orderItems, openGroup === 'orders', () => toggleGroup('orders'), isOrdersActive)}
         
@@ -201,7 +202,6 @@ const AdminSidebar = () => {
         {renderNavLink("/admin/independent-inventory", Warehouse, "Independent Inventory")}
         {renderNavLink("/admin/media", Image, "Media")}
         {renderNavLink("/admin/music", Music, "Music Player")}
-        {renderNavLink("/admin/chatbot", MessageSquare, "Customer Chatbot")}
         {renderNavLink("/admin/site-settings", Settings, "Site Settings")}
       </nav>
 

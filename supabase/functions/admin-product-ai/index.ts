@@ -36,6 +36,8 @@ const READ_TOOLS = new Set([
   // Site / Analytics
   "get_site_overview", "get_sales_analytics", "get_top_products", "get_top_customers",
   "get_site_settings", "get_site_branding",
+  // Chatbot
+  "get_chatbot_settings", "list_chatbot_faqs",
 ]);
 
 const WRITE_TOOLS = new Set([
@@ -48,6 +50,8 @@ const WRITE_TOOLS = new Set([
   // Orders
   "update_order", "delete_order", "set_order_status", "set_payment_status",
   "update_order_item", "add_order_payment",
+  // Chatbot training
+  "update_chatbot_settings", "create_chatbot_faq", "update_chatbot_faq", "delete_chatbot_faq",
 ]);
 
 const tools = [
@@ -146,13 +150,35 @@ const tools = [
     payment_reference: { type: "string" },
   }, required: ["order_id", "account_id", "amount"] } } },
   { type: "function", function: { name: "delete_order", description: "Delete an order by id (irreversible).", parameters: { type: "object", properties: { order_id: { type: "string" } }, required: ["order_id"] } } },
+  // READ — Chatbot
+  { type: "function", function: { name: "get_chatbot_settings", description: "Get the current Customer Chatbot configuration: welcome_message, system_prompt, blocked_topics, model, enabled.", parameters: { type: "object", properties: {} } } },
+  { type: "function", function: { name: "list_chatbot_faqs", description: "List Customer Chatbot FAQ knowledge entries.", parameters: { type: "object", properties: { is_active: { type: "boolean" }, limit: { type: "number" } } } } },
+  // WRITE — Chatbot training (auto-saves to Customer Chatbot module)
+  { type: "function", function: { name: "update_chatbot_settings", description: "Update Customer Chatbot settings. Pass any subset of: welcome_message, system_prompt (bot personality + rules), blocked_topics (array of strings), model, enabled.", parameters: { type: "object", properties: {
+    welcome_message: { type: "string" },
+    system_prompt: { type: "string" },
+    blocked_topics: { type: "array", items: { type: "string" }, description: "List of topics the bot must refuse." },
+    model: { type: "string" },
+    enabled: { type: "boolean" },
+  } } } },
+  { type: "function", function: { name: "create_chatbot_faq", description: "Add a new FAQ / knowledge entry to the Customer Chatbot.", parameters: { type: "object", properties: {
+    question: { type: "string" }, answer: { type: "string" },
+    image_url: { type: "string" }, sort_order: { type: "number" }, is_active: { type: "boolean" },
+  }, required: ["question", "answer"] } } },
+  { type: "function", function: { name: "update_chatbot_faq", description: "Update a Customer Chatbot FAQ by id.", parameters: { type: "object", properties: {
+    faq_id: { type: "string" }, question: { type: "string" }, answer: { type: "string" },
+    image_url: { type: "string" }, sort_order: { type: "number" }, is_active: { type: "boolean" },
+  }, required: ["faq_id"] } } },
+  { type: "function", function: { name: "delete_chatbot_faq", description: "Delete a Customer Chatbot FAQ by id.", parameters: { type: "object", properties: { faq_id: { type: "string" } }, required: ["faq_id"] } } },
 ];
 
 const SYSTEM_PROMPT = `You are POSHPLEX's admin AI assistant. The brand is a Bangladesh streetwear store ("BE POSH WITH POSHPLEX"). Currency is Taka (৳), locale en-BD.
 
 You have READ access to EVERY module of the system: products, orders, customers, reviews, inventory, financial accounts, transactions, payments, promo codes, payment methods, shipping locations (Districts/Thanas), site settings, and analytics. Use the appropriate tool to look up real data — never guess numbers.
 
-You have WRITE access to: PRODUCTS (create/update/delete/toggle/images), CUSTOMERS (create/update/delete), and ORDERS (update fields, change status, change payment status, edit/delete items, record payments, delete order). For other modules (finance accounts, inventory entries, promo codes, etc.) explain what you see and tell the admin to use that admin page.
+You have WRITE access to: PRODUCTS (create/update/delete/toggle/images), CUSTOMERS (create/update/delete), ORDERS (update fields, change status, change payment status, edit/delete items, record payments, delete order), and the CUSTOMER CHATBOT module (welcome message, system prompt / personality + rules, blocked topics, enabled/model, plus FAQ knowledge entries — create / update / delete). For other modules (finance accounts, inventory entries, promo codes, etc.) explain what you see and tell the admin to use that admin page.
+
+CHATBOT TRAINING: When the admin teaches messaging behavior — tone, rules, refusals, welcome wording, blocked topics, or new Q&A knowledge — treat it as training the Customer Chatbot. Use get_chatbot_settings / list_chatbot_faqs to read current config, then call update_chatbot_settings to persist welcome_message / system_prompt / blocked_topics, or create_chatbot_faq / update_chatbot_faq / delete_chatbot_faq for knowledge entries. When merging new rules into system_prompt, preserve existing rules unless the admin asks to remove them. Blocked_topics must be a clean array of short topic strings.
 
 When the admin asks to change a customer or order, first look it up by phone/email/order_number to get the id, then call the right write tool. Always confirm the destructive action briefly after it runs.
 
@@ -515,6 +541,61 @@ async function executeTool(name: string, args: any, sb: any) {
         await sb.from("order_status_history").delete().eq("order_id", args.order_id);
         await sb.from("order_payments").delete().eq("order_id", args.order_id);
         const { error } = await sb.from("orders").delete().eq("id", args.order_id);
+        if (error) throw error;
+        return { success: true };
+      }
+      // ====== Chatbot ======
+      case "get_chatbot_settings": {
+        const { data, error } = await sb.from("chatbot_settings").select("*").limit(1).maybeSingle();
+        if (error) throw error;
+        return { settings: data };
+      }
+      case "list_chatbot_faqs": {
+        let q = sb.from("chatbot_faqs").select("*").order("sort_order", { ascending: true }).limit(args.limit || 100);
+        if (typeof args.is_active === "boolean") q = q.eq("is_active", args.is_active);
+        const { data, error } = await q;
+        if (error) throw error;
+        return { faqs: data };
+      }
+      case "update_chatbot_settings": {
+        const patch: any = {};
+        if (args.welcome_message !== undefined) patch.welcome_message = args.welcome_message;
+        if (args.system_prompt !== undefined) patch.system_prompt = args.system_prompt;
+        if (args.blocked_topics !== undefined) patch.blocked_topics = Array.isArray(args.blocked_topics) ? args.blocked_topics : [];
+        if (args.model !== undefined) patch.model = args.model;
+        if (args.enabled !== undefined) patch.enabled = args.enabled;
+        patch.updated_at = new Date().toISOString();
+        const { data: existing } = await sb.from("chatbot_settings").select("id").limit(1).maybeSingle();
+        let result;
+        if (existing?.id) {
+          const { data, error } = await sb.from("chatbot_settings").update(patch).eq("id", existing.id).select().single();
+          if (error) throw error;
+          result = data;
+        } else {
+          const { data, error } = await sb.from("chatbot_settings").insert(patch).select().single();
+          if (error) throw error;
+          result = data;
+        }
+        return { success: true, settings: result };
+      }
+      case "create_chatbot_faq": {
+        const { data, error } = await sb.from("chatbot_faqs").insert({
+          question: args.question, answer: args.answer,
+          image_url: args.image_url || null,
+          sort_order: args.sort_order ?? 0,
+          is_active: args.is_active ?? true,
+        }).select().single();
+        if (error) throw error;
+        return { success: true, faq: data };
+      }
+      case "update_chatbot_faq": {
+        const { faq_id, ...patch } = args;
+        const { data, error } = await sb.from("chatbot_faqs").update(patch).eq("id", faq_id).select().single();
+        if (error) throw error;
+        return { success: true, faq: data };
+      }
+      case "delete_chatbot_faq": {
+        const { error } = await sb.from("chatbot_faqs").delete().eq("id", args.faq_id);
         if (error) throw error;
         return { success: true };
       }

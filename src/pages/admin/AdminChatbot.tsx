@@ -450,48 +450,132 @@ export default function AdminChatbot() {
         </TabsContent>
 
         {/* Conversations */}
-        <TabsContent value="conversations">
+        <TabsContent value="conversations" className="space-y-3">
+          {/* Filters */}
+          <Card className="p-3 grid grid-cols-1 md:grid-cols-6 gap-2 items-end">
+            <div className="md:col-span-2 relative">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search messages…"
+                className="pl-8 h-9"
+              />
+            </div>
+            <div>
+              <Label className="text-[10px] uppercase">Tag</Label>
+              <select className="w-full border border-border rounded-md px-2 h-9 text-sm bg-background"
+                value={filterTag} onChange={(e) => setFilterTag(e.target.value)}>
+                <option value="all">All</option>
+                <option value="none">Untagged</option>
+                <option value="order">Orders</option>
+                <option value="complaint">Complaints (open)</option>
+                <option value="resolved">Resolved</option>
+              </select>
+            </div>
+            <div>
+              <Label className="text-[10px] uppercase">Channel</Label>
+              <select className="w-full border border-border rounded-md px-2 h-9 text-sm bg-background"
+                value={filterChannel} onChange={(e) => setFilterChannel(e.target.value)}>
+                <option value="all">All</option>
+                <option value="web">Website</option>
+                <option value="messenger">Facebook</option>
+                <option value="instagram">Instagram</option>
+                <option value="whatsapp">WhatsApp</option>
+              </select>
+            </div>
+            <div>
+              <Label className="text-[10px] uppercase">From</Label>
+              <Input type="date" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)} className="h-9" />
+            </div>
+            <div>
+              <Label className="text-[10px] uppercase">To</Label>
+              <Input type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} className="h-9" />
+            </div>
+            {(filterTag !== "all" || filterChannel !== "all" || filterFrom || filterTo || searchTerm) && (
+              <Button variant="ghost" size="sm" className="md:col-span-6 justify-self-end h-7"
+                onClick={() => { setFilterTag("all"); setFilterChannel("all"); setFilterFrom(""); setFilterTo(""); setSearchTerm(""); }}>
+                <X className="h-3 w-3 mr-1" /> Clear filters
+              </Button>
+            )}
+          </Card>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-1 space-y-1 max-h-[600px] overflow-y-auto">
-              {conversations.map((c: any) => (
-                <button
-                  key={c.id}
-                  onClick={() => setSelectedConv(c.id)}
-                  className={`w-full text-left p-3 border rounded-md text-xs ${selectedConv === c.id ? "bg-muted border-foreground" : "border-border hover:bg-muted/40"}`}
-                >
-                  <div className="font-medium">
-                    {c.customer?.name || c.customer?.phone || "Guest"}
-                  </div>
-                  <div className="text-muted-foreground">
-                    {c.message_count} msgs · {new Date(c.last_message_at).toLocaleDateString()}
-                  </div>
-                </button>
-              ))}
-              {conversations.length === 0 && <p className="text-sm text-muted-foreground p-4">No conversations yet.</p>}
+              {conversations.map((c: any) => {
+                const name = displayNameFor(c);
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => setSelectedConv(c.id)}
+                    className={`w-full text-left p-3 border rounded-md text-xs ${selectedConv === c.id ? "bg-muted border-foreground" : "border-border hover:bg-muted/40"}`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="font-medium truncate">{name}</div>
+                      <ChannelIcon channel={c.channel} />
+                    </div>
+                    <div className="text-muted-foreground mt-0.5">
+                      {c.message_count} msgs · {new Date(c.last_message_at).toLocaleDateString()}
+                    </div>
+                    {c.tag && c.tag !== "none" && (
+                      <div className="mt-1"><TagBadge tag={c.tag} /></div>
+                    )}
+                  </button>
+                );
+              })}
+              {conversations.length === 0 && <p className="text-sm text-muted-foreground p-4">No conversations match.</p>}
             </div>
 
             <div className="md:col-span-2">
-              {selectedConv ? (
-                <Card className="p-4 max-h-[600px] overflow-y-auto space-y-3">
-                  {convMessages.map((m: any) => (
-                    <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                      <div className={`max-w-[80%] p-3 rounded-lg text-sm ${m.role === "user" ? "bg-foreground text-background" : "bg-muted"}`}>
-                        <div className="text-[10px] uppercase opacity-60 mb-1">{m.role}</div>
-                        <div className="whitespace-pre-wrap">{m.content}</div>
-                        {m.role === "assistant" && (
-                          <div className="flex gap-2 mt-2">
-                            <button onClick={() => setFeedback(m.id, "good")} className={m.feedback === "good" ? "text-green-600" : "opacity-50"}>
-                              <ThumbsUp size={12} />
-                            </button>
-                            <button onClick={() => setFeedback(m.id, "bad")} className={m.feedback === "bad" ? "text-red-600" : "opacity-50"}>
-                              <ThumbsDown size={12} />
-                            </button>
-                          </div>
-                        )}
-                      </div>
+              {selectedConv && selectedConvData ? (
+                <div className="space-y-2">
+                  <Card className="p-3 flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2 text-sm">
+                      <ChannelIcon channel={selectedConvData.channel} />
+                      <span className="font-semibold">{displayNameFor(selectedConvData)}</span>
+                      {selectedConvData.tag !== "none" && <TagBadge tag={selectedConvData.tag} />}
                     </div>
-                  ))}
-                </Card>
+                    <div className="flex items-center gap-1 flex-wrap">
+                      <Button size="sm" variant={selectedConvData.tag === "order" ? "default" : "outline"}
+                        onClick={() => updateConvTag(selectedConv!, "order")}>
+                        <ShoppingCart className="h-3 w-3 mr-1" /> Order
+                      </Button>
+                      <Button size="sm" variant={selectedConvData.tag === "complaint" ? "default" : "outline"}
+                        onClick={() => updateConvTag(selectedConv!, "complaint")}>
+                        <AlertTriangle className="h-3 w-3 mr-1" /> Complaint
+                      </Button>
+                      <Button size="sm" variant={selectedConvData.tag === "resolved" ? "default" : "outline"}
+                        onClick={() => updateConvTag(selectedConv!, "resolved")}>
+                        <CheckCircle2 className="h-3 w-3 mr-1" /> Resolved
+                      </Button>
+                      {selectedConvData.tag !== "none" && (
+                        <Button size="sm" variant="ghost" onClick={() => updateConvTag(selectedConv!, "none")}>
+                          <X className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </Card>
+                  <Card className="p-4 max-h-[540px] overflow-y-auto space-y-3">
+                    {convMessages.map((m: any) => (
+                      <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                        <div className={`max-w-[80%] p-3 rounded-lg text-sm ${m.role === "user" ? "bg-foreground text-background" : "bg-muted"}`}>
+                          <div className="text-[10px] uppercase opacity-60 mb-1">{m.role}</div>
+                          <div className="whitespace-pre-wrap">{m.content}</div>
+                          {m.role === "assistant" && (
+                            <div className="flex gap-2 mt-2">
+                              <button onClick={() => setFeedback(m.id, "good")} className={m.feedback === "good" ? "text-green-600" : "opacity-50"}>
+                                <ThumbsUp size={12} />
+                              </button>
+                              <button onClick={() => setFeedback(m.id, "bad")} className={m.feedback === "bad" ? "text-red-600" : "opacity-50"}>
+                                <ThumbsDown size={12} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </Card>
+                </div>
               ) : (
                 <div className="flex items-center justify-center h-64 text-muted-foreground text-sm border border-dashed border-border rounded-md">
                   <MessageSquare className="h-5 w-5 mr-2" /> Select a conversation

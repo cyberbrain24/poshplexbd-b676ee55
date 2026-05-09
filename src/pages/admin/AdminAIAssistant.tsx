@@ -4,9 +4,9 @@ export default function AdminAIAssistant() {
   return (
     <div className="p-4 md:p-6 max-w-4xl mx-auto">
       <div className="mb-4">
-        <h1 className="text-2xl font-bold tracking-tight uppercase">Product AI Assistant</h1>
+        <h1 className="text-2xl font-bold tracking-tight uppercase">Admin AI Assistant</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Chat to manage your product catalog. Read-only questions work instantly; create / edit / delete actions ask for your approval first.
+          Manage products, orders, and customers — and train the Customer Chatbot (welcome message, system prompt, blocked topics, FAQs). Read-only questions run instantly; writes ask for your approval first and auto-save to the Customer Chatbot module.
         </p>
       </div>
       <AdminProductAI />

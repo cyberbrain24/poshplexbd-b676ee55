@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.meta-webhook]
 verify_jwt = false
+
+[functions.sms-order-placed]
+verify_jwt = false

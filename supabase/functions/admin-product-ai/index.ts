@@ -751,6 +751,44 @@ async function executeTool(name: string, args: any, sb: any) {
         return { success: true, recipients: recipients.length, sent, failed, campaign_id: campaign?.id };
       }
 
+      // ===== UNIVERSAL DB ACCESS =====
+      case "db_list_tables": {
+        const { data, error } = await sb.rpc("admin_list_schema");
+        if (error) throw error;
+        return { tables: data };
+      }
+      case "db_query_table": {
+        const table = String(args.table || "").trim();
+        if (!table || !/^[a-z_][a-z0-9_]*$/i.test(table)) return { error: "Invalid table name" };
+        const limit = Math.min(Math.max(Number(args.limit) || 25, 1), 200);
+        let q = sb.from(table).select(args.columns || "*").limit(limit);
+        if (args.filters && typeof args.filters === "object") {
+          for (const [k, v] of Object.entries(args.filters)) {
+            if (v === null) q = q.is(k, null); else q = q.eq(k, v as any);
+          }
+        }
+        if (args.search?.column && args.search?.value) {
+          q = q.ilike(args.search.column, `%${args.search.value}%`);
+        }
+        if (args.order_by) q = q.order(args.order_by, { ascending: args.ascending !== false });
+        const { data, error } = await q;
+        if (error) return { error: error.message };
+        return { rows: data, count: data?.length || 0 };
+      }
+      case "db_count_table": {
+        const table = String(args.table || "").trim();
+        if (!table || !/^[a-z_][a-z0-9_]*$/i.test(table)) return { error: "Invalid table name" };
+        let q = sb.from(table).select("*", { count: "exact", head: true });
+        if (args.filters && typeof args.filters === "object") {
+          for (const [k, v] of Object.entries(args.filters)) {
+            if (v === null) q = q.is(k, null); else q = q.eq(k, v as any);
+          }
+        }
+        const { count, error } = await q;
+        if (error) return { error: error.message };
+        return { count };
+      }
+
       default: return { error: `Unknown tool: ${name}` };
     }
   } catch (e: any) {

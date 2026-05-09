@@ -40,6 +40,8 @@ const READ_TOOLS = new Set([
   "get_chatbot_settings", "list_chatbot_faqs",
   // SMS
   "get_sms_settings", "list_sms_templates", "list_sms_campaigns", "list_sms_messages",
+  // Universal DB introspection (auto-discovers any new module)
+  "db_list_tables", "db_query_table", "db_count_table",
 ]);
 
 const WRITE_TOOLS = new Set([
@@ -200,11 +202,22 @@ const tools = [
   { type: "function", function: { name: "send_bulk_sms", description: "Run a bulk SMS campaign. audience_filter is one of: {type:'all'} | {type:'membership',ids:[customer_type_id...]} | {type:'division',ids:[division_id...]} | {type:'thana',ids:[thana_id...]} | {type:'manual',phones:[]}. Body supports {name},{phone}.", parameters: { type: "object", properties: {
     name: { type: "string" }, message: { type: "string" }, audience_filter: { type: "object" },
   }, required: ["message"] } } },
+  // UNIVERSAL DB ACCESS — works for ANY current or future module/table in the public schema
+  { type: "function", function: { name: "db_list_tables", description: "List EVERY table in the database with all columns (name, type, nullable, default). Use this first to discover any module — including newly added ones — when you don't already have a dedicated tool for it.", parameters: { type: "object", properties: {} } } },
+  { type: "function", function: { name: "db_query_table", description: "Read rows from ANY public table. Use only when no dedicated list_/get_ tool exists for that module. Args: table (required), columns (default '*'), filters (object of column=value equals matches), search (object {column,value} for ilike), order_by, ascending, limit (default 25, max 200).", parameters: { type: "object", properties: {
+    table: { type: "string" }, columns: { type: "string" }, filters: { type: "object" },
+    search: { type: "object" }, order_by: { type: "string" }, ascending: { type: "boolean" }, limit: { type: "number" },
+  }, required: ["table"] } } },
+  { type: "function", function: { name: "db_count_table", description: "Count rows in any public table with optional equality filters.", parameters: { type: "object", properties: {
+    table: { type: "string" }, filters: { type: "object" },
+  }, required: ["table"] } } },
 ];
 
 const SYSTEM_PROMPT = `You are POSHPLEX's admin AI assistant. The brand is a Bangladesh streetwear store ("BE POSH WITH POSHPLEX"). Currency is Taka (৳), locale en-BD.
 
-You have READ access to EVERY module of the system: products, orders, customers, reviews, inventory, financial accounts, transactions, payments, promo codes, payment methods, shipping locations (Districts/Thanas), site settings, and analytics. Use the appropriate tool to look up real data — never guess numbers.
+You have READ access to EVERY module of the system: products, orders, customers, reviews, inventory, financial accounts, transactions, payments, promo codes, payment methods, shipping locations (Districts/Thanas), site settings, analytics, chatbot, and SMS. Use the appropriate tool to look up real data — never guess numbers.
+
+UNIVERSAL DATABASE ACCESS: For ANY module or table that does not have a dedicated tool (including newly created modules added later), use db_list_tables to discover the full schema, then db_query_table / db_count_table to read its data. Always prefer the dedicated tool when one exists. When the admin asks "what tables / modules do you have access to?", call db_list_tables.
 
 You have WRITE access to: PRODUCTS (create/update/delete/toggle/images), CUSTOMERS (create/update/delete), ORDERS (update fields, change status, change payment status, edit/delete items, record payments, delete order), and the CUSTOMER CHATBOT module (welcome message, system prompt / personality + rules, blocked topics, enabled/model, plus FAQ knowledge entries — create / update / delete). For other modules (finance accounts, inventory entries, promo codes, etc.) explain what you see and tell the admin to use that admin page.
 
@@ -738,6 +751,44 @@ async function executeTool(name: string, args: any, sb: any) {
         }
         if (campaign?.id) await sb.from("sms_campaigns").update({ sent_count: sent, failed_count: failed, status: "completed", completed_at: new Date().toISOString() }).eq("id", campaign.id);
         return { success: true, recipients: recipients.length, sent, failed, campaign_id: campaign?.id };
+      }
+
+      // ===== UNIVERSAL DB ACCESS =====
+      case "db_list_tables": {
+        const { data, error } = await sb.rpc("admin_list_schema");
+        if (error) throw error;
+        return { tables: data };
+      }
+      case "db_query_table": {
+        const table = String(args.table || "").trim();
+        if (!table || !/^[a-z_][a-z0-9_]*$/i.test(table)) return { error: "Invalid table name" };
+        const limit = Math.min(Math.max(Number(args.limit) || 25, 1), 200);
+        let q = sb.from(table).select(args.columns || "*").limit(limit);
+        if (args.filters && typeof args.filters === "object") {
+          for (const [k, v] of Object.entries(args.filters)) {
+            if (v === null) q = q.is(k, null); else q = q.eq(k, v as any);
+          }
+        }
+        if (args.search?.column && args.search?.value) {
+          q = q.ilike(args.search.column, `%${args.search.value}%`);
+        }
+        if (args.order_by) q = q.order(args.order_by, { ascending: args.ascending !== false });
+        const { data, error } = await q;
+        if (error) return { error: error.message };
+        return { rows: data, count: data?.length || 0 };
+      }
+      case "db_count_table": {
+        const table = String(args.table || "").trim();
+        if (!table || !/^[a-z_][a-z0-9_]*$/i.test(table)) return { error: "Invalid table name" };
+        let q = sb.from(table).select("*", { count: "exact", head: true });
+        if (args.filters && typeof args.filters === "object") {
+          for (const [k, v] of Object.entries(args.filters)) {
+            if (v === null) q = q.is(k, null); else q = q.eq(k, v as any);
+          }
+        }
+        const { count, error } = await q;
+        if (error) return { error: error.message };
+        return { count };
       }
 
       default: return { error: `Unknown tool: ${name}` };

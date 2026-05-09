@@ -2623,6 +2623,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_list_schema: { Args: never; Returns: Json }
       create_order_atomic: {
         Args: { p_items: Json; p_order: Json }
         Returns: Json

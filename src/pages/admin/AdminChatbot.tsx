@@ -558,5 +558,52 @@ export default function AdminChatbot() {
           </div>
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function ChannelCredentialsForm({ channel, onSave }: { channel: any; onSave: (id: string, patch: any) => void }) {
+  const [form, setForm] = useState({
+    page_id: channel.page_id || "",
+    phone_number_id: channel.phone_number_id || "",
+    business_account_id: channel.business_account_id || "",
+    app_id: channel.app_id || "",
+    app_secret: channel.app_secret || "",
+    access_token: channel.access_token || "",
+    notes: channel.notes || "",
+  });
+
+  return (
+    <div className="space-y-2 pt-2 border-t border-border">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+        {channel.channel === "whatsapp" ? (
+          <>
+            <LabeledInput label="Phone Number ID" value={form.phone_number_id} onChange={(v) => setForm({ ...form, phone_number_id: v })} />
+            <LabeledInput label="WhatsApp Business Account ID" value={form.business_account_id} onChange={(v) => setForm({ ...form, business_account_id: v })} />
+          </>
+        ) : (
+          <LabeledInput label="Page ID" value={form.page_id} onChange={(v) => setForm({ ...form, page_id: v })} />
+        )}
+        <LabeledInput label="App ID" value={form.app_id} onChange={(v) => setForm({ ...form, app_id: v })} />
+        <LabeledInput label="App Secret" value={form.app_secret} onChange={(v) => setForm({ ...form, app_secret: v })} type="password" />
+        <LabeledInput label="Access Token (permanent)" value={form.access_token} onChange={(v) => setForm({ ...form, access_token: v })} type="password" />
+      </div>
+      <div className="space-y-1">
+        <Label className="text-[10px] uppercase">Notes</Label>
+        <Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+      </div>
+      <Button size="sm" onClick={() => onSave(channel.id, form)}>
+        <Save className="h-3 w-3 mr-1" /> Save Credentials
+      </Button>
+    </div>
+  );
+}
+
+function LabeledInput({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
+  return (
+    <div className="space-y-1">
+      <Label className="text-[10px] uppercase">{label}</Label>
+      <Input type={type} value={value} onChange={(e) => onChange(e.target.value)} className="font-mono text-[11px]" />
+    </div>
   );
 }

@@ -2274,6 +2274,192 @@ export type Database = {
         }
         Relationships: []
       }
+      sms_campaigns: {
+        Row: {
+          audience_filter: Json
+          body: string
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          failed_count: number
+          id: string
+          name: string
+          recipient_count: number
+          sent_count: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          audience_filter?: Json
+          body: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          failed_count?: number
+          id?: string
+          name: string
+          recipient_count?: number
+          sent_count?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          audience_filter?: Json
+          body?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          failed_count?: number
+          id?: string
+          name?: string
+          recipient_count?: number
+          sent_count?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sms_messages: {
+        Row: {
+          body: string
+          campaign_id: string | null
+          created_at: string
+          customer_id: string | null
+          id: string
+          order_id: string | null
+          phone: string
+          provider_response: string | null
+          sent_at: string | null
+          status: string
+          template_id: string | null
+          trigger_event: string | null
+        }
+        Insert: {
+          body: string
+          campaign_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          order_id?: string | null
+          phone: string
+          provider_response?: string | null
+          sent_at?: string | null
+          status?: string
+          template_id?: string | null
+          trigger_event?: string | null
+        }
+        Update: {
+          body?: string
+          campaign_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          order_id?: string | null
+          phone?: string
+          provider_response?: string | null
+          sent_at?: string | null
+          status?: string
+          template_id?: string | null
+          trigger_event?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_messages_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "sms_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_messages_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "sms_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sms_provider_settings: {
+        Row: {
+          api_key: string | null
+          created_at: string
+          enabled: boolean
+          endpoint_url: string | null
+          headers: Json
+          http_method: string
+          id: string
+          notes: string | null
+          provider_name: string
+          request_template: Json
+          sender_id: string | null
+          success_keyword: string | null
+          updated_at: string
+        }
+        Insert: {
+          api_key?: string | null
+          created_at?: string
+          enabled?: boolean
+          endpoint_url?: string | null
+          headers?: Json
+          http_method?: string
+          id?: string
+          notes?: string | null
+          provider_name?: string
+          request_template?: Json
+          sender_id?: string | null
+          success_keyword?: string | null
+          updated_at?: string
+        }
+        Update: {
+          api_key?: string | null
+          created_at?: string
+          enabled?: boolean
+          endpoint_url?: string | null
+          headers?: Json
+          http_method?: string
+          id?: string
+          notes?: string | null
+          provider_name?: string
+          request_template?: Json
+          sender_id?: string | null
+          success_keyword?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sms_templates: {
+        Row: {
+          body: string
+          created_at: string
+          enabled: boolean
+          event_key: string
+          id: string
+          is_system: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          enabled?: boolean
+          event_key: string
+          id?: string
+          is_system?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          enabled?: boolean
+          event_key?: string
+          id?: string
+          is_system?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       thanas: {
         Row: {
           created_at: string

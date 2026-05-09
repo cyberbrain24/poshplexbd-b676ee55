@@ -38,6 +38,8 @@ const READ_TOOLS = new Set([
   "get_site_settings", "get_site_branding",
   // Chatbot
   "get_chatbot_settings", "list_chatbot_faqs",
+  // SMS
+  "get_sms_settings", "list_sms_templates", "list_sms_campaigns", "list_sms_messages",
 ]);
 
 const WRITE_TOOLS = new Set([
@@ -52,6 +54,9 @@ const WRITE_TOOLS = new Set([
   "update_order_item", "add_order_payment",
   // Chatbot training
   "update_chatbot_settings", "create_chatbot_faq", "update_chatbot_faq", "delete_chatbot_faq",
+  // SMS Marketing
+  "update_sms_settings", "update_sms_template", "create_sms_template", "delete_sms_template",
+  "send_sms", "send_bulk_sms",
 ]);
 
 const tools = [
@@ -170,6 +175,31 @@ const tools = [
     image_url: { type: "string" }, sort_order: { type: "number" }, is_active: { type: "boolean" },
   }, required: ["faq_id"] } } },
   { type: "function", function: { name: "delete_chatbot_faq", description: "Delete a Customer Chatbot FAQ by id.", parameters: { type: "object", properties: { faq_id: { type: "string" } }, required: ["faq_id"] } } },
+
+  // ====== SMS Marketing ======
+  { type: "function", function: { name: "get_sms_settings", description: "Get the SMS provider settings: endpoint URL, sender ID, enabled flag, request template.", parameters: { type: "object", properties: {} } } },
+  { type: "function", function: { name: "list_sms_templates", description: "List SMS templates (account_created, order_placed, order_shipped, order_delivered, custom). Returns id, event_key, name, body, enabled.", parameters: { type: "object", properties: {} } } },
+  { type: "function", function: { name: "list_sms_campaigns", description: "List recent bulk SMS campaigns with name, recipient/sent/failed counts, status, date.", parameters: { type: "object", properties: { limit: { type: "number" } } } } },
+  { type: "function", function: { name: "list_sms_messages", description: "List individual SMS send log. Optional filter by status (sent|failed|pending) or trigger_event.", parameters: { type: "object", properties: { limit: { type: "number" }, status: { type: "string" }, trigger_event: { type: "string" } } } } },
+  { type: "function", function: { name: "update_sms_settings", description: "Update SMS provider settings. Pass any subset: provider_name, endpoint_url, http_method (GET/POST), request_template (JSON), headers (JSON), api_key, sender_id, success_keyword, enabled, notes.", parameters: { type: "object", properties: {
+    provider_name: { type: "string" }, endpoint_url: { type: "string" }, http_method: { type: "string" },
+    request_template: { type: "object" }, headers: { type: "object" },
+    api_key: { type: "string" }, sender_id: { type: "string" },
+    success_keyword: { type: "string" }, enabled: { type: "boolean" }, notes: { type: "string" },
+  } } } },
+  { type: "function", function: { name: "update_sms_template", description: "Update an SMS template by event_key (account_created/order_placed/order_shipped/order_delivered or a custom slug). Pass body (with {name},{phone},{order_number},{total},{tracking} placeholders), enabled, name.", parameters: { type: "object", properties: {
+    event_key: { type: "string" }, body: { type: "string" }, enabled: { type: "boolean" }, name: { type: "string" },
+  }, required: ["event_key"] } } },
+  { type: "function", function: { name: "create_sms_template", description: "Create a new custom SMS template. Provide a unique event_key slug, name, body, enabled.", parameters: { type: "object", properties: {
+    event_key: { type: "string" }, name: { type: "string" }, body: { type: "string" }, enabled: { type: "boolean" },
+  }, required: ["event_key", "name", "body"] } } },
+  { type: "function", function: { name: "delete_sms_template", description: "Delete a custom (non-system) SMS template by event_key.", parameters: { type: "object", properties: { event_key: { type: "string" } }, required: ["event_key"] } } },
+  { type: "function", function: { name: "send_sms", description: "Send a one-off SMS to a single phone number now.", parameters: { type: "object", properties: {
+    phone: { type: "string" }, message: { type: "string" },
+  }, required: ["phone", "message"] } } },
+  { type: "function", function: { name: "send_bulk_sms", description: "Run a bulk SMS campaign. audience_filter is one of: {type:'all'} | {type:'membership',ids:[customer_type_id...]} | {type:'division',ids:[division_id...]} | {type:'thana',ids:[thana_id...]} | {type:'manual',phones:[]}. Body supports {name},{phone}.", parameters: { type: "object", properties: {
+    name: { type: "string" }, message: { type: "string" }, audience_filter: { type: "object" },
+  }, required: ["message"] } } },
 ];
 
 const SYSTEM_PROMPT = `You are POSHPLEX's admin AI assistant. The brand is a Bangladesh streetwear store ("BE POSH WITH POSHPLEX"). Currency is Taka (৳), locale en-BD.
@@ -598,6 +628,116 @@ async function executeTool(name: string, args: any, sb: any) {
         const { error } = await sb.from("chatbot_faqs").delete().eq("id", args.faq_id);
         if (error) throw error;
         return { success: true };
+      }
+
+      // ====== SMS Marketing ======
+      case "get_sms_settings": {
+        const { data } = await sb.from("sms_provider_settings").select("*").limit(1).maybeSingle();
+        if (data && data.api_key) data.api_key = data.api_key.length > 4 ? `***${data.api_key.slice(-4)}` : "***";
+        return { settings: data };
+      }
+      case "list_sms_templates": {
+        const { data, error } = await sb.from("sms_templates").select("*").order("event_key");
+        if (error) throw error;
+        return { templates: data };
+      }
+      case "list_sms_campaigns": {
+        const { data, error } = await sb.from("sms_campaigns").select("*").order("created_at", { ascending: false }).limit(args.limit || 25);
+        if (error) throw error;
+        return { campaigns: data };
+      }
+      case "list_sms_messages": {
+        let q = sb.from("sms_messages").select("*").order("created_at", { ascending: false }).limit(args.limit || 50);
+        if (args.status) q = q.eq("status", args.status);
+        if (args.trigger_event) q = q.eq("trigger_event", args.trigger_event);
+        const { data, error } = await q;
+        if (error) throw error;
+        return { messages: data };
+      }
+      case "update_sms_settings": {
+        const patch: any = {};
+        for (const k of ["provider_name","endpoint_url","http_method","request_template","headers","api_key","sender_id","success_keyword","enabled","notes"]) {
+          if (args[k] !== undefined) patch[k] = args[k];
+        }
+        patch.updated_at = new Date().toISOString();
+        const { data: existing } = await sb.from("sms_provider_settings").select("id").limit(1).maybeSingle();
+        if (existing?.id) {
+          const { data, error } = await sb.from("sms_provider_settings").update(patch).eq("id", existing.id).select().single();
+          if (error) throw error;
+          return { success: true, settings: data };
+        }
+        const { data, error } = await sb.from("sms_provider_settings").insert(patch).select().single();
+        if (error) throw error;
+        return { success: true, settings: data };
+      }
+      case "update_sms_template": {
+        const { event_key, ...patch } = args;
+        const { data: existing } = await sb.from("sms_templates").select("id").eq("event_key", event_key).maybeSingle();
+        if (!existing) return { error: `Template not found for event_key: ${event_key}` };
+        const { data, error } = await sb.from("sms_templates").update(patch).eq("id", existing.id).select().single();
+        if (error) throw error;
+        return { success: true, template: data };
+      }
+      case "create_sms_template": {
+        const { data, error } = await sb.from("sms_templates").insert({
+          event_key: args.event_key, name: args.name, body: args.body,
+          enabled: args.enabled ?? true, is_system: false,
+        }).select().single();
+        if (error) throw error;
+        return { success: true, template: data };
+      }
+      case "delete_sms_template": {
+        const { data: tpl } = await sb.from("sms_templates").select("id, is_system").eq("event_key", args.event_key).maybeSingle();
+        if (!tpl) return { error: "Template not found" };
+        if (tpl.is_system) return { error: "Cannot delete a system template; you can disable it instead." };
+        const { error } = await sb.from("sms_templates").delete().eq("id", tpl.id);
+        if (error) throw error;
+        return { success: true };
+      }
+      case "send_sms": {
+        const { sendSmsViaProvider } = await import("../_shared/sms.ts");
+        const result = await sendSmsViaProvider(sb, args.phone, args.message);
+        await sb.from("sms_messages").insert({
+          phone: args.phone, body: args.message, status: result.status,
+          provider_response: result.response, trigger_event: "ai",
+          sent_at: result.success ? new Date().toISOString() : null,
+        });
+        return result;
+      }
+      case "send_bulk_sms": {
+        // Run via service role: resolve audience + send
+        const filter = args.audience_filter || { type: "all" };
+        const message = args.message;
+        let recipients: { phone: string; customer_id?: string; name?: string }[] = [];
+        if (filter.type === "manual") {
+          recipients = (filter.phones || []).map((p: string) => ({ phone: String(p).trim() })).filter((r: any) => r.phone);
+        } else {
+          let q = sb.from("customers").select("id, name, phone").not("phone", "is", null).eq("is_active", true);
+          if (filter.type === "membership" && filter.ids?.length) q = q.in("customer_type_id", filter.ids);
+          else if (filter.type === "division" && filter.ids?.length) q = q.in("division_id", filter.ids);
+          else if (filter.type === "thana" && filter.ids?.length) q = q.in("thana_id", filter.ids);
+          const { data } = await q.limit(10000);
+          recipients = (data || []).map((c: any) => ({ phone: c.phone, customer_id: c.id, name: c.name }));
+        }
+        if (!recipients.length) return { error: "No recipients matched the filter" };
+        const { data: campaign } = await sb.from("sms_campaigns").insert({
+          name: args.name || `AI Campaign ${new Date().toISOString()}`,
+          body: message, audience_filter: filter, recipient_count: recipients.length, status: "sending",
+        }).select().single();
+        const { sendSmsViaProvider, renderTemplate } = await import("../_shared/sms.ts");
+        let sent = 0, failed = 0;
+        for (const r of recipients) {
+          const personalised = renderTemplate(message, { name: r.name || "", phone: r.phone });
+          const res = await sendSmsViaProvider(sb, r.phone, personalised);
+          await sb.from("sms_messages").insert({
+            phone: r.phone, body: personalised, status: res.status, provider_response: res.response,
+            customer_id: r.customer_id || null, campaign_id: campaign?.id || null, trigger_event: "bulk",
+            sent_at: res.success ? new Date().toISOString() : null,
+          });
+          if (res.success) sent++; else failed++;
+        }
+        if (campaign?.id) await sb.from("sms_campaigns").update({ sent_count: sent, failed_count: failed, status: "completed", completed_at: new Date().toISOString() }).eq("id", campaign.id);
+        return { success: true, recipients: recipients.length, sent, failed, campaign_id: campaign?.id };
       }
 
       default: return { error: `Unknown tool: ${name}` };

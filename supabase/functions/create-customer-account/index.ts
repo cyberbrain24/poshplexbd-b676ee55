@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
 import { checkRateLimit, getClientIP, rateLimitResponse } from "../_shared/rate-limiter.ts";
+import { sendByEvent } from "../_shared/sms.ts";
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
@@ -131,6 +132,13 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: accountError.message }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Fire-and-forget welcome SMS (won't block account creation if it fails)
+    try {
+      await sendByEvent(supabase, "account_created", phone, { name: name || "Customer", phone });
+    } catch (smsErr) {
+      console.error("Welcome SMS failed:", smsErr);
     }
 
     return new Response(

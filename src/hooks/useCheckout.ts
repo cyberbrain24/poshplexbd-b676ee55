@@ -322,6 +322,8 @@ export const useCreateOrder = () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["products-list"] });
       toast.success(`Order ${result.orderNumber} placed successfully!`);
+      // Fire-and-forget order_placed SMS (provider/template may be disabled — ignored silently)
+      supabase.functions.invoke("sms-order-placed", { body: { order_id: result.orderId } }).catch(() => {});
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to place order");

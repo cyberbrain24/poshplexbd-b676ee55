@@ -138,6 +138,12 @@ async function sendReply(msg: IncomingMsg, text: string) {
 async function handleMessage(supabase: any, msg: IncomingMsg) {
   const ch = msg.channelRow;
 
+  // Resolve sender display name (WhatsApp gives it inline, Messenger/IG via Graph API).
+  let senderName = msg.senderName || null;
+  if (!senderName && (msg.channel === "messenger" || msg.channel === "instagram")) {
+    senderName = await fetchSenderName(msg.channel, msg.externalUserId, ch.access_token);
+  }
+
   // Find or create meta_conversation → chatbot_conversation
   let { data: mc } = await supabase
     .from("meta_conversations")
@@ -155,11 +161,18 @@ async function handleMessage(supabase: any, msg: IncomingMsg) {
         session_id: `${msg.channel}:${msg.externalUserId}`,
         channel: msg.channel,
         external_user_id: msg.externalUserId,
+        display_name: senderName,
         user_agent: `meta-${msg.channel}`,
       })
       .select("id")
       .single();
     conversationId = conv?.id ?? null;
+  } else if (senderName) {
+    await supabase
+      .from("chatbot_conversations")
+      .update({ display_name: senderName })
+      .eq("id", conversationId)
+      .is("display_name", null);
   }
 
   if (!mc) {
@@ -168,11 +181,16 @@ async function handleMessage(supabase: any, msg: IncomingMsg) {
       channel: msg.channel,
       external_user_id: msg.externalUserId,
       conversation_id: conversationId,
+      display_name: senderName,
     });
   } else {
     await supabase
       .from("meta_conversations")
-      .update({ conversation_id: conversationId, last_message_at: new Date().toISOString() })
+      .update({
+        conversation_id: conversationId,
+        last_message_at: new Date().toISOString(),
+        ...(senderName && !mc.display_name ? { display_name: senderName } : {}),
+      })
       .eq("id", mc.id);
   }
 

@@ -9,7 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Plus, Trash2, MessageSquare, ThumbsUp, ThumbsDown, ImagePlus, Loader2, X, Pencil, Save } from "lucide-react";
+import { Plus, Trash2, MessageSquare, ThumbsUp, ThumbsDown, ImagePlus, Loader2, X, Pencil, Save, Copy, RefreshCcw } from "lucide-react";
+
+const WEBHOOK_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/meta-webhook`;
+const CHANNEL_LABEL: Record<string, string> = { whatsapp: "WhatsApp", messenger: "Messenger", instagram: "Instagram" };
+const randomToken = () => Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
 
 export default function AdminChatbot() {
   const qc = useQueryClient();
@@ -203,6 +207,47 @@ export default function AdminChatbot() {
   const today = new Date(); today.setHours(0,0,0,0);
   const todayConvs = conversations.filter((c: any) => new Date(c.created_at) >= today).length;
 
+  // ====== Meta Channels (WhatsApp / Messenger / Instagram) ======
+  const { data: metaChannels = [] } = useQuery({
+    queryKey: ["meta-channels"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("meta_channels").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const [newCh, setNewCh] = useState<{ channel: string; display_name: string; verify_token: string }>({
+    channel: "whatsapp", display_name: "", verify_token: randomToken(),
+  });
+
+  const addChannel = async () => {
+    if (!newCh.display_name || !newCh.verify_token) return toast.error("Name and verify token required");
+    const { error } = await supabase.from("meta_channels").insert({
+      channel: newCh.channel, display_name: newCh.display_name, verify_token: newCh.verify_token, is_active: true,
+    });
+    if (error) return toast.error(error.message);
+    toast.success("Channel created — now paste the credentials below");
+    setNewCh({ channel: "whatsapp", display_name: "", verify_token: randomToken() });
+    qc.invalidateQueries({ queryKey: ["meta-channels"] });
+  };
+
+  const updateChannel = async (id: string, patch: any) => {
+    const { error } = await supabase.from("meta_channels").update(patch).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Saved");
+    qc.invalidateQueries({ queryKey: ["meta-channels"] });
+  };
+
+  const deleteChannel = async (id: string) => {
+    if (!confirm("Delete this channel? Existing conversation mappings will be removed.")) return;
+    const { error } = await supabase.from("meta_channels").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    qc.invalidateQueries({ queryKey: ["meta-channels"] });
+  };
+
+  const copyText = (s: string) => { navigator.clipboard.writeText(s); toast.success("Copied"); };
+
   return (
     <div className="p-4 md:p-6 max-w-6xl mx-auto">
       <div className="mb-4">
@@ -218,6 +263,7 @@ export default function AdminChatbot() {
           <TabsTrigger value="faqs">FAQs ({faqs.length})</TabsTrigger>
           <TabsTrigger value="conversations">Conversations</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="meta">Meta DM ({metaChannels.length})</TabsTrigger>
         </TabsList>
 
         {/* Settings */}
@@ -419,7 +465,145 @@ export default function AdminChatbot() {
             <Card className="p-4"><p className="text-xs text-muted-foreground uppercase">Total Messages</p><p className="text-2xl font-bold mt-1">{totalMsgs}</p></Card>
           </div>
         </TabsContent>
+
+        {/* Meta DM Channels */}
+        <TabsContent value="meta" className="space-y-4">
+          <Card className="p-4 space-y-3">
+            <h3 className="font-medium text-sm uppercase tracking-wider">How to connect</h3>
+            <ol className="text-xs text-muted-foreground space-y-1 list-decimal pl-4">
+              <li>Create a Meta App at developers.facebook.com → add WhatsApp / Messenger / Instagram product.</li>
+              <li>Add a channel below for each platform — pick a Display name, copy the auto-generated Verify Token.</li>
+              <li>In the Meta App's Webhooks section, paste the Webhook URL and Verify Token shown on each card.</li>
+              <li>Subscribe to <code>messages</code> (WhatsApp) or <code>messages</code> + <code>messaging_postbacks</code> (Messenger/Instagram).</li>
+              <li>Paste your Page Access Token / Phone Number ID / App Secret into the channel card and save.</li>
+            </ol>
+            <div className="flex items-center gap-2 text-xs bg-muted/50 px-3 py-2 rounded">
+              <span className="font-mono break-all flex-1">{WEBHOOK_URL}</span>
+              <Button size="sm" variant="ghost" onClick={() => copyText(WEBHOOK_URL)}><Copy className="h-3 w-3" /></Button>
+            </div>
+          </Card>
+
+          <Card className="p-4 space-y-3">
+            <h3 className="font-medium text-sm uppercase tracking-wider">Add Channel</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+              <select
+                className="border border-border rounded-md px-3 py-2 text-sm bg-background"
+                value={newCh.channel}
+                onChange={(e) => setNewCh({ ...newCh, channel: e.target.value })}
+              >
+                <option value="whatsapp">WhatsApp</option>
+                <option value="messenger">Messenger</option>
+                <option value="instagram">Instagram</option>
+              </select>
+              <Input
+                placeholder="Display name (e.g. POSHPLEX WhatsApp)"
+                value={newCh.display_name}
+                onChange={(e) => setNewCh({ ...newCh, display_name: e.target.value })}
+              />
+              <div className="flex gap-1">
+                <Input
+                  placeholder="Verify token"
+                  value={newCh.verify_token}
+                  onChange={(e) => setNewCh({ ...newCh, verify_token: e.target.value })}
+                />
+                <Button variant="outline" size="icon" onClick={() => setNewCh({ ...newCh, verify_token: randomToken() })} title="Regenerate">
+                  <RefreshCcw className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <Button onClick={addChannel} disabled={!newCh.display_name}>
+              <Plus className="h-4 w-4 mr-1" /> Add Channel
+            </Button>
+          </Card>
+
+          <div className="space-y-3">
+            {metaChannels.map((c: any) => (
+              <Card key={c.id} className="p-4 space-y-3">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div>
+                    <div className="font-semibold uppercase text-sm">{CHANNEL_LABEL[c.channel] || c.channel} · {c.display_name}</div>
+                    <div className="text-xs text-muted-foreground">Created {new Date(c.created_at).toLocaleDateString()}</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch checked={c.is_active} onCheckedChange={(v) => updateChannel(c.id, { is_active: v })} />
+                    <button onClick={() => deleteChannel(c.id)} className="text-destructive hover:opacity-70" title="Delete">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                  <div className="space-y-1">
+                    <Label className="text-[10px] uppercase">Webhook URL</Label>
+                    <div className="flex gap-1">
+                      <Input readOnly value={WEBHOOK_URL} className="font-mono text-[11px]" />
+                      <Button variant="outline" size="icon" onClick={() => copyText(WEBHOOK_URL)}><Copy className="h-3 w-3" /></Button>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[10px] uppercase">Verify Token</Label>
+                    <div className="flex gap-1">
+                      <Input readOnly value={c.verify_token} className="font-mono text-[11px]" />
+                      <Button variant="outline" size="icon" onClick={() => copyText(c.verify_token)}><Copy className="h-3 w-3" /></Button>
+                    </div>
+                  </div>
+                </div>
+
+                <ChannelCredentialsForm channel={c} onSave={updateChannel} />
+              </Card>
+            ))}
+            {metaChannels.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-8">No Meta channels yet. Add one above to start receiving DMs.</p>
+            )}
+          </div>
+        </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function ChannelCredentialsForm({ channel, onSave }: { channel: any; onSave: (id: string, patch: any) => void }) {
+  const [form, setForm] = useState({
+    page_id: channel.page_id || "",
+    phone_number_id: channel.phone_number_id || "",
+    business_account_id: channel.business_account_id || "",
+    app_id: channel.app_id || "",
+    app_secret: channel.app_secret || "",
+    access_token: channel.access_token || "",
+    notes: channel.notes || "",
+  });
+
+  return (
+    <div className="space-y-2 pt-2 border-t border-border">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+        {channel.channel === "whatsapp" ? (
+          <>
+            <LabeledInput label="Phone Number ID" value={form.phone_number_id} onChange={(v) => setForm({ ...form, phone_number_id: v })} />
+            <LabeledInput label="WhatsApp Business Account ID" value={form.business_account_id} onChange={(v) => setForm({ ...form, business_account_id: v })} />
+          </>
+        ) : (
+          <LabeledInput label="Page ID" value={form.page_id} onChange={(v) => setForm({ ...form, page_id: v })} />
+        )}
+        <LabeledInput label="App ID" value={form.app_id} onChange={(v) => setForm({ ...form, app_id: v })} />
+        <LabeledInput label="App Secret" value={form.app_secret} onChange={(v) => setForm({ ...form, app_secret: v })} type="password" />
+        <LabeledInput label="Access Token (permanent)" value={form.access_token} onChange={(v) => setForm({ ...form, access_token: v })} type="password" />
+      </div>
+      <div className="space-y-1">
+        <Label className="text-[10px] uppercase">Notes</Label>
+        <Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+      </div>
+      <Button size="sm" onClick={() => onSave(channel.id, form)}>
+        <Save className="h-3 w-3 mr-1" /> Save Credentials
+      </Button>
+    </div>
+  );
+}
+
+function LabeledInput({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
+  return (
+    <div className="space-y-1">
+      <Label className="text-[10px] uppercase">{label}</Label>
+      <Input type={type} value={value} onChange={(e) => onChange(e.target.value)} className="font-mono text-[11px]" />
     </div>
   );
 }

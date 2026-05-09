@@ -133,8 +133,10 @@ export type Database = {
       chatbot_conversations: {
         Row: {
           auth_user_id: string | null
+          channel: string
           created_at: string
           customer_id: string | null
+          external_user_id: string | null
           id: string
           last_message_at: string
           message_count: number
@@ -143,8 +145,10 @@ export type Database = {
         }
         Insert: {
           auth_user_id?: string | null
+          channel?: string
           created_at?: string
           customer_id?: string | null
+          external_user_id?: string | null
           id?: string
           last_message_at?: string
           message_count?: number
@@ -153,8 +157,10 @@ export type Database = {
         }
         Update: {
           auth_user_id?: string | null
+          channel?: string
           created_at?: string
           customer_id?: string | null
+          external_user_id?: string | null
           id?: string
           last_message_at?: string
           message_count?: number
@@ -853,6 +859,111 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      meta_channels: {
+        Row: {
+          access_token: string | null
+          app_id: string | null
+          app_secret: string | null
+          business_account_id: string | null
+          channel: string
+          created_at: string
+          display_name: string
+          id: string
+          is_active: boolean
+          notes: string | null
+          page_id: string | null
+          phone_number_id: string | null
+          updated_at: string
+          verify_token: string
+        }
+        Insert: {
+          access_token?: string | null
+          app_id?: string | null
+          app_secret?: string | null
+          business_account_id?: string | null
+          channel: string
+          created_at?: string
+          display_name: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          page_id?: string | null
+          phone_number_id?: string | null
+          updated_at?: string
+          verify_token: string
+        }
+        Update: {
+          access_token?: string | null
+          app_id?: string | null
+          app_secret?: string | null
+          business_account_id?: string | null
+          channel?: string
+          created_at?: string
+          display_name?: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          page_id?: string | null
+          phone_number_id?: string | null
+          updated_at?: string
+          verify_token?: string
+        }
+        Relationships: []
+      }
+      meta_conversations: {
+        Row: {
+          channel: string
+          conversation_id: string | null
+          created_at: string
+          customer_id: string | null
+          display_name: string | null
+          external_user_id: string
+          id: string
+          last_message_at: string
+          meta_channel_id: string
+          updated_at: string
+        }
+        Insert: {
+          channel: string
+          conversation_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          display_name?: string | null
+          external_user_id: string
+          id?: string
+          last_message_at?: string
+          meta_channel_id: string
+          updated_at?: string
+        }
+        Update: {
+          channel?: string
+          conversation_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          display_name?: string | null
+          external_user_id?: string
+          id?: string
+          last_message_at?: string
+          meta_channel_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meta_conversations_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chatbot_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meta_conversations_meta_channel_id_fkey"
+            columns: ["meta_channel_id"]
+            isOneToOne: false
+            referencedRelation: "meta_channels"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       music_tracks: {
         Row: {

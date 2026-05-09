@@ -735,3 +735,29 @@ function LabeledInput({ label, value, onChange, type = "text" }: { label: string
     </div>
   );
 }
+
+function displayNameFor(c: any): string {
+  if (c?.customer?.name) return c.customer.name;
+  if (c?.customer?.phone) return c.customer.phone;
+  const metaName = Array.isArray(c?.meta) ? c.meta[0]?.display_name : c?.meta?.display_name;
+  if (metaName) return metaName;
+  if (c?.display_name) return c.display_name;
+  if (c?.guest_number) return `Guest ${c.guest_number}`;
+  if (c?.external_user_id) return c.external_user_id;
+  return "Guest";
+}
+
+function ChannelIcon({ channel }: { channel: string }) {
+  const cls = "h-3.5 w-3.5";
+  if (channel === "whatsapp") return <MessageCircle className={cls + " text-green-600"} aria-label="WhatsApp" />;
+  if (channel === "messenger") return <Facebook className={cls + " text-blue-600"} aria-label="Facebook" />;
+  if (channel === "instagram") return <Instagram className={cls + " text-pink-600"} aria-label="Instagram" />;
+  return <Globe className={cls + " text-muted-foreground"} aria-label="Website" />;
+}
+
+function TagBadge({ tag }: { tag: string }) {
+  if (tag === "order") return <Badge className="bg-blue-600 hover:bg-blue-600 text-white"><ShoppingCart className="h-3 w-3 mr-1" />Order</Badge>;
+  if (tag === "complaint") return <Badge variant="destructive"><AlertTriangle className="h-3 w-3 mr-1" />Complaint</Badge>;
+  if (tag === "resolved") return <Badge className="bg-green-600 hover:bg-green-600 text-white"><CheckCircle2 className="h-3 w-3 mr-1" />Resolved</Badge>;
+  return null;
+}

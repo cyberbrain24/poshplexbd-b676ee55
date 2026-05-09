@@ -27,6 +27,7 @@ interface IncomingMsg {
   text: string;
   channelRow: any;
   recipientId?: string; // page id / phone number id (used to send reply back)
+  senderName?: string;
 }
 
 function extractMessages(body: any, channel: Channel): Array<Omit<IncomingMsg, "channelRow">> {
@@ -39,6 +40,11 @@ function extractMessages(body: any, channel: Channel): Array<Omit<IncomingMsg, "
       for (const ch of changes) {
         const val = ch.value || {};
         const phoneNumberId = val?.metadata?.phone_number_id;
+        const contacts = val.contacts || [];
+        const nameByWaId: Record<string, string> = {};
+        for (const c of contacts) {
+          if (c?.wa_id && c?.profile?.name) nameByWaId[c.wa_id] = c.profile.name;
+        }
         const msgs = val.messages || [];
         for (const m of msgs) {
           if (m.type === "text" && m.text?.body) {
@@ -47,6 +53,7 @@ function extractMessages(body: any, channel: Channel): Array<Omit<IncomingMsg, "
               externalUserId: m.from,
               text: m.text.body,
               recipientId: phoneNumberId,
+              senderName: nameByWaId[m.from],
             });
           }
         }
@@ -68,6 +75,19 @@ function extractMessages(body: any, channel: Channel): Array<Omit<IncomingMsg, "
     }
   }
   return out;
+}
+
+async function fetchSenderName(channel: Channel, userId: string, token: string): Promise<string | null> {
+  if (!userId || !token) return null;
+  try {
+    const url = `https://graph.facebook.com/v21.0/${userId}?fields=name,first_name,last_name,username&access_token=${encodeURIComponent(token)}`;
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    const j = await r.json();
+    return j?.name || [j?.first_name, j?.last_name].filter(Boolean).join(" ") || j?.username || null;
+  } catch {
+    return null;
+  }
 }
 
 async function sendReply(msg: IncomingMsg, text: string) {

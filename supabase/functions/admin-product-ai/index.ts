@@ -921,6 +921,7 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const messages = body.messages || [];
     const confirmedAction = body.confirmed_action; // {name, args, tool_call_id} after user approves
+    const autoApproveWrites = body.auto_approve_writes === true; // bulk mode: auto-execute writes without per-call confirmation
 
     // If a confirmed write action is provided, execute it and continue
     if (confirmedAction) {

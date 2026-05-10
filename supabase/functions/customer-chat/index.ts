@@ -396,6 +396,68 @@ async function executeTool(name: string, args: any, supabase: any) {
       return results.map(shapeProduct);
     }
 
+    if (name === "list_colors") {
+      const { data } = await supabase.from("colors").select("name, hex_code").order("name");
+      return data || [];
+    }
+
+    if (name === "list_sizes") {
+      const { data } = await supabase.from("sizes").select("label").order("label");
+      return data || [];
+    }
+
+    if (name === "list_materials") {
+      const { data } = await supabase.from("materials").select("name, gsm, season").order("name");
+      return data || [];
+    }
+
+    if (name === "list_brands") {
+      const { data } = await supabase.from("brands").select("id, name").order("name");
+      return data || [];
+    }
+
+    if (name === "get_size_guide") {
+      if (args.product) {
+        const isUuid = /^[0-9a-f-]{36}$/i.test(args.product);
+        let q = supabase.from("products").select("size_guide:size_guides(name, content)").limit(1);
+        q = isUuid ? q.eq("id", args.product) : q.ilike("name", `%${args.product}%`);
+        const { data } = await q.maybeSingle();
+        if ((data as any)?.size_guide) return (data as any).size_guide;
+      }
+      if (args.name) {
+        const { data } = await supabase.from("size_guides").select("name, content").ilike("name", `%${args.name}%`).limit(1).maybeSingle();
+        if (data) return data;
+      }
+      const { data } = await supabase.from("size_guides").select("name, content").order("name");
+      return data || [];
+    }
+
+    if (name === "get_care_instructions") {
+      if (args.product) {
+        const isUuid = /^[0-9a-f-]{36}$/i.test(args.product);
+        let q = supabase.from("products").select("care_instruction:care_instructions(name, content)").limit(1);
+        q = isUuid ? q.eq("id", args.product) : q.ilike("name", `%${args.product}%`);
+        const { data } = await q.maybeSingle();
+        if ((data as any)?.care_instruction) return (data as any).care_instruction;
+      }
+      if (args.name) {
+        const { data } = await supabase.from("care_instructions").select("name, content").ilike("name", `%${args.name}%`).limit(1).maybeSingle();
+        if (data) return data;
+      }
+      const { data } = await supabase.from("care_instructions").select("name, content").order("name");
+      return data || [];
+    }
+
+    if (name === "track_order") {
+      const { data, error } = await supabase.rpc("track_orders_lookup", {
+        p_order_number: args.order_number || null,
+        p_phone: args.phone || null,
+        p_email: args.email || null,
+      });
+      if (error) return { error: error.message };
+      return data || [];
+    }
+
     if (name === "lookup_orders") {
       const { data, error } = await supabase.rpc("track_orders_lookup", {
         p_order_number: args.order_number || null, p_phone: args.phone || null, p_email: null,

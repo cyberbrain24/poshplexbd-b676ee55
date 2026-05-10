@@ -51,7 +51,7 @@ const WRITE_TOOLS = new Set([
   "add_product_image", "update_product_image", "delete_product_image",
   "set_product_active", "set_product_featured",
   "create_product_variant", "update_product_variant", "delete_product_variant",
-  "bulk_update_variant_prices",
+  "bulk_update_variant_prices", "bulk_update_category_prices",
   "add_product_category", "remove_product_category",
   // Customers
   "create_customer", "update_customer", "delete_customer",
@@ -67,7 +67,7 @@ const WRITE_TOOLS = new Set([
 
 const tools = [
   // READ
-  { type: "function", function: { name: "list_products", description: "List products. Optional search by name/SKU.", parameters: { type: "object", properties: { search: { type: "string" }, limit: { type: "number" } } } } },
+  { type: "function", function: { name: "list_products", description: "List products. Filter by search (name/SKU), category_id OR category_name (matches both legacy products.category_id AND multi-category junction), is_active. Default limit 100, max 500.", parameters: { type: "object", properties: { search: { type: "string" }, category_id: { type: "string" }, category_name: { type: "string" }, is_active: { type: "boolean" }, limit: { type: "number" } } } } },
   { type: "function", function: { name: "get_product", description: "Get full product details by id, name, or SKU.", parameters: { type: "object", properties: { identifier: { type: "string" } }, required: ["identifier"] } } },
   { type: "function", function: { name: "list_categories", description: "List all categories.", parameters: { type: "object", properties: {} } } },
   { type: "function", function: { name: "list_brands", description: "List all brands.", parameters: { type: "object", properties: {} } } },
@@ -113,9 +113,13 @@ const tools = [
     image_url: { type: "string" }, stock_quantity: { type: "number" }, low_stock_threshold: { type: "number" }, is_active: { type: "boolean" },
   }, required: ["variant_id"] } } },
   { type: "function", function: { name: "delete_product_variant", description: "Delete a variant by id.", parameters: { type: "object", properties: { variant_id: { type: "string" } }, required: ["variant_id"] } } },
-  { type: "function", function: { name: "bulk_update_variant_prices", description: "Update selling_price (and optionally purchase_price) for ALL variants of a product in one call. Use when admin says 'change all variation prices to X'.", parameters: { type: "object", properties: {
+  { type: "function", function: { name: "bulk_update_variant_prices", description: "Update selling_price (and optionally purchase_price) for ALL variants of ONE product in a single call, AND aligns the product's base_price. Works for both simple and variable products.", parameters: { type: "object", properties: {
     product_id: { type: "string" }, selling_price: { type: "number" }, purchase_price: { type: "number" },
   }, required: ["product_id", "selling_price"] } } },
+  { type: "function", function: { name: "bulk_update_category_prices", description: "Change selling_price for ALL products in a category in one call. Updates products.base_price for every matched product (so simple products work) AND product_variants.selling_price for variants. Pass either category_id or category_name. Use this when admin says 'change all products in <category> to <price>'. Matches both legacy products.category_id AND multi-category junction.", parameters: { type: "object", properties: {
+    category_id: { type: "string" }, category_name: { type: "string" },
+    selling_price: { type: "number" }, purchase_price: { type: "number" },
+  }, required: ["selling_price"] } } },
   { type: "function", function: { name: "add_product_category", description: "Link an additional category to a product (multi-category support).", parameters: { type: "object", properties: { product_id: { type: "string" }, category_id: { type: "string" } }, required: ["product_id", "category_id"] } } },
   { type: "function", function: { name: "remove_product_category", description: "Remove a category link from a product.", parameters: { type: "object", properties: { product_id: { type: "string" }, category_id: { type: "string" } }, required: ["product_id", "category_id"] } } },
   { type: "function", function: { name: "list_orders", description: "List recent orders with optional filters.", parameters: { type: "object", properties: { status: { type: "string", description: "pending|confirmed|shipped|delivered|cancelled|partially_delivered" }, payment_status: { type: "string", description: "unpaid|partial|paid|refunded" }, search: { type: "string", description: "Order number or customer phone" }, limit: { type: "number" }, days: { type: "number", description: "Only orders from last N days" } } } } },
@@ -248,7 +252,7 @@ UNIVERSAL DATABASE ACCESS: For ANY module or table that does not have a dedicate
 
 You have WRITE access to: PRODUCTS — full control: create / update / delete products; manage VARIANTS (create / update / delete / bulk price update — this is how you change variation selling_price or purchase_price); manage IMAGES (add / update is_main, sort_order, alt_text, color_id / delete); manage multi-CATEGORY links (add_product_category / remove_product_category); toggle active/featured; update YouTube, size guide, care instruction. CUSTOMERS (create/update/delete), ORDERS (update fields, change status, change payment status, edit/delete items, record payments, delete order), and the CUSTOMER CHATBOT module (welcome message, system prompt / personality + rules, blocked topics, enabled/model, plus FAQ knowledge entries — create / update / delete). For other modules (finance accounts, inventory entries, promo codes, etc.) explain what you see and tell the admin to use that admin page.
 
-VARIANT PRICING: When admin asks to change a variant/variation price, use update_product_variant for one variant or bulk_update_variant_prices for all variants of a product. Never confuse base_price (product) with selling_price (variant). For variable products, the actual sale price comes from the variant's selling_price.
+VARIANT PRICING: When admin asks to change a single variant price, use update_product_variant. For ALL variants of ONE product, use bulk_update_variant_prices (also aligns base_price). For ALL products in a CATEGORY (e.g. "change every product in Upper Wear to 799"), ALWAYS use bulk_update_category_prices in a SINGLE call — never loop product-by-product. It updates both products.base_price AND every variant's selling_price, covering simple products too. Use list_products with category_name only if you need to preview the affected items first.
 
 CHATBOT TRAINING: When the admin teaches messaging behavior — tone, rules, refusals, welcome wording, blocked topics, or new Q&A knowledge — treat it as training the Customer Chatbot. Use get_chatbot_settings / list_chatbot_faqs to read current config, then call update_chatbot_settings to persist welcome_message / system_prompt / blocked_topics, or create_chatbot_faq / update_chatbot_faq / delete_chatbot_faq for knowledge entries. When merging new rules into system_prompt, preserve existing rules unless the admin asks to remove them. Blocked_topics must be a clean array of short topic strings.
 
@@ -276,11 +280,36 @@ async function executeTool(name: string, args: any, sb: any) {
   try {
     switch (name) {
       case "list_products": {
-        let q = sb.from("products").select("id, name, sku, base_price, is_active, is_featured, product_type, category_id").limit(args.limit || 25).order("created_at", { ascending: false });
+        const limit = Math.min(args.limit || 100, 500);
+        // Resolve category by name if provided
+        let categoryIds: string[] | null = null;
+        if (args.category_id) {
+          categoryIds = [args.category_id];
+        } else if (args.category_name) {
+          const { data: cats } = await sb.from("categories").select("id").ilike("name", `%${args.category_name}%`);
+          categoryIds = (cats || []).map((c: any) => c.id);
+          if (categoryIds.length === 0) return { products: [], note: `No category matched "${args.category_name}"` };
+        }
+        let productIds: string[] | null = null;
+        if (categoryIds) {
+          // Look in BOTH legacy products.category_id AND junction product_categories
+          const [{ data: viaJunction }, { data: viaLegacy }] = await Promise.all([
+            sb.from("product_categories").select("product_id").in("category_id", categoryIds),
+            sb.from("products").select("id").in("category_id", categoryIds),
+          ]);
+          productIds = Array.from(new Set([
+            ...(viaJunction || []).map((r: any) => r.product_id),
+            ...(viaLegacy || []).map((r: any) => r.id),
+          ]));
+          if (productIds.length === 0) return { products: [], note: "No products in that category" };
+        }
+        let q = sb.from("products").select("id, name, sku, base_price, is_active, is_featured, product_type, category_id").limit(limit).order("created_at", { ascending: false });
+        if (productIds) q = q.in("id", productIds);
         if (args.search) q = q.or(`name.ilike.%${args.search}%,sku.ilike.%${args.search}%`);
+        if (args.is_active !== undefined) q = q.eq("is_active", args.is_active);
         const { data, error } = await q;
         if (error) throw error;
-        return { products: data };
+        return { products: data, count: data?.length || 0 };
       }
       case "get_product": {
         const id = args.identifier;
@@ -416,11 +445,48 @@ async function executeTool(name: string, args: any, sb: any) {
         return { success: true };
       }
       case "bulk_update_variant_prices": {
-        const patch: any = { selling_price: args.selling_price };
-        if (args.purchase_price !== undefined) patch.purchase_price = args.purchase_price;
-        const { data, error } = await sb.from("product_variants").update(patch).eq("product_id", args.product_id).select("id, sku, selling_price, purchase_price");
-        if (error) throw error;
-        return { success: true, updated_count: data?.length || 0, variants: data };
+        const variantPatch: any = { selling_price: args.selling_price };
+        if (args.purchase_price !== undefined) variantPatch.purchase_price = args.purchase_price;
+        const { data: variants, error: vErr } = await sb.from("product_variants").update(variantPatch).eq("product_id", args.product_id).select("id, sku, selling_price, purchase_price");
+        if (vErr) throw vErr;
+        // Also keep product.base_price aligned so simple products and storefront price displays update too
+        const productPatch: any = { base_price: args.selling_price };
+        const { error: pErr } = await sb.from("products").update(productPatch).eq("id", args.product_id);
+        if (pErr) throw pErr;
+        return { success: true, updated_variant_count: variants?.length || 0, base_price_updated: true, variants };
+      }
+      case "bulk_update_category_prices": {
+        // High-level: change selling_price for ALL products in a category (by id or name).
+        // Updates products.base_price for every matched product AND product_variants.selling_price for variants.
+        let categoryIds: string[] = [];
+        if (args.category_id) categoryIds = [args.category_id];
+        else if (args.category_name) {
+          const { data: cats } = await sb.from("categories").select("id, name").ilike("name", `%${args.category_name}%`);
+          categoryIds = (cats || []).map((c: any) => c.id);
+          if (categoryIds.length === 0) return { error: `No category matched "${args.category_name}"` };
+        } else {
+          return { error: "Provide category_id or category_name" };
+        }
+        const [{ data: viaJunction }, { data: viaLegacy }] = await Promise.all([
+          sb.from("product_categories").select("product_id").in("category_id", categoryIds),
+          sb.from("products").select("id").in("category_id", categoryIds),
+        ]);
+        const productIds = Array.from(new Set([
+          ...(viaJunction || []).map((r: any) => r.product_id),
+          ...(viaLegacy || []).map((r: any) => r.id),
+        ]));
+        if (productIds.length === 0) return { success: true, updated_products: 0, updated_variants: 0, note: "No products in that category" };
+
+        const productPatch: any = { base_price: args.selling_price };
+        const { data: prodRows, error: pErr } = await sb.from("products").update(productPatch).in("id", productIds).select("id, name");
+        if (pErr) throw pErr;
+
+        const variantPatch: any = { selling_price: args.selling_price };
+        if (args.purchase_price !== undefined) variantPatch.purchase_price = args.purchase_price;
+        const { data: varRows, error: vErr } = await sb.from("product_variants").update(variantPatch).in("product_id", productIds).select("id");
+        if (vErr) throw vErr;
+
+        return { success: true, updated_products: prodRows?.length || 0, updated_variants: varRows?.length || 0, product_ids: productIds };
       }
       case "add_product_category": {
         const { data, error } = await sb.from("product_categories").insert({ product_id: args.product_id, category_id: args.category_id }).select().single();

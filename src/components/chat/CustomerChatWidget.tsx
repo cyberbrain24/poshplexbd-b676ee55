@@ -9,7 +9,6 @@ import ImageLightbox from "@/components/ui/image-lightbox";
 
 type Msg = { role: "user" | "assistant"; content: string; images?: string[] };
 type ProductCard = { id: string; name: string; price: number; image?: string; url?: string };
-type ProductCard = { id: string; name: string; price: number; image?: string; url?: string };
 
 const SESSION_KEY = "poshplex_chat_session";
 const CONV_KEY = "poshplex_chat_conversation";

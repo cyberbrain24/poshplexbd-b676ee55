@@ -378,15 +378,16 @@ const CustomerChatWidget = () => {
               >
                 <Paperclip size={18} />
               </button>
-              <input
-                type="text"
+              <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") send(); }}
+                rows={1}
                 placeholder={pendingImages.length ? "Describe or just send the image…" : "Ask, or attach a product photo…"}
-                className="flex-1 px-3 py-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-foreground"
+                className="flex-1 px-3 py-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-foreground resize-none max-h-32 leading-snug"
+                style={{ minHeight: "38px" }}
                 disabled={loading}
               />
+              <p className="sr-only">Press the send button to submit. Enter inserts a new line.</p>
               <button
                 onClick={send}
                 disabled={loading || (!input.trim() && pendingImages.length === 0)}

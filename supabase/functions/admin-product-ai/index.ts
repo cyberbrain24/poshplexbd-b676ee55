@@ -276,11 +276,36 @@ async function executeTool(name: string, args: any, sb: any) {
   try {
     switch (name) {
       case "list_products": {
-        let q = sb.from("products").select("id, name, sku, base_price, is_active, is_featured, product_type, category_id").limit(args.limit || 25).order("created_at", { ascending: false });
+        const limit = Math.min(args.limit || 100, 500);
+        // Resolve category by name if provided
+        let categoryIds: string[] | null = null;
+        if (args.category_id) {
+          categoryIds = [args.category_id];
+        } else if (args.category_name) {
+          const { data: cats } = await sb.from("categories").select("id").ilike("name", `%${args.category_name}%`);
+          categoryIds = (cats || []).map((c: any) => c.id);
+          if (categoryIds.length === 0) return { products: [], note: `No category matched "${args.category_name}"` };
+        }
+        let productIds: string[] | null = null;
+        if (categoryIds) {
+          // Look in BOTH legacy products.category_id AND junction product_categories
+          const [{ data: viaJunction }, { data: viaLegacy }] = await Promise.all([
+            sb.from("product_categories").select("product_id").in("category_id", categoryIds),
+            sb.from("products").select("id").in("category_id", categoryIds),
+          ]);
+          productIds = Array.from(new Set([
+            ...(viaJunction || []).map((r: any) => r.product_id),
+            ...(viaLegacy || []).map((r: any) => r.id),
+          ]));
+          if (productIds.length === 0) return { products: [], note: "No products in that category" };
+        }
+        let q = sb.from("products").select("id, name, sku, base_price, is_active, is_featured, product_type, category_id").limit(limit).order("created_at", { ascending: false });
+        if (productIds) q = q.in("id", productIds);
         if (args.search) q = q.or(`name.ilike.%${args.search}%,sku.ilike.%${args.search}%`);
+        if (args.is_active !== undefined) q = q.eq("is_active", args.is_active);
         const { data, error } = await q;
         if (error) throw error;
-        return { products: data };
+        return { products: data, count: data?.length || 0 };
       }
       case "get_product": {
         const id = args.identifier;

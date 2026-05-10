@@ -204,9 +204,12 @@ export default function AdminProductAI({ embedded = false }: Props) {
               AI wants to <strong>{pending.name}</strong>
             </div>
             <pre className="text-[11px] bg-background/60 rounded p-2 overflow-auto max-h-32">{JSON.stringify(pending.args, null, 2)}</pre>
-            <div className="flex gap-2">
-              <Button size="sm" onClick={approve} disabled={loading}>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" onClick={() => approve(false)} disabled={loading}>
                 <Check className="h-3 w-3 mr-1" /> Approve
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => approve(true)} disabled={loading} title="Auto-execute all remaining steps in this workflow">
+                <Check className="h-3 w-3 mr-1" /> Approve All (auto-run rest)
               </Button>
               <Button size="sm" variant="outline" onClick={reject} disabled={loading}>
                 <X className="h-3 w-3 mr-1" /> Reject

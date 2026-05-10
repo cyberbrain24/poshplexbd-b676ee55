@@ -331,6 +331,9 @@ async function executeTool(name: string, args: any, sb: any) {
         return { success: true, product: data };
       }
       case "delete_product": {
+        await sb.from("product_images").delete().eq("product_id", args.product_id);
+        await sb.from("product_variants").delete().eq("product_id", args.product_id);
+        await sb.from("product_categories").delete().eq("product_id", args.product_id);
         const { error } = await sb.from("products").delete().eq("id", args.product_id);
         if (error) throw error;
         return { success: true };

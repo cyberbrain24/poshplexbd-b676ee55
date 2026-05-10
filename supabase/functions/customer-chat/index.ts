@@ -174,6 +174,81 @@ const tools = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "list_colors",
+      description: "List all available colors in the catalog (name + hex code). Use to answer 'what colors do you have'.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "list_sizes",
+      description: "List all available size labels in the catalog (e.g. S, M, L, 28, 30).",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "list_materials",
+      description: "List all materials/fabrics available (name, GSM, season).",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "list_brands",
+      description: "List all brands.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_size_guide",
+      description: "Get a size guide by name or by product identifier. Returns the table/content used to advise on fit.",
+      parameters: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "Size guide name (optional)" },
+          product: { type: "string", description: "Product id or name to fetch its assigned size guide (optional)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_care_instructions",
+      description: "Get care & cleaning instructions by name or product identifier.",
+      parameters: {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          product: { type: "string", description: "Product id or name to fetch its care instructions (optional)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "track_order",
+      description: "Detailed order tracking for a customer — returns order status, payment status, courier, tracking number, status timeline, items, and shipping address. Verify with order_number plus phone or email when available.",
+      parameters: {
+        type: "object",
+        properties: {
+          order_number: { type: "string" },
+          phone: { type: "string" },
+          email: { type: "string" },
+        },
+      },
+    },
+  },
 ];
 
 const PRODUCT_LIST_SELECT = `

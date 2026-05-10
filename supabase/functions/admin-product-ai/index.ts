@@ -18,7 +18,8 @@ const READ_TOOLS = new Set([
   // Catalog
   "list_products", "get_product", "list_categories", "list_brands",
   "list_colors", "list_sizes", "list_materials", "list_size_guides",
-  "list_care_instructions",
+  "list_care_instructions", "list_product_variants", "list_product_images",
+  "list_product_categories",
   // Orders
   "list_orders", "get_order", "get_order_items",
   // Customers
@@ -47,8 +48,11 @@ const READ_TOOLS = new Set([
 const WRITE_TOOLS = new Set([
   // Products
   "create_product", "update_product", "delete_product",
-  "add_product_image", "delete_product_image", "set_product_active",
-  "set_product_featured",
+  "add_product_image", "update_product_image", "delete_product_image",
+  "set_product_active", "set_product_featured",
+  "create_product_variant", "update_product_variant", "delete_product_variant",
+  "bulk_update_variant_prices",
+  "add_product_category", "remove_product_category",
   // Customers
   "create_customer", "update_customer", "delete_customer",
   // Orders
@@ -83,14 +87,37 @@ const tools = [
   { type: "function", function: { name: "update_product", description: "Update fields on an existing product. Pass product_id and any fields to change.", parameters: { type: "object", properties: {
     product_id: { type: "string" }, name: { type: "string" }, sku: { type: "string" },
     base_price: { type: "number" }, short_description: { type: "string" }, full_description: { type: "string" },
-    brand_id: { type: "string" }, category_id: { type: "string" },
+    brand_id: { type: "string" }, category_id: { type: "string" }, product_type: { type: "string", description: "simple|variable" },
+    youtube_url: { type: "string" }, youtube_autoplay: { type: "boolean" }, youtube_mute: { type: "boolean" },
+    size_guide_id: { type: "string" }, care_instruction_id: { type: "string" },
     is_active: { type: "boolean" }, is_featured: { type: "boolean" },
   }, required: ["product_id"] } } },
-  { type: "function", function: { name: "delete_product", description: "Delete a product by id.", parameters: { type: "object", properties: { product_id: { type: "string" } }, required: ["product_id"] } } },
+  { type: "function", function: { name: "delete_product", description: "Delete a product by id (also removes its variants and images).", parameters: { type: "object", properties: { product_id: { type: "string" } }, required: ["product_id"] } } },
   { type: "function", function: { name: "set_product_active", description: "Toggle product active status.", parameters: { type: "object", properties: { product_id: { type: "string" }, is_active: { type: "boolean" } }, required: ["product_id", "is_active"] } } },
   { type: "function", function: { name: "set_product_featured", description: "Toggle product featured status.", parameters: { type: "object", properties: { product_id: { type: "string" }, is_featured: { type: "boolean" } }, required: ["product_id", "is_featured"] } } },
-  { type: "function", function: { name: "add_product_image", description: "Attach an image URL to a product.", parameters: { type: "object", properties: { product_id: { type: "string" }, image_url: { type: "string" }, is_main: { type: "boolean" }, alt_text: { type: "string" } }, required: ["product_id", "image_url"] } } },
+  { type: "function", function: { name: "add_product_image", description: "Attach an image URL to a product.", parameters: { type: "object", properties: { product_id: { type: "string" }, image_url: { type: "string" }, is_main: { type: "boolean" }, alt_text: { type: "string" }, color_id: { type: "string" }, sort_order: { type: "number" } }, required: ["product_id", "image_url"] } } },
+  { type: "function", function: { name: "update_product_image", description: "Update fields on a product image (is_main, alt_text, sort_order, color_id).", parameters: { type: "object", properties: { image_id: { type: "string" }, is_main: { type: "boolean" }, alt_text: { type: "string" }, sort_order: { type: "number" }, color_id: { type: "string" } }, required: ["image_id"] } } },
   { type: "function", function: { name: "delete_product_image", description: "Delete a product image by id.", parameters: { type: "object", properties: { image_id: { type: "string" } }, required: ["image_id"] } } },
+  // Variants
+  { type: "function", function: { name: "list_product_variants", description: "List variants for a product, including color/size/material names, SKU, prices, and stock.", parameters: { type: "object", properties: { product_id: { type: "string" } }, required: ["product_id"] } } },
+  { type: "function", function: { name: "list_product_images", description: "List images for a product.", parameters: { type: "object", properties: { product_id: { type: "string" } }, required: ["product_id"] } } },
+  { type: "function", function: { name: "list_product_categories", description: "List category links for a product (multi-category junction).", parameters: { type: "object", properties: { product_id: { type: "string" } }, required: ["product_id"] } } },
+  { type: "function", function: { name: "create_product_variant", description: "Create a new variant for a product. Provide product_id, sku, selling_price, and any of color_id/size_id/material_id, purchase_price, image_url, stock_quantity, low_stock_threshold, is_active.", parameters: { type: "object", properties: {
+    product_id: { type: "string" }, sku: { type: "string" }, selling_price: { type: "number" }, purchase_price: { type: "number" },
+    color_id: { type: "string" }, size_id: { type: "string" }, material_id: { type: "string" },
+    image_url: { type: "string" }, stock_quantity: { type: "number" }, low_stock_threshold: { type: "number" }, is_active: { type: "boolean" },
+  }, required: ["product_id", "sku", "selling_price"] } } },
+  { type: "function", function: { name: "update_product_variant", description: "Update an existing variant by variant_id. Use this to change variation prices (selling_price / purchase_price), stock, SKU, color/size/material, image, or active state.", parameters: { type: "object", properties: {
+    variant_id: { type: "string" }, sku: { type: "string" }, selling_price: { type: "number" }, purchase_price: { type: "number" },
+    color_id: { type: "string" }, size_id: { type: "string" }, material_id: { type: "string" },
+    image_url: { type: "string" }, stock_quantity: { type: "number" }, low_stock_threshold: { type: "number" }, is_active: { type: "boolean" },
+  }, required: ["variant_id"] } } },
+  { type: "function", function: { name: "delete_product_variant", description: "Delete a variant by id.", parameters: { type: "object", properties: { variant_id: { type: "string" } }, required: ["variant_id"] } } },
+  { type: "function", function: { name: "bulk_update_variant_prices", description: "Update selling_price (and optionally purchase_price) for ALL variants of a product in one call. Use when admin says 'change all variation prices to X'.", parameters: { type: "object", properties: {
+    product_id: { type: "string" }, selling_price: { type: "number" }, purchase_price: { type: "number" },
+  }, required: ["product_id", "selling_price"] } } },
+  { type: "function", function: { name: "add_product_category", description: "Link an additional category to a product (multi-category support).", parameters: { type: "object", properties: { product_id: { type: "string" }, category_id: { type: "string" } }, required: ["product_id", "category_id"] } } },
+  { type: "function", function: { name: "remove_product_category", description: "Remove a category link from a product.", parameters: { type: "object", properties: { product_id: { type: "string" }, category_id: { type: "string" } }, required: ["product_id", "category_id"] } } },
   { type: "function", function: { name: "list_orders", description: "List recent orders with optional filters.", parameters: { type: "object", properties: { status: { type: "string", description: "pending|confirmed|shipped|delivered|cancelled|partially_delivered" }, payment_status: { type: "string", description: "unpaid|partial|paid|refunded" }, search: { type: "string", description: "Order number or customer phone" }, limit: { type: "number" }, days: { type: "number", description: "Only orders from last N days" } } } } },
   { type: "function", function: { name: "get_order", description: "Get full order details by order_number or id.", parameters: { type: "object", properties: { identifier: { type: "string" } }, required: ["identifier"] } } },
   { type: "function", function: { name: "get_order_items", description: "List items for an order id.", parameters: { type: "object", properties: { order_id: { type: "string" } }, required: ["order_id"] } } },
@@ -219,7 +246,9 @@ You have READ access to EVERY module of the system: products, orders, customers,
 
 UNIVERSAL DATABASE ACCESS: For ANY module or table that does not have a dedicated tool (including newly created modules added later), use db_list_tables to discover the full schema, then db_query_table / db_count_table to read its data. Always prefer the dedicated tool when one exists. When the admin asks "what tables / modules do you have access to?", call db_list_tables.
 
-You have WRITE access to: PRODUCTS (create/update/delete/toggle/images), CUSTOMERS (create/update/delete), ORDERS (update fields, change status, change payment status, edit/delete items, record payments, delete order), and the CUSTOMER CHATBOT module (welcome message, system prompt / personality + rules, blocked topics, enabled/model, plus FAQ knowledge entries — create / update / delete). For other modules (finance accounts, inventory entries, promo codes, etc.) explain what you see and tell the admin to use that admin page.
+You have WRITE access to: PRODUCTS — full control: create / update / delete products; manage VARIANTS (create / update / delete / bulk price update — this is how you change variation selling_price or purchase_price); manage IMAGES (add / update is_main, sort_order, alt_text, color_id / delete); manage multi-CATEGORY links (add_product_category / remove_product_category); toggle active/featured; update YouTube, size guide, care instruction. CUSTOMERS (create/update/delete), ORDERS (update fields, change status, change payment status, edit/delete items, record payments, delete order), and the CUSTOMER CHATBOT module (welcome message, system prompt / personality + rules, blocked topics, enabled/model, plus FAQ knowledge entries — create / update / delete). For other modules (finance accounts, inventory entries, promo codes, etc.) explain what you see and tell the admin to use that admin page.
+
+VARIANT PRICING: When admin asks to change a variant/variation price, use update_product_variant for one variant or bulk_update_variant_prices for all variants of a product. Never confuse base_price (product) with selling_price (variant). For variable products, the actual sale price comes from the variant's selling_price.
 
 CHATBOT TRAINING: When the admin teaches messaging behavior — tone, rules, refusals, welcome wording, blocked topics, or new Q&A knowledge — treat it as training the Customer Chatbot. Use get_chatbot_settings / list_chatbot_faqs to read current config, then call update_chatbot_settings to persist welcome_message / system_prompt / blocked_topics, or create_chatbot_faq / update_chatbot_faq / delete_chatbot_faq for knowledge entries. When merging new rules into system_prompt, preserve existing rules unless the admin asks to remove them. Blocked_topics must be a clean array of short topic strings.
 
@@ -302,6 +331,9 @@ async function executeTool(name: string, args: any, sb: any) {
         return { success: true, product: data };
       }
       case "delete_product": {
+        await sb.from("product_images").delete().eq("product_id", args.product_id);
+        await sb.from("product_variants").delete().eq("product_id", args.product_id);
+        await sb.from("product_categories").delete().eq("product_id", args.product_id);
         const { error } = await sb.from("products").delete().eq("id", args.product_id);
         if (error) throw error;
         return { success: true };
@@ -320,12 +352,83 @@ async function executeTool(name: string, args: any, sb: any) {
         const { data, error } = await sb.from("product_images").insert({
           product_id: args.product_id, image_url: args.image_url,
           is_main: args.is_main ?? false, alt_text: args.alt_text,
+          color_id: args.color_id || null, sort_order: args.sort_order ?? 0,
         }).select().single();
+        if (error) throw error;
+        return { success: true, image: data };
+      }
+      case "update_product_image": {
+        const { image_id, ...patch } = args;
+        const { data, error } = await sb.from("product_images").update(patch).eq("id", image_id).select().single();
         if (error) throw error;
         return { success: true, image: data };
       }
       case "delete_product_image": {
         const { error } = await sb.from("product_images").delete().eq("id", args.image_id);
+        if (error) throw error;
+        return { success: true };
+      }
+      case "list_product_variants": {
+        const { data, error } = await sb.from("product_variants").select(`
+          id, sku, selling_price, purchase_price, stock_quantity, low_stock_threshold, is_active, image_url,
+          color:colors(id, name, hex_code), size:sizes(id, label), material:materials(id, name)
+        `).eq("product_id", args.product_id).order("created_at");
+        if (error) throw error;
+        return { variants: data };
+      }
+      case "list_product_images": {
+        const { data, error } = await sb.from("product_images").select("id, image_url, alt_text, is_main, sort_order, color_id").eq("product_id", args.product_id).order("sort_order");
+        if (error) throw error;
+        return { images: data };
+      }
+      case "list_product_categories": {
+        const { data, error } = await sb.from("product_categories").select("id, category_id, category:categories(id, name)").eq("product_id", args.product_id);
+        if (error) throw error;
+        return { product_categories: data };
+      }
+      case "create_product_variant": {
+        const { product_id, ...rest } = args;
+        const { data, error } = await sb.from("product_variants").insert({
+          product_id,
+          sku: rest.sku,
+          selling_price: rest.selling_price,
+          purchase_price: rest.purchase_price ?? 0,
+          color_id: rest.color_id || null,
+          size_id: rest.size_id || null,
+          material_id: rest.material_id || null,
+          image_url: rest.image_url || null,
+          stock_quantity: rest.stock_quantity ?? 0,
+          low_stock_threshold: rest.low_stock_threshold ?? 5,
+          is_active: rest.is_active ?? true,
+        }).select().single();
+        if (error) throw error;
+        return { success: true, variant: data };
+      }
+      case "update_product_variant": {
+        const { variant_id, ...patch } = args;
+        const { data, error } = await sb.from("product_variants").update(patch).eq("id", variant_id).select().single();
+        if (error) throw error;
+        return { success: true, variant: data };
+      }
+      case "delete_product_variant": {
+        const { error } = await sb.from("product_variants").delete().eq("id", args.variant_id);
+        if (error) throw error;
+        return { success: true };
+      }
+      case "bulk_update_variant_prices": {
+        const patch: any = { selling_price: args.selling_price };
+        if (args.purchase_price !== undefined) patch.purchase_price = args.purchase_price;
+        const { data, error } = await sb.from("product_variants").update(patch).eq("product_id", args.product_id).select("id, sku, selling_price, purchase_price");
+        if (error) throw error;
+        return { success: true, updated_count: data?.length || 0, variants: data };
+      }
+      case "add_product_category": {
+        const { data, error } = await sb.from("product_categories").insert({ product_id: args.product_id, category_id: args.category_id }).select().single();
+        if (error) throw error;
+        return { success: true, link: data };
+      }
+      case "remove_product_category": {
+        const { error } = await sb.from("product_categories").delete().eq("product_id", args.product_id).eq("category_id", args.category_id);
         if (error) throw error;
         return { success: true };
       }

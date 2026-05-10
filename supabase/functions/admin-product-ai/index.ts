@@ -18,7 +18,8 @@ const READ_TOOLS = new Set([
   // Catalog
   "list_products", "get_product", "list_categories", "list_brands",
   "list_colors", "list_sizes", "list_materials", "list_size_guides",
-  "list_care_instructions",
+  "list_care_instructions", "list_product_variants", "list_product_images",
+  "list_product_categories",
   // Orders
   "list_orders", "get_order", "get_order_items",
   // Customers

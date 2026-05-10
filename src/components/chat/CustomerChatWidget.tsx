@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { MessageCircle, X, Send, Loader2, Paperclip, ImageIcon } from "lucide-react";
+import { MessageCircle, X, Send, Loader2, Paperclip } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";

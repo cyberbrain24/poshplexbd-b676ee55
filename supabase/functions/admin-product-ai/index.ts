@@ -936,7 +936,7 @@ Deno.serve(async (req) => {
     // Tool-calling loop (max 8 iterations)
     let convo = [{ role: "system", content: SYSTEM_PROMPT }, ...messages];
 
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 30; i++) {
       const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },

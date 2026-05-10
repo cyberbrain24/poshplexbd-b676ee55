@@ -681,7 +681,13 @@ Available product tools:
 - list_colors / list_sizes / list_materials / list_brands — full catalog reference data so you can answer "what colors/sizes/fabrics/brands do you have".
 - get_size_guide / get_care_instructions — by product name/id or by guide name. ALWAYS consult these before advising on sizing or washing/care.
 
-IMAGE INPUT: Customers may attach product photos or screenshots. Examine the image carefully (style, color, garment type, any visible text/brand/SKU/price). Then call search_products with relevant keywords (e.g. "black hoodie", "oversized tee printed") and/or browse_by_category to find matching items in our catalog. Always reply with the matching products in the \`products\` fenced block (with our prices) and a 1-line note like "Closest matches from our catalog:". If nothing matches, say so politely and suggest related categories.
+IMAGE INPUT — STRICT VISUAL MATCHING PROTOCOL (follow every step, do NOT skip):
+1. First, silently extract these attributes from the attached image: GARMENT TYPE (t-shirt / hoodie / shirt / pants / jacket / cap / etc.), DOMINANT COLOR(S), SLEEVE LENGTH, FIT (regular / oversized / drop-shoulder), GRAPHIC/PRINT (logo, text, skull, floral, plain, etc.), and any VISIBLE TEXT/BRAND.
+2. Run AT LEAST 2–3 separate \`search_products\` calls using different keyword combinations derived from those attributes (e.g. "black oversized tee", "skull print t-shirt", "drop shoulder black"). Also call \`browse_by_category\` for the relevant category if helpful.
+3. From ALL returned products, pick ONLY items that visually match the SAME garment type AND the SAME dominant color AND a similar print/graphic style. NEVER return a product whose color or graphic clearly differs from the photo (e.g. do not return a brown shirt for a black photo, do not return a skull-print shirt for a plain shirt).
+4. If fewer than 3 true visual matches exist, return only those (1 or 2 is fine) and add: "These are the closest in our catalog — exact match not found." Do NOT pad with unrelated products.
+5. Before producing the \`products\` block, write 1 short line stating WHY these match (e.g. "Black oversized drop-shoulder tees with graphic print:").
+6. NEVER fabricate product names, ids, prices, or images — use ONLY values returned by the tools.
 
 CRITICAL OUTPUT RULE FOR PRODUCT LISTS:
 When recommending, suggesting, or listing ANY products, you MUST embed them ONLY inside a fenced code block tagged exactly \`products\`. Never write product JSON, raw arrays, or product details as plain text or markdown lists. The UI hides this block and renders an image slider in its place.
@@ -706,6 +712,15 @@ ${faqText ? "Reference FAQs (if a FAQ has an Image URL, ALWAYS include it in you
 
     const fullMessages: any[] = [{ role: "system", content: systemPrompt }, ...aiMessages];
 
+    // If the latest user message contains image(s), use a stronger vision model so the
+    // assistant can actually read garment type / color / print and match visually.
+    const hasImageInput = messages.some(
+      (m: any) => m.role === "user" && Array.isArray(m.images) && m.images.length > 0
+    );
+    const chosenModel = hasImageInput
+      ? "google/gemini-2.5-pro"
+      : (settings?.model || "google/gemini-3-flash-preview");
+
     let finalText = "";
     let iterations = 0;
     while (iterations < 6) {
@@ -714,7 +729,7 @@ ${faqText ? "Reference FAQs (if a FAQ has an Image URL, ALWAYS include it in you
         method: "POST",
         headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: settings?.model || "google/gemini-3-flash-preview",
+          model: chosenModel,
           messages: fullMessages,
           tools,
         }),

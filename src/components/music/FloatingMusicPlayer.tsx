@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { Music, Play, Pause, SkipBack, SkipForward, X } from "lucide-react";
 import { useMusicPlayer } from "@/contexts/MusicPlayerContext";
@@ -8,13 +8,35 @@ const FloatingMusicPlayer = () => {
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const { hasTracks, isPlaying, togglePlay, next, prev, currentTrack } = useMusicPlayer();
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Hide on admin routes
-  if (location.pathname.startsWith("/admin")) return null;
+  const isAdmin = location.pathname.startsWith("/admin");
+
+  // Close popup on outside click
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent | TouchEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("touchstart", onDown);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("touchstart", onDown);
+    };
+  }, [open]);
+
   if (!hasTracks) return null;
 
+  // Admin: bottom-right, just above the chatbot icon. Storefront: left-middle.
+  const wrapperPos = isAdmin
+    ? "fixed right-4 sm:right-6 bottom-24 sm:bottom-24 z-[71] flex flex-row-reverse items-center gap-2"
+    : "fixed left-3 sm:left-4 top-1/2 -translate-y-1/2 z-40 flex items-center gap-2";
+
   return (
-    <div className="fixed left-3 sm:left-4 top-1/2 -translate-y-1/2 z-40 flex items-center gap-2">
+    <div ref={wrapperRef} className={wrapperPos}>
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label="Music player"

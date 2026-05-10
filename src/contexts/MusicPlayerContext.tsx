@@ -38,7 +38,7 @@ export const MusicPlayerProvider = ({ children }: { children: ReactNode }) => {
     audioRef.current.preload = "auto";
   }
 
-  // Load tracks from DB
+  // Load tracks from DB and start at a random track
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -47,7 +47,10 @@ export const MusicPlayerProvider = ({ children }: { children: ReactNode }) => {
         .select("id,title,file_url")
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
-      if (mounted && data) setTracks(data as MusicTrack[]);
+      if (mounted && data && data.length) {
+        setTracks(data as MusicTrack[]);
+        setCurrentIndex(Math.floor(Math.random() * data.length));
+      }
     })();
     return () => { mounted = false; };
   }, []);
@@ -64,13 +67,21 @@ export const MusicPlayerProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [currentTrack, isPlaying]);
 
+  // Pick a random different track (shuffle)
+  const pickRandom = useCallback((len: number, exclude: number) => {
+    if (len <= 1) return 0;
+    let n = Math.floor(Math.random() * len);
+    if (n === exclude) n = (n + 1) % len;
+    return n;
+  }, []);
+
   const next = useCallback(() => {
-    setCurrentIndex((i) => (tracks.length ? (i + 1) % tracks.length : 0));
-  }, [tracks.length]);
+    setCurrentIndex((i) => (tracks.length ? pickRandom(tracks.length, i) : 0));
+  }, [tracks.length, pickRandom]);
 
   const prev = useCallback(() => {
-    setCurrentIndex((i) => (tracks.length ? (i - 1 + tracks.length) % tracks.length : 0));
-  }, [tracks.length]);
+    setCurrentIndex((i) => (tracks.length ? pickRandom(tracks.length, i) : 0));
+  }, [tracks.length, pickRandom]);
 
   // Auto-advance on end
   useEffect(() => {

@@ -347,12 +347,83 @@ async function executeTool(name: string, args: any, sb: any) {
         const { data, error } = await sb.from("product_images").insert({
           product_id: args.product_id, image_url: args.image_url,
           is_main: args.is_main ?? false, alt_text: args.alt_text,
+          color_id: args.color_id || null, sort_order: args.sort_order ?? 0,
         }).select().single();
+        if (error) throw error;
+        return { success: true, image: data };
+      }
+      case "update_product_image": {
+        const { image_id, ...patch } = args;
+        const { data, error } = await sb.from("product_images").update(patch).eq("id", image_id).select().single();
         if (error) throw error;
         return { success: true, image: data };
       }
       case "delete_product_image": {
         const { error } = await sb.from("product_images").delete().eq("id", args.image_id);
+        if (error) throw error;
+        return { success: true };
+      }
+      case "list_product_variants": {
+        const { data, error } = await sb.from("product_variants").select(`
+          id, sku, selling_price, purchase_price, stock_quantity, low_stock_threshold, is_active, image_url,
+          color:colors(id, name, hex_code), size:sizes(id, label), material:materials(id, name)
+        `).eq("product_id", args.product_id).order("created_at");
+        if (error) throw error;
+        return { variants: data };
+      }
+      case "list_product_images": {
+        const { data, error } = await sb.from("product_images").select("id, image_url, alt_text, is_main, sort_order, color_id").eq("product_id", args.product_id).order("sort_order");
+        if (error) throw error;
+        return { images: data };
+      }
+      case "list_product_categories": {
+        const { data, error } = await sb.from("product_categories").select("id, category_id, category:categories(id, name)").eq("product_id", args.product_id);
+        if (error) throw error;
+        return { product_categories: data };
+      }
+      case "create_product_variant": {
+        const { product_id, ...rest } = args;
+        const { data, error } = await sb.from("product_variants").insert({
+          product_id,
+          sku: rest.sku,
+          selling_price: rest.selling_price,
+          purchase_price: rest.purchase_price ?? 0,
+          color_id: rest.color_id || null,
+          size_id: rest.size_id || null,
+          material_id: rest.material_id || null,
+          image_url: rest.image_url || null,
+          stock_quantity: rest.stock_quantity ?? 0,
+          low_stock_threshold: rest.low_stock_threshold ?? 5,
+          is_active: rest.is_active ?? true,
+        }).select().single();
+        if (error) throw error;
+        return { success: true, variant: data };
+      }
+      case "update_product_variant": {
+        const { variant_id, ...patch } = args;
+        const { data, error } = await sb.from("product_variants").update(patch).eq("id", variant_id).select().single();
+        if (error) throw error;
+        return { success: true, variant: data };
+      }
+      case "delete_product_variant": {
+        const { error } = await sb.from("product_variants").delete().eq("id", args.variant_id);
+        if (error) throw error;
+        return { success: true };
+      }
+      case "bulk_update_variant_prices": {
+        const patch: any = { selling_price: args.selling_price };
+        if (args.purchase_price !== undefined) patch.purchase_price = args.purchase_price;
+        const { data, error } = await sb.from("product_variants").update(patch).eq("product_id", args.product_id).select("id, sku, selling_price, purchase_price");
+        if (error) throw error;
+        return { success: true, updated_count: data?.length || 0, variants: data };
+      }
+      case "add_product_category": {
+        const { data, error } = await sb.from("product_categories").insert({ product_id: args.product_id, category_id: args.category_id }).select().single();
+        if (error) throw error;
+        return { success: true, link: data };
+      }
+      case "remove_product_category": {
+        const { error } = await sb.from("product_categories").delete().eq("product_id", args.product_id).eq("category_id", args.category_id);
         if (error) throw error;
         return { success: true };
       }

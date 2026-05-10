@@ -975,6 +975,12 @@ Deno.serve(async (req) => {
         try { args = JSON.parse(call.function.arguments || "{}"); } catch {}
 
         if (WRITE_TOOLS.has(name)) {
+          if (autoApproveWrites) {
+            // Bulk mode: execute write tool immediately without stopping for confirmation
+            const result = await executeTool(name, args, sb);
+            convo.push({ role: "tool", tool_call_id: call.id, content: JSON.stringify(result) });
+            continue;
+          }
           // Stop and ask user to confirm. Persist conversation up to (but excluding) this tool's result.
           needsConfirmation = { tool_call_id: call.id, name, args };
           break;

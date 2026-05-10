@@ -67,7 +67,7 @@ const WRITE_TOOLS = new Set([
 
 const tools = [
   // READ
-  { type: "function", function: { name: "list_products", description: "List products. Optional search by name/SKU.", parameters: { type: "object", properties: { search: { type: "string" }, limit: { type: "number" } } } } },
+  { type: "function", function: { name: "list_products", description: "List products. Filter by search (name/SKU), category_id OR category_name (matches both legacy products.category_id AND multi-category junction), is_active. Default limit 100, max 500.", parameters: { type: "object", properties: { search: { type: "string" }, category_id: { type: "string" }, category_name: { type: "string" }, is_active: { type: "boolean" }, limit: { type: "number" } } } } },
   { type: "function", function: { name: "get_product", description: "Get full product details by id, name, or SKU.", parameters: { type: "object", properties: { identifier: { type: "string" } }, required: ["identifier"] } } },
   { type: "function", function: { name: "list_categories", description: "List all categories.", parameters: { type: "object", properties: {} } } },
   { type: "function", function: { name: "list_brands", description: "List all brands.", parameters: { type: "object", properties: {} } } },

@@ -37,7 +37,7 @@ export default function AdminProductAI({ embedded = false }: Props) {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, loading, pending]);
 
-  const callBackend = async (newMessages: Msg[], confirmedAction?: PendingAction) => {
+  const callBackend = async (newMessages: Msg[], confirmedAction?: PendingAction, autoApproveWrites?: boolean) => {
     setLoading(true);
     try {
       const { data: session } = await supabase.auth.getSession();
@@ -45,7 +45,11 @@ export default function AdminProductAI({ embedded = false }: Props) {
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-product-ai`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ messages: newMessages, confirmed_action: confirmedAction }),
+        body: JSON.stringify({
+          messages: newMessages,
+          confirmed_action: confirmedAction,
+          auto_approve_writes: autoApproveWrites ?? bulkMode,
+        }),
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || "Request failed");

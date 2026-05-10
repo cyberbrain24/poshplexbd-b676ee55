@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { MessageCircle, X, Send, Loader2 } from "lucide-react";
+import { MessageCircle, X, Send, Loader2, Paperclip, ImageIcon } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -7,7 +7,8 @@ import { toast } from "sonner";
 import { formatCurrency } from "@/lib/currency";
 import ImageLightbox from "@/components/ui/image-lightbox";
 
-type Msg = { role: "user" | "assistant"; content: string };
+type Msg = { role: "user" | "assistant"; content: string; images?: string[] };
+type ProductCard = { id: string; name: string; price: number; image?: string; url?: string };
 type ProductCard = { id: string; name: string; price: number; image?: string; url?: string };
 
 const SESSION_KEY = "poshplex_chat_session";

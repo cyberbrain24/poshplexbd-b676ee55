@@ -94,11 +94,60 @@ const CustomerChatWidget = () => {
     } catch { return []; }
   });
   const [input, setInput] = useState("");
+  const [pendingImages, setPendingImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [lightbox, setLightbox] = useState<string | null>(null);
   const conversationIdRef = useRef<string | null>(localStorage.getItem(CONV_KEY));
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+
+  const MAX_IMAGES = 3;
+  const MAX_BYTES = 4 * 1024 * 1024; // 4MB raw
+
+  const compressImage = (file: File): Promise<string> => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const maxDim = 1280;
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          const r = Math.min(maxDim / width, maxDim / height);
+          width = Math.round(width * r); height = Math.round(height * r);
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width; canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return reject(new Error("canvas error"));
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", 0.82));
+      };
+      img.onerror = reject;
+      img.src = reader.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  const handleFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const accepted = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    const slots = MAX_IMAGES - pendingImages.length;
+    if (slots <= 0) { toast.error(`Max ${MAX_IMAGES} images per message`); return; }
+    const arr = Array.from(files).slice(0, slots);
+    for (const f of arr) {
+      if (!accepted.includes(f.type)) { toast.error(`${f.name}: only JPG/PNG/WEBP`); continue; }
+      if (f.size > MAX_BYTES) { toast.error(`${f.name}: max 4MB`); continue; }
+      try {
+        const dataUrl = await compressImage(f);
+        setPendingImages((prev) => [...prev, dataUrl]);
+      } catch {
+        toast.error(`${f.name}: failed to read`);
+      }
+    }
+  };
+
 
   const markdownComponents = useMemo(() => ({
     img: ({ src, alt }: any) => (

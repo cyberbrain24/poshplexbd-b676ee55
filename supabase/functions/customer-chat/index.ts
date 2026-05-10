@@ -174,6 +174,81 @@ const tools = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "list_colors",
+      description: "List all available colors in the catalog (name + hex code). Use to answer 'what colors do you have'.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "list_sizes",
+      description: "List all available size labels in the catalog (e.g. S, M, L, 28, 30).",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "list_materials",
+      description: "List all materials/fabrics available (name, GSM, season).",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "list_brands",
+      description: "List all brands.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_size_guide",
+      description: "Get a size guide by name or by product identifier. Returns the table/content used to advise on fit.",
+      parameters: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "Size guide name (optional)" },
+          product: { type: "string", description: "Product id or name to fetch its assigned size guide (optional)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_care_instructions",
+      description: "Get care & cleaning instructions by name or product identifier.",
+      parameters: {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          product: { type: "string", description: "Product id or name to fetch its care instructions (optional)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "track_order",
+      description: "Detailed order tracking for a customer — returns order status, payment status, courier, tracking number, status timeline, items, and shipping address. Verify with order_number plus phone or email when available.",
+      parameters: {
+        type: "object",
+        properties: {
+          order_number: { type: "string" },
+          phone: { type: "string" },
+          email: { type: "string" },
+        },
+      },
+    },
+  },
 ];
 
 const PRODUCT_LIST_SELECT = `
@@ -319,6 +394,68 @@ async function executeTool(name: string, args: any, supabase: any) {
         results = results.filter((p: any) => (p.variants || []).some((v: any) => v.size?.label?.toLowerCase() === args.size.toLowerCase()));
       }
       return results.map(shapeProduct);
+    }
+
+    if (name === "list_colors") {
+      const { data } = await supabase.from("colors").select("name, hex_code").order("name");
+      return data || [];
+    }
+
+    if (name === "list_sizes") {
+      const { data } = await supabase.from("sizes").select("label").order("label");
+      return data || [];
+    }
+
+    if (name === "list_materials") {
+      const { data } = await supabase.from("materials").select("name, gsm, season").order("name");
+      return data || [];
+    }
+
+    if (name === "list_brands") {
+      const { data } = await supabase.from("brands").select("id, name").order("name");
+      return data || [];
+    }
+
+    if (name === "get_size_guide") {
+      if (args.product) {
+        const isUuid = /^[0-9a-f-]{36}$/i.test(args.product);
+        let q = supabase.from("products").select("size_guide:size_guides(name, content)").limit(1);
+        q = isUuid ? q.eq("id", args.product) : q.ilike("name", `%${args.product}%`);
+        const { data } = await q.maybeSingle();
+        if ((data as any)?.size_guide) return (data as any).size_guide;
+      }
+      if (args.name) {
+        const { data } = await supabase.from("size_guides").select("name, content").ilike("name", `%${args.name}%`).limit(1).maybeSingle();
+        if (data) return data;
+      }
+      const { data } = await supabase.from("size_guides").select("name, content").order("name");
+      return data || [];
+    }
+
+    if (name === "get_care_instructions") {
+      if (args.product) {
+        const isUuid = /^[0-9a-f-]{36}$/i.test(args.product);
+        let q = supabase.from("products").select("care_instruction:care_instructions(name, content)").limit(1);
+        q = isUuid ? q.eq("id", args.product) : q.ilike("name", `%${args.product}%`);
+        const { data } = await q.maybeSingle();
+        if ((data as any)?.care_instruction) return (data as any).care_instruction;
+      }
+      if (args.name) {
+        const { data } = await supabase.from("care_instructions").select("name, content").ilike("name", `%${args.name}%`).limit(1).maybeSingle();
+        if (data) return data;
+      }
+      const { data } = await supabase.from("care_instructions").select("name, content").order("name");
+      return data || [];
+    }
+
+    if (name === "track_order") {
+      const { data, error } = await supabase.rpc("track_orders_lookup", {
+        p_order_number: args.order_number || null,
+        p_phone: args.phone || null,
+        p_email: args.email || null,
+      });
+      if (error) return { error: error.message };
+      return data || [];
     }
 
     if (name === "lookup_orders") {
@@ -540,7 +677,9 @@ Available product tools:
 - get_featured_products / get_new_arrivals — recommendations
 - suggest_related_products — similar items to a given product
 - filter_products — by price range, category, brand, color, size
-- lookup_orders / place_order / modify_order_item — order operations (modify color/size on a pending order after verifying order_number + phone)
+- lookup_orders / track_order / place_order / modify_order_item — order ops. Use track_order for tracking-status questions ("where is my order", "tracking number", courier, status timeline) — verify with order_number plus phone or email.
+- list_colors / list_sizes / list_materials / list_brands — full catalog reference data so you can answer "what colors/sizes/fabrics/brands do you have".
+- get_size_guide / get_care_instructions — by product name/id or by guide name. ALWAYS consult these before advising on sizing or washing/care.
 
 IMAGE INPUT: Customers may attach product photos or screenshots. Examine the image carefully (style, color, garment type, any visible text/brand/SKU/price). Then call search_products with relevant keywords (e.g. "black hoodie", "oversized tee printed") and/or browse_by_category to find matching items in our catalog. Always reply with the matching products in the \`products\` fenced block (with our prices) and a 1-line note like "Closest matches from our catalog:". If nothing matches, say so politely and suggest related categories.
 

@@ -180,12 +180,13 @@ const CustomerChatWidget = () => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, open]);
 
-  const sendText = useCallback(async (text: string) => {
-    if (!text || loading) return;
-    const userMsg: Msg = { role: "user", content: text };
+  const sendText = useCallback(async (text: string, images: string[] = []) => {
+    if ((!text && images.length === 0) || loading) return;
+    const userMsg: Msg = { role: "user", content: text || (images.length ? "(image attached)" : ""), images: images.length ? images : undefined };
     const next = [...messages, userMsg];
     setMessages(next);
     setInput("");
+    setPendingImages([]);
     setLoading(true);
 
     try {
@@ -215,7 +216,7 @@ const CustomerChatWidget = () => {
     }
   }, [loading, messages]);
 
-  const send = () => sendText(input.trim());
+  const send = () => sendText(input.trim(), pendingImages);
 
   const pickProduct = (p: ProductCard) => {
     sendText(`I'd like to order: ${p.name} (${p.id}). Please guide me.`);

@@ -498,10 +498,28 @@ Deno.serve(async (req) => {
     }
     const lastUserMsg = messages[messages.length - 1];
     if (lastUserMsg?.role === "user" && conversationId) {
+      // Persist text + note about attached images (don't store base64 blobs)
+      const lastImages: string[] = Array.isArray(lastUserMsg.images) ? lastUserMsg.images : [];
+      const storedContent = typeof lastUserMsg.content === "string" ? lastUserMsg.content : "";
+      const noteSuffix = lastImages.length ? `\n[attached ${lastImages.length} image(s)]` : "";
       await supabase.from("chatbot_messages").insert({
-        conversation_id: conversationId, role: "user", content: lastUserMsg.content,
+        conversation_id: conversationId, role: "user", content: (storedContent + noteSuffix).slice(0, 4000),
       });
     }
+
+    // Normalize messages for AI gateway: convert {content, images:[dataUrl,...]} into multimodal content array
+    const aiMessages = messages.map((m: any) => {
+      if (m.role === "user" && Array.isArray(m.images) && m.images.length > 0) {
+        const parts: any[] = [];
+        if (m.content) parts.push({ type: "text", text: String(m.content) });
+        for (const url of m.images) {
+          if (typeof url === "string" && url) parts.push({ type: "image_url", image_url: { url } });
+        }
+        return { role: "user", content: parts };
+      }
+      const { images, ...rest } = m;
+      return rest;
+    });
 
     const faqText = (faqs || []).map((f: any) => {
       const img = f.image_url ? `\nImage: ${f.image_url}` : "";

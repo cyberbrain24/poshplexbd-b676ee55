@@ -441,11 +441,48 @@ async function executeTool(name: string, args: any, sb: any) {
         return { success: true };
       }
       case "bulk_update_variant_prices": {
-        const patch: any = { selling_price: args.selling_price };
-        if (args.purchase_price !== undefined) patch.purchase_price = args.purchase_price;
-        const { data, error } = await sb.from("product_variants").update(patch).eq("product_id", args.product_id).select("id, sku, selling_price, purchase_price");
-        if (error) throw error;
-        return { success: true, updated_count: data?.length || 0, variants: data };
+        const variantPatch: any = { selling_price: args.selling_price };
+        if (args.purchase_price !== undefined) variantPatch.purchase_price = args.purchase_price;
+        const { data: variants, error: vErr } = await sb.from("product_variants").update(variantPatch).eq("product_id", args.product_id).select("id, sku, selling_price, purchase_price");
+        if (vErr) throw vErr;
+        // Also keep product.base_price aligned so simple products and storefront price displays update too
+        const productPatch: any = { base_price: args.selling_price };
+        const { error: pErr } = await sb.from("products").update(productPatch).eq("id", args.product_id);
+        if (pErr) throw pErr;
+        return { success: true, updated_variant_count: variants?.length || 0, base_price_updated: true, variants };
+      }
+      case "bulk_update_category_prices": {
+        // High-level: change selling_price for ALL products in a category (by id or name).
+        // Updates products.base_price for every matched product AND product_variants.selling_price for variants.
+        let categoryIds: string[] = [];
+        if (args.category_id) categoryIds = [args.category_id];
+        else if (args.category_name) {
+          const { data: cats } = await sb.from("categories").select("id, name").ilike("name", `%${args.category_name}%`);
+          categoryIds = (cats || []).map((c: any) => c.id);
+          if (categoryIds.length === 0) return { error: `No category matched "${args.category_name}"` };
+        } else {
+          return { error: "Provide category_id or category_name" };
+        }
+        const [{ data: viaJunction }, { data: viaLegacy }] = await Promise.all([
+          sb.from("product_categories").select("product_id").in("category_id", categoryIds),
+          sb.from("products").select("id").in("category_id", categoryIds),
+        ]);
+        const productIds = Array.from(new Set([
+          ...(viaJunction || []).map((r: any) => r.product_id),
+          ...(viaLegacy || []).map((r: any) => r.id),
+        ]));
+        if (productIds.length === 0) return { success: true, updated_products: 0, updated_variants: 0, note: "No products in that category" };
+
+        const productPatch: any = { base_price: args.selling_price };
+        const { data: prodRows, error: pErr } = await sb.from("products").update(productPatch).in("id", productIds).select("id, name");
+        if (pErr) throw pErr;
+
+        const variantPatch: any = { selling_price: args.selling_price };
+        if (args.purchase_price !== undefined) variantPatch.purchase_price = args.purchase_price;
+        const { data: varRows, error: vErr } = await sb.from("product_variants").update(variantPatch).in("product_id", productIds).select("id");
+        if (vErr) throw vErr;
+
+        return { success: true, updated_products: prodRows?.length || 0, updated_variants: varRows?.length || 0, product_ids: productIds };
       }
       case "add_product_category": {
         const { data, error } = await sb.from("product_categories").insert({ product_id: args.product_id, category_id: args.category_id }).select().single();

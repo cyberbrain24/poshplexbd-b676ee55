@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { MessageCircle, X, Send, Loader2 } from "lucide-react";
+import { MessageCircle, X, Send, Loader2, Paperclip } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { formatCurrency } from "@/lib/currency";
 import ImageLightbox from "@/components/ui/image-lightbox";
 
-type Msg = { role: "user" | "assistant"; content: string };
+type Msg = { role: "user" | "assistant"; content: string; images?: string[] };
 type ProductCard = { id: string; name: string; price: number; image?: string; url?: string };
 
 const SESSION_KEY = "poshplex_chat_session";
@@ -94,11 +94,60 @@ const CustomerChatWidget = () => {
     } catch { return []; }
   });
   const [input, setInput] = useState("");
+  const [pendingImages, setPendingImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [lightbox, setLightbox] = useState<string | null>(null);
   const conversationIdRef = useRef<string | null>(localStorage.getItem(CONV_KEY));
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+
+  const MAX_IMAGES = 3;
+  const MAX_BYTES = 4 * 1024 * 1024; // 4MB raw
+
+  const compressImage = (file: File): Promise<string> => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const maxDim = 1280;
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          const r = Math.min(maxDim / width, maxDim / height);
+          width = Math.round(width * r); height = Math.round(height * r);
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width; canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return reject(new Error("canvas error"));
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", 0.82));
+      };
+      img.onerror = reject;
+      img.src = reader.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  const handleFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const accepted = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    const slots = MAX_IMAGES - pendingImages.length;
+    if (slots <= 0) { toast.error(`Max ${MAX_IMAGES} images per message`); return; }
+    const arr = Array.from(files).slice(0, slots);
+    for (const f of arr) {
+      if (!accepted.includes(f.type)) { toast.error(`${f.name}: only JPG/PNG/WEBP`); continue; }
+      if (f.size > MAX_BYTES) { toast.error(`${f.name}: max 4MB`); continue; }
+      try {
+        const dataUrl = await compressImage(f);
+        setPendingImages((prev) => [...prev, dataUrl]);
+      } catch {
+        toast.error(`${f.name}: failed to read`);
+      }
+    }
+  };
+
 
   const markdownComponents = useMemo(() => ({
     img: ({ src, alt }: any) => (
@@ -127,16 +176,19 @@ const CustomerChatWidget = () => {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(messages.slice(-30)));
+    // Strip image data URLs before persisting to keep localStorage small
+    const slim = messages.slice(-30).map((m) => ({ ...m, images: m.images && m.images.length ? ["__img__"] : undefined }));
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(slim)); } catch {}
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, open]);
 
-  const sendText = useCallback(async (text: string) => {
-    if (!text || loading) return;
-    const userMsg: Msg = { role: "user", content: text };
+  const sendText = useCallback(async (text: string, images: string[] = []) => {
+    if ((!text && images.length === 0) || loading) return;
+    const userMsg: Msg = { role: "user", content: text || (images.length ? "(image attached)" : ""), images: images.length ? images : undefined };
     const next = [...messages, userMsg];
     setMessages(next);
     setInput("");
+    setPendingImages([]);
     setLoading(true);
 
     try {
@@ -166,7 +218,7 @@ const CustomerChatWidget = () => {
     }
   }, [loading, messages]);
 
-  const send = () => sendText(input.trim());
+  const send = () => sendText(input.trim(), pendingImages);
 
   const pickProduct = (p: ProductCard) => {
     sendText(`I'd like to order: ${p.name} (${p.id}). Please guide me.`);
@@ -229,8 +281,21 @@ const CustomerChatWidget = () => {
                 if (m.role === "user") {
                   return (
                     <div key={i} className="flex justify-end">
-                      <div className="max-w-[85%] px-3 py-2 rounded-lg text-sm bg-foreground text-background">
-                        {m.content}
+                      <div className="max-w-[85%] px-3 py-2 rounded-lg text-sm bg-foreground text-background space-y-2">
+                        {Array.isArray(m.images) && m.images.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {m.images.map((src: string, j: number) => (
+                              <img
+                                key={j}
+                                src={src}
+                                alt="Attached"
+                                onClick={() => setLightbox(src)}
+                                className="w-24 h-24 object-cover rounded-md cursor-zoom-in border border-background/20"
+                              />
+                            ))}
+                          </div>
+                        )}
+                        {m.content && <div>{m.content}</div>}
                       </div>
                     </div>
                   );
@@ -275,20 +340,56 @@ const CustomerChatWidget = () => {
               </div>
             )}
 
+            {/* Pending image previews */}
+            {pendingImages.length > 0 && (
+              <div className="px-3 pt-2 flex flex-wrap gap-2 border-t border-border">
+                {pendingImages.map((src, i) => (
+                  <div key={i} className="relative">
+                    <img src={src} alt="preview" className="w-14 h-14 object-cover rounded-md border border-border" />
+                    <button
+                      onClick={() => setPendingImages((p) => p.filter((_, j) => j !== i))}
+                      className="absolute -top-1.5 -right-1.5 bg-foreground text-background rounded-full w-5 h-5 flex items-center justify-center text-[10px]"
+                      aria-label="Remove"
+                    >
+                      <X size={10} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* Input */}
-            <div className="border-t border-border p-3 flex gap-2">
+            <div className={`${pendingImages.length > 0 ? "" : "border-t border-border"} p-3 flex gap-2 items-center`}>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                multiple
+                className="hidden"
+                onChange={(e) => { handleFiles(e.target.files); e.target.value = ""; }}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={loading || pendingImages.length >= MAX_IMAGES}
+                className="p-2 text-muted-foreground hover:text-foreground disabled:opacity-40"
+                aria-label="Attach image"
+                title="Attach image (JPG/PNG/WEBP)"
+              >
+                <Paperclip size={18} />
+              </button>
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") send(); }}
-                placeholder="Ask about products, orders…"
+                placeholder={pendingImages.length ? "Describe or just send the image…" : "Ask, or attach a product photo…"}
                 className="flex-1 px-3 py-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-foreground"
                 disabled={loading}
               />
               <button
                 onClick={send}
-                disabled={loading || !input.trim()}
+                disabled={loading || (!input.trim() && pendingImages.length === 0)}
                 className="px-3 py-2 bg-foreground text-background rounded-md disabled:opacity-50"
                 aria-label="Send"
               >

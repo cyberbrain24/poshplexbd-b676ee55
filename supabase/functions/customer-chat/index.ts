@@ -498,10 +498,28 @@ Deno.serve(async (req) => {
     }
     const lastUserMsg = messages[messages.length - 1];
     if (lastUserMsg?.role === "user" && conversationId) {
+      // Persist text + note about attached images (don't store base64 blobs)
+      const lastImages: string[] = Array.isArray(lastUserMsg.images) ? lastUserMsg.images : [];
+      const storedContent = typeof lastUserMsg.content === "string" ? lastUserMsg.content : "";
+      const noteSuffix = lastImages.length ? `\n[attached ${lastImages.length} image(s)]` : "";
       await supabase.from("chatbot_messages").insert({
-        conversation_id: conversationId, role: "user", content: lastUserMsg.content,
+        conversation_id: conversationId, role: "user", content: (storedContent + noteSuffix).slice(0, 4000),
       });
     }
+
+    // Normalize messages for AI gateway: convert {content, images:[dataUrl,...]} into multimodal content array
+    const aiMessages = messages.map((m: any) => {
+      if (m.role === "user" && Array.isArray(m.images) && m.images.length > 0) {
+        const parts: any[] = [];
+        if (m.content) parts.push({ type: "text", text: String(m.content) });
+        for (const url of m.images) {
+          if (typeof url === "string" && url) parts.push({ type: "image_url", image_url: { url } });
+        }
+        return { role: "user", content: parts };
+      }
+      const { images, ...rest } = m;
+      return rest;
+    });
 
     const faqText = (faqs || []).map((f: any) => {
       const img = f.image_url ? `\nImage: ${f.image_url}` : "";
@@ -524,6 +542,8 @@ Available product tools:
 - filter_products — by price range, category, brand, color, size
 - lookup_orders / place_order / modify_order_item — order operations (modify color/size on a pending order after verifying order_number + phone)
 
+IMAGE INPUT: Customers may attach product photos or screenshots. Examine the image carefully (style, color, garment type, any visible text/brand/SKU/price). Then call search_products with relevant keywords (e.g. "black hoodie", "oversized tee printed") and/or browse_by_category to find matching items in our catalog. Always reply with the matching products in the \`products\` fenced block (with our prices) and a 1-line note like "Closest matches from our catalog:". If nothing matches, say so politely and suggest related categories.
+
 CRITICAL OUTPUT RULE FOR PRODUCT LISTS:
 When recommending, suggesting, or listing ANY products, you MUST embed them ONLY inside a fenced code block tagged exactly \`products\`. Never write product JSON, raw arrays, or product details as plain text or markdown lists. The UI hides this block and renders an image slider in its place.
 
@@ -545,7 +565,7 @@ When the customer wants to buy: search_products → get_product_details → conf
 
 ${faqText ? "Reference FAQs (if a FAQ has an Image URL, ALWAYS include it in your reply as markdown image syntax: ![](url) on its own line):\n" + faqText : ""}`;
 
-    const fullMessages: ChatMessage[] = [{ role: "system", content: systemPrompt }, ...messages];
+    const fullMessages: any[] = [{ role: "system", content: systemPrompt }, ...aiMessages];
 
     let finalText = "";
     let iterations = 0;

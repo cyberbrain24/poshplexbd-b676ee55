@@ -338,20 +338,56 @@ const CustomerChatWidget = () => {
               </div>
             )}
 
+            {/* Pending image previews */}
+            {pendingImages.length > 0 && (
+              <div className="px-3 pt-2 flex flex-wrap gap-2 border-t border-border">
+                {pendingImages.map((src, i) => (
+                  <div key={i} className="relative">
+                    <img src={src} alt="preview" className="w-14 h-14 object-cover rounded-md border border-border" />
+                    <button
+                      onClick={() => setPendingImages((p) => p.filter((_, j) => j !== i))}
+                      className="absolute -top-1.5 -right-1.5 bg-foreground text-background rounded-full w-5 h-5 flex items-center justify-center text-[10px]"
+                      aria-label="Remove"
+                    >
+                      <X size={10} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* Input */}
-            <div className="border-t border-border p-3 flex gap-2">
+            <div className={`${pendingImages.length > 0 ? "" : "border-t border-border"} p-3 flex gap-2 items-center`}>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                multiple
+                className="hidden"
+                onChange={(e) => { handleFiles(e.target.files); e.target.value = ""; }}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={loading || pendingImages.length >= MAX_IMAGES}
+                className="p-2 text-muted-foreground hover:text-foreground disabled:opacity-40"
+                aria-label="Attach image"
+                title="Attach image (JPG/PNG/WEBP)"
+              >
+                <Paperclip size={18} />
+              </button>
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") send(); }}
-                placeholder="Ask about products, orders…"
+                placeholder={pendingImages.length ? "Describe or just send the image…" : "Ask, or attach a product photo…"}
                 className="flex-1 px-3 py-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-foreground"
                 disabled={loading}
               />
               <button
                 onClick={send}
-                disabled={loading || !input.trim()}
+                disabled={loading || (!input.trim() && pendingImages.length === 0)}
                 className="px-3 py-2 bg-foreground text-background rounded-md disabled:opacity-50"
                 aria-label="Send"
               >

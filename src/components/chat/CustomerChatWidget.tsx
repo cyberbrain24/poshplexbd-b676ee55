@@ -279,8 +279,21 @@ const CustomerChatWidget = () => {
                 if (m.role === "user") {
                   return (
                     <div key={i} className="flex justify-end">
-                      <div className="max-w-[85%] px-3 py-2 rounded-lg text-sm bg-foreground text-background">
-                        {m.content}
+                      <div className="max-w-[85%] px-3 py-2 rounded-lg text-sm bg-foreground text-background space-y-2">
+                        {Array.isArray(m.images) && m.images.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {m.images.map((src: string, j: number) => (
+                              <img
+                                key={j}
+                                src={src}
+                                alt="Attached"
+                                onClick={() => setLightbox(src)}
+                                className="w-24 h-24 object-cover rounded-md cursor-zoom-in border border-background/20"
+                              />
+                            ))}
+                          </div>
+                        )}
+                        {m.content && <div>{m.content}</div>}
                       </div>
                     </div>
                   );

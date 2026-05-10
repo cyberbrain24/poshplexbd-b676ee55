@@ -48,8 +48,11 @@ const READ_TOOLS = new Set([
 const WRITE_TOOLS = new Set([
   // Products
   "create_product", "update_product", "delete_product",
-  "add_product_image", "delete_product_image", "set_product_active",
-  "set_product_featured",
+  "add_product_image", "update_product_image", "delete_product_image",
+  "set_product_active", "set_product_featured",
+  "create_product_variant", "update_product_variant", "delete_product_variant",
+  "bulk_update_variant_prices",
+  "add_product_category", "remove_product_category",
   // Customers
   "create_customer", "update_customer", "delete_customer",
   // Orders

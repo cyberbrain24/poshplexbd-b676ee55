@@ -921,6 +921,7 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const messages = body.messages || [];
     const confirmedAction = body.confirmed_action; // {name, args, tool_call_id} after user approves
+    const autoApproveWrites = body.auto_approve_writes === true; // bulk mode: auto-execute writes without per-call confirmation
 
     // If a confirmed write action is provided, execute it and continue
     if (confirmedAction) {
@@ -935,7 +936,7 @@ Deno.serve(async (req) => {
     // Tool-calling loop (max 8 iterations)
     let convo = [{ role: "system", content: SYSTEM_PROMPT }, ...messages];
 
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 30; i++) {
       const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
@@ -974,6 +975,12 @@ Deno.serve(async (req) => {
         try { args = JSON.parse(call.function.arguments || "{}"); } catch {}
 
         if (WRITE_TOOLS.has(name)) {
+          if (autoApproveWrites) {
+            // Bulk mode: execute write tool immediately without stopping for confirmation
+            const result = await executeTool(name, args, sb);
+            convo.push({ role: "tool", tool_call_id: call.id, content: JSON.stringify(result) });
+            continue;
+          }
           // Stop and ask user to confirm. Persist conversation up to (but excluding) this tool's result.
           needsConfirmation = { tool_call_id: call.id, name, args };
           break;

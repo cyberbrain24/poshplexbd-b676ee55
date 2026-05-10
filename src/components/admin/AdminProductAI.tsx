@@ -27,6 +27,7 @@ export default function AdminProductAI({ embedded = false }: Props) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [pending, setPending] = useState<PendingAction | null>(null);
+  const [bulkMode, setBulkMode] = useState(false);
   const [attachedImageUrl, setAttachedImageUrl] = useState<string | null>(null);
   const [attaching, setAttaching] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -36,7 +37,7 @@ export default function AdminProductAI({ embedded = false }: Props) {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, loading, pending]);
 
-  const callBackend = async (newMessages: Msg[], confirmedAction?: PendingAction) => {
+  const callBackend = async (newMessages: Msg[], confirmedAction?: PendingAction, autoApproveWrites?: boolean) => {
     setLoading(true);
     try {
       const { data: session } = await supabase.auth.getSession();
@@ -44,7 +45,11 @@ export default function AdminProductAI({ embedded = false }: Props) {
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-product-ai`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ messages: newMessages, confirmed_action: confirmedAction }),
+        body: JSON.stringify({
+          messages: newMessages,
+          confirmed_action: confirmedAction,
+          auto_approve_writes: autoApproveWrites ?? bulkMode,
+        }),
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || "Request failed");
@@ -75,11 +80,15 @@ export default function AdminProductAI({ embedded = false }: Props) {
     await callBackend(next);
   };
 
-  const approve = async () => {
+  const approve = async (autoRest = false) => {
     if (!pending) return;
     const action = pending;
     setPending(null);
-    await callBackend(messages, action);
+    if (autoRest) {
+      setBulkMode(true);
+      toast.success("Bulk mode on — remaining steps will auto-run");
+    }
+    await callBackend(messages, action, autoRest || bulkMode);
   };
 
   const reject = () => {
@@ -150,8 +159,17 @@ export default function AdminProductAI({ embedded = false }: Props) {
           <div className="text-sm font-semibold uppercase tracking-wide">Product AI</div>
           <div className="text-[11px] text-muted-foreground">Manage products in plain English</div>
         </div>
+        {bulkMode && (
+          <button
+            onClick={() => { setBulkMode(false); toast.message("Bulk mode off"); }}
+            className="text-[10px] uppercase tracking-wide bg-amber-500/15 text-amber-700 dark:text-amber-400 px-2 py-1 rounded border border-amber-500/30 hover:bg-amber-500/25"
+            title="Click to turn off auto-approve"
+          >
+            Bulk: ON
+          </button>
+        )}
         {messages.length > 0 && (
-          <Button size="sm" variant="ghost" onClick={() => { setMessages([]); setPending(null); }}>Clear</Button>
+          <Button size="sm" variant="ghost" onClick={() => { setMessages([]); setPending(null); setBulkMode(false); }}>Clear</Button>
         )}
       </div>
 
@@ -195,9 +213,12 @@ export default function AdminProductAI({ embedded = false }: Props) {
               AI wants to <strong>{pending.name}</strong>
             </div>
             <pre className="text-[11px] bg-background/60 rounded p-2 overflow-auto max-h-32">{JSON.stringify(pending.args, null, 2)}</pre>
-            <div className="flex gap-2">
-              <Button size="sm" onClick={approve} disabled={loading}>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" onClick={() => approve(false)} disabled={loading}>
                 <Check className="h-3 w-3 mr-1" /> Approve
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => approve(true)} disabled={loading} title="Auto-execute all remaining steps in this workflow">
+                <Check className="h-3 w-3 mr-1" /> Approve All (auto-run rest)
               </Button>
               <Button size="sm" variant="outline" onClick={reject} disabled={loading}>
                 <X className="h-3 w-3 mr-1" /> Reject

@@ -27,6 +27,7 @@ export default function AdminProductAI({ embedded = false }: Props) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [pending, setPending] = useState<PendingAction | null>(null);
+  const [bulkMode, setBulkMode] = useState(false);
   const [attachedImageUrl, setAttachedImageUrl] = useState<string | null>(null);
   const [attaching, setAttaching] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);

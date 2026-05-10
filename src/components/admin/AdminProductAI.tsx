@@ -80,11 +80,15 @@ export default function AdminProductAI({ embedded = false }: Props) {
     await callBackend(next);
   };
 
-  const approve = async () => {
+  const approve = async (autoRest = false) => {
     if (!pending) return;
     const action = pending;
     setPending(null);
-    await callBackend(messages, action);
+    if (autoRest) {
+      setBulkMode(true);
+      toast.success("Bulk mode on — remaining steps will auto-run");
+    }
+    await callBackend(messages, action, autoRest || bulkMode);
   };
 
   const reject = () => {

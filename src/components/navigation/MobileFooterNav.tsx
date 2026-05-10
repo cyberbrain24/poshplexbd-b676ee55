@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, LayoutGrid, MessageCircle, ShoppingBag, User } from "lucide-react";
+import { Home, LayoutGrid, Sparkles, ShoppingBag, User } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { cn } from "@/lib/utils";
 

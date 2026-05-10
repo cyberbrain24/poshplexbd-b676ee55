@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, LayoutGrid, MessageCircle, ShoppingBag, User } from "lucide-react";
+import { Home, LayoutGrid, Sparkles, ShoppingBag, User } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { cn } from "@/lib/utils";
 
@@ -27,7 +27,7 @@ const MobileFooterNav = () => {
   }> = [
     { icon: Home, label: "Home", path: "/" },
     { icon: LayoutGrid, label: "Category", path: "/categories" },
-    { icon: MessageCircle, label: "Chat", onClick: openChat, highlight: true },
+    { icon: Sparkles, label: "AI Chat", onClick: openChat, highlight: true },
     {
       icon: ShoppingBag,
       label: "Cart",
@@ -49,7 +49,17 @@ const MobileFooterNav = () => {
             const isActive = item.path ? location.pathname === item.path : false;
             const Icon = item.icon;
 
-            const inner = (
+            const inner = item.highlight ? (
+              <>
+                <span className="relative -mt-7 flex items-center justify-center">
+                  <span className="absolute inline-flex h-12 w-12 rounded-full bg-foreground/30 animate-ping" />
+                  <span className="relative h-12 w-12 rounded-full bg-foreground text-background flex items-center justify-center shadow-[0_6px_20px_-4px_rgba(47,47,47,0.6)] ring-4 ring-background">
+                    <Icon className="h-5 w-5" strokeWidth={2} />
+                  </span>
+                </span>
+                <span className="text-[10px] mt-1 font-bold uppercase tracking-wider">{item.label}</span>
+              </>
+            ) : (
               <>
                 <div className="relative">
                   <Icon className="h-5 w-5" strokeWidth={1.5} />

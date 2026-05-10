@@ -565,7 +565,7 @@ When the customer wants to buy: search_products → get_product_details → conf
 
 ${faqText ? "Reference FAQs (if a FAQ has an Image URL, ALWAYS include it in your reply as markdown image syntax: ![](url) on its own line):\n" + faqText : ""}`;
 
-    const fullMessages: ChatMessage[] = [{ role: "system", content: systemPrompt }, ...messages];
+    const fullMessages: any[] = [{ role: "system", content: systemPrompt }, ...aiMessages];
 
     let finalText = "";
     let iterations = 0;

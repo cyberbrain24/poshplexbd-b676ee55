@@ -159,8 +159,17 @@ export default function AdminProductAI({ embedded = false }: Props) {
           <div className="text-sm font-semibold uppercase tracking-wide">Product AI</div>
           <div className="text-[11px] text-muted-foreground">Manage products in plain English</div>
         </div>
+        {bulkMode && (
+          <button
+            onClick={() => { setBulkMode(false); toast.message("Bulk mode off"); }}
+            className="text-[10px] uppercase tracking-wide bg-amber-500/15 text-amber-700 dark:text-amber-400 px-2 py-1 rounded border border-amber-500/30 hover:bg-amber-500/25"
+            title="Click to turn off auto-approve"
+          >
+            Bulk: ON
+          </button>
+        )}
         {messages.length > 0 && (
-          <Button size="sm" variant="ghost" onClick={() => { setMessages([]); setPending(null); }}>Clear</Button>
+          <Button size="sm" variant="ghost" onClick={() => { setMessages([]); setPending(null); setBulkMode(false); }}>Clear</Button>
         )}
       </div>
 

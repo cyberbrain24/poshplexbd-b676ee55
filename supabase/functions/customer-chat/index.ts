@@ -712,6 +712,15 @@ ${faqText ? "Reference FAQs (if a FAQ has an Image URL, ALWAYS include it in you
 
     const fullMessages: any[] = [{ role: "system", content: systemPrompt }, ...aiMessages];
 
+    // If the latest user message contains image(s), use a stronger vision model so the
+    // assistant can actually read garment type / color / print and match visually.
+    const hasImageInput = messages.some(
+      (m: any) => m.role === "user" && Array.isArray(m.images) && m.images.length > 0
+    );
+    const chosenModel = hasImageInput
+      ? "google/gemini-2.5-pro"
+      : (settings?.model || "google/gemini-3-flash-preview");
+
     let finalText = "";
     let iterations = 0;
     while (iterations < 6) {
@@ -720,7 +729,7 @@ ${faqText ? "Reference FAQs (if a FAQ has an Image URL, ALWAYS include it in you
         method: "POST",
         headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: settings?.model || "google/gemini-3-flash-preview",
+          model: chosenModel,
           messages: fullMessages,
           tools,
         }),

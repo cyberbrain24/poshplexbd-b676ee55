@@ -27,7 +27,7 @@ const MobileFooterNav = () => {
   }> = [
     { icon: Home, label: "Home", path: "/" },
     { icon: LayoutGrid, label: "Category", path: "/categories" },
-    { icon: MessageCircle, label: "Chat", onClick: openChat, highlight: true },
+    { icon: Sparkles, label: "AI Chat", onClick: openChat, highlight: true },
     {
       icon: ShoppingBag,
       label: "Cart",

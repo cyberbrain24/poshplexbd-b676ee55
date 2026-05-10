@@ -176,7 +176,9 @@ const CustomerChatWidget = () => {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(messages.slice(-30)));
+    // Strip image data URLs before persisting to keep localStorage small
+    const slim = messages.slice(-30).map((m) => ({ ...m, images: m.images && m.images.length ? ["__img__"] : undefined }));
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(slim)); } catch {}
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, open]);
 

@@ -677,7 +677,9 @@ Available product tools:
 - get_featured_products / get_new_arrivals — recommendations
 - suggest_related_products — similar items to a given product
 - filter_products — by price range, category, brand, color, size
-- lookup_orders / place_order / modify_order_item — order operations (modify color/size on a pending order after verifying order_number + phone)
+- lookup_orders / track_order / place_order / modify_order_item — order ops. Use track_order for tracking-status questions ("where is my order", "tracking number", courier, status timeline) — verify with order_number plus phone or email.
+- list_colors / list_sizes / list_materials / list_brands — full catalog reference data so you can answer "what colors/sizes/fabrics/brands do you have".
+- get_size_guide / get_care_instructions — by product name/id or by guide name. ALWAYS consult these before advising on sizing or washing/care.
 
 IMAGE INPUT: Customers may attach product photos or screenshots. Examine the image carefully (style, color, garment type, any visible text/brand/SKU/price). Then call search_products with relevant keywords (e.g. "black hoodie", "oversized tee printed") and/or browse_by_category to find matching items in our catalog. Always reply with the matching products in the \`products\` fenced block (with our prices) and a 1-line note like "Closest matches from our catalog:". If nothing matches, say so politely and suggest related categories.
 

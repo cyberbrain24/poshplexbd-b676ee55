@@ -1,10 +1,9 @@
 // Unified AI chat completions helper.
 // Uses ONLY third-party AI providers (Gemini / OpenAI / Anthropic).
-// Routing precedence:
-//   1. If body.model has a recognized prefix (`google/`, `openai/`, `anthropic/`),
-//      route to that provider — provided its API key is set.
-//   2. Otherwise fall back to the first available provider in the order:
-//      Gemini → OpenAI → Anthropic.
+// Keys are loaded from `site_settings` (DB) first, then env fallback.
+// Each provider also has an enable toggle in `site_settings`.
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const GEMINI_OAI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
@@ -12,11 +11,51 @@ const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 
 type Provider = "gemini" | "openai" | "anthropic";
 
-export function aiProvider(): Provider | null {
-  if (Deno.env.get("GEMINI_API_KEY")) return "gemini";
-  if (Deno.env.get("OPENAI_API_KEY")) return "openai";
-  if (Deno.env.get("ANTHROPIC_API_KEY")) return "anthropic";
-  return null;
+type ProviderState = {
+  gemini: { key: string | null; enabled: boolean };
+  openai: { key: string | null; enabled: boolean };
+  anthropic: { key: string | null; enabled: boolean };
+};
+
+let cached: { state: ProviderState; at: number } | null = null;
+const TTL_MS = 30_000;
+
+export async function loadProviderState(): Promise<ProviderState> {
+  if (cached && Date.now() - cached.at < TTL_MS) return cached.state;
+
+  const state: ProviderState = {
+    gemini: { key: Deno.env.get("GEMINI_API_KEY") || null, enabled: true },
+    openai: { key: Deno.env.get("OPENAI_API_KEY") || null, enabled: true },
+    anthropic: { key: Deno.env.get("ANTHROPIC_API_KEY") || null, enabled: true },
+  };
+
+  try {
+    const url = Deno.env.get("SUPABASE_URL");
+    const srk = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (url && srk) {
+      const sb = createClient(url, srk);
+      const { data } = await sb
+        .from("site_settings")
+        .select(
+          "gemini_api_key, gemini_enabled, openai_api_key, openai_enabled, anthropic_api_key, anthropic_enabled",
+        )
+        .limit(1)
+        .maybeSingle();
+      if (data) {
+        if (data.gemini_api_key) state.gemini.key = data.gemini_api_key as string;
+        if (data.gemini_enabled === false) state.gemini.enabled = false;
+        if (data.openai_api_key) state.openai.key = data.openai_api_key as string;
+        if (data.openai_enabled === false) state.openai.enabled = false;
+        if (data.anthropic_api_key) state.anthropic.key = data.anthropic_api_key as string;
+        if (data.anthropic_enabled === false) state.anthropic.enabled = false;
+      }
+    }
+  } catch (e) {
+    console.error("loadProviderState error:", e);
+  }
+
+  cached = { state, at: Date.now() };
+  return state;
 }
 
 function providerForModel(model?: string): Provider | null {
@@ -27,11 +66,20 @@ function providerForModel(model?: string): Provider | null {
   return null;
 }
 
-function hasKey(p: Provider): boolean {
-  if (p === "gemini") return !!Deno.env.get("GEMINI_API_KEY");
-  if (p === "openai") return !!Deno.env.get("OPENAI_API_KEY");
-  if (p === "anthropic") return !!Deno.env.get("ANTHROPIC_API_KEY");
-  return false;
+function pickFirstAvailable(state: ProviderState): Provider | null {
+  if (state.gemini.enabled && state.gemini.key) return "gemini";
+  if (state.openai.enabled && state.openai.key) return "openai";
+  if (state.anthropic.enabled && state.anthropic.key) return "anthropic";
+  return null;
+}
+
+function isUsable(state: ProviderState, p: Provider): boolean {
+  return state[p].enabled && !!state[p].key;
+}
+
+export async function aiProvider(): Promise<Provider | null> {
+  const state = await loadProviderState();
+  return pickFirstAvailable(state);
 }
 
 function mapModelForGemini(model?: string): string {
@@ -60,16 +108,17 @@ function mapModelForAnthropic(model?: string): string {
 }
 
 export async function aiChatCompletion(body: any, _opts: { stream?: boolean } = {}): Promise<Response> {
-  // Decide provider: prefer the one matching the model prefix if its key is set.
+  const state = await loadProviderState();
+
   const requested = providerForModel(body?.model);
-  let provider: Provider | null = requested && hasKey(requested) ? requested : null;
-  if (!provider) provider = aiProvider();
+  let provider: Provider | null = requested && isUsable(state, requested) ? requested : null;
+  if (!provider) provider = pickFirstAvailable(state);
 
   if (!provider) {
     return new Response(
       JSON.stringify({
         error:
-          "No AI provider configured. Add a third-party API key (GEMINI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY).",
+          "No AI provider configured or enabled. Add a key for Gemini, OpenAI, or Anthropic in Admin → Site Settings → AI Credentials.",
       }),
       { status: 503, headers: { "Content-Type": "application/json" } },
     );
@@ -80,7 +129,7 @@ export async function aiChatCompletion(body: any, _opts: { stream?: boolean } = 
     return fetch(GEMINI_OAI_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${Deno.env.get("GEMINI_API_KEY")}`,
+        Authorization: `Bearer ${state.gemini.key}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
@@ -92,7 +141,7 @@ export async function aiChatCompletion(body: any, _opts: { stream?: boolean } = 
     return fetch(OPENAI_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${Deno.env.get("OPENAI_API_KEY")}`,
+        Authorization: `Bearer ${state.openai.key}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
@@ -105,7 +154,7 @@ export async function aiChatCompletion(body: any, _opts: { stream?: boolean } = 
   const resp = await fetch(ANTHROPIC_URL, {
     method: "POST",
     headers: {
-      "x-api-key": Deno.env.get("ANTHROPIC_API_KEY")!,
+      "x-api-key": state.anthropic.key!,
       "anthropic-version": "2023-06-01",
       "Content-Type": "application/json",
     },

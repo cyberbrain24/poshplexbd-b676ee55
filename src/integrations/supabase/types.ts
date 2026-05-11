@@ -263,8 +263,10 @@ export type Database = {
           created_at: string
           enabled: boolean
           id: string
+          image_model: string
           model: string
           system_prompt: string
+          text_model: string
           updated_at: string
           welcome_message: string
         }
@@ -273,8 +275,10 @@ export type Database = {
           created_at?: string
           enabled?: boolean
           id?: string
+          image_model?: string
           model?: string
           system_prompt?: string
+          text_model?: string
           updated_at?: string
           welcome_message?: string
         }
@@ -283,8 +287,10 @@ export type Database = {
           created_at?: string
           enabled?: boolean
           id?: string
+          image_model?: string
           model?: string
           system_prompt?: string
+          text_model?: string
           updated_at?: string
           welcome_message?: string
         }

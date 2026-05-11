@@ -1,4 +1,5 @@
-// Returns whether a Gemini API key is configured (DB-stored). Admin-only.
+// Returns AI provider configuration status (Gemini / OpenAI / Anthropic). Admin-only.
+// Function name kept as `gemini-credentials-status` for backward compatibility.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -6,6 +7,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
+
+function mask(k: string | null | undefined): string | null {
+  if (!k) return null;
+  if (k.length <= 8) return "••••";
+  return `${k.slice(0, 4)}••••${k.slice(-4)}`;
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -20,38 +27,80 @@ Deno.serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const { data: userData } = await supabase.auth.getUser(token);
     if (!userData?.user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userData.user.id, _role: "admin" });
+    const { data: isAdmin } = await supabase.rpc("has_role", {
+      _user_id: userData.user.id,
+      _role: "admin",
+    });
     if (!isAdmin) {
-      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const { data: settings } = await supabase
       .from("site_settings")
-      .select("gemini_api_key, gemini_enabled")
+      .select(
+        "gemini_api_key, gemini_enabled, openai_api_key, openai_enabled, anthropic_api_key, anthropic_enabled",
+      )
       .limit(1)
       .maybeSingle();
 
-    const dbKey = settings?.gemini_api_key as string | null;
-    const enabled = settings?.gemini_enabled !== false;
-    const envKey = Deno.env.get("GEMINI_API_KEY");
-    const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-    const activeKey = dbKey || envKey;
+    const buildStatus = (envName: string, dbKey: string | null, enabled: boolean) => {
+      const envKey = Deno.env.get(envName) || null;
+      const active = dbKey || envKey;
+      return {
+        configured: !!active,
+        enabled,
+        masked: mask(active),
+        source: dbKey ? "database" : envKey ? "secret" : null,
+      };
+    };
+
+    const gemini = buildStatus(
+      "GEMINI_API_KEY",
+      (settings?.gemini_api_key as string) || null,
+      settings?.gemini_enabled !== false,
+    );
+    const openai = buildStatus(
+      "OPENAI_API_KEY",
+      (settings?.openai_api_key as string) || null,
+      settings?.openai_enabled !== false,
+    );
+    const anthropic = buildStatus(
+      "ANTHROPIC_API_KEY",
+      (settings?.anthropic_api_key as string) || null,
+      settings?.anthropic_enabled !== false,
+    );
+
+    let activeProvider = "none";
+    if (gemini.enabled && gemini.configured) activeProvider = "gemini";
+    else if (openai.enabled && openai.configured) activeProvider = "openai";
+    else if (anthropic.enabled && anthropic.configured) activeProvider = "anthropic";
 
     return new Response(
       JSON.stringify({
-        gemini_configured: !!activeKey,
-        gemini_enabled: enabled,
-        gemini_masked: activeKey ? `${activeKey.slice(0, 4)}••••${activeKey.slice(-4)}` : null,
-        gemini_source: dbKey ? "database" : envKey ? "secret" : null,
-        lovable_ai_configured: !!lovableKey,
-        active_provider: !enabled ? "disabled" : (activeKey ? "gemini_direct" : (lovableKey ? "lovable_gateway" : "none")),
+        // Backward-compatible flat fields (Gemini)
+        gemini_configured: gemini.configured,
+        gemini_enabled: gemini.enabled,
+        gemini_masked: gemini.masked,
+        gemini_source: gemini.source,
+        active_provider: activeProvider,
+        // New per-provider object
+        providers: { gemini, openai, anthropic },
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e) {
-    return new Response(JSON.stringify({ error: (e as Error).message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ error: (e as Error).message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });

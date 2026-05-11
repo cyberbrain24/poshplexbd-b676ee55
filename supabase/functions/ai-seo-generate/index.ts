@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
 import { checkRateLimit, getClientIP, rateLimitResponse } from "../_shared/rate-limiter.ts";
+import { aiChatCompletion } from "../_shared/ai.ts";
 
 interface GenerateRequest {
   type: 'product_description' | 'blog_content' | 'meta_tags' | 'blog_excerpt';

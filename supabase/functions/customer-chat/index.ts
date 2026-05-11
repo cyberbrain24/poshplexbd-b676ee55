@@ -732,21 +732,35 @@ ${faqText ? "Reference FAQs (if a FAQ has an Image URL, ALWAYS include it in you
       ? (settings?.image_model || settings?.model || "google/gemini-2.5-flash")
       : (settings?.text_model || settings?.model || "google/gemini-2.5-flash");
 
+    const fallbackModels = Array.from(new Set([
+      chosenModel,
+      hasImageInput ? (settings?.text_model || settings?.model) : null,
+      "google/gemini-2.5-flash-lite",
+      "google/gemini-2.5-flash",
+    ].filter(Boolean))) as string[];
+
+    const runAiCompletion = async () => {
+      let last429: Response | null = null;
+      for (const model of fallbackModels) {
+        let resp = await aiChatCompletion({ model, messages: fullMessages, tools });
+
+        if (resp.status === 429) {
+          console.warn(`AI model ${model} rate-limited; retrying once, then falling back.`);
+          await new Promise((r) => setTimeout(r, 1200));
+          resp = await aiChatCompletion({ model, messages: fullMessages, tools });
+        }
+
+        if (resp.status !== 429) return resp;
+        last429 = resp;
+      }
+      return last429 || new Response(JSON.stringify({ error: "AI unavailable" }), { status: 503 });
+    };
+
     let finalText = "";
     let iterations = 0;
     while (iterations < 6) {
       iterations++;
-      let resp = await aiChatCompletion({
-        model: chosenModel,
-        messages: fullMessages,
-        tools,
-      });
-
-      // Retry once on 429 with a short backoff before surfacing the error.
-      if (resp.status === 429) {
-        await new Promise((r) => setTimeout(r, 1500));
-        resp = await aiChatCompletion({ model: chosenModel, messages: fullMessages, tools });
-      }
+      const resp = await runAiCompletion();
 
       if (resp.status === 429) {
         return new Response(JSON.stringify({ error: "Our AI is busy right now. Please try again in a few seconds." }), {

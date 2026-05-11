@@ -342,16 +342,67 @@ export default function AdminChatbot() {
               <Input value={blockedTopicsText} onChange={(e) => setBlockedTopicsText(e.target.value)} placeholder="politics, competitors, personal advice" />
             </div>
 
-            <div className="space-y-2">
-              <Label>AI Model</Label>
-              <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background" value={model} onChange={(e) => setModel(e.target.value)}>
-                <option value="google/gemini-3-flash-preview">Gemini 3 Flash (fast, default)</option>
-                <option value="google/gemini-2.5-flash">Gemini 2.5 Flash</option>
-                <option value="google/gemini-2.5-pro">Gemini 2.5 Pro (smarter)</option>
-                <option value="openai/gpt-5-mini">GPT-5 Mini</option>
-                <option value="openai/gpt-5">GPT-5</option>
-              </select>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>AI Model — Text Messages</Label>
+                <select
+                  className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background"
+                  value={textModel}
+                  onChange={(e) => setTextModel(e.target.value)}
+                >
+                  <optgroup label="Google Gemini">
+                    <option value="google/gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (cheapest)</option>
+                    <option value="google/gemini-2.5-flash">Gemini 2.5 Flash</option>
+                    <option value="google/gemini-2.5-pro">Gemini 2.5 Pro (smarter)</option>
+                    <option value="google/gemini-3-flash-preview">Gemini 3 Flash (preview)</option>
+                  </optgroup>
+                  <optgroup label="OpenAI ChatGPT">
+                    <option value="openai/gpt-5-nano">GPT-5 Nano</option>
+                    <option value="openai/gpt-5-mini">GPT-5 Mini</option>
+                    <option value="openai/gpt-5">GPT-5</option>
+                    <option value="openai/gpt-4o-mini">GPT-4o Mini</option>
+                    <option value="openai/gpt-4o">GPT-4o</option>
+                  </optgroup>
+                  <optgroup label="Anthropic Claude">
+                    <option value="anthropic/claude-3-5-haiku-latest">Claude 3.5 Haiku</option>
+                    <option value="anthropic/claude-3-5-sonnet-latest">Claude 3.5 Sonnet</option>
+                    <option value="anthropic/claude-sonnet-4-5">Claude Sonnet 4.5</option>
+                  </optgroup>
+                </select>
+                <p className="text-[11px] text-muted-foreground">Used when the customer sends only text.</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>AI Model — Image Messages</Label>
+                <select
+                  className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background"
+                  value={imageModel}
+                  onChange={(e) => setImageModel(e.target.value)}
+                >
+                  <optgroup label="Google Gemini (vision)">
+                    <option value="google/gemini-2.5-flash">Gemini 2.5 Flash (default)</option>
+                    <option value="google/gemini-2.5-pro">Gemini 2.5 Pro (best, low quota)</option>
+                    <option value="google/gemini-3-flash-preview">Gemini 3 Flash (preview)</option>
+                  </optgroup>
+                  <optgroup label="OpenAI ChatGPT (vision)">
+                    <option value="openai/gpt-4o-mini">GPT-4o Mini</option>
+                    <option value="openai/gpt-4o">GPT-4o</option>
+                    <option value="openai/gpt-5">GPT-5</option>
+                  </optgroup>
+                  <optgroup label="Anthropic Claude (vision)">
+                    <option value="anthropic/claude-3-5-sonnet-latest">Claude 3.5 Sonnet</option>
+                    <option value="anthropic/claude-sonnet-4-5">Claude Sonnet 4.5</option>
+                  </optgroup>
+                </select>
+                <p className="text-[11px] text-muted-foreground">Used when the customer attaches a photo.</p>
+              </div>
             </div>
+
+            <p className="text-[11px] text-muted-foreground">
+              Provider is auto-selected from the model prefix. Make sure the matching API key
+              (<code>GEMINI_API_KEY</code>, <code>OPENAI_API_KEY</code>, or <code>ANTHROPIC_API_KEY</code>) is configured;
+              otherwise the chatbot falls back to whichever provider key is available.
+            </p>
 
             <Button onClick={saveSettings}>Save Settings</Button>
           </Card>

@@ -616,9 +616,10 @@ Deno.serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const { messages, sessionId, conversationId: incomingConvId } = await req.json();
 
-    const [{ data: settings }, { data: faqs }] = await Promise.all([
+    const [{ data: settings }, { data: faqs }, { data: learnings }] = await Promise.all([
       supabase.from("chatbot_settings").select("*").maybeSingle(),
       supabase.from("chatbot_faqs").select("question, answer, image_url").eq("is_active", true).order("sort_order"),
+      supabase.from("chatbot_learnings").select("kind, content").eq("is_active", true).order("created_at", { ascending: false }).limit(40),
     ]);
 
     if (settings && !settings.enabled) {

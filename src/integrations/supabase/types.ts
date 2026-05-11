@@ -2255,6 +2255,8 @@ export type Database = {
       }
       site_settings: {
         Row: {
+          anthropic_api_key: string | null
+          anthropic_enabled: boolean
           created_at: string
           ga4_enabled: boolean
           ga4_measurement_id: string | null
@@ -2268,9 +2270,13 @@ export type Database = {
           meta_pixel_enabled: boolean
           meta_pixel_id: string | null
           meta_test_mode: boolean
+          openai_api_key: string | null
+          openai_enabled: boolean
           updated_at: string
         }
         Insert: {
+          anthropic_api_key?: string | null
+          anthropic_enabled?: boolean
           created_at?: string
           ga4_enabled?: boolean
           ga4_measurement_id?: string | null
@@ -2284,9 +2290,13 @@ export type Database = {
           meta_pixel_enabled?: boolean
           meta_pixel_id?: string | null
           meta_test_mode?: boolean
+          openai_api_key?: string | null
+          openai_enabled?: boolean
           updated_at?: string
         }
         Update: {
+          anthropic_api_key?: string | null
+          anthropic_enabled?: boolean
           created_at?: string
           ga4_enabled?: boolean
           ga4_measurement_id?: string | null
@@ -2300,6 +2310,8 @@ export type Database = {
           meta_pixel_enabled?: boolean
           meta_pixel_id?: string | null
           meta_test_mode?: boolean
+          openai_api_key?: string | null
+          openai_enabled?: boolean
           updated_at?: string
         }
         Relationships: []

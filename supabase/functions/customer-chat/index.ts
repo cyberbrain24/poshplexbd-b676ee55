@@ -710,6 +710,14 @@ Strict scope: Only discuss POSHPLEX products, orders, shipping, returns, and cus
 
 When the customer wants to buy: search_products → get_product_details → confirm choice & variant → collect name+phone+address+city → confirm full summary → call place_order.
 
+${(() => {
+  const rules = (learnings || []).filter((l: any) => l.kind === "rule").map((l: any) => `- ${l.content}`).join("\n");
+  const styles = (learnings || []).filter((l: any) => l.kind === "style").map((l: any) => `- ${l.content}`).join("\n");
+  let out = "";
+  if (rules) out += `\nLearned behavior rules (always follow):\n${rules}\n`;
+  if (styles) out += `\nTone & style notes:\n${styles}\n`;
+  return out;
+})()}
 ${faqText ? "Reference FAQs (if a FAQ has an Image URL, ALWAYS include it in your reply as markdown image syntax: ![](url) on its own line):\n" + faqText : ""}`;
 
     const fullMessages: any[] = [{ role: "system", content: systemPrompt }, ...aiMessages];

@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { aiChatCompletion } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -725,14 +726,10 @@ ${faqText ? "Reference FAQs (if a FAQ has an Image URL, ALWAYS include it in you
     let iterations = 0;
     while (iterations < 6) {
       iterations++;
-      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: chosenModel,
-          messages: fullMessages,
-          tools,
-        }),
+      const resp = await aiChatCompletion({
+        model: chosenModel,
+        messages: fullMessages,
+        tools,
       });
 
       if (resp.status === 429) {

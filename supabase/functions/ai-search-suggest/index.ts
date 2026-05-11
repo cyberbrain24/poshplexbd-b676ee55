@@ -57,56 +57,46 @@ Only suggest IDs that exist in the provided catalog. If nothing reasonable match
 Catalog:
 ${JSON.stringify(catalog)}`;
 
-    const aiResp = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash-lite",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: `Shopper query: "${query.trim()}"` },
-          ],
-          tools: [
-            {
-              type: "function",
-              function: {
-                name: "return_search_suggestions",
-                description: "Return search suggestions for the query.",
-                parameters: {
-                  type: "object",
-                  properties: {
-                    corrected_query: {
-                      type: ["string", "null"],
-                      description: "A cleaned-up spelling/phrasing or null.",
-                    },
-                    suggested_product_ids: {
-                      type: "array",
-                      items: { type: "string" },
-                      description: "Up to 6 matching product UUIDs from the catalog.",
-                    },
-                    message: {
-                      type: ["string", "null"],
-                      description: "Optional short note like 'Did you mean black hoodies?'",
-                    },
-                  },
-                  required: ["corrected_query", "suggested_product_ids", "message"],
-                  additionalProperties: false,
+    const aiResp = await aiChatCompletion({
+      model: "google/gemini-2.5-flash-lite",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: `Shopper query: "${query.trim()}"` },
+      ],
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "return_search_suggestions",
+            description: "Return search suggestions for the query.",
+            parameters: {
+              type: "object",
+              properties: {
+                corrected_query: {
+                  type: ["string", "null"],
+                  description: "A cleaned-up spelling/phrasing or null.",
+                },
+                suggested_product_ids: {
+                  type: "array",
+                  items: { type: "string" },
+                  description: "Up to 6 matching product UUIDs from the catalog.",
+                },
+                message: {
+                  type: ["string", "null"],
+                  description: "Optional short note like 'Did you mean black hoodies?'",
                 },
               },
+              required: ["corrected_query", "suggested_product_ids", "message"],
+              additionalProperties: false,
             },
-          ],
-          tool_choice: {
-            type: "function",
-            function: { name: "return_search_suggestions" },
           },
-        }),
+        },
+      ],
+      tool_choice: {
+        type: "function",
+        function: { name: "return_search_suggestions" },
       },
-    );
+    });
 
     if (!aiResp.ok) {
       if (aiResp.status === 429 || aiResp.status === 402) {

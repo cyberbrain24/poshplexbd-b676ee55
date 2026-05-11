@@ -107,47 +107,23 @@ function mapModelForAnthropic(model?: string): string {
   return m;
 }
 
-export async function aiChatCompletion(body: any, _opts: { stream?: boolean } = {}): Promise<Response> {
-  const state = await loadProviderState();
-
-  const requested = providerForModel(body?.model);
-  let provider: Provider | null = requested && isUsable(state, requested) ? requested : null;
-  if (!provider) provider = pickFirstAvailable(state);
-
-  if (!provider) {
-    return new Response(
-      JSON.stringify({
-        error:
-          "No AI provider configured or enabled. Add a key for Gemini, OpenAI, or Anthropic in Admin → Site Settings → AI Credentials.",
-      }),
-      { status: 503, headers: { "Content-Type": "application/json" } },
-    );
-  }
-
+async function callProvider(provider: Provider, state: ProviderState, body: any): Promise<Response> {
   if (provider === "gemini") {
     const payload = { ...body, model: mapModelForGemini(body.model) };
     return fetch(GEMINI_OAI_URL, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${state.gemini.key}`,
-        "Content-Type": "application/json",
-      },
+      headers: { Authorization: `Bearer ${state.gemini.key}`, "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
   }
-
   if (provider === "openai") {
     const payload = { ...body, model: mapModelForOpenAI(body.model) };
     return fetch(OPENAI_URL, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${state.openai.key}`,
-        "Content-Type": "application/json",
-      },
+      headers: { Authorization: `Bearer ${state.openai.key}`, "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
   }
-
   // Anthropic
   const messages = (body.messages || []).filter((m: any) => m.role !== "system");
   const system = (body.messages || []).find((m: any) => m.role === "system")?.content;
@@ -174,5 +150,56 @@ export async function aiChatCompletion(body: any, _opts: { stream?: boolean } = 
   return new Response(JSON.stringify(oaiShape), {
     status: 200,
     headers: { "Content-Type": "application/json" },
+  });
+}
+
+function shouldFailover(status: number): boolean {
+  return status === 429 || status === 408 || status === 503 || status === 502 || status === 504 || status === 500;
+}
+
+export async function aiChatCompletion(body: any, _opts: { stream?: boolean } = {}): Promise<Response> {
+  const state = await loadProviderState();
+
+  const requested = providerForModel(body?.model);
+  const order: Provider[] = [];
+  if (requested && isUsable(state, requested)) order.push(requested);
+  for (const p of ["gemini", "openai", "anthropic"] as Provider[]) {
+    if (!order.includes(p) && isUsable(state, p)) order.push(p);
+  }
+
+  if (order.length === 0) {
+    return new Response(
+      JSON.stringify({
+        error:
+          "No AI provider configured or enabled. Add a key for Gemini, OpenAI, or Anthropic in Admin → Site Settings → AI Credentials.",
+      }),
+      { status: 503, headers: { "Content-Type": "application/json" } },
+    );
+  }
+
+  let lastResp: Response | null = null;
+  for (let i = 0; i < order.length; i++) {
+    const provider = order[i];
+    try {
+      const resp = await callProvider(provider, state, body);
+      if (resp.ok) return resp;
+      if (!shouldFailover(resp.status) || i === order.length - 1) {
+        return resp;
+      }
+      // consume body to free resources, then try next provider
+      try { await resp.text(); } catch { /* ignore */ }
+      console.warn(`AI provider ${provider} returned ${resp.status}, failing over...`);
+      lastResp = resp;
+    } catch (e) {
+      console.error(`AI provider ${provider} threw:`, e);
+      if (i === order.length - 1) {
+        return new Response(JSON.stringify({ error: (e as Error).message }), {
+          status: 502, headers: { "Content-Type": "application/json" },
+        });
+      }
+    }
+  }
+  return lastResp || new Response(JSON.stringify({ error: "AI unavailable" }), {
+    status: 503, headers: { "Content-Type": "application/json" },
   });
 }

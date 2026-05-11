@@ -727,14 +727,20 @@ ${faqText ? "Reference FAQs (if a FAQ has an Image URL, ALWAYS include it in you
     let iterations = 0;
     while (iterations < 6) {
       iterations++;
-      const resp = await aiChatCompletion({
+      let resp = await aiChatCompletion({
         model: chosenModel,
         messages: fullMessages,
         tools,
       });
 
+      // Retry once on 429 with a short backoff before surfacing the error.
       if (resp.status === 429) {
-        return new Response(JSON.stringify({ error: "Too many requests, please wait a moment." }), {
+        await new Promise((r) => setTimeout(r, 1500));
+        resp = await aiChatCompletion({ model: chosenModel, messages: fullMessages, tools });
+      }
+
+      if (resp.status === 429) {
+        return new Response(JSON.stringify({ error: "Our AI is busy right now. Please try again in a few seconds." }), {
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }

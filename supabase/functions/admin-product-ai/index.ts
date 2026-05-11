@@ -1004,11 +1004,7 @@ Deno.serve(async (req) => {
     let convo = [{ role: "system", content: SYSTEM_PROMPT }, ...messages];
 
     for (let i = 0; i < 30; i++) {
-      const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ model: MODEL, messages: convo, tools, tool_choice: "auto" }),
-      });
+      const aiResp = await aiChatCompletion({ model: MODEL, messages: convo, tools, tool_choice: "auto" });
 
       if (!aiResp.ok) {
         const txt = await aiResp.text();

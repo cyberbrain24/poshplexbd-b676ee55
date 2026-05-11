@@ -140,12 +140,6 @@ Deno.serve(async (req) => {
 
     const sanitizedContext = validateAndSanitizeInput(context);
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
-
     const systemPrompt = `You are a copywriter for Poshplex, a premium streetwear fashion brand. 
 Your tone is: Minimal, Hype, Streetwear, Gen-Z focused. 
 No corporate jargon. Be authentic, cool, and engaging.

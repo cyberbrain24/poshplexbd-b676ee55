@@ -20,52 +20,92 @@ const AdminSiteSettings = () => {
   const { data: pixelSettings, isLoading: loadingPixel } = usePixelSettings();
   const updatePixelMutation = useUpdatePixelSettings();
 
-  const { data: geminiStatus, isLoading: loadingGemini, refetch: refetchGemini } = useQuery({
-    queryKey: ["gemini-credentials-status"],
+  type ProviderStatus = { configured: boolean; enabled: boolean; masked: string | null; source: string | null };
+  type AICredsStatus = {
+    active_provider: string;
+    providers: { gemini: ProviderStatus; openai: ProviderStatus; anthropic: ProviderStatus };
+  };
+
+  const { data: aiStatus, isLoading: loadingAI, refetch: refetchAI } = useQuery({
+    queryKey: ["ai-credentials-status"],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke("gemini-credentials-status");
       if (error) throw error;
-      return data as { gemini_configured: boolean; gemini_enabled: boolean; gemini_masked: string | null; gemini_source: string | null; lovable_ai_configured: boolean; active_provider: string };
+      return data as AICredsStatus;
     },
   });
 
-  const [geminiKeyInput, setGeminiKeyInput] = useState("");
-  const [savingGemini, setSavingGemini] = useState(false);
+  const [keyInputs, setKeyInputs] = useState<Record<"gemini" | "openai" | "anthropic", string>>({
+    gemini: "",
+    openai: "",
+    anthropic: "",
+  });
+  const [savingProvider, setSavingProvider] = useState<string | null>(null);
 
-  const handleSaveGeminiKey = async () => {
-    const key = geminiKeyInput.trim();
-    if (!key) { toast.error("Please enter a Gemini API key"); return; }
+  const PROVIDER_CONFIG = {
+    gemini: {
+      label: "Google Gemini",
+      keyColumn: "gemini_api_key" as const,
+      enabledColumn: "gemini_enabled" as const,
+      placeholder: "AIza...",
+      helpUrl: "https://aistudio.google.com/app/apikey",
+      helpLabel: "aistudio.google.com/app/apikey",
+    },
+    openai: {
+      label: "OpenAI (ChatGPT)",
+      keyColumn: "openai_api_key" as const,
+      enabledColumn: "openai_enabled" as const,
+      placeholder: "sk-...",
+      helpUrl: "https://platform.openai.com/api-keys",
+      helpLabel: "platform.openai.com/api-keys",
+    },
+    anthropic: {
+      label: "Anthropic (Claude)",
+      keyColumn: "anthropic_api_key" as const,
+      enabledColumn: "anthropic_enabled" as const,
+      placeholder: "sk-ant-...",
+      helpUrl: "https://console.anthropic.com/settings/keys",
+      helpLabel: "console.anthropic.com/settings/keys",
+    },
+  } as const;
+
+  const handleSaveProviderKey = async (provider: "gemini" | "openai" | "anthropic") => {
+    const cfg = PROVIDER_CONFIG[provider];
+    const key = keyInputs[provider].trim();
+    if (!key) { toast.error(`Please enter a ${cfg.label} API key`); return; }
     if (key.length < 20) { toast.error("That doesn't look like a valid API key"); return; }
-    setSavingGemini(true);
+    setSavingProvider(provider);
     const { data: row } = await supabase.from("site_settings").select("id").limit(1).maybeSingle();
-    if (!row) { toast.error("Site settings row not found"); setSavingGemini(false); return; }
-    const { error } = await supabase.from("site_settings").update({ gemini_api_key: key }).eq("id", row.id);
-    setSavingGemini(false);
+    if (!row) { toast.error("Site settings row not found"); setSavingProvider(null); return; }
+    const { error } = await supabase.from("site_settings").update({ [cfg.keyColumn]: key }).eq("id", row.id);
+    setSavingProvider(null);
     if (error) { toast.error(error.message); return; }
-    toast.success("Gemini API key saved");
-    setGeminiKeyInput("");
-    refetchGemini();
+    toast.success(`${cfg.label} API key saved`);
+    setKeyInputs((s) => ({ ...s, [provider]: "" }));
+    refetchAI();
   };
 
-  const handleClearGeminiKey = async () => {
-    if (!confirm("Remove the saved Gemini API key? AI will fall back to Lovable AI Gateway.")) return;
-    setSavingGemini(true);
+  const handleClearProviderKey = async (provider: "gemini" | "openai" | "anthropic") => {
+    const cfg = PROVIDER_CONFIG[provider];
+    if (!confirm(`Remove the saved ${cfg.label} API key?`)) return;
+    setSavingProvider(provider);
     const { data: row } = await supabase.from("site_settings").select("id").limit(1).maybeSingle();
-    if (!row) { setSavingGemini(false); return; }
-    const { error } = await supabase.from("site_settings").update({ gemini_api_key: null }).eq("id", row.id);
-    setSavingGemini(false);
+    if (!row) { setSavingProvider(null); return; }
+    const { error } = await supabase.from("site_settings").update({ [cfg.keyColumn]: null }).eq("id", row.id);
+    setSavingProvider(null);
     if (error) { toast.error(error.message); return; }
-    toast.success("Gemini API key removed");
-    refetchGemini();
+    toast.success(`${cfg.label} API key removed`);
+    refetchAI();
   };
 
-  const handleToggleGemini = async (next: boolean) => {
+  const handleToggleProvider = async (provider: "gemini" | "openai" | "anthropic", next: boolean) => {
+    const cfg = PROVIDER_CONFIG[provider];
     const { data: row } = await supabase.from("site_settings").select("id").limit(1).maybeSingle();
     if (!row) { toast.error("Site settings row not found"); return; }
-    const { error } = await supabase.from("site_settings").update({ gemini_enabled: next }).eq("id", row.id);
+    const { error } = await supabase.from("site_settings").update({ [cfg.enabledColumn]: next }).eq("id", row.id);
     if (error) { toast.error(error.message); return; }
-    toast.success(next ? "Gemini AI enabled" : "Gemini AI disabled");
-    refetchGemini();
+    toast.success(`${cfg.label} ${next ? "enabled" : "disabled"}`);
+    refetchAI();
   };
 
   const [siteName, setSiteName] = useState("");

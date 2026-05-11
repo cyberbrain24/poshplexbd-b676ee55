@@ -32,7 +32,9 @@ export default function AdminChatbot() {
   const [enabled, setEnabled] = useState(true);
   const [systemPrompt, setSystemPrompt] = useState("");
   const [welcome, setWelcome] = useState("");
-  const [model, setModel] = useState("google/gemini-3-flash-preview");
+  const [model, setModel] = useState("google/gemini-2.5-flash");
+  const [textModel, setTextModel] = useState("google/gemini-2.5-flash");
+  const [imageModel, setImageModel] = useState("google/gemini-2.5-flash");
   const [blockedTopicsText, setBlockedTopicsText] = useState("");
 
   useEffect(() => {
@@ -41,6 +43,8 @@ export default function AdminChatbot() {
     setSystemPrompt(settings.system_prompt);
     setWelcome(settings.welcome_message);
     setModel(settings.model);
+    setTextModel((settings as any).text_model || settings.model || "google/gemini-2.5-flash");
+    setImageModel((settings as any).image_model || settings.model || "google/gemini-2.5-flash");
     setBlockedTopicsText((settings.blocked_topics as string[] || []).join(", "));
   }, [settings]);
 
@@ -51,8 +55,9 @@ export default function AdminChatbot() {
       .from("chatbot_settings")
       .update({
         enabled, system_prompt: systemPrompt, welcome_message: welcome,
-        model, blocked_topics: blocked,
-      })
+        model: textModel, text_model: textModel, image_model: imageModel,
+        blocked_topics: blocked,
+      } as any)
       .eq("id", settings.id);
     if (error) return toast.error(error.message);
     toast.success("Settings saved");

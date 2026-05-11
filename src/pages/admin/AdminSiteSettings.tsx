@@ -20,52 +20,92 @@ const AdminSiteSettings = () => {
   const { data: pixelSettings, isLoading: loadingPixel } = usePixelSettings();
   const updatePixelMutation = useUpdatePixelSettings();
 
-  const { data: geminiStatus, isLoading: loadingGemini, refetch: refetchGemini } = useQuery({
-    queryKey: ["gemini-credentials-status"],
+  type ProviderStatus = { configured: boolean; enabled: boolean; masked: string | null; source: string | null };
+  type AICredsStatus = {
+    active_provider: string;
+    providers: { gemini: ProviderStatus; openai: ProviderStatus; anthropic: ProviderStatus };
+  };
+
+  const { data: aiStatus, isLoading: loadingAI, refetch: refetchAI } = useQuery({
+    queryKey: ["ai-credentials-status"],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke("gemini-credentials-status");
       if (error) throw error;
-      return data as { gemini_configured: boolean; gemini_enabled: boolean; gemini_masked: string | null; gemini_source: string | null; lovable_ai_configured: boolean; active_provider: string };
+      return data as AICredsStatus;
     },
   });
 
-  const [geminiKeyInput, setGeminiKeyInput] = useState("");
-  const [savingGemini, setSavingGemini] = useState(false);
+  const [keyInputs, setKeyInputs] = useState<Record<"gemini" | "openai" | "anthropic", string>>({
+    gemini: "",
+    openai: "",
+    anthropic: "",
+  });
+  const [savingProvider, setSavingProvider] = useState<string | null>(null);
 
-  const handleSaveGeminiKey = async () => {
-    const key = geminiKeyInput.trim();
-    if (!key) { toast.error("Please enter a Gemini API key"); return; }
+  const PROVIDER_CONFIG = {
+    gemini: {
+      label: "Google Gemini",
+      keyColumn: "gemini_api_key" as const,
+      enabledColumn: "gemini_enabled" as const,
+      placeholder: "AIza...",
+      helpUrl: "https://aistudio.google.com/app/apikey",
+      helpLabel: "aistudio.google.com/app/apikey",
+    },
+    openai: {
+      label: "OpenAI (ChatGPT)",
+      keyColumn: "openai_api_key" as const,
+      enabledColumn: "openai_enabled" as const,
+      placeholder: "sk-...",
+      helpUrl: "https://platform.openai.com/api-keys",
+      helpLabel: "platform.openai.com/api-keys",
+    },
+    anthropic: {
+      label: "Anthropic (Claude)",
+      keyColumn: "anthropic_api_key" as const,
+      enabledColumn: "anthropic_enabled" as const,
+      placeholder: "sk-ant-...",
+      helpUrl: "https://console.anthropic.com/settings/keys",
+      helpLabel: "console.anthropic.com/settings/keys",
+    },
+  } as const;
+
+  const handleSaveProviderKey = async (provider: "gemini" | "openai" | "anthropic") => {
+    const cfg = PROVIDER_CONFIG[provider];
+    const key = keyInputs[provider].trim();
+    if (!key) { toast.error(`Please enter a ${cfg.label} API key`); return; }
     if (key.length < 20) { toast.error("That doesn't look like a valid API key"); return; }
-    setSavingGemini(true);
+    setSavingProvider(provider);
     const { data: row } = await supabase.from("site_settings").select("id").limit(1).maybeSingle();
-    if (!row) { toast.error("Site settings row not found"); setSavingGemini(false); return; }
-    const { error } = await supabase.from("site_settings").update({ gemini_api_key: key }).eq("id", row.id);
-    setSavingGemini(false);
+    if (!row) { toast.error("Site settings row not found"); setSavingProvider(null); return; }
+    const { error } = await supabase.from("site_settings").update({ [cfg.keyColumn]: key }).eq("id", row.id);
+    setSavingProvider(null);
     if (error) { toast.error(error.message); return; }
-    toast.success("Gemini API key saved");
-    setGeminiKeyInput("");
-    refetchGemini();
+    toast.success(`${cfg.label} API key saved`);
+    setKeyInputs((s) => ({ ...s, [provider]: "" }));
+    refetchAI();
   };
 
-  const handleClearGeminiKey = async () => {
-    if (!confirm("Remove the saved Gemini API key? AI will fall back to Lovable AI Gateway.")) return;
-    setSavingGemini(true);
+  const handleClearProviderKey = async (provider: "gemini" | "openai" | "anthropic") => {
+    const cfg = PROVIDER_CONFIG[provider];
+    if (!confirm(`Remove the saved ${cfg.label} API key?`)) return;
+    setSavingProvider(provider);
     const { data: row } = await supabase.from("site_settings").select("id").limit(1).maybeSingle();
-    if (!row) { setSavingGemini(false); return; }
-    const { error } = await supabase.from("site_settings").update({ gemini_api_key: null }).eq("id", row.id);
-    setSavingGemini(false);
+    if (!row) { setSavingProvider(null); return; }
+    const { error } = await supabase.from("site_settings").update({ [cfg.keyColumn]: null }).eq("id", row.id);
+    setSavingProvider(null);
     if (error) { toast.error(error.message); return; }
-    toast.success("Gemini API key removed");
-    refetchGemini();
+    toast.success(`${cfg.label} API key removed`);
+    refetchAI();
   };
 
-  const handleToggleGemini = async (next: boolean) => {
+  const handleToggleProvider = async (provider: "gemini" | "openai" | "anthropic", next: boolean) => {
+    const cfg = PROVIDER_CONFIG[provider];
     const { data: row } = await supabase.from("site_settings").select("id").limit(1).maybeSingle();
     if (!row) { toast.error("Site settings row not found"); return; }
-    const { error } = await supabase.from("site_settings").update({ gemini_enabled: next }).eq("id", row.id);
+    const { error } = await supabase.from("site_settings").update({ [cfg.enabledColumn]: next }).eq("id", row.id);
     if (error) { toast.error(error.message); return; }
-    toast.success(next ? "Gemini AI enabled" : "Gemini AI disabled");
-    refetchGemini();
+    toast.success(`${cfg.label} ${next ? "enabled" : "disabled"}`);
+    refetchAI();
   };
 
   const [siteName, setSiteName] = useState("");
@@ -434,118 +474,114 @@ const AdminSiteSettings = () => {
         )}
       </section>
 
-      {/* ── Gemini AI Credentials ───────────────────────────── */}
+      {/* ── AI Provider Credentials ───────────────────────────── */}
       <section className="border border-border p-6 mb-8">
         <div className="flex items-center gap-2 mb-1">
           <Sparkles className="h-5 w-5 text-muted-foreground" />
-          <h2 className="text-base font-medium">Gemini AI Credentials</h2>
+          <h2 className="text-base font-medium">AI Provider Credentials</h2>
         </div>
+        <p className="text-xs text-muted-foreground mb-2">
+          Configure one or more third-party AI providers (Gemini, OpenAI/ChatGPT, Anthropic/Claude).
+          Powers the Admin AI Assistant, customer chatbot, AI search suggestions, and product description generator.
+        </p>
         <p className="text-xs text-muted-foreground mb-6">
-          Powers the Admin AI Assistant, AI search suggestions, and AI product description generator.
+          Active provider:{" "}
+          <span className="font-mono">
+            {aiStatus?.active_provider && aiStatus.active_provider !== "none"
+              ? aiStatus.active_provider
+              : "none configured"}
+          </span>
+          . The system picks based on the selected model; if that provider has no key, it falls back to the next enabled provider in order: Gemini → OpenAI → Anthropic.
         </p>
 
-        {loadingGemini ? (
+        {loadingAI ? (
           <Skeleton className="h-20 w-full" />
         ) : (
-          <div className="space-y-4">
-            {/* Enable/Disable toggle */}
-            <div className="flex items-center justify-between border border-border p-3">
-              <div>
-                <p className="text-sm font-medium">Gemini AI</p>
-                <p className="text-xs text-muted-foreground">
-                  {geminiStatus?.gemini_enabled
-                    ? "AI features are active across the site"
-                    : "AI features are turned off"}
-                </p>
-              </div>
-              <Switch
-                checked={!!geminiStatus?.gemini_enabled}
-                onCheckedChange={handleToggleGemini}
-              />
-            </div>
+          <div className="space-y-6">
+            {(["gemini", "openai", "anthropic"] as const).map((provider) => {
+              const cfg = PROVIDER_CONFIG[provider];
+              const status = aiStatus?.providers?.[provider];
+              return (
+                <div key={provider} className="border border-border p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {status?.configured ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                      )}
+                      <div>
+                        <p className="text-sm font-medium">{cfg.label}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {status?.configured
+                            ? `Configured: ${status.masked} (${status.source})`
+                            : "No API key configured"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-mono text-muted-foreground">
+                        {!status?.enabled ? "Disabled" : status?.configured ? "Active" : "—"}
+                      </span>
+                      <Switch
+                        checked={!!status?.enabled}
+                        onCheckedChange={(next) => handleToggleProvider(provider, next)}
+                      />
+                    </div>
+                  </div>
 
-            {/* Gemini Key status */}
-            <div className="flex items-center justify-between border border-border p-3">
-              <div className="flex items-center gap-3">
-                {geminiStatus?.gemini_configured ? (
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
-                ) : (
-                  <AlertCircle className="h-4 w-4 text-muted-foreground" />
-                )}
-                <div>
-                  <p className="text-sm font-medium">Gemini API Key</p>
+                  <Label className="text-sm font-medium">
+                    {status?.configured ? `Update ${cfg.label} API Key` : `Set ${cfg.label} API Key`}
+                  </Label>
+                  <Input
+                    type="password"
+                    value={keyInputs[provider]}
+                    onChange={(e) => setKeyInputs((s) => ({ ...s, [provider]: e.target.value }))}
+                    className="rounded-none font-mono"
+                    placeholder={cfg.placeholder}
+                    autoComplete="off"
+                  />
                   <p className="text-xs text-muted-foreground">
-                    {geminiStatus?.gemini_configured
-                      ? `Configured: ${geminiStatus.gemini_masked}`
-                      : "Not configured"}
+                    Get a key at{" "}
+                    <a href={cfg.helpUrl} target="_blank" rel="noopener" className="underline">
+                      {cfg.helpLabel}
+                    </a>
+                    . Stored securely; only admins can view or change it.
                   </p>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      className="rounded-none"
+                      onClick={() => handleSaveProviderKey(provider)}
+                      disabled={savingProvider === provider || !keyInputs[provider].trim()}
+                    >
+                      {savingProvider === provider ? "Saving…" : "Save Key"}
+                    </Button>
+                    {status?.configured && status?.source === "database" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="rounded-none text-destructive"
+                        onClick={() => handleClearProviderKey(provider)}
+                        disabled={savingProvider === provider}
+                      >
+                        <X className="h-4 w-4 mr-1" /> Remove Key
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <span className="text-xs font-mono text-muted-foreground">
-                {!geminiStatus?.gemini_enabled
-                  ? "Disabled"
-                  : geminiStatus?.gemini_configured ? "Active" : "—"}
-              </span>
-            </div>
+              );
+            })}
 
-            {/* Inline credential form */}
-            <div className="border border-border p-4 space-y-3">
-              <Label className="text-sm font-medium">
-                {geminiStatus?.gemini_configured ? "Update Gemini API Key" : "Set Gemini API Key"}
-              </Label>
-              <Input
-                type="password"
-                value={geminiKeyInput}
-                onChange={(e) => setGeminiKeyInput(e.target.value)}
-                className="rounded-none font-mono"
-                placeholder="AIza..."
-                autoComplete="off"
-              />
-              <p className="text-xs text-muted-foreground">
-                Get a free key at{" "}
-                <a
-                  href="https://aistudio.google.com/app/apikey"
-                  target="_blank"
-                  rel="noopener"
-                  className="underline"
-                >
-                  aistudio.google.com/app/apikey
-                </a>
-                . Stored securely; only admins can view or change it.
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  className="rounded-none"
-                  onClick={handleSaveGeminiKey}
-                  disabled={savingGemini || !geminiKeyInput.trim()}
-                >
-                  {savingGemini ? "Saving…" : "Save Key"}
-                </Button>
-                {geminiStatus?.gemini_configured && geminiStatus?.gemini_source === "database" && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="rounded-none text-destructive"
-                    onClick={handleClearGeminiKey}
-                    disabled={savingGemini}
-                  >
-                    <X className="h-4 w-4 mr-1" /> Remove Key
-                  </Button>
-                )}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="rounded-none ml-auto"
-                  onClick={() => refetchGemini()}
-                >
-                  Refresh
-                </Button>
-              </div>
+            <div className="flex justify-end">
+              <Button size="sm" variant="outline" className="rounded-none" onClick={() => refetchAI()}>
+                Refresh Status
+              </Button>
             </div>
           </div>
         )}
       </section>
+
     </div>
   );
 };

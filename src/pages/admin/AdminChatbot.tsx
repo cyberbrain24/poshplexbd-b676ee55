@@ -506,6 +506,11 @@ export default function AdminChatbot() {
           </div>
         </TabsContent>
 
+        {/* Learning */}
+        <TabsContent value="learning" className="space-y-4">
+          <ChatbotLearningPanel />
+        </TabsContent>
+
         {/* Conversations */}
         <TabsContent value="conversations" className="space-y-3">
           {/* Filters */}

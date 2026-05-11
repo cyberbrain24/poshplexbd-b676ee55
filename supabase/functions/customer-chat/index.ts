@@ -718,10 +718,10 @@ ${faqText ? "Reference FAQs (if a FAQ has an Image URL, ALWAYS include it in you
     const hasImageInput = messages.some(
       (m: any) => m.role === "user" && Array.isArray(m.images) && m.images.length > 0
     );
-    // Use flash for vision too — pro hits rate limits quickly on free tier.
+    // Pick a separate model for image vs text inputs (admin-configurable).
     const chosenModel = hasImageInput
-      ? "google/gemini-2.5-flash"
-      : (settings?.model || "google/gemini-2.5-flash");
+      ? (settings?.image_model || settings?.model || "google/gemini-2.5-flash")
+      : (settings?.text_model || settings?.model || "google/gemini-2.5-flash");
 
     let finalText = "";
     let iterations = 0;

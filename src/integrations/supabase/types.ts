@@ -189,32 +189,107 @@ export type Database = {
       chatbot_faqs: {
         Row: {
           answer: string
+          auto_generated: boolean
           created_at: string
           id: string
           image_url: string | null
           is_active: boolean
           question: string
           sort_order: number
+          source: string | null
           updated_at: string
         }
         Insert: {
           answer: string
+          auto_generated?: boolean
           created_at?: string
           id?: string
           image_url?: string | null
           is_active?: boolean
           question: string
           sort_order?: number
+          source?: string | null
           updated_at?: string
         }
         Update: {
           answer?: string
+          auto_generated?: boolean
           created_at?: string
           id?: string
           image_url?: string | null
           is_active?: boolean
           question?: string
           sort_order?: number
+          source?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      chatbot_learning_runs: {
+        Row: {
+          conversations_analyzed: number
+          error: string | null
+          faqs_added: number
+          finished_at: string | null
+          id: string
+          learnings_added: number
+          started_at: string
+          status: string
+          summary: Json
+          triggered_by: string | null
+        }
+        Insert: {
+          conversations_analyzed?: number
+          error?: string | null
+          faqs_added?: number
+          finished_at?: string | null
+          id?: string
+          learnings_added?: number
+          started_at?: string
+          status?: string
+          summary?: Json
+          triggered_by?: string | null
+        }
+        Update: {
+          conversations_analyzed?: number
+          error?: string | null
+          faqs_added?: number
+          finished_at?: string | null
+          id?: string
+          learnings_added?: number
+          started_at?: string
+          status?: string
+          summary?: Json
+          triggered_by?: string | null
+        }
+        Relationships: []
+      }
+      chatbot_learnings: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_active: boolean
+          kind: string
+          source: Json
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          kind: string
+          source?: Json
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          kind?: string
+          source?: Json
           updated_at?: string
         }
         Relationships: []

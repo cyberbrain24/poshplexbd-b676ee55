@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Plus, Trash2, MessageSquare, ThumbsUp, ThumbsDown, ImagePlus, Loader2, X, Pencil, Save, Copy, RefreshCcw, Search, ShoppingCart, AlertTriangle, CheckCircle2, Globe, Facebook, Instagram, MessageCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import ChatbotLearningPanel from "@/components/admin/ChatbotLearningPanel";
 
 const WEBHOOK_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/meta-webhook`;
 const CHANNEL_LABEL: Record<string, string> = { whatsapp: "WhatsApp", messenger: "Messenger", instagram: "Instagram" };
@@ -310,6 +311,7 @@ export default function AdminChatbot() {
         <TabsList>
           <TabsTrigger value="settings">Settings</TabsTrigger>
           <TabsTrigger value="faqs">FAQs ({faqs.length})</TabsTrigger>
+          <TabsTrigger value="learning">Learning</TabsTrigger>
           <TabsTrigger value="conversations">Conversations</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="meta">Meta DM ({metaChannels.length})</TabsTrigger>
@@ -503,6 +505,11 @@ export default function AdminChatbot() {
             })}
             {faqs.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">No FAQs yet. Add the first one above.</p>}
           </div>
+        </TabsContent>
+
+        {/* Learning */}
+        <TabsContent value="learning" className="space-y-4">
+          <ChatbotLearningPanel />
         </TabsContent>
 
         {/* Conversations */}

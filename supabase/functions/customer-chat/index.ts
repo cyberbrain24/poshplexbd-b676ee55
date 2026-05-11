@@ -616,9 +616,10 @@ Deno.serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const { messages, sessionId, conversationId: incomingConvId } = await req.json();
 
-    const [{ data: settings }, { data: faqs }] = await Promise.all([
+    const [{ data: settings }, { data: faqs }, { data: learnings }] = await Promise.all([
       supabase.from("chatbot_settings").select("*").maybeSingle(),
       supabase.from("chatbot_faqs").select("question, answer, image_url").eq("is_active", true).order("sort_order"),
+      supabase.from("chatbot_learnings").select("kind, content").eq("is_active", true).order("created_at", { ascending: false }).limit(40),
     ]);
 
     if (settings && !settings.enabled) {
@@ -709,6 +710,14 @@ Strict scope: Only discuss POSHPLEX products, orders, shipping, returns, and cus
 
 When the customer wants to buy: search_products → get_product_details → confirm choice & variant → collect name+phone+address+city → confirm full summary → call place_order.
 
+${(() => {
+  const rules = (learnings || []).filter((l: any) => l.kind === "rule").map((l: any) => `- ${l.content}`).join("\n");
+  const styles = (learnings || []).filter((l: any) => l.kind === "style").map((l: any) => `- ${l.content}`).join("\n");
+  let out = "";
+  if (rules) out += `\nLearned behavior rules (always follow):\n${rules}\n`;
+  if (styles) out += `\nTone & style notes:\n${styles}\n`;
+  return out;
+})()}
 ${faqText ? "Reference FAQs (if a FAQ has an Image URL, ALWAYS include it in your reply as markdown image syntax: ![](url) on its own line):\n" + faqText : ""}`;
 
     const fullMessages: any[] = [{ role: "system", content: systemPrompt }, ...aiMessages];

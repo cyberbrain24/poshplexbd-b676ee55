@@ -421,7 +421,7 @@ export default function AdminChatbot() {
 
             <p className="text-[11px] text-muted-foreground">
               Provider is auto-selected from the model prefix. Make sure the matching API key
-              (<code>GEMINI_API_KEY</code>, <code>OPENAI_API_KEY</code>, or <code>ANTHROPIC_API_KEY</code>) is configured;
+              (Gemini, OpenAI, Anthropic, or OpenRouter) is configured in Site Settings → AI Credentials;
               otherwise the chatbot falls back to whichever provider key is available.
             </p>
 

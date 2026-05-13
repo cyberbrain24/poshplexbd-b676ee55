@@ -1,15 +1,20 @@
-import { useEffect } from "react";
+import { Helmet } from "react-helmet-async";
 import PoshplexHeader from "../../components/header/PoshplexHeader";
 import PoshplexFooter from "../../components/footer/PoshplexFooter";
 import AboutSidebar from "../../components/about/AboutSidebar";
 
 const TermsConditions = () => {
-  useEffect(() => {
-    document.title = "Terms & Conditions - Poshplex";
-  }, []);
-
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>Terms &amp; Conditions — POSHPLEX</title>
+        <meta name="description" content="POSHPLEX terms covering orders, pricing, COD, delivery charges, exchanges, returns, and use of brand content. Please read before shopping with us." />
+        <link rel="canonical" href="https://poshplexbd.com/pages/terms-conditions" />
+        <meta property="og:title" content="Terms &amp; Conditions — POSHPLEX" />
+        <meta property="og:description" content="Order, payment, delivery, exchange, and return terms for shopping at POSHPLEX." />
+        <meta property="og:url" content="https://poshplexbd.com/pages/terms-conditions" />
+        <meta property="og:type" content="website" />
+      </Helmet>
       <PoshplexHeader />
       
       <div className="flex">

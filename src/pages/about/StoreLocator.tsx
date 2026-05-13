@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Helmet } from "react-helmet-async";
 import PoshplexHeader from "../../components/header/PoshplexHeader";
 import PoshplexFooter from "../../components/footer/PoshplexFooter";
 import AboutSidebar from "../../components/about/AboutSidebar";
@@ -7,6 +8,30 @@ import { Input } from "../../components/ui/input";
 import { Textarea } from "../../components/ui/textarea";
 import { MapPin, Mail, Phone } from "lucide-react";
 import { toast } from "sonner";
+
+const LOCAL_BUSINESS_LD = {
+  "@context": "https://schema.org",
+  "@type": "ClothingStore",
+  name: "POSHPLEX",
+  image: "https://poshplexbd.com/favicon.ico",
+  url: "https://poshplexbd.com/pages/store-locator",
+  telephone: "+8801887362831",
+  email: "poshplexbd@gmail.com",
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: "Dhaka",
+    addressCountry: "BD",
+  },
+  openingHoursSpecification: [
+    {
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"],
+      opens: "10:00",
+      closes: "20:00",
+    },
+  ],
+  priceRange: "৳৳",
+};
 
 const StoreLocator = () => {
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });

@@ -1,6 +1,15 @@
 import { supabase } from "@/integrations/supabase/client";
 import { BlogPost, BlogCategory, BlogPostInput, BlogPostStatus } from "@/types/blog";
-import { slugify } from "@/lib/slug";
+function slugify(input: string): string {
+  return (input || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .substring(0, 80);
+}
 
 const POST_COLS = "id, title, slug, excerpt, cover_image_url, cover_image_alt, status, published_at, author_name, reading_time_minutes, view_count, focus_keyword, meta_title, meta_description, canonical_url, og_image_url, robots_index, created_at, updated_at";
 const POST_FULL_COLS = `${POST_COLS}, content`;

@@ -29,6 +29,9 @@ export const adminRouteLoaders: Record<string, Loader> = {
   "/admin/customer-types": () => import("@/pages/admin/AdminCustomerTypes"),
   "/admin/media": () => import("@/pages/admin/AdminMedia"),
   "/admin/site-settings": () => import("@/pages/admin/AdminSiteSettings"),
+  "/admin/blog": () => import("@/pages/admin/AdminBlogPosts"),
+  "/admin/blog/new": () => import("@/pages/admin/AdminBlogEdit"),
+  "/admin/blog/categories": () => import("@/pages/admin/AdminBlogCategories"),
 };
 
 const prefetched = new Set<string>();

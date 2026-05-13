@@ -6,7 +6,7 @@ import {
   LayoutDashboard, ArrowLeft, ChevronDown, Wallet, CreditCard, TrendingUp,
   TrendingDown, Users, MapPin, Map, Crown, ShoppingCart, ExternalLink,
   LucideIcon, RefreshCw, MessageSquare, Image, Tag, Settings, Send,
-  Upload, Menu, X, Music,
+  Upload, Menu, X, Music, FileText, Newspaper,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -57,6 +57,11 @@ const customerManagementItems: NavItem[] = [
   { icon: Crown, label: "Membership Types", path: "/admin/customer-types" },
 ];
 
+const blogItems: NavItem[] = [
+  { icon: FileText, label: "Posts", path: "/admin/blog" },
+  { icon: FolderTree, label: "Categories", path: "/admin/blog/categories" },
+];
+
 const AdminSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -94,17 +99,17 @@ const AdminSidebar = () => {
 
   const isProductMgmtActive = productManagementItems.some(item => location.pathname === item.path);
   const isOrdersActive = orderItems.some(item => location.pathname === item.path);
-  
   const isAccountMgmtActive = accountManagementItems.some(item => location.pathname === item.path);
   const isCustomerMgmtActive = customerManagementItems.some(item => location.pathname === item.path);
+  const isBlogActive = location.pathname.startsWith("/admin/blog");
 
-  type GroupKey = 'product' | 'orders' | 'account' | 'customer';
+  type GroupKey = 'product' | 'orders' | 'account' | 'customer' | 'blog';
   const getInitialOpen = (): GroupKey | null => {
     if (isProductMgmtActive) return 'product';
     if (isOrdersActive) return 'orders';
-    
     if (isCustomerMgmtActive) return 'customer';
     if (isAccountMgmtActive) return 'account';
+    if (isBlogActive) return 'blog';
     return null;
   };
   const [openGroup, setOpenGroup] = useState<GroupKey | null>(getInitialOpen);
@@ -199,6 +204,7 @@ const AdminSidebar = () => {
         
         {renderCollapsible(Users, "Customer Management", customerManagementItems, openGroup === 'customer', () => toggleGroup('customer'), isCustomerMgmtActive)}
         {renderCollapsible(Wallet, "Account Management", accountManagementItems, openGroup === 'account', () => toggleGroup('account'), isAccountMgmtActive)}
+        {renderCollapsible(Newspaper, "Blog", blogItems, openGroup === 'blog', () => toggleGroup('blog'), isBlogActive)}
         {renderNavLink("/admin/media", Image, "Media")}
         {renderNavLink("/admin/music", Music, "Music Player")}
         {renderNavLink("/admin/site-settings", Settings, "Site Settings")}

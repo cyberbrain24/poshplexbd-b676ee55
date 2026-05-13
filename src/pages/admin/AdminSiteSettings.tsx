@@ -21,7 +21,7 @@ const AdminSiteSettings = () => {
   const updatePixelMutation = useUpdatePixelSettings();
 
   type ProviderStatus = { configured: boolean; enabled: boolean; masked: string | null; source: string | null };
-  type ProviderKey = "gemini" | "openai" | "anthropic" | "openrouter";
+  type ProviderKey = ProviderKey | "openrouter";
   type AICredsStatus = {
     active_provider: string;
     providers: Record<ProviderKey, ProviderStatus>;
@@ -79,7 +79,7 @@ const AdminSiteSettings = () => {
     },
   } as const;
 
-  const handleSaveProviderKey = async (provider: "gemini" | "openai" | "anthropic") => {
+  const handleSaveProviderKey = async (provider: ProviderKey) => {
     const cfg = PROVIDER_CONFIG[provider];
     const key = keyInputs[provider].trim();
     if (!key) { toast.error(`Please enter a ${cfg.label} API key`); return; }
@@ -95,7 +95,7 @@ const AdminSiteSettings = () => {
     refetchAI();
   };
 
-  const handleClearProviderKey = async (provider: "gemini" | "openai" | "anthropic") => {
+  const handleClearProviderKey = async (provider: ProviderKey) => {
     const cfg = PROVIDER_CONFIG[provider];
     if (!confirm(`Remove the saved ${cfg.label} API key?`)) return;
     setSavingProvider(provider);
@@ -108,7 +108,7 @@ const AdminSiteSettings = () => {
     refetchAI();
   };
 
-  const handleToggleProvider = async (provider: "gemini" | "openai" | "anthropic", next: boolean) => {
+  const handleToggleProvider = async (provider: ProviderKey, next: boolean) => {
     const cfg = PROVIDER_CONFIG[provider];
     const { data: row } = await supabase.from("site_settings").select("id").limit(1).maybeSingle();
     if (!row) { toast.error("Site settings row not found"); return; }

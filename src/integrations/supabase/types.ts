@@ -2272,6 +2272,8 @@ export type Database = {
           meta_test_mode: boolean
           openai_api_key: string | null
           openai_enabled: boolean
+          openrouter_api_key: string | null
+          openrouter_enabled: boolean
           updated_at: string
         }
         Insert: {
@@ -2292,6 +2294,8 @@ export type Database = {
           meta_test_mode?: boolean
           openai_api_key?: string | null
           openai_enabled?: boolean
+          openrouter_api_key?: string | null
+          openrouter_enabled?: boolean
           updated_at?: string
         }
         Update: {
@@ -2312,6 +2316,8 @@ export type Database = {
           meta_test_mode?: boolean
           openai_api_key?: string | null
           openai_enabled?: boolean
+          openrouter_api_key?: string | null
+          openrouter_enabled?: boolean
           updated_at?: string
         }
         Relationships: []

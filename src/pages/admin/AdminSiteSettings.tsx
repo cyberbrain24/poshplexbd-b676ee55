@@ -21,9 +21,10 @@ const AdminSiteSettings = () => {
   const updatePixelMutation = useUpdatePixelSettings();
 
   type ProviderStatus = { configured: boolean; enabled: boolean; masked: string | null; source: string | null };
+  type ProviderKey = "gemini" | "openai" | "anthropic" | "openrouter";
   type AICredsStatus = {
     active_provider: string;
-    providers: { gemini: ProviderStatus; openai: ProviderStatus; anthropic: ProviderStatus };
+    providers: Record<ProviderKey, ProviderStatus>;
   };
 
   const { data: aiStatus, isLoading: loadingAI, refetch: refetchAI } = useQuery({
@@ -35,10 +36,11 @@ const AdminSiteSettings = () => {
     },
   });
 
-  const [keyInputs, setKeyInputs] = useState<Record<"gemini" | "openai" | "anthropic", string>>({
+  const [keyInputs, setKeyInputs] = useState<Record<ProviderKey, string>>({
     gemini: "",
     openai: "",
     anthropic: "",
+    openrouter: "",
   });
   const [savingProvider, setSavingProvider] = useState<string | null>(null);
 
@@ -67,9 +69,17 @@ const AdminSiteSettings = () => {
       helpUrl: "https://console.anthropic.com/settings/keys",
       helpLabel: "console.anthropic.com/settings/keys",
     },
+    openrouter: {
+      label: "OpenRouter (Multi-model)",
+      keyColumn: "openrouter_api_key" as const,
+      enabledColumn: "openrouter_enabled" as const,
+      placeholder: "sk-or-...",
+      helpUrl: "https://openrouter.ai/keys",
+      helpLabel: "openrouter.ai/keys",
+    },
   } as const;
 
-  const handleSaveProviderKey = async (provider: "gemini" | "openai" | "anthropic") => {
+  const handleSaveProviderKey = async (provider: ProviderKey) => {
     const cfg = PROVIDER_CONFIG[provider];
     const key = keyInputs[provider].trim();
     if (!key) { toast.error(`Please enter a ${cfg.label} API key`); return; }
@@ -85,7 +95,7 @@ const AdminSiteSettings = () => {
     refetchAI();
   };
 
-  const handleClearProviderKey = async (provider: "gemini" | "openai" | "anthropic") => {
+  const handleClearProviderKey = async (provider: ProviderKey) => {
     const cfg = PROVIDER_CONFIG[provider];
     if (!confirm(`Remove the saved ${cfg.label} API key?`)) return;
     setSavingProvider(provider);
@@ -98,7 +108,7 @@ const AdminSiteSettings = () => {
     refetchAI();
   };
 
-  const handleToggleProvider = async (provider: "gemini" | "openai" | "anthropic", next: boolean) => {
+  const handleToggleProvider = async (provider: ProviderKey, next: boolean) => {
     const cfg = PROVIDER_CONFIG[provider];
     const { data: row } = await supabase.from("site_settings").select("id").limit(1).maybeSingle();
     if (!row) { toast.error("Site settings row not found"); return; }
@@ -491,14 +501,14 @@ const AdminSiteSettings = () => {
               ? aiStatus.active_provider
               : "none configured"}
           </span>
-          . The system picks based on the selected model; if that provider has no key, it falls back to the next enabled provider in order: Gemini → OpenAI → Anthropic.
+          . The system picks based on the selected model; if that provider has no key, it falls back to the next enabled provider in order: Gemini → OpenAI → Anthropic → OpenRouter.
         </p>
 
         {loadingAI ? (
           <Skeleton className="h-20 w-full" />
         ) : (
           <div className="space-y-6">
-            {(["gemini", "openai", "anthropic"] as const).map((provider) => {
+            {(["gemini", "openai", "anthropic", "openrouter"] as const).map((provider) => {
               const cfg = PROVIDER_CONFIG[provider];
               const status = aiStatus?.providers?.[provider];
               return (

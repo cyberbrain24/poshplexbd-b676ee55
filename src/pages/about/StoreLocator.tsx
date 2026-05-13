@@ -53,6 +53,16 @@ const StoreLocator = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>Store Locator &amp; Contact — POSHPLEX Dhaka</title>
+        <meta name="description" content="Visit or contact POSHPLEX in Dhaka, Bangladesh. Email poshplexbd@gmail.com or call +88 01887 362831 for orders, exchanges, and inquiries." />
+        <link rel="canonical" href="https://poshplexbd.com/pages/store-locator" />
+        <meta property="og:title" content="Find POSHPLEX — Dhaka, Bangladesh" />
+        <meta property="og:description" content="Visit, email, or call the POSHPLEX team in Dhaka for orders and inquiries." />
+        <meta property="og:url" content="https://poshplexbd.com/pages/store-locator" />
+        <meta property="og:type" content="website" />
+        <script type="application/ld+json">{JSON.stringify(LOCAL_BUSINESS_LD)}</script>
+      </Helmet>
       <PoshplexHeader />
       
       <div className="flex">

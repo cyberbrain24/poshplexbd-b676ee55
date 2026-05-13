@@ -21,7 +21,7 @@ const AdminSiteSettings = () => {
   const updatePixelMutation = useUpdatePixelSettings();
 
   type ProviderStatus = { configured: boolean; enabled: boolean; masked: string | null; source: string | null };
-  type ProviderKey = ProviderKey | "openrouter";
+  type ProviderKey = "gemini" | "openai" | "anthropic" | "openrouter";
   type AICredsStatus = {
     active_provider: string;
     providers: Record<ProviderKey, ProviderStatus>;

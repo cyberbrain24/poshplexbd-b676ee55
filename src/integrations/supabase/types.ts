@@ -1917,6 +1917,87 @@ export type Database = {
           },
         ]
       }
+      seo_pages: {
+        Row: {
+          canonical_url: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          focus_keyword: string | null
+          id: string
+          json_ld: Json | null
+          keywords: string[] | null
+          meta_description: string | null
+          meta_title: string | null
+          notes: string | null
+          og_description: string | null
+          og_image_url: string | null
+          og_title: string | null
+          og_type: string | null
+          robots_follow: boolean
+          robots_index: boolean
+          route_path: string
+          sitemap_changefreq: string | null
+          sitemap_include: boolean
+          sitemap_priority: number | null
+          twitter_card: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          canonical_url?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          focus_keyword?: string | null
+          id?: string
+          json_ld?: Json | null
+          keywords?: string[] | null
+          meta_description?: string | null
+          meta_title?: string | null
+          notes?: string | null
+          og_description?: string | null
+          og_image_url?: string | null
+          og_title?: string | null
+          og_type?: string | null
+          robots_follow?: boolean
+          robots_index?: boolean
+          route_path: string
+          sitemap_changefreq?: string | null
+          sitemap_include?: boolean
+          sitemap_priority?: number | null
+          twitter_card?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          canonical_url?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          focus_keyword?: string | null
+          id?: string
+          json_ld?: Json | null
+          keywords?: string[] | null
+          meta_description?: string | null
+          meta_title?: string | null
+          notes?: string | null
+          og_description?: string | null
+          og_image_url?: string | null
+          og_title?: string | null
+          og_type?: string | null
+          robots_follow?: boolean
+          robots_index?: boolean
+          route_path?: string
+          sitemap_changefreq?: string | null
+          sitemap_include?: boolean
+          sitemap_priority?: number | null
+          twitter_card?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       shared_variant_categories: {
         Row: {
           category_id: string

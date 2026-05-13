@@ -647,23 +647,35 @@ Deno.serve(async (req) => {
     }
 
     // Normalize messages for AI gateway: convert {content, images:[dataUrl,...]} into multimodal content array
-    const aiMessages = messages.map((m: any) => {
-      if (m.role === "user" && Array.isArray(m.images) && m.images.length > 0) {
-        const parts: any[] = [];
-        if (m.content) parts.push({ type: "text", text: String(m.content) });
-        for (const url of m.images) {
-          if (typeof url === "string" && /^(https?:|data:image\/)/i.test(url)) {
-            parts.push({ type: "image_url", image_url: { url } });
+    const aiMessages = messages
+      .filter((m: any) => m && (m.role === "user" || m.role === "assistant" || m.role === "system" || m.role === "tool"))
+      .map((m: any) => {
+        if (m.role === "user" && Array.isArray(m.images) && m.images.length > 0) {
+          const parts: any[] = [];
+          const text = typeof m.content === "string" ? m.content : "";
+          if (text) parts.push({ type: "text", text });
+          for (const url of m.images) {
+            if (typeof url === "string" && /^(https?:|data:image\/)/i.test(url)) {
+              parts.push({ type: "image_url", image_url: { url } });
+            }
           }
+          if (parts.length === 0) return { role: "user", content: text || " " };
+          if (parts.length === 1 && parts[0].type === "text") return { role: "user", content: parts[0].text };
+          return { role: "user", content: parts };
         }
-        // If only invalid image placeholders were sent, fall back to plain text
-        if (parts.length === 0) return { role: "user", content: String(m.content || "") };
-        if (parts.length === 1 && parts[0].type === "text") return { role: "user", content: parts[0].text };
-        return { role: "user", content: parts };
-      }
-      const { images, ...rest } = m;
-      return rest;
-    });
+        const { images, ...rest } = m;
+        // Coerce content to string — Google rejects null content
+        if (rest.content == null) rest.content = "";
+        else if (typeof rest.content !== "string" && !Array.isArray(rest.content)) {
+          rest.content = String(rest.content);
+        }
+        return rest;
+      })
+      .filter((m: any) => {
+        // Drop empty assistant messages without tool_calls
+        if (m.role === "assistant" && !m.tool_calls && (!m.content || (typeof m.content === "string" && m.content.trim() === ""))) return false;
+        return true;
+      });
 
     const faqText = (faqs || []).map((f: any) => {
       const img = f.image_url ? `\nImage: ${f.image_url}` : "";

@@ -37,6 +37,8 @@ import OrderTracking from "./pages/OrderTracking";
 import MyOrders from "./pages/MyOrders";
 const Membership = lazy(() => import("./pages/Membership"));
 const Favorites = lazy(() => import("./pages/Favorites"));
+const Blog = lazy(() => import("./pages/Blog"));
+const BlogPost = lazy(() => import("./pages/BlogPost"));
 
 // Admin pages - lazy loaded (separate chunk, never downloaded by storefront users)
 const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
@@ -67,6 +69,9 @@ const AdminSiteSettings = lazy(() => import("./pages/admin/AdminSiteSettings"));
 const AdminBulkUpload = lazy(() => import("./pages/admin/AdminBulkUpload"));
 const AdminMusic = lazy(() => import("./pages/admin/AdminMusic"));
 const AdminSMS = lazy(() => import("./pages/admin/AdminSMS"));
+const AdminBlogPosts = lazy(() => import("./pages/admin/AdminBlogPosts"));
+const AdminBlogEdit = lazy(() => import("./pages/admin/AdminBlogEdit"));
+const AdminBlogCategories = lazy(() => import("./pages/admin/AdminBlogCategories"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -128,6 +133,8 @@ const App = () => (
                   <Route path="/shipping-delivery" element={<Suspense fallback={<LoadingFallback />}><ShippingDelivery /></Suspense>} />
                   <Route path="/auth" element={<Suspense fallback={<LoadingFallback />}><Auth /></Suspense>} />
                   <Route path="/login" element={<CustomerAuth />} />
+                  <Route path="/blog" element={<Suspense fallback={<LoadingFallback />}><Blog /></Suspense>} />
+                  <Route path="/blog/:slug" element={<Suspense fallback={<LoadingFallback />}><BlogPost /></Suspense>} />
                   
                   
                   {/* Admin Routes - Lazy loaded */}
@@ -164,6 +171,10 @@ const App = () => (
                     <Route path="bulk-upload" element={<AdminBulkUpload />} />
                     <Route path="music" element={<AdminMusic />} />
                     <Route path="sms" element={<AdminSMS />} />
+                    <Route path="blog" element={<AdminBlogPosts />} />
+                    <Route path="blog/new" element={<AdminBlogEdit />} />
+                    <Route path="blog/edit/:id" element={<AdminBlogEdit />} />
+                    <Route path="blog/categories" element={<AdminBlogCategories />} />
                     <Route path="site-settings" element={<AdminSiteSettings />} />
                   </Route>
                   

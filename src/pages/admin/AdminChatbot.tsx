@@ -407,6 +407,13 @@ export default function AdminChatbot() {
                     <option value="anthropic/claude-3-5-sonnet-latest">Claude 3.5 Sonnet</option>
                     <option value="anthropic/claude-sonnet-4-5">Claude Sonnet 4.5</option>
                   </optgroup>
+                  <optgroup label="OpenRouter (vision)">
+                    <option value="openrouter/google/gemini-2.5-flash">OR · Gemini 2.5 Flash</option>
+                    <option value="openrouter/google/gemini-2.5-pro">OR · Gemini 2.5 Pro</option>
+                    <option value="openrouter/openai/gpt-4o">OR · GPT-4o</option>
+                    <option value="openrouter/openai/gpt-4o-mini">OR · GPT-4o Mini</option>
+                    <option value="openrouter/anthropic/claude-3.5-sonnet">OR · Claude 3.5 Sonnet</option>
+                  </optgroup>
                 </select>
                 <p className="text-[11px] text-muted-foreground">Used when the customer attaches a photo.</p>
               </div>

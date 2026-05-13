@@ -508,7 +508,7 @@ const AdminSiteSettings = () => {
           <Skeleton className="h-20 w-full" />
         ) : (
           <div className="space-y-6">
-            {(["gemini", "openai", "anthropic"] as const).map((provider) => {
+            {(["gemini", "openai", "anthropic", "openrouter"] as const).map((provider) => {
               const cfg = PROVIDER_CONFIG[provider];
               const status = aiStatus?.providers?.[provider];
               return (

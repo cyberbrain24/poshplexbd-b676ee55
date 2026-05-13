@@ -40,6 +40,8 @@ const READ_TOOLS = new Set([
   "get_site_settings", "get_site_branding",
   // SMS
   "get_sms_settings", "list_sms_templates", "list_sms_campaigns", "list_sms_messages",
+  // SEO
+  "list_seo_pages", "get_seo_page", "list_indexable_routes", "ai_generate_seo_meta",
   // Universal DB introspection (auto-discovers any new module)
   "db_list_tables", "db_query_table", "db_count_table",
 ]);
@@ -60,6 +62,8 @@ const WRITE_TOOLS = new Set([
   // SMS Marketing
   "update_sms_settings", "update_sms_template", "create_sms_template", "delete_sms_template",
   "send_sms", "send_bulk_sms",
+  // SEO
+  "set_seo_page", "delete_seo_page", "bulk_generate_seo",
 ]);
 
 const tools = [
@@ -218,6 +222,26 @@ const tools = [
   { type: "function", function: { name: "db_count_table", description: "Count rows in any public table with optional equality filters.", parameters: { type: "object", properties: {
     table: { type: "string" }, filters: { type: "object" },
   }, required: ["table"] } } },
+  // ====== SEO ======
+  { type: "function", function: { name: "list_seo_pages", description: "List existing per-route SEO overrides from seo_pages table.", parameters: { type: "object", properties: { search: { type: "string", description: "Filter by route_path substring" }, limit: { type: "number" } } } } },
+  { type: "function", function: { name: "get_seo_page", description: "Get the SEO override row for a specific route_path (e.g. '/', '/category/upper-wear', '/product/blood-throne-abc123', '/blog/post-slug').", parameters: { type: "object", properties: { route_path: { type: "string" } }, required: ["route_path"] } } },
+  { type: "function", function: { name: "list_indexable_routes", description: "Discover ALL indexable routes on the site: static pages + every product (slug-based path), every category, every published blog post. Returns route_path and an entity hint.", parameters: { type: "object", properties: { include_kinds: { type: "array", items: { type: "string" }, description: "Subset of [static,product,category,blog_post]; defaults to all." } } } } },
+  { type: "function", function: { name: "ai_generate_seo_meta", description: "Use AI to draft meta_title (<60c), meta_description (<160c), focus_keyword and og_title/og_description for a given route. Provide context (page subject) — does NOT save; returns suggestion to confirm with set_seo_page.", parameters: { type: "object", properties: { route_path: { type: "string" }, subject: { type: "string", description: "Short description of the page content/intent" }, focus_keyword: { type: "string" } }, required: ["route_path", "subject"] } } },
+  { type: "function", function: { name: "set_seo_page", description: "Create or update SEO override for a route. Pass route_path plus any of: meta_title, meta_description, canonical_url, og_title, og_description, og_image_url, og_type, twitter_card, focus_keyword, keywords (string[]), robots_index, robots_follow, json_ld (object), sitemap_priority (0-1), sitemap_changefreq, sitemap_include, entity_type, entity_id, notes.", parameters: { type: "object", properties: {
+    route_path: { type: "string" }, meta_title: { type: "string" }, meta_description: { type: "string" },
+    canonical_url: { type: "string" }, og_title: { type: "string" }, og_description: { type: "string" },
+    og_image_url: { type: "string" }, og_type: { type: "string" }, twitter_card: { type: "string" },
+    focus_keyword: { type: "string" }, keywords: { type: "array", items: { type: "string" } },
+    robots_index: { type: "boolean" }, robots_follow: { type: "boolean" }, json_ld: { type: "object" },
+    sitemap_priority: { type: "number" }, sitemap_changefreq: { type: "string" }, sitemap_include: { type: "boolean" },
+    entity_type: { type: "string" }, entity_id: { type: "string" }, notes: { type: "string" },
+  }, required: ["route_path"] } } },
+  { type: "function", function: { name: "delete_seo_page", description: "Remove a per-route SEO override (route falls back to defaults).", parameters: { type: "object", properties: { route_path: { type: "string" } }, required: ["route_path"] } } },
+  { type: "function", function: { name: "bulk_generate_seo", description: "Generate AI-written meta_title + meta_description for many routes at once and upsert them. Scope can be 'products' (all active products missing SEO), 'categories' (all categories missing SEO), 'blog_posts' (all published posts missing SEO), or 'all'. Limit caps how many to process per call (default 25, max 100).", parameters: { type: "object", properties: {
+    scope: { type: "string", description: "products|categories|blog_posts|all" },
+    only_missing: { type: "boolean", description: "If true (default), skip routes that already have a seo_pages row." },
+    limit: { type: "number" },
+  }, required: ["scope"] } } },
 ];
 
 const SYSTEM_PROMPT = `You are POSHPLEX's admin AI assistant. The brand is a Bangladesh streetwear store ("BE POSH WITH POSHPLEX"). Currency is Taka (৳), locale en-BD.
@@ -864,6 +888,109 @@ async function executeTool(name: string, args: any, sb: any) {
         const { count, error } = await q;
         if (error) return { error: error.message };
         return { count };
+      }
+
+      // ===== SEO =====
+      case "list_seo_pages": {
+        let q = sb.from("seo_pages").select("*").order("route_path").limit(Math.min(args.limit || 100, 500));
+        if (args.search) q = q.ilike("route_path", `%${args.search}%`);
+        const { data, error } = await q;
+        if (error) throw error;
+        return { seo_pages: data, count: data?.length || 0 };
+      }
+      case "get_seo_page": {
+        const { data } = await sb.from("seo_pages").select("*").eq("route_path", args.route_path).maybeSingle();
+        return { seo_page: data };
+      }
+      case "list_indexable_routes": {
+        const kinds = new Set<string>(args.include_kinds || ["static", "product", "category", "blog_post"]);
+        const routes: any[] = [];
+        if (kinds.has("static")) {
+          ["/", "/categories", "/blog", "/membership", "/pages/our-story", "/pages/privacy-policy", "/pages/terms-conditions", "/pages/shipping-delivery", "/pages/store-locator"].forEach(p => routes.push({ route_path: p, entity_type: "static" }));
+        }
+        if (kinds.has("category")) {
+          const { data } = await sb.from("categories").select("id, name");
+          (data || []).forEach((c: any) => routes.push({ route_path: `/category/${c.name.toLowerCase().replace(/\s+/g, "-")}`, entity_type: "category", entity_id: c.id, name: c.name }));
+        }
+        if (kinds.has("product")) {
+          const { data } = await sb.from("products").select("id, name").eq("is_active", true).limit(2000);
+          (data || []).forEach((p: any) => {
+            const slug = p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + "-" + p.id.slice(0, 8);
+            routes.push({ route_path: `/product/${slug}`, entity_type: "product", entity_id: p.id, name: p.name });
+          });
+        }
+        if (kinds.has("blog_post")) {
+          const { data } = await sb.from("blog_posts").select("id, slug, title").eq("status", "published");
+          (data || []).forEach((b: any) => routes.push({ route_path: `/blog/${b.slug}`, entity_type: "blog_post", entity_id: b.id, name: b.title }));
+        }
+        return { routes, count: routes.length };
+      }
+      case "ai_generate_seo_meta": {
+        const sys = "You are an SEO copywriter for POSHPLEX, a Bangladesh streetwear brand. Reply ONLY as compact JSON.";
+        const user = `Route: ${args.route_path}\nSubject: ${args.subject}\nFocus keyword: ${args.focus_keyword || "(pick the best one)"}\n\nReturn JSON: {"meta_title": "<=60 chars including keyword", "meta_description": "<=160 chars compelling", "focus_keyword": "primary keyword", "og_title": "<=70 chars", "og_description": "<=200 chars"}`;
+        const resp = await aiChatCompletion({ model: MODEL, messages: [{ role: "system", content: sys }, { role: "user", content: user }] });
+        if (!resp.ok) return { error: `AI failed (${resp.status})` };
+        const data = await resp.json();
+        const text = data.choices?.[0]?.message?.content || "";
+        try { const m = text.match(/\{[\s\S]*\}/); return { suggestion: m ? JSON.parse(m[0]) : { raw: text } }; }
+        catch { return { suggestion: { raw: text } }; }
+      }
+      case "set_seo_page": {
+        const { data, error } = await sb.from("seo_pages").upsert(args, { onConflict: "route_path" }).select().single();
+        if (error) throw error;
+        return { success: true, seo_page: data };
+      }
+      case "delete_seo_page": {
+        const { error } = await sb.from("seo_pages").delete().eq("route_path", args.route_path);
+        if (error) throw error;
+        return { success: true };
+      }
+      case "bulk_generate_seo": {
+        const limit = Math.min(args.limit || 25, 100);
+        const onlyMissing = args.only_missing !== false;
+        const items: { route_path: string; entity_type: string; entity_id?: string; subject: string }[] = [];
+        const scope = args.scope;
+        if (scope === "products" || scope === "all") {
+          const { data } = await sb.from("products").select("id, name, short_description, full_description, category:categories(name)").eq("is_active", true).limit(limit * 2);
+          (data || []).forEach((p: any) => {
+            const slug = p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + "-" + p.id.slice(0, 8);
+            items.push({ route_path: `/product/${slug}`, entity_type: "product", entity_id: p.id, subject: `Product: ${p.name}. Category: ${p.category?.name || "Apparel"}. ${(p.short_description || p.full_description || "").slice(0, 200)}` });
+          });
+        }
+        if (scope === "categories" || scope === "all") {
+          const { data } = await sb.from("categories").select("id, name");
+          (data || []).forEach((c: any) => items.push({ route_path: `/category/${c.name.toLowerCase().replace(/\s+/g, "-")}`, entity_type: "category", entity_id: c.id, subject: `Category page for ${c.name} streetwear collection` }));
+        }
+        if (scope === "blog_posts" || scope === "all") {
+          const { data } = await sb.from("blog_posts").select("id, slug, title, excerpt, focus_keyword").eq("status", "published");
+          (data || []).forEach((b: any) => items.push({ route_path: `/blog/${b.slug}`, entity_type: "blog_post", entity_id: b.id, subject: `Blog post titled "${b.title}". ${(b.excerpt || "").slice(0, 200)}. Focus keyword: ${b.focus_keyword || ""}` }));
+        }
+        let toProcess = items.slice(0, limit);
+        if (onlyMissing && toProcess.length) {
+          const paths = toProcess.map(i => i.route_path);
+          const { data: existing } = await sb.from("seo_pages").select("route_path").in("route_path", paths);
+          const existingSet = new Set((existing || []).map((r: any) => r.route_path));
+          toProcess = toProcess.filter(i => !existingSet.has(i.route_path));
+        }
+        const sys = "You are an SEO copywriter for POSHPLEX streetwear. Reply ONLY as compact JSON: {\"meta_title\":\"<=60c\",\"meta_description\":\"<=160c\",\"focus_keyword\":\"...\"}.";
+        let processed = 0, errors = 0;
+        for (const item of toProcess) {
+          try {
+            const resp = await aiChatCompletion({ model: MODEL, messages: [{ role: "system", content: sys }, { role: "user", content: item.subject }] });
+            if (!resp.ok) { errors++; continue; }
+            const json = await resp.json();
+            const text = json.choices?.[0]?.message?.content || "";
+            const m = text.match(/\{[\s\S]*\}/);
+            if (!m) { errors++; continue; }
+            const parsed = JSON.parse(m[0]);
+            await sb.from("seo_pages").upsert({
+              route_path: item.route_path, entity_type: item.entity_type, entity_id: item.entity_id || null,
+              meta_title: parsed.meta_title, meta_description: parsed.meta_description, focus_keyword: parsed.focus_keyword,
+            }, { onConflict: "route_path" });
+            processed++;
+          } catch { errors++; }
+        }
+        return { success: true, processed, errors, scanned: toProcess.length };
       }
 
       default: return { error: `Unknown tool: ${name}` };

@@ -14,6 +14,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import MobileFooterNav from "./components/navigation/MobileFooterNav";
 import FacebookPixelTracker from "./components/tracking/FacebookPixelTracker";
 import FloatingMusicPlayer from "./components/music/FloatingMusicPlayer";
+import GlobalSEOOverride from "./components/seo/GlobalSEOOverride";
 
 
 // Storefront pages - eagerly loaded (critical path)
@@ -111,6 +112,7 @@ const App = () => (
               >
                 <ScrollToTop />
                 <FacebookPixelTracker />
+                <GlobalSEOOverride />
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/categories" element={<CategoryBrowser />} />

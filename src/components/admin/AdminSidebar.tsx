@@ -5,7 +5,7 @@ import {
   Package, Palette, Ruler, Shirt, BookOpen, Sparkles, FolderTree, Building2,
   LayoutDashboard, ArrowLeft, ChevronDown, Wallet, CreditCard, TrendingUp,
   TrendingDown, Users, MapPin, Map, Crown, ShoppingCart, ExternalLink,
-  LucideIcon, RefreshCw, Image, Tag, Settings, Send,
+  LucideIcon, RefreshCw, MessageSquare, Image, Tag, Settings, Send,
   Upload, Menu, X, Music,
 } from "lucide-react";
 import { toast } from "sonner";

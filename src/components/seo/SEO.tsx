@@ -1,4 +1,6 @@
 import { Helmet } from "react-helmet-async";
+import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "react-router-dom";
 import {
   SITE_CONFIG,
   generateTitle,
@@ -6,6 +8,7 @@ import {
   getImageUrl,
   generateCanonicalUrl,
 } from "@/utils/seo-helpers";
+import { seoService, type SeoPage } from "@/services/seo.service";
 
 export interface SEOProps {
   title?: string | null;
@@ -14,6 +17,8 @@ export interface SEOProps {
   url?: string;
   type?: "website" | "article" | "product";
   noIndex?: boolean;
+  /** Optional explicit lookup key for DB overrides (defaults to current pathname) */
+  seoLookupPath?: string;
   children?: React.ReactNode;
 }
 

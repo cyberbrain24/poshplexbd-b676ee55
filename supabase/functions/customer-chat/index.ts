@@ -652,8 +652,13 @@ Deno.serve(async (req) => {
         const parts: any[] = [];
         if (m.content) parts.push({ type: "text", text: String(m.content) });
         for (const url of m.images) {
-          if (typeof url === "string" && url) parts.push({ type: "image_url", image_url: { url } });
+          if (typeof url === "string" && /^(https?:|data:image\/)/i.test(url)) {
+            parts.push({ type: "image_url", image_url: { url } });
+          }
         }
+        // If only invalid image placeholders were sent, fall back to plain text
+        if (parts.length === 0) return { role: "user", content: String(m.content || "") };
+        if (parts.length === 1 && parts[0].type === "text") return { role: "user", content: parts[0].text };
         return { role: "user", content: parts };
       }
       const { images, ...rest } = m;

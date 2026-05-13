@@ -501,7 +501,7 @@ const AdminSiteSettings = () => {
               ? aiStatus.active_provider
               : "none configured"}
           </span>
-          . The system picks based on the selected model; if that provider has no key, it falls back to the next enabled provider in order: Gemini → OpenAI → Anthropic.
+          . The system picks based on the selected model; if that provider has no key, it falls back to the next enabled provider in order: Gemini → OpenAI → Anthropic → OpenRouter.
         </p>
 
         {loadingAI ? (

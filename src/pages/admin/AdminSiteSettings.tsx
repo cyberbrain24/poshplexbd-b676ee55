@@ -21,9 +21,10 @@ const AdminSiteSettings = () => {
   const updatePixelMutation = useUpdatePixelSettings();
 
   type ProviderStatus = { configured: boolean; enabled: boolean; masked: string | null; source: string | null };
+  type ProviderKey = "gemini" | "openai" | "anthropic" | "openrouter";
   type AICredsStatus = {
     active_provider: string;
-    providers: { gemini: ProviderStatus; openai: ProviderStatus; anthropic: ProviderStatus };
+    providers: Record<ProviderKey, ProviderStatus>;
   };
 
   const { data: aiStatus, isLoading: loadingAI, refetch: refetchAI } = useQuery({
@@ -35,10 +36,11 @@ const AdminSiteSettings = () => {
     },
   });
 
-  const [keyInputs, setKeyInputs] = useState<Record<"gemini" | "openai" | "anthropic", string>>({
+  const [keyInputs, setKeyInputs] = useState<Record<ProviderKey, string>>({
     gemini: "",
     openai: "",
     anthropic: "",
+    openrouter: "",
   });
   const [savingProvider, setSavingProvider] = useState<string | null>(null);
 
@@ -66,6 +68,14 @@ const AdminSiteSettings = () => {
       placeholder: "sk-ant-...",
       helpUrl: "https://console.anthropic.com/settings/keys",
       helpLabel: "console.anthropic.com/settings/keys",
+    },
+    openrouter: {
+      label: "OpenRouter (Multi-model)",
+      keyColumn: "openrouter_api_key" as const,
+      enabledColumn: "openrouter_enabled" as const,
+      placeholder: "sk-or-...",
+      helpUrl: "https://openrouter.ai/keys",
+      helpLabel: "openrouter.ai/keys",
     },
   } as const;
 

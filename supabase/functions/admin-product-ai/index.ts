@@ -28,7 +28,7 @@ const READ_TOOLS = new Set([
   // Reviews
   "list_reviews",
   // Inventory
-  "list_inventory_products", "list_low_stock_variants", "list_inventory_entries",
+  "list_low_stock_variants",
   // Finance
   "list_accounts", "list_transactions", "list_order_payments",
   // Marketing
@@ -126,9 +126,7 @@ const tools = [
   { type: "function", function: { name: "get_customer", description: "Get customer details + order history by id, phone, or email.", parameters: { type: "object", properties: { identifier: { type: "string" } }, required: ["identifier"] } } },
   { type: "function", function: { name: "list_customer_types", description: "List membership/customer types.", parameters: { type: "object", properties: {} } } },
   { type: "function", function: { name: "list_reviews", description: "List reviews. Filter by approval status or product.", parameters: { type: "object", properties: { is_approved: { type: "boolean" }, product_id: { type: "string" }, limit: { type: "number" } } } } },
-  { type: "function", function: { name: "list_inventory_products", description: "List independent inventory products with stock.", parameters: { type: "object", properties: { search: { type: "string" }, limit: { type: "number" } } } } },
   { type: "function", function: { name: "list_low_stock_variants", description: "Catalog product variants below their low_stock_threshold.", parameters: { type: "object", properties: { limit: { type: "number" } } } } },
-  { type: "function", function: { name: "list_inventory_entries", description: "Recent inventory in/out entries.", parameters: { type: "object", properties: { type: { type: "string", description: "in|out" }, limit: { type: "number" } } } } },
   { type: "function", function: { name: "list_accounts", description: "List financial accounts with current balances.", parameters: { type: "object", properties: {} } } },
   { type: "function", function: { name: "list_transactions", description: "Recent finance transactions (income/expense/transfer).", parameters: { type: "object", properties: { type: { type: "string" }, account_id: { type: "string" }, limit: { type: "number" }, days: { type: "number" } } } } },
   { type: "function", function: { name: "list_order_payments", description: "Recent payments recorded against orders.", parameters: { type: "object", properties: { order_id: { type: "string" }, limit: { type: "number" } } } } },
@@ -248,7 +246,7 @@ Modules summary:
 - Products: catalog with variants, images, categories (junction), brands, colors, sizes, materials, size guides, care instructions.
 - Orders: PO-XXXXX numbers, status (pending/confirmed/shipped/delivered/...), payment_status (unpaid/partial/paid/refunded), Steadfast courier integration.
 - Customers: linked to auth via customer_accounts; have phone, email, division/thana, customer_type (membership).
-- Inventory: independent inventory_products + entries (in/out); also product_variants stock_quantity for the catalog.
+- Inventory: product_variants stock_quantity for the catalog.
 - Finance: accounts (balances), transactions (income/expense/transfer), order_payments (linked to orders).
 - Marketing: promo_codes, payment_methods (COD, Mobile Banking).
 - Locations: divisions (districts) -> thanas (delivery zones).`;
@@ -534,25 +532,11 @@ async function executeTool(name: string, args: any, sb: any) {
         if (error) throw error;
         return { reviews: data };
       }
-      case "list_inventory_products": {
-        let q = sb.from("inventory_products").select("id, name, sku, current_stock, unit, purchase_price, is_active").order("name").limit(args.limit || 50);
-        if (args.search) q = q.or(`name.ilike.%${args.search}%,sku.ilike.%${args.search}%`);
-        const { data, error } = await q;
-        if (error) throw error;
-        return { inventory_products: data };
-      }
       case "list_low_stock_variants": {
         const { data, error } = await sb.from("product_variants").select("id, product_id, sku, stock_quantity, low_stock_threshold, selling_price").eq("is_active", true).limit(args.limit || 50);
         if (error) throw error;
         const low = (data || []).filter((v: any) => v.stock_quantity <= (v.low_stock_threshold ?? 5));
         return { low_stock_variants: low };
-      }
-      case "list_inventory_entries": {
-        let q = sb.from("inventory_entries").select("id, type, date, notes, created_at, account_id").order("created_at", { ascending: false }).limit(args.limit || 25);
-        if (args.type) q = q.eq("type", args.type);
-        const { data, error } = await q;
-        if (error) throw error;
-        return { entries: data };
       }
       case "list_accounts": {
         const { data, error } = await sb.from("accounts").select("id, name, current_balance, initial_balance, is_active, description").order("name");

@@ -232,7 +232,6 @@ You have WRITE access to: PRODUCTS — full control: create / update / delete pr
 
 VARIANT PRICING: When admin asks to change a single variant price, use update_product_variant. For ALL variants of ONE product, use bulk_update_variant_prices (also aligns base_price). For ALL products in a CATEGORY (e.g. "change every product in Upper Wear to 799"), ALWAYS use bulk_update_category_prices in a SINGLE call — never loop product-by-product. It updates both products.base_price AND every variant's selling_price, covering simple products too. Use list_products with category_name only if you need to preview the affected items first.
 
-CHATBOT TRAINING: When the admin teaches messaging behavior — tone, rules, refusals, welcome wording, blocked topics, or new Q&A knowledge — treat it as training the Customer Chatbot. Use get_chatbot_settings / list_chatbot_faqs to read current config, then call update_chatbot_settings to persist welcome_message / system_prompt / blocked_topics, or create_chatbot_faq / update_chatbot_faq / delete_chatbot_faq for knowledge entries. When merging new rules into system_prompt, preserve existing rules unless the admin asks to remove them. Blocked_topics must be a clean array of short topic strings.
 
 When the admin asks to change a customer or order, first look it up by phone/email/order_number to get the id, then call the right write tool. Always confirm the destructive action briefly after it runs.
 
@@ -731,61 +730,6 @@ async function executeTool(name: string, args: any, sb: any) {
         await sb.from("order_status_history").delete().eq("order_id", args.order_id);
         await sb.from("order_payments").delete().eq("order_id", args.order_id);
         const { error } = await sb.from("orders").delete().eq("id", args.order_id);
-        if (error) throw error;
-        return { success: true };
-      }
-      // ====== Chatbot ======
-      case "get_chatbot_settings": {
-        const { data, error } = await sb.from("chatbot_settings").select("*").limit(1).maybeSingle();
-        if (error) throw error;
-        return { settings: data };
-      }
-      case "list_chatbot_faqs": {
-        let q = sb.from("chatbot_faqs").select("*").order("sort_order", { ascending: true }).limit(args.limit || 100);
-        if (typeof args.is_active === "boolean") q = q.eq("is_active", args.is_active);
-        const { data, error } = await q;
-        if (error) throw error;
-        return { faqs: data };
-      }
-      case "update_chatbot_settings": {
-        const patch: any = {};
-        if (args.welcome_message !== undefined) patch.welcome_message = args.welcome_message;
-        if (args.system_prompt !== undefined) patch.system_prompt = args.system_prompt;
-        if (args.blocked_topics !== undefined) patch.blocked_topics = Array.isArray(args.blocked_topics) ? args.blocked_topics : [];
-        if (args.model !== undefined) patch.model = args.model;
-        if (args.enabled !== undefined) patch.enabled = args.enabled;
-        patch.updated_at = new Date().toISOString();
-        const { data: existing } = await sb.from("chatbot_settings").select("id").limit(1).maybeSingle();
-        let result;
-        if (existing?.id) {
-          const { data, error } = await sb.from("chatbot_settings").update(patch).eq("id", existing.id).select().single();
-          if (error) throw error;
-          result = data;
-        } else {
-          const { data, error } = await sb.from("chatbot_settings").insert(patch).select().single();
-          if (error) throw error;
-          result = data;
-        }
-        return { success: true, settings: result };
-      }
-      case "create_chatbot_faq": {
-        const { data, error } = await sb.from("chatbot_faqs").insert({
-          question: args.question, answer: args.answer,
-          image_url: args.image_url || null,
-          sort_order: args.sort_order ?? 0,
-          is_active: args.is_active ?? true,
-        }).select().single();
-        if (error) throw error;
-        return { success: true, faq: data };
-      }
-      case "update_chatbot_faq": {
-        const { faq_id, ...patch } = args;
-        const { data, error } = await sb.from("chatbot_faqs").update(patch).eq("id", faq_id).select().single();
-        if (error) throw error;
-        return { success: true, faq: data };
-      }
-      case "delete_chatbot_faq": {
-        const { error } = await sb.from("chatbot_faqs").delete().eq("id", args.faq_id);
         if (error) throw error;
         return { success: true };
       }

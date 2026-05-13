@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
     const { data: settings } = await supabase
       .from("site_settings")
       .select(
-        "gemini_api_key, gemini_enabled, openai_api_key, openai_enabled, anthropic_api_key, anthropic_enabled",
+        "gemini_api_key, gemini_enabled, openai_api_key, openai_enabled, anthropic_api_key, anthropic_enabled, openrouter_api_key, openrouter_enabled",
       )
       .limit(1)
       .maybeSingle();

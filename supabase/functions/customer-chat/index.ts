@@ -756,6 +756,14 @@ ${faqText ? "Reference FAQs (if a FAQ has an Image URL, ALWAYS include it in you
       "google/gemini-2.5-flash",
     ].filter(Boolean))) as string[];
 
+    console.log("[customer-chat] model selection", {
+      hasImageInput,
+      chosenModel,
+      text_model: settings?.text_model,
+      image_model: settings?.image_model,
+      fallbackModels,
+    });
+
     const runAiCompletion = async () => {
       let last429: Response | null = null;
       for (const model of fallbackModels) {

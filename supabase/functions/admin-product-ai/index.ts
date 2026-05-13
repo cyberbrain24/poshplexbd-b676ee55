@@ -38,8 +38,6 @@ const READ_TOOLS = new Set([
   // Site / Analytics
   "get_site_overview", "get_sales_analytics", "get_top_products", "get_top_customers",
   "get_site_settings", "get_site_branding",
-  // Chatbot
-  "get_chatbot_settings", "list_chatbot_faqs",
   // SMS
   "get_sms_settings", "list_sms_templates", "list_sms_campaigns", "list_sms_messages",
   // Universal DB introspection (auto-discovers any new module)
@@ -59,8 +57,6 @@ const WRITE_TOOLS = new Set([
   // Orders
   "update_order", "delete_order", "set_order_status", "set_payment_status",
   "update_order_item", "add_order_payment",
-  // Chatbot training
-  "update_chatbot_settings", "create_chatbot_faq", "update_chatbot_faq", "delete_chatbot_faq",
   // SMS Marketing
   "update_sms_settings", "update_sms_template", "create_sms_template", "delete_sms_template",
   "send_sms", "send_bulk_sms",
@@ -189,26 +185,7 @@ const tools = [
     payment_reference: { type: "string" },
   }, required: ["order_id", "account_id", "amount"] } } },
   { type: "function", function: { name: "delete_order", description: "Delete an order by id (irreversible).", parameters: { type: "object", properties: { order_id: { type: "string" } }, required: ["order_id"] } } },
-  // READ — Chatbot
-  { type: "function", function: { name: "get_chatbot_settings", description: "Get the current Customer Chatbot configuration: welcome_message, system_prompt, blocked_topics, model, enabled.", parameters: { type: "object", properties: {} } } },
-  { type: "function", function: { name: "list_chatbot_faqs", description: "List Customer Chatbot FAQ knowledge entries.", parameters: { type: "object", properties: { is_active: { type: "boolean" }, limit: { type: "number" } } } } },
-  // WRITE — Chatbot training (auto-saves to Customer Chatbot module)
-  { type: "function", function: { name: "update_chatbot_settings", description: "Update Customer Chatbot settings. Pass any subset of: welcome_message, system_prompt (bot personality + rules), blocked_topics (array of strings), model, enabled.", parameters: { type: "object", properties: {
-    welcome_message: { type: "string" },
-    system_prompt: { type: "string" },
-    blocked_topics: { type: "array", items: { type: "string" }, description: "List of topics the bot must refuse." },
-    model: { type: "string" },
-    enabled: { type: "boolean" },
-  } } } },
-  { type: "function", function: { name: "create_chatbot_faq", description: "Add a new FAQ / knowledge entry to the Customer Chatbot.", parameters: { type: "object", properties: {
-    question: { type: "string" }, answer: { type: "string" },
-    image_url: { type: "string" }, sort_order: { type: "number" }, is_active: { type: "boolean" },
-  }, required: ["question", "answer"] } } },
-  { type: "function", function: { name: "update_chatbot_faq", description: "Update a Customer Chatbot FAQ by id.", parameters: { type: "object", properties: {
-    faq_id: { type: "string" }, question: { type: "string" }, answer: { type: "string" },
-    image_url: { type: "string" }, sort_order: { type: "number" }, is_active: { type: "boolean" },
-  }, required: ["faq_id"] } } },
-  { type: "function", function: { name: "delete_chatbot_faq", description: "Delete a Customer Chatbot FAQ by id.", parameters: { type: "object", properties: { faq_id: { type: "string" } }, required: ["faq_id"] } } },
+
 
   // ====== SMS Marketing ======
   { type: "function", function: { name: "get_sms_settings", description: "Get the SMS provider settings: endpoint URL, sender ID, enabled flag, request template.", parameters: { type: "object", properties: {} } } },
@@ -247,11 +224,11 @@ const tools = [
 
 const SYSTEM_PROMPT = `You are POSHPLEX's admin AI assistant. The brand is a Bangladesh streetwear store ("BE POSH WITH POSHPLEX"). Currency is Taka (৳), locale en-BD.
 
-You have READ access to EVERY module of the system: products, orders, customers, reviews, inventory, financial accounts, transactions, payments, promo codes, payment methods, shipping locations (Districts/Thanas), site settings, analytics, chatbot, and SMS. Use the appropriate tool to look up real data — never guess numbers.
+You have READ access to EVERY module of the system: products, orders, customers, reviews, inventory, financial accounts, transactions, payments, promo codes, payment methods, shipping locations (Districts/Thanas), site settings, analytics, and SMS. Use the appropriate tool to look up real data — never guess numbers.
 
 UNIVERSAL DATABASE ACCESS: For ANY module or table that does not have a dedicated tool (including newly created modules added later), use db_list_tables to discover the full schema, then db_query_table / db_count_table to read its data. Always prefer the dedicated tool when one exists. When the admin asks "what tables / modules do you have access to?", call db_list_tables.
 
-You have WRITE access to: PRODUCTS — full control: create / update / delete products; manage VARIANTS (create / update / delete / bulk price update — this is how you change variation selling_price or purchase_price); manage IMAGES (add / update is_main, sort_order, alt_text, color_id / delete); manage multi-CATEGORY links (add_product_category / remove_product_category); toggle active/featured; update YouTube, size guide, care instruction. CUSTOMERS (create/update/delete), ORDERS (update fields, change status, change payment status, edit/delete items, record payments, delete order), and the CUSTOMER CHATBOT module (welcome message, system prompt / personality + rules, blocked topics, enabled/model, plus FAQ knowledge entries — create / update / delete). For other modules (finance accounts, inventory entries, promo codes, etc.) explain what you see and tell the admin to use that admin page.
+You have WRITE access to: PRODUCTS — full control: create / update / delete products; manage VARIANTS (create / update / delete / bulk price update — this is how you change variation selling_price or purchase_price); manage IMAGES (add / update is_main, sort_order, alt_text, color_id / delete); manage multi-CATEGORY links (add_product_category / remove_product_category); toggle active/featured; update YouTube, size guide, care instruction. CUSTOMERS (create/update/delete), ORDERS (update fields, change status, change payment status, edit/delete items, record payments, delete order). For other modules (finance accounts, inventory entries, promo codes, etc.) explain what you see and tell the admin to use that admin page.
 
 VARIANT PRICING: When admin asks to change a single variant price, use update_product_variant. For ALL variants of ONE product, use bulk_update_variant_prices (also aligns base_price). For ALL products in a CATEGORY (e.g. "change every product in Upper Wear to 799"), ALWAYS use bulk_update_category_prices in a SINGLE call — never loop product-by-product. It updates both products.base_price AND every variant's selling_price, covering simple products too. Use list_products with category_name only if you need to preview the affected items first.
 

@@ -144,7 +144,13 @@ async function callProvider(provider: Provider, state: ProviderState, body: any)
     });
   }
   if (provider === "openrouter") {
-    const payload = { ...body, model: mapModelForOpenRouter(body.model) };
+    // OpenRouter requires an explicit max_tokens; without it, the upstream model
+    // reserves its full context window and small-credit keys get a 402.
+    const payload = {
+      ...body,
+      model: mapModelForOpenRouter(body.model),
+      max_tokens: typeof body.max_tokens === "number" ? Math.min(body.max_tokens, 4096) : 2048,
+    };
     return fetch(OPENROUTER_URL, {
       method: "POST",
       headers: {

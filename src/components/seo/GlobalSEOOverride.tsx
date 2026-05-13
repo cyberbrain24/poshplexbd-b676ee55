@@ -1,6 +1,7 @@
 import { Helmet } from "react-helmet-async";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { seoService, type SeoPage } from "@/services/seo.service";
 
 /**
@@ -12,15 +13,31 @@ import { seoService, type SeoPage } from "@/services/seo.service";
  * for matching meta names — admin overrides win).
  *
  * If no override exists for the path, this renders nothing.
+ *
+ * Perf: the lookup is deferred until after first paint (idle / 1.5s fallback)
+ * so the homepage LCP isn't blocked by a Supabase round-trip on Slow-4G.
  */
 export default function GlobalSEOOverride() {
   const location = useLocation();
   const path = location.pathname;
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    setReady(false);
+    const w = window as any;
+    if (typeof w.requestIdleCallback === "function") {
+      const id = w.requestIdleCallback(() => setReady(true), { timeout: 1500 });
+      return () => w.cancelIdleCallback?.(id);
+    }
+    const t = setTimeout(() => setReady(true), 1500);
+    return () => clearTimeout(t);
+  }, [path]);
+
   const { data: override } = useQuery<SeoPage | null>({
     queryKey: ["seo_page", path],
     queryFn: () => seoService.getByPath(path),
     staleTime: 5 * 60 * 1000,
-    enabled: !!path,
+    enabled: ready && !!path,
   });
 
   if (!override) return null;

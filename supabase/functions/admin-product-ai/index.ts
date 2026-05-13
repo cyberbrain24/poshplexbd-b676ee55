@@ -222,6 +222,26 @@ const tools = [
   { type: "function", function: { name: "db_count_table", description: "Count rows in any public table with optional equality filters.", parameters: { type: "object", properties: {
     table: { type: "string" }, filters: { type: "object" },
   }, required: ["table"] } } },
+  // ====== SEO ======
+  { type: "function", function: { name: "list_seo_pages", description: "List existing per-route SEO overrides from seo_pages table.", parameters: { type: "object", properties: { search: { type: "string", description: "Filter by route_path substring" }, limit: { type: "number" } } } } },
+  { type: "function", function: { name: "get_seo_page", description: "Get the SEO override row for a specific route_path (e.g. '/', '/category/upper-wear', '/product/blood-throne-abc123', '/blog/post-slug').", parameters: { type: "object", properties: { route_path: { type: "string" } }, required: ["route_path"] } } },
+  { type: "function", function: { name: "list_indexable_routes", description: "Discover ALL indexable routes on the site: static pages + every product (slug-based path), every category, every published blog post. Returns route_path and an entity hint.", parameters: { type: "object", properties: { include_kinds: { type: "array", items: { type: "string" }, description: "Subset of [static,product,category,blog_post]; defaults to all." } } } } },
+  { type: "function", function: { name: "ai_generate_seo_meta", description: "Use AI to draft meta_title (<60c), meta_description (<160c), focus_keyword and og_title/og_description for a given route. Provide context (page subject) — does NOT save; returns suggestion to confirm with set_seo_page.", parameters: { type: "object", properties: { route_path: { type: "string" }, subject: { type: "string", description: "Short description of the page content/intent" }, focus_keyword: { type: "string" } }, required: ["route_path", "subject"] } } },
+  { type: "function", function: { name: "set_seo_page", description: "Create or update SEO override for a route. Pass route_path plus any of: meta_title, meta_description, canonical_url, og_title, og_description, og_image_url, og_type, twitter_card, focus_keyword, keywords (string[]), robots_index, robots_follow, json_ld (object), sitemap_priority (0-1), sitemap_changefreq, sitemap_include, entity_type, entity_id, notes.", parameters: { type: "object", properties: {
+    route_path: { type: "string" }, meta_title: { type: "string" }, meta_description: { type: "string" },
+    canonical_url: { type: "string" }, og_title: { type: "string" }, og_description: { type: "string" },
+    og_image_url: { type: "string" }, og_type: { type: "string" }, twitter_card: { type: "string" },
+    focus_keyword: { type: "string" }, keywords: { type: "array", items: { type: "string" } },
+    robots_index: { type: "boolean" }, robots_follow: { type: "boolean" }, json_ld: { type: "object" },
+    sitemap_priority: { type: "number" }, sitemap_changefreq: { type: "string" }, sitemap_include: { type: "boolean" },
+    entity_type: { type: "string" }, entity_id: { type: "string" }, notes: { type: "string" },
+  }, required: ["route_path"] } } },
+  { type: "function", function: { name: "delete_seo_page", description: "Remove a per-route SEO override (route falls back to defaults).", parameters: { type: "object", properties: { route_path: { type: "string" } }, required: ["route_path"] } } },
+  { type: "function", function: { name: "bulk_generate_seo", description: "Generate AI-written meta_title + meta_description for many routes at once and upsert them. Scope can be 'products' (all active products missing SEO), 'categories' (all categories missing SEO), 'blog_posts' (all published posts missing SEO), or 'all'. Limit caps how many to process per call (default 25, max 100).", parameters: { type: "object", properties: {
+    scope: { type: "string", description: "products|categories|blog_posts|all" },
+    only_missing: { type: "boolean", description: "If true (default), skip routes that already have a seo_pages row." },
+    limit: { type: "number" },
+  }, required: ["scope"] } } },
 ];
 
 const SYSTEM_PROMPT = `You are POSHPLEX's admin AI assistant. The brand is a Bangladesh streetwear store ("BE POSH WITH POSHPLEX"). Currency is Taka (৳), locale en-BD.

@@ -42,8 +42,10 @@ const BlogPost = () => {
   }
 
   const url = `${SITE}/blog/${post.slug}`;
-  const metaTitle = (post.meta_title || post.title).slice(0, 70);
-  const metaDesc = (post.meta_description || post.excerpt || post.title).slice(0, 180);
+  const rawTitle = post.meta_title || post.title;
+  const metaTitle = rawTitle.length > 60 ? rawTitle.slice(0, 57).trimEnd() + "…" : rawTitle;
+  const rawDesc = post.meta_description || post.excerpt || post.title;
+  const metaDesc = rawDesc.length > 160 ? rawDesc.slice(0, 157).trimEnd() + "…" : rawDesc;
   const ogImage = post.og_image_url || post.cover_image_url || undefined;
   const canonical = post.canonical_url || url;
 

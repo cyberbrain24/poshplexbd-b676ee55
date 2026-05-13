@@ -22,7 +22,7 @@ const Blog = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Helmet>
-        <title>Blog — POSHPLEX | Streetwear stories, style guides & news</title>
+        <title>POSHPLEX Journal — Streetwear Stories & Drops</title>
         <meta name="description" content="Read the latest from POSHPLEX: streetwear style guides, drop announcements, behind-the-brand stories, and Bangladesh fashion culture." />
         <link rel="canonical" href="https://poshplexbd.com/blog" />
         <meta property="og:title" content="POSHPLEX Blog" />

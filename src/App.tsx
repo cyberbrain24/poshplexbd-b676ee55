@@ -14,7 +14,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import MobileFooterNav from "./components/navigation/MobileFooterNav";
 import FacebookPixelTracker from "./components/tracking/FacebookPixelTracker";
 import FloatingMusicPlayer from "./components/music/FloatingMusicPlayer";
-import CustomerChatWidget from "./components/chat/CustomerChatWidget";
+
 
 // Storefront pages - eagerly loaded (critical path)
 import Index from "./pages/Index";
@@ -175,7 +175,6 @@ const App = () => (
                 </Routes>
                 <MobileFooterNav />
                 <FloatingMusicPlayer />
-                <CustomerChatWidget />
               </BrowserRouter>
             </TooltipProvider>
             </MusicPlayerProvider>

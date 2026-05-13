@@ -5,8 +5,8 @@ import {
   Package, Palette, Ruler, Shirt, BookOpen, Sparkles, FolderTree, Building2,
   LayoutDashboard, ArrowLeft, ChevronDown, Wallet, CreditCard, TrendingUp,
   TrendingDown, Users, MapPin, Map, Crown, ShoppingCart, ExternalLink,
-  LucideIcon, RefreshCw, MessageSquare, Image, Tag, Settings, Send,
-  Upload, Menu, X, Warehouse, Music,
+  LucideIcon, RefreshCw, Image, Tag, Settings, Send,
+  Upload, Menu, X, Music,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -193,14 +193,12 @@ const AdminSidebar = () => {
       <nav className="flex-1 p-3 md:p-4 space-y-0.5 overflow-y-auto">
         {renderNavLink("/admin", LayoutDashboard, "Business Intelligence")}
         {renderNavLink("/admin/ai-assistant", Sparkles, "AI Assistant")}
-        {renderNavLink("/admin/chatbot", MessageSquare, "Customer Chatbot")}
         {renderNavLink("/admin/sms", Send, "SMS Marketing")}
         {renderCollapsible(Package, "Product Management", productManagementItems, openGroup === 'product', () => toggleGroup('product'), isProductMgmtActive)}
         {renderCollapsible(ShoppingCart, "Order Management", orderItems, openGroup === 'orders', () => toggleGroup('orders'), isOrdersActive)}
         
         {renderCollapsible(Users, "Customer Management", customerManagementItems, openGroup === 'customer', () => toggleGroup('customer'), isCustomerMgmtActive)}
         {renderCollapsible(Wallet, "Account Management", accountManagementItems, openGroup === 'account', () => toggleGroup('account'), isAccountMgmtActive)}
-        {renderNavLink("/admin/independent-inventory", Warehouse, "Independent Inventory")}
         {renderNavLink("/admin/media", Image, "Media")}
         {renderNavLink("/admin/music", Music, "Music Player")}
         {renderNavLink("/admin/site-settings", Settings, "Site Settings")}

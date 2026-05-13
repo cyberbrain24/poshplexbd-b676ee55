@@ -6,7 +6,7 @@ export default function AdminAIAssistant() {
       <div className="mb-4">
         <h1 className="text-2xl font-bold tracking-tight uppercase">Admin AI Assistant</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Manage products, orders, and customers — and train the Customer Chatbot (welcome message, system prompt, blocked topics, FAQs). Read-only questions run instantly; writes ask for your approval first and auto-save to the Customer Chatbot module.
+          Manage products, orders, and customers. Read-only questions run instantly; writes ask for your approval first.
         </p>
       </div>
       <AdminProductAI />

@@ -492,7 +492,7 @@ const AdminSiteSettings = () => {
         </div>
         <p className="text-xs text-muted-foreground mb-2">
           Configure one or more third-party AI providers (Gemini, OpenAI/ChatGPT, Anthropic/Claude).
-          Powers the Admin AI Assistant, customer chatbot, AI search suggestions, and product description generator.
+          Powers the Admin AI Assistant, AI search suggestions, and product description generator.
         </p>
         <p className="text-xs text-muted-foreground mb-6">
           Active provider:{" "}

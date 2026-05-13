@@ -28,7 +28,7 @@ const READ_TOOLS = new Set([
   // Reviews
   "list_reviews",
   // Inventory
-  "list_inventory_products", "list_low_stock_variants", "list_inventory_entries",
+  "list_low_stock_variants",
   // Finance
   "list_accounts", "list_transactions", "list_order_payments",
   // Marketing
@@ -38,8 +38,6 @@ const READ_TOOLS = new Set([
   // Site / Analytics
   "get_site_overview", "get_sales_analytics", "get_top_products", "get_top_customers",
   "get_site_settings", "get_site_branding",
-  // Chatbot
-  "get_chatbot_settings", "list_chatbot_faqs",
   // SMS
   "get_sms_settings", "list_sms_templates", "list_sms_campaigns", "list_sms_messages",
   // Universal DB introspection (auto-discovers any new module)
@@ -59,8 +57,6 @@ const WRITE_TOOLS = new Set([
   // Orders
   "update_order", "delete_order", "set_order_status", "set_payment_status",
   "update_order_item", "add_order_payment",
-  // Chatbot training
-  "update_chatbot_settings", "create_chatbot_faq", "update_chatbot_faq", "delete_chatbot_faq",
   // SMS Marketing
   "update_sms_settings", "update_sms_template", "create_sms_template", "delete_sms_template",
   "send_sms", "send_bulk_sms",
@@ -130,9 +126,7 @@ const tools = [
   { type: "function", function: { name: "get_customer", description: "Get customer details + order history by id, phone, or email.", parameters: { type: "object", properties: { identifier: { type: "string" } }, required: ["identifier"] } } },
   { type: "function", function: { name: "list_customer_types", description: "List membership/customer types.", parameters: { type: "object", properties: {} } } },
   { type: "function", function: { name: "list_reviews", description: "List reviews. Filter by approval status or product.", parameters: { type: "object", properties: { is_approved: { type: "boolean" }, product_id: { type: "string" }, limit: { type: "number" } } } } },
-  { type: "function", function: { name: "list_inventory_products", description: "List independent inventory products with stock.", parameters: { type: "object", properties: { search: { type: "string" }, limit: { type: "number" } } } } },
   { type: "function", function: { name: "list_low_stock_variants", description: "Catalog product variants below their low_stock_threshold.", parameters: { type: "object", properties: { limit: { type: "number" } } } } },
-  { type: "function", function: { name: "list_inventory_entries", description: "Recent inventory in/out entries.", parameters: { type: "object", properties: { type: { type: "string", description: "in|out" }, limit: { type: "number" } } } } },
   { type: "function", function: { name: "list_accounts", description: "List financial accounts with current balances.", parameters: { type: "object", properties: {} } } },
   { type: "function", function: { name: "list_transactions", description: "Recent finance transactions (income/expense/transfer).", parameters: { type: "object", properties: { type: { type: "string" }, account_id: { type: "string" }, limit: { type: "number" }, days: { type: "number" } } } } },
   { type: "function", function: { name: "list_order_payments", description: "Recent payments recorded against orders.", parameters: { type: "object", properties: { order_id: { type: "string" }, limit: { type: "number" } } } } },
@@ -189,26 +183,7 @@ const tools = [
     payment_reference: { type: "string" },
   }, required: ["order_id", "account_id", "amount"] } } },
   { type: "function", function: { name: "delete_order", description: "Delete an order by id (irreversible).", parameters: { type: "object", properties: { order_id: { type: "string" } }, required: ["order_id"] } } },
-  // READ — Chatbot
-  { type: "function", function: { name: "get_chatbot_settings", description: "Get the current Customer Chatbot configuration: welcome_message, system_prompt, blocked_topics, model, enabled.", parameters: { type: "object", properties: {} } } },
-  { type: "function", function: { name: "list_chatbot_faqs", description: "List Customer Chatbot FAQ knowledge entries.", parameters: { type: "object", properties: { is_active: { type: "boolean" }, limit: { type: "number" } } } } },
-  // WRITE — Chatbot training (auto-saves to Customer Chatbot module)
-  { type: "function", function: { name: "update_chatbot_settings", description: "Update Customer Chatbot settings. Pass any subset of: welcome_message, system_prompt (bot personality + rules), blocked_topics (array of strings), model, enabled.", parameters: { type: "object", properties: {
-    welcome_message: { type: "string" },
-    system_prompt: { type: "string" },
-    blocked_topics: { type: "array", items: { type: "string" }, description: "List of topics the bot must refuse." },
-    model: { type: "string" },
-    enabled: { type: "boolean" },
-  } } } },
-  { type: "function", function: { name: "create_chatbot_faq", description: "Add a new FAQ / knowledge entry to the Customer Chatbot.", parameters: { type: "object", properties: {
-    question: { type: "string" }, answer: { type: "string" },
-    image_url: { type: "string" }, sort_order: { type: "number" }, is_active: { type: "boolean" },
-  }, required: ["question", "answer"] } } },
-  { type: "function", function: { name: "update_chatbot_faq", description: "Update a Customer Chatbot FAQ by id.", parameters: { type: "object", properties: {
-    faq_id: { type: "string" }, question: { type: "string" }, answer: { type: "string" },
-    image_url: { type: "string" }, sort_order: { type: "number" }, is_active: { type: "boolean" },
-  }, required: ["faq_id"] } } },
-  { type: "function", function: { name: "delete_chatbot_faq", description: "Delete a Customer Chatbot FAQ by id.", parameters: { type: "object", properties: { faq_id: { type: "string" } }, required: ["faq_id"] } } },
+
 
   // ====== SMS Marketing ======
   { type: "function", function: { name: "get_sms_settings", description: "Get the SMS provider settings: endpoint URL, sender ID, enabled flag, request template.", parameters: { type: "object", properties: {} } } },
@@ -247,15 +222,14 @@ const tools = [
 
 const SYSTEM_PROMPT = `You are POSHPLEX's admin AI assistant. The brand is a Bangladesh streetwear store ("BE POSH WITH POSHPLEX"). Currency is Taka (৳), locale en-BD.
 
-You have READ access to EVERY module of the system: products, orders, customers, reviews, inventory, financial accounts, transactions, payments, promo codes, payment methods, shipping locations (Districts/Thanas), site settings, analytics, chatbot, and SMS. Use the appropriate tool to look up real data — never guess numbers.
+You have READ access to EVERY module of the system: products, orders, customers, reviews, inventory, financial accounts, transactions, payments, promo codes, payment methods, shipping locations (Districts/Thanas), site settings, analytics, and SMS. Use the appropriate tool to look up real data — never guess numbers.
 
 UNIVERSAL DATABASE ACCESS: For ANY module or table that does not have a dedicated tool (including newly created modules added later), use db_list_tables to discover the full schema, then db_query_table / db_count_table to read its data. Always prefer the dedicated tool when one exists. When the admin asks "what tables / modules do you have access to?", call db_list_tables.
 
-You have WRITE access to: PRODUCTS — full control: create / update / delete products; manage VARIANTS (create / update / delete / bulk price update — this is how you change variation selling_price or purchase_price); manage IMAGES (add / update is_main, sort_order, alt_text, color_id / delete); manage multi-CATEGORY links (add_product_category / remove_product_category); toggle active/featured; update YouTube, size guide, care instruction. CUSTOMERS (create/update/delete), ORDERS (update fields, change status, change payment status, edit/delete items, record payments, delete order), and the CUSTOMER CHATBOT module (welcome message, system prompt / personality + rules, blocked topics, enabled/model, plus FAQ knowledge entries — create / update / delete). For other modules (finance accounts, inventory entries, promo codes, etc.) explain what you see and tell the admin to use that admin page.
+You have WRITE access to: PRODUCTS — full control: create / update / delete products; manage VARIANTS (create / update / delete / bulk price update — this is how you change variation selling_price or purchase_price); manage IMAGES (add / update is_main, sort_order, alt_text, color_id / delete); manage multi-CATEGORY links (add_product_category / remove_product_category); toggle active/featured; update YouTube, size guide, care instruction. CUSTOMERS (create/update/delete), ORDERS (update fields, change status, change payment status, edit/delete items, record payments, delete order). For other modules (finance accounts, inventory entries, promo codes, etc.) explain what you see and tell the admin to use that admin page.
 
 VARIANT PRICING: When admin asks to change a single variant price, use update_product_variant. For ALL variants of ONE product, use bulk_update_variant_prices (also aligns base_price). For ALL products in a CATEGORY (e.g. "change every product in Upper Wear to 799"), ALWAYS use bulk_update_category_prices in a SINGLE call — never loop product-by-product. It updates both products.base_price AND every variant's selling_price, covering simple products too. Use list_products with category_name only if you need to preview the affected items first.
 
-CHATBOT TRAINING: When the admin teaches messaging behavior — tone, rules, refusals, welcome wording, blocked topics, or new Q&A knowledge — treat it as training the Customer Chatbot. Use get_chatbot_settings / list_chatbot_faqs to read current config, then call update_chatbot_settings to persist welcome_message / system_prompt / blocked_topics, or create_chatbot_faq / update_chatbot_faq / delete_chatbot_faq for knowledge entries. When merging new rules into system_prompt, preserve existing rules unless the admin asks to remove them. Blocked_topics must be a clean array of short topic strings.
 
 When the admin asks to change a customer or order, first look it up by phone/email/order_number to get the id, then call the right write tool. Always confirm the destructive action briefly after it runs.
 
@@ -272,7 +246,7 @@ Modules summary:
 - Products: catalog with variants, images, categories (junction), brands, colors, sizes, materials, size guides, care instructions.
 - Orders: PO-XXXXX numbers, status (pending/confirmed/shipped/delivered/...), payment_status (unpaid/partial/paid/refunded), Steadfast courier integration.
 - Customers: linked to auth via customer_accounts; have phone, email, division/thana, customer_type (membership).
-- Inventory: independent inventory_products + entries (in/out); also product_variants stock_quantity for the catalog.
+- Inventory: product_variants stock_quantity for the catalog.
 - Finance: accounts (balances), transactions (income/expense/transfer), order_payments (linked to orders).
 - Marketing: promo_codes, payment_methods (COD, Mobile Banking).
 - Locations: divisions (districts) -> thanas (delivery zones).`;
@@ -558,25 +532,11 @@ async function executeTool(name: string, args: any, sb: any) {
         if (error) throw error;
         return { reviews: data };
       }
-      case "list_inventory_products": {
-        let q = sb.from("inventory_products").select("id, name, sku, current_stock, unit, purchase_price, is_active").order("name").limit(args.limit || 50);
-        if (args.search) q = q.or(`name.ilike.%${args.search}%,sku.ilike.%${args.search}%`);
-        const { data, error } = await q;
-        if (error) throw error;
-        return { inventory_products: data };
-      }
       case "list_low_stock_variants": {
         const { data, error } = await sb.from("product_variants").select("id, product_id, sku, stock_quantity, low_stock_threshold, selling_price").eq("is_active", true).limit(args.limit || 50);
         if (error) throw error;
         const low = (data || []).filter((v: any) => v.stock_quantity <= (v.low_stock_threshold ?? 5));
         return { low_stock_variants: low };
-      }
-      case "list_inventory_entries": {
-        let q = sb.from("inventory_entries").select("id, type, date, notes, created_at, account_id").order("created_at", { ascending: false }).limit(args.limit || 25);
-        if (args.type) q = q.eq("type", args.type);
-        const { data, error } = await q;
-        if (error) throw error;
-        return { entries: data };
       }
       case "list_accounts": {
         const { data, error } = await sb.from("accounts").select("id, name, current_balance, initial_balance, is_active, description").order("name");
@@ -754,61 +714,6 @@ async function executeTool(name: string, args: any, sb: any) {
         await sb.from("order_status_history").delete().eq("order_id", args.order_id);
         await sb.from("order_payments").delete().eq("order_id", args.order_id);
         const { error } = await sb.from("orders").delete().eq("id", args.order_id);
-        if (error) throw error;
-        return { success: true };
-      }
-      // ====== Chatbot ======
-      case "get_chatbot_settings": {
-        const { data, error } = await sb.from("chatbot_settings").select("*").limit(1).maybeSingle();
-        if (error) throw error;
-        return { settings: data };
-      }
-      case "list_chatbot_faqs": {
-        let q = sb.from("chatbot_faqs").select("*").order("sort_order", { ascending: true }).limit(args.limit || 100);
-        if (typeof args.is_active === "boolean") q = q.eq("is_active", args.is_active);
-        const { data, error } = await q;
-        if (error) throw error;
-        return { faqs: data };
-      }
-      case "update_chatbot_settings": {
-        const patch: any = {};
-        if (args.welcome_message !== undefined) patch.welcome_message = args.welcome_message;
-        if (args.system_prompt !== undefined) patch.system_prompt = args.system_prompt;
-        if (args.blocked_topics !== undefined) patch.blocked_topics = Array.isArray(args.blocked_topics) ? args.blocked_topics : [];
-        if (args.model !== undefined) patch.model = args.model;
-        if (args.enabled !== undefined) patch.enabled = args.enabled;
-        patch.updated_at = new Date().toISOString();
-        const { data: existing } = await sb.from("chatbot_settings").select("id").limit(1).maybeSingle();
-        let result;
-        if (existing?.id) {
-          const { data, error } = await sb.from("chatbot_settings").update(patch).eq("id", existing.id).select().single();
-          if (error) throw error;
-          result = data;
-        } else {
-          const { data, error } = await sb.from("chatbot_settings").insert(patch).select().single();
-          if (error) throw error;
-          result = data;
-        }
-        return { success: true, settings: result };
-      }
-      case "create_chatbot_faq": {
-        const { data, error } = await sb.from("chatbot_faqs").insert({
-          question: args.question, answer: args.answer,
-          image_url: args.image_url || null,
-          sort_order: args.sort_order ?? 0,
-          is_active: args.is_active ?? true,
-        }).select().single();
-        if (error) throw error;
-        return { success: true, faq: data };
-      }
-      case "update_chatbot_faq": {
-        const { faq_id, ...patch } = args;
-        const { data, error } = await sb.from("chatbot_faqs").update(patch).eq("id", faq_id).select().single();
-        if (error) throw error;
-        return { success: true, faq: data };
-      }
-      case "delete_chatbot_faq": {
-        const { error } = await sb.from("chatbot_faqs").delete().eq("id", args.faq_id);
         if (error) throw error;
         return { success: true };
       }

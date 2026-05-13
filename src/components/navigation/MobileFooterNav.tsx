@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, LayoutGrid, Sparkles, ShoppingBag, User } from "lucide-react";
+import { Home, LayoutGrid, ShoppingBag, User } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { cn } from "@/lib/utils";
 
@@ -15,8 +15,6 @@ const MobileFooterNav = () => {
     return null;
   }
 
-  const openChat = () => window.dispatchEvent(new Event("open-customer-chat"));
-
   const navItems: Array<{
     icon: typeof Home;
     label: string;
@@ -27,7 +25,6 @@ const MobileFooterNav = () => {
   }> = [
     { icon: Home, label: "Home", path: "/" },
     { icon: LayoutGrid, label: "Category", path: "/categories" },
-    { icon: Sparkles, label: "AI Chat", onClick: openChat, highlight: true },
     {
       icon: ShoppingBag,
       label: "Cart",

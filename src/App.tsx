@@ -14,7 +14,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import MobileFooterNav from "./components/navigation/MobileFooterNav";
 import FacebookPixelTracker from "./components/tracking/FacebookPixelTracker";
 import FloatingMusicPlayer from "./components/music/FloatingMusicPlayer";
-import CustomerChatWidget from "./components/chat/CustomerChatWidget";
+
 
 // Storefront pages - eagerly loaded (critical path)
 import Index from "./pages/Index";
@@ -65,9 +65,7 @@ const AdminMedia = lazy(() => import("./pages/admin/AdminMedia"));
 const AdminPromoCodes = lazy(() => import("./pages/admin/AdminPromoCodes"));
 const AdminSiteSettings = lazy(() => import("./pages/admin/AdminSiteSettings"));
 const AdminBulkUpload = lazy(() => import("./pages/admin/AdminBulkUpload"));
-const AdminIndependentInventory = lazy(() => import("./pages/admin/AdminIndependentInventory"));
 const AdminMusic = lazy(() => import("./pages/admin/AdminMusic"));
-const AdminChatbot = lazy(() => import("./pages/admin/AdminChatbot"));
 const AdminSMS = lazy(() => import("./pages/admin/AdminSMS"));
 
 const queryClient = new QueryClient({
@@ -164,9 +162,7 @@ const App = () => (
                     <Route path="payment-methods" element={<AdminPaymentMethods />} />
                     <Route path="promo-codes" element={<AdminPromoCodes />} />
                     <Route path="bulk-upload" element={<AdminBulkUpload />} />
-                    <Route path="independent-inventory" element={<AdminIndependentInventory />} />
                     <Route path="music" element={<AdminMusic />} />
-                    <Route path="chatbot" element={<AdminChatbot />} />
                     <Route path="sms" element={<AdminSMS />} />
                     <Route path="site-settings" element={<AdminSiteSettings />} />
                   </Route>
@@ -175,7 +171,6 @@ const App = () => (
                 </Routes>
                 <MobileFooterNav />
                 <FloatingMusicPlayer />
-                <CustomerChatWidget />
               </BrowserRouter>
             </TooltipProvider>
             </MusicPlayerProvider>

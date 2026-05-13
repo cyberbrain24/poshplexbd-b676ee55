@@ -40,6 +40,8 @@ const READ_TOOLS = new Set([
   "get_site_settings", "get_site_branding",
   // SMS
   "get_sms_settings", "list_sms_templates", "list_sms_campaigns", "list_sms_messages",
+  // SEO
+  "list_seo_pages", "get_seo_page", "list_indexable_routes", "ai_generate_seo_meta",
   // Universal DB introspection (auto-discovers any new module)
   "db_list_tables", "db_query_table", "db_count_table",
 ]);
@@ -60,6 +62,8 @@ const WRITE_TOOLS = new Set([
   // SMS Marketing
   "update_sms_settings", "update_sms_template", "create_sms_template", "delete_sms_template",
   "send_sms", "send_bulk_sms",
+  // SEO
+  "set_seo_page", "delete_seo_page", "bulk_generate_seo",
 ]);
 
 const tools = [

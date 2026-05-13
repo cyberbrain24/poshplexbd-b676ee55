@@ -78,22 +78,26 @@ Deno.serve(async (req) => {
       (settings?.anthropic_api_key as string) || null,
       settings?.anthropic_enabled !== false,
     );
+    const openrouter = buildStatus(
+      "OPENROUTER_API_KEY",
+      (settings?.openrouter_api_key as string) || null,
+      settings?.openrouter_enabled !== false,
+    );
 
     let activeProvider = "none";
     if (gemini.enabled && gemini.configured) activeProvider = "gemini";
     else if (openai.enabled && openai.configured) activeProvider = "openai";
     else if (anthropic.enabled && anthropic.configured) activeProvider = "anthropic";
+    else if (openrouter.enabled && openrouter.configured) activeProvider = "openrouter";
 
     return new Response(
       JSON.stringify({
-        // Backward-compatible flat fields (Gemini)
         gemini_configured: gemini.configured,
         gemini_enabled: gemini.enabled,
         gemini_masked: gemini.masked,
         gemini_source: gemini.source,
         active_provider: activeProvider,
-        // New per-provider object
-        providers: { gemini, openai, anthropic },
+        providers: { gemini, openai, anthropic, openrouter },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );

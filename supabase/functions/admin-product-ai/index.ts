@@ -240,6 +240,8 @@ Rules:
 - Be terse. Use markdown lists/tables when helpful.
 - For prices in DB, never include the ৳ symbol.
 - When creating products, default product_type to "simple" unless variants are mentioned.
+- NEVER invent UUIDs. Before calling create_product_variant / update_product (with brand_id, category_id, size_guide_id, care_instruction_id) you MUST first call the matching list_* tool (list_colors, list_sizes, list_materials, list_brands, list_categories, list_size_guides, list_care_instructions) and use the real id from the response. The sizes tool returns rows with a 'label' field (e.g. M, L, XL) — match by label, not by name.
+- When creating multiple variants for one product (e.g. one color × several sizes), call create_product_variant once per combination and WAIT for each tool result. Do not summarize success until every call returned success:true. If any call errors, report the failure and stop — do not pretend it succeeded.
 - After making any change, briefly confirm what changed.
 
 Modules summary:

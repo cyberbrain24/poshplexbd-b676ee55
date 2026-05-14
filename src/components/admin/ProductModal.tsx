@@ -351,9 +351,9 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
       if (uploadedCount > 0) {
         toast.success(`${uploadedCount} image${uploadedCount > 1 ? "s" : ""} uploaded`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Image upload error:", error);
-      toast.error("Failed to upload images");
+      toast.error(`Failed to upload images: ${error?.message || "Unknown error"}`);
     } finally {
       setIsUploading(false);
     }

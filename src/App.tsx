@@ -165,6 +165,7 @@ const App = () => (
                     <Route path="bulk-upload" element={<AdminBulkUpload />} />
                     <Route path="music" element={<AdminMusic />} />
                     <Route path="sms" element={<AdminSMS />} />
+                    <Route path="notes" element={<AdminNotes />} />
                     <Route path="site-settings" element={<AdminSiteSettings />} />
                   </Route>
                   

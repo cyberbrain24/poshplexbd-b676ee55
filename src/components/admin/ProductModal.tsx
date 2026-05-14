@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import VariantBuilder from "@/components/admin/VariantBuilder";
 import ProductImagePickerModal from "@/components/admin/ProductImagePickerModal";
 import { useProductCategoryIds, useSyncProductCategories } from "@/hooks/useProductCategories";
+import { compressProductImage } from "@/lib/imageCompress";
 
 interface ProductModalProps {
   isOpen: boolean;

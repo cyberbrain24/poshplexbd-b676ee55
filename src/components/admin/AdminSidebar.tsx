@@ -199,6 +199,7 @@ const AdminSidebar = () => {
         
         {renderCollapsible(Users, "Customer Management", customerManagementItems, openGroup === 'customer', () => toggleGroup('customer'), isCustomerMgmtActive)}
         {renderCollapsible(Wallet, "Account Management", accountManagementItems, openGroup === 'account', () => toggleGroup('account'), isAccountMgmtActive)}
+        {renderNavLink("/admin/notes", StickyNote, "Notes")}
         {renderNavLink("/admin/media", Image, "Media")}
         {renderNavLink("/admin/music", Music, "Music Player")}
         {renderNavLink("/admin/site-settings", Settings, "Site Settings")}

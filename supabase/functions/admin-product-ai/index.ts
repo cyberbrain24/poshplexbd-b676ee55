@@ -302,7 +302,7 @@ async function executeTool(name: string, args: any, sb: any) {
       case "list_categories": return { categories: (await sb.from("categories").select("id, name, parent_id").order("name")).data };
       case "list_brands": return { brands: (await sb.from("brands").select("id, name").order("name")).data };
       case "list_colors": return { colors: (await sb.from("colors").select("id, name, hex_code")).data };
-      case "list_sizes": return { sizes: (await sb.from("sizes").select("id, name, sort_order").order("sort_order")).data };
+      case "list_sizes": return { sizes: (await sb.from("sizes").select("id, label, sort_order").order("sort_order")).data };
       case "list_materials": return { materials: (await sb.from("materials").select("id, name, gsm")).data };
       case "list_size_guides": return { size_guides: (await sb.from("size_guides").select("id, name")).data };
       case "list_care_instructions": return { care_instructions: (await sb.from("care_instructions").select("id, name")).data };

@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import VariantBuilder from "@/components/admin/VariantBuilder";
 import ProductImagePickerModal from "@/components/admin/ProductImagePickerModal";
 import { useProductCategoryIds, useSyncProductCategories } from "@/hooks/useProductCategories";
+import { compressProductImage } from "@/lib/imageCompress";
 
 interface ProductModalProps {
   isOpen: boolean;
@@ -271,23 +272,28 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
 
     try {
       if (product) {
-        // Existing product: upload to storage in parallel, then insert DB rows for new images only
+        // Existing product: compress, then upload sequentially (more reliable than parallel for storage 520s)
         const existingUrls = new Set(images.map(i => i.image_url));
         const baseSort = images.length;
 
-        const uploadResults = await Promise.allSettled(
-          validFiles.map((file) => uploadProductImage(file, product.id))
+        // Compress in parallel (CPU-bound, safe)
+        const compressed = await Promise.all(
+          validFiles.map(async (f) => {
+            try { return await compressProductImage(f); } catch { return f; }
+          })
         );
 
         const newRows: ProductImage[] = [];
-        for (let i = 0; i < uploadResults.length; i++) {
-          const r = uploadResults[i];
-          if (r.status === "rejected") {
-            console.error("Upload failed:", r.reason);
-            toast.error(`Upload failed: ${r.reason?.message || "Unknown error"}`);
+        for (let i = 0; i < compressed.length; i++) {
+          const file = compressed[i];
+          let imageUrl: string;
+          try {
+            imageUrl = await uploadProductImage(file, product.id);
+          } catch (err: any) {
+            console.error("Upload failed:", err);
+            toast.error(`"${validFiles[i].name}" upload failed: ${err?.message || "Unknown error"}`);
             continue;
           }
-          const imageUrl = r.value;
           if (existingUrls.has(imageUrl)) continue;
           existingUrls.add(imageUrl);
 

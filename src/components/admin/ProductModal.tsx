@@ -271,47 +271,54 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
 
     try {
       if (product) {
-        // Existing product: upload sequentially, prepend new images
+        // Existing product: upload to storage in parallel, then insert DB rows for new images only
         const existingUrls = new Set(images.map(i => i.image_url));
-        const newUploaded: ProductImage[] = [];
+        const baseSort = images.length;
 
-        for (let i = 0; i < validFiles.length; i++) {
-          const file = validFiles[i];
-          if (i > 0) await new Promise(r => setTimeout(r, 200));
+        const uploadResults = await Promise.allSettled(
+          validFiles.map((file) => uploadProductImage(file, product.id))
+        );
 
-          const imageUrl = await uploadProductImage(file, product.id);
+        const newRows: ProductImage[] = [];
+        for (let i = 0; i < uploadResults.length; i++) {
+          const r = uploadResults[i];
+          if (r.status === "rejected") {
+            console.error("Upload failed:", r.reason);
+            toast.error(`Upload failed: ${r.reason?.message || "Unknown error"}`);
+            continue;
+          }
+          const imageUrl = r.value;
           if (existingUrls.has(imageUrl)) continue;
           existingUrls.add(imageUrl);
-          newUploaded.push({
-            id: `temp-uploaded-${Date.now()}-${i}`,
-            product_id: product.id,
-            image_url: imageUrl,
-            alt_text: null,
-            sort_order: i,
-            is_main: false,
-            color_id: null,
-            created_at: new Date().toISOString(),
-          });
-          uploadedCount++;
+
+          try {
+            const inserted = await addImage.mutateAsync({
+              productId: product.id,
+              imageUrl,
+              sortOrder: baseSort + i,
+              isMain: false,
+            });
+            if (inserted) {
+              newRows.push({
+                id: inserted.id,
+                product_id: product.id,
+                image_url: imageUrl,
+                alt_text: null,
+                sort_order: baseSort + i,
+                is_main: false,
+                color_id: null,
+                created_at: new Date().toISOString(),
+              });
+              uploadedCount++;
+            }
+          } catch (err: any) {
+            console.error("DB insert failed:", err);
+            toast.error(`Save failed: ${err?.message || "Unknown error"}`);
+          }
         }
 
-        // Prepend new uploads, re-index sort_order, then persist
-        if (newUploaded.length > 0) {
-          const combined = [...newUploaded, ...images].map((img, idx) => ({ ...img, sort_order: idx }));
-          setImages(combined);
-          // Persist to DB
-          for (const img of combined) {
-            if (img.id.startsWith("temp-uploaded-")) {
-              await addImage.mutateAsync({
-                productId: product.id,
-                imageUrl: img.image_url,
-                sortOrder: img.sort_order,
-                isMain: img.is_main,
-              });
-            } else {
-              await updateImage.mutateAsync({ id: img.id, sortOrder: img.sort_order });
-            }
-          }
+        if (newRows.length > 0) {
+          setImages((prev) => [...newRows, ...prev].map((img, idx) => ({ ...img, sort_order: idx })));
         }
       } else {
         // New product: store as blobs locally; prepend new images so latest uploads appear first
@@ -344,9 +351,9 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
       if (uploadedCount > 0) {
         toast.success(`${uploadedCount} image${uploadedCount > 1 ? "s" : ""} uploaded`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Image upload error:", error);
-      toast.error("Failed to upload images");
+      toast.error(`Failed to upload images: ${error?.message || "Unknown error"}`);
     } finally {
       setIsUploading(false);
     }

@@ -187,12 +187,6 @@ export async function uploadProductImage(
   }
 
   throw lastError || new Error("Upload failed");
-
-  const { data: urlData } = supabase.storage
-    .from(STORAGE.PRODUCT_IMAGES_BUCKET)
-    .getPublicUrl(fileName);
-
-  return urlData.publicUrl;
 }
 
 /**

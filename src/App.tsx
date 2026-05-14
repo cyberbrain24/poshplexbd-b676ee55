@@ -67,6 +67,7 @@ const AdminSiteSettings = lazy(() => import("./pages/admin/AdminSiteSettings"));
 const AdminBulkUpload = lazy(() => import("./pages/admin/AdminBulkUpload"));
 const AdminMusic = lazy(() => import("./pages/admin/AdminMusic"));
 const AdminSMS = lazy(() => import("./pages/admin/AdminSMS"));
+const AdminNotes = lazy(() => import("./pages/admin/AdminNotes"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -164,6 +165,7 @@ const App = () => (
                     <Route path="bulk-upload" element={<AdminBulkUpload />} />
                     <Route path="music" element={<AdminMusic />} />
                     <Route path="sms" element={<AdminSMS />} />
+                    <Route path="notes" element={<AdminNotes />} />
                     <Route path="site-settings" element={<AdminSiteSettings />} />
                   </Route>
                   

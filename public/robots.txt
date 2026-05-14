@@ -27,4 +27,4 @@ Disallow: /auth
 Disallow: /order-tracking
 
 # Sitemap location
-Sitemap: https://poshplexbd.com/sitemap.xml
+Sitemap: https://zspmhkzosumopyfmlwvl.supabase.co/functions/v1/sitemap

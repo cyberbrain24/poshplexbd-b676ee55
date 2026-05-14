@@ -1,4 +1,3 @@
-import { Helmet } from "react-helmet-async";
 import PoshplexHeader from "../../components/header/PoshplexHeader";
 import PoshplexFooter from "../../components/footer/PoshplexFooter";
 import AboutSidebar from "../../components/about/AboutSidebar";
@@ -6,15 +5,6 @@ import AboutSidebar from "../../components/about/AboutSidebar";
 const OurStory = () => {
   return (
     <div className="min-h-screen bg-background">
-      <Helmet>
-        <title>Our Story — POSHPLEX | The Hossan Brothers</title>
-        <meta name="description" content="The story of POSHPLEX: how brothers Imran and Sadman united in 2025 to build a premium Bangladeshi streetwear label rooted in family, craftsmanship, and global ambition." />
-        <link rel="canonical" href="https://poshplexbd.com/pages/our-story" />
-        <meta property="og:title" content="Our Story — POSHPLEX" />
-        <meta property="og:description" content="How two brothers built POSHPLEX into a premium Bangladeshi streetwear brand grounded in passion, family, and craftsmanship." />
-        <meta property="og:url" content="https://poshplexbd.com/pages/our-story" />
-        <meta property="og:type" content="article" />
-      </Helmet>
       <PoshplexHeader />
       
       <div className="flex">

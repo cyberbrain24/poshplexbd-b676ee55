@@ -1,20 +1,15 @@
-import { Helmet } from "react-helmet-async";
+import { useEffect } from "react";
 import PoshplexHeader from "../../components/header/PoshplexHeader";
 import PoshplexFooter from "../../components/footer/PoshplexFooter";
 import AboutSidebar from "../../components/about/AboutSidebar";
 
 const ShippingDelivery = () => {
+  useEffect(() => {
+    document.title = "Shipping & Delivery - Poshplex";
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
-      <Helmet>
-        <title>Shipping &amp; Delivery — POSHPLEX</title>
-        <meta name="description" content="POSHPLEX delivery charges and timelines: ৳70 inside Dhaka (2–3 days), ৳100 sub-urban (2–4 days), ৳120 outside Dhaka (3–5 days). COD available." />
-        <link rel="canonical" href="https://poshplexbd.com/pages/shipping-delivery" />
-        <meta property="og:title" content="Shipping &amp; Delivery — POSHPLEX" />
-        <meta property="og:description" content="Delivery charges, timelines, and COD policy for POSHPLEX orders across Bangladesh." />
-        <meta property="og:url" content="https://poshplexbd.com/pages/shipping-delivery" />
-        <meta property="og:type" content="website" />
-      </Helmet>
       <PoshplexHeader />
       
       <div className="flex">

@@ -20,35 +20,23 @@ const HeroSection = () => {
 
   if (branding && !hasBanner) return null;
 
-  // Responsive preloads: mobile gets the mobile asset, desktop gets the desktop asset.
-  // Avoids wasting Slow-4G bandwidth on a 1335px image when the device is 390px wide.
-  const desktopPreloadUrl = desktopBanner ? toWebP(desktopBanner, 1335) || desktopBanner : null;
-  const mobilePreloadUrl = mobileBanner
-    ? toWebP(mobileBanner, 390) || mobileBanner
-    : desktopPreloadUrl;
+  // Build the preload URL for the LCP image (desktop banner takes priority)
+  const lcpPreloadUrl = desktopBanner ? toWebP(desktopBanner, 1335) || desktopBanner : null;
 
   return (
     <>
-      <Helmet>
-        {mobilePreloadUrl && (
+      {/* Inject a preload hint as soon as the URL is known so the browser
+          fetches the LCP image earlier in the waterfall */}
+      {lcpPreloadUrl && (
+        <Helmet>
           <link
             rel="preload"
             as="image"
-            href={mobilePreloadUrl}
+            href={lcpPreloadUrl}
             fetchPriority="high"
-            media="(max-width: 767px)"
           />
-        )}
-        {desktopPreloadUrl && (
-          <link
-            rel="preload"
-            as="image"
-            href={desktopPreloadUrl}
-            fetchPriority="high"
-            media="(min-width: 768px)"
-          />
-        )}
-      </Helmet>
+        </Helmet>
+      )}
       <section className="w-full">
         {/* Reserve space while images load to prevent layout shift */}
         {!hasBanner && (
@@ -60,7 +48,6 @@ const HeroSection = () => {
             alt="Hero banner"
             loading="eager"
             fetchPriority="high"
-            decoding="async"
             width="1335"
             height="451"
             className={`w-full h-auto block ${mobileBanner ? 'hidden md:block' : ''}`}
@@ -72,7 +59,6 @@ const HeroSection = () => {
             alt="Hero banner"
             loading="eager"
             fetchPriority="high"
-            decoding="async"
             width="390"
             height="520"
             className={`w-full h-auto block ${desktopBanner ? 'md:hidden' : ''}`}

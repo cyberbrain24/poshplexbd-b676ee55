@@ -1,20 +1,15 @@
-import { Helmet } from "react-helmet-async";
+import { useEffect } from "react";
 import PoshplexHeader from "../../components/header/PoshplexHeader";
 import PoshplexFooter from "../../components/footer/PoshplexFooter";
 import AboutSidebar from "../../components/about/AboutSidebar";
 
 const PrivacyPolicy = () => {
+  useEffect(() => {
+    document.title = "Privacy Policy - Poshplex";
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
-      <Helmet>
-        <title>Privacy Policy — POSHPLEX</title>
-        <meta name="description" content="How POSHPLEX collects, uses, and protects your personal information when you shop with us — including data, payments, cookies, and your privacy rights." />
-        <link rel="canonical" href="https://poshplexbd.com/pages/privacy-policy" />
-        <meta property="og:title" content="Privacy Policy — POSHPLEX" />
-        <meta property="og:description" content="How we collect, use, and protect your personal information at POSHPLEX." />
-        <meta property="og:url" content="https://poshplexbd.com/pages/privacy-policy" />
-        <meta property="og:type" content="website" />
-      </Helmet>
       <PoshplexHeader />
       
       <div className="flex">

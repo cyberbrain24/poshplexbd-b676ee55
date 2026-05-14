@@ -161,14 +161,32 @@ export async function uploadProductImage(
     throw new Error("Invalid file type. Allowed: JPEG, PNG, WebP, GIF");
   }
 
-  const fileExt = file.name.split(".").pop();
-  const fileName = `${productId}/${Date.now()}.${fileExt}`;
+  const fileExt = (file.name.split(".").pop() || "jpg").toLowerCase();
+  const baseName = `${productId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-  const { error: uploadError } = await supabase.storage
-    .from(STORAGE.PRODUCT_IMAGES_BUCKET)
-    .upload(fileName, file);
+  // Retry transient storage failures (520/timeouts) up to 3 attempts with backoff
+  let lastError: any = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const fileName = `${baseName}-${attempt}.${fileExt}`;
+    const { error: uploadError } = await supabase.storage
+      .from(STORAGE.PRODUCT_IMAGES_BUCKET)
+      .upload(fileName, file, { contentType: file.type, upsert: false });
 
-  if (uploadError) throw uploadError;
+    if (!uploadError) {
+      const { data: urlData } = supabase.storage
+        .from(STORAGE.PRODUCT_IMAGES_BUCKET)
+        .getPublicUrl(fileName);
+      return urlData.publicUrl;
+    }
+
+    lastError = uploadError;
+    const status = (uploadError as any)?.status || (uploadError as any)?.statusCode;
+    const transient = !status || [408, 425, 429, 500, 502, 503, 504, 520, 522, 524].includes(Number(status));
+    if (!transient) break;
+    await new Promise((r) => setTimeout(r, 600 * (attempt + 1)));
+  }
+
+  throw lastError || new Error("Upload failed");
 
   const { data: urlData } = supabase.storage
     .from(STORAGE.PRODUCT_IMAGES_BUCKET)

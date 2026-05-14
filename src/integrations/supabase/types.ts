@@ -47,6 +47,144 @@ export type Database = {
         }
         Relationships: []
       }
+      blog_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      blog_post_categories: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          post_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          post_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_post_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "blog_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blog_post_categories_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blog_posts: {
+        Row: {
+          author_name: string
+          canonical_url: string | null
+          content: string
+          cover_image_alt: string | null
+          cover_image_url: string | null
+          created_at: string
+          excerpt: string | null
+          focus_keyword: string | null
+          id: string
+          meta_description: string | null
+          meta_title: string | null
+          og_image_url: string | null
+          published_at: string | null
+          reading_time_minutes: number
+          robots_index: boolean
+          slug: string
+          status: Database["public"]["Enums"]["blog_post_status"]
+          title: string
+          updated_at: string
+          view_count: number
+        }
+        Insert: {
+          author_name?: string
+          canonical_url?: string | null
+          content?: string
+          cover_image_alt?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          excerpt?: string | null
+          focus_keyword?: string | null
+          id?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          og_image_url?: string | null
+          published_at?: string | null
+          reading_time_minutes?: number
+          robots_index?: boolean
+          slug: string
+          status?: Database["public"]["Enums"]["blog_post_status"]
+          title: string
+          updated_at?: string
+          view_count?: number
+        }
+        Update: {
+          author_name?: string
+          canonical_url?: string | null
+          content?: string
+          cover_image_alt?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          excerpt?: string | null
+          focus_keyword?: string | null
+          id?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          og_image_url?: string | null
+          published_at?: string | null
+          reading_time_minutes?: number
+          robots_index?: boolean
+          slug?: string
+          status?: Database["public"]["Enums"]["blog_post_status"]
+          title?: string
+          updated_at?: string
+          view_count?: number
+        }
+        Relationships: []
+      }
       brands: {
         Row: {
           created_at: string
@@ -1779,6 +1917,87 @@ export type Database = {
           },
         ]
       }
+      seo_pages: {
+        Row: {
+          canonical_url: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          focus_keyword: string | null
+          id: string
+          json_ld: Json | null
+          keywords: string[] | null
+          meta_description: string | null
+          meta_title: string | null
+          notes: string | null
+          og_description: string | null
+          og_image_url: string | null
+          og_title: string | null
+          og_type: string | null
+          robots_follow: boolean
+          robots_index: boolean
+          route_path: string
+          sitemap_changefreq: string | null
+          sitemap_include: boolean
+          sitemap_priority: number | null
+          twitter_card: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          canonical_url?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          focus_keyword?: string | null
+          id?: string
+          json_ld?: Json | null
+          keywords?: string[] | null
+          meta_description?: string | null
+          meta_title?: string | null
+          notes?: string | null
+          og_description?: string | null
+          og_image_url?: string | null
+          og_title?: string | null
+          og_type?: string | null
+          robots_follow?: boolean
+          robots_index?: boolean
+          route_path: string
+          sitemap_changefreq?: string | null
+          sitemap_include?: boolean
+          sitemap_priority?: number | null
+          twitter_card?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          canonical_url?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          focus_keyword?: string | null
+          id?: string
+          json_ld?: Json | null
+          keywords?: string[] | null
+          meta_description?: string | null
+          meta_title?: string | null
+          notes?: string | null
+          og_description?: string | null
+          og_image_url?: string | null
+          og_title?: string | null
+          og_type?: string | null
+          robots_follow?: boolean
+          robots_index?: boolean
+          route_path?: string
+          sitemap_changefreq?: string | null
+          sitemap_include?: boolean
+          sitemap_priority?: number | null
+          twitter_card?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       shared_variant_categories: {
         Row: {
           category_id: string
@@ -2440,6 +2659,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_blog_post_views: {
+        Args: { p_slug: string }
+        Returns: undefined
+      }
       increment_promo_usage: {
         Args: { p_promo_code_id: string }
         Returns: undefined
@@ -2480,6 +2703,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      blog_post_status: "draft" | "published" | "scheduled"
       item_fulfillment_status:
         | "pending"
         | "reserved"
@@ -2645,6 +2869,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      blog_post_status: ["draft", "published", "scheduled"],
       item_fulfillment_status: [
         "pending",
         "reserved",

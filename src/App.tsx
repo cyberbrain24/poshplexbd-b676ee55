@@ -67,6 +67,7 @@ const AdminSiteSettings = lazy(() => import("./pages/admin/AdminSiteSettings"));
 const AdminBulkUpload = lazy(() => import("./pages/admin/AdminBulkUpload"));
 const AdminMusic = lazy(() => import("./pages/admin/AdminMusic"));
 const AdminSMS = lazy(() => import("./pages/admin/AdminSMS"));
+const AdminNotes = lazy(() => import("./pages/admin/AdminNotes"));
 
 const queryClient = new QueryClient({
   defaultOptions: {

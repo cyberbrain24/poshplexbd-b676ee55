@@ -39,7 +39,8 @@ const Navigation = () => {
     const fetchCategories = async () => {
       const { data: allCategories } = await supabase
         .from('categories')
-        .select('id, name, parent_id')
+        .select('id, name, parent_id, is_active')
+        .eq('is_active', true)
         .order('name');
       
       if (allCategories) {

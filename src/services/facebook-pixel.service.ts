@@ -63,10 +63,6 @@ const injectScript = () => {
   if (_scriptInjected) return;
   if (!_config?.isEnabled || !_config?.pixelId) return;
 
-  // Environment gate: only run in production OR if test_mode is on
-  const isProd = import.meta.env.PROD;
-  if (!isProd && !_config.testMode) return;
-
   _scriptInjected = true;
 
   // Facebook Pixel base code (minified inline)

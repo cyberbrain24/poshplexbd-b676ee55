@@ -6,7 +6,7 @@ import {
   LayoutDashboard, ArrowLeft, ChevronDown, Wallet, CreditCard, TrendingUp,
   TrendingDown, Users, MapPin, Map, Crown, ShoppingCart, ExternalLink,
   LucideIcon, RefreshCw, MessageSquare, Image, Tag, Settings, Send,
-  Upload, Menu, X, Music, StickyNote,
+  Upload, Menu, X, Music, StickyNote, Megaphone, Facebook, Server, BarChart3, LayoutGrid,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -57,6 +57,13 @@ const customerManagementItems: NavItem[] = [
   { icon: Crown, label: "Membership Types", path: "/admin/customer-types" },
 ];
 
+const marketingItems: NavItem[] = [
+  { icon: LayoutGrid, label: "Overview", path: "/admin/marketing" },
+  { icon: Facebook, label: "Meta Pixel", path: "/admin/marketing/meta-pixel" },
+  { icon: Server, label: "Meta CAPI", path: "/admin/marketing/meta-capi" },
+  { icon: BarChart3, label: "Google Analytics 4", path: "/admin/marketing/ga4" },
+];
+
 const AdminSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -97,12 +104,13 @@ const AdminSidebar = () => {
   
   const isAccountMgmtActive = accountManagementItems.some(item => location.pathname === item.path);
   const isCustomerMgmtActive = customerManagementItems.some(item => location.pathname === item.path);
+  const isMarketingActive = location.pathname.startsWith("/admin/marketing");
 
-  type GroupKey = 'product' | 'orders' | 'account' | 'customer';
+  type GroupKey = 'product' | 'orders' | 'account' | 'customer' | 'marketing';
   const getInitialOpen = (): GroupKey | null => {
     if (isProductMgmtActive) return 'product';
     if (isOrdersActive) return 'orders';
-    
+    if (isMarketingActive) return 'marketing';
     if (isCustomerMgmtActive) return 'customer';
     if (isAccountMgmtActive) return 'account';
     return null;
@@ -196,6 +204,8 @@ const AdminSidebar = () => {
         {renderNavLink("/admin/sms", Send, "SMS Marketing")}
         {renderCollapsible(Package, "Product Management", productManagementItems, openGroup === 'product', () => toggleGroup('product'), isProductMgmtActive)}
         {renderCollapsible(ShoppingCart, "Order Management", orderItems, openGroup === 'orders', () => toggleGroup('orders'), isOrdersActive)}
+        {renderCollapsible(Megaphone, "Marketing & Tracking", marketingItems, openGroup === 'marketing', () => toggleGroup('marketing'), isMarketingActive)}
+        
         
         {renderCollapsible(Users, "Customer Management", customerManagementItems, openGroup === 'customer', () => toggleGroup('customer'), isCustomerMgmtActive)}
         {renderCollapsible(Wallet, "Account Management", accountManagementItems, openGroup === 'account', () => toggleGroup('account'), isAccountMgmtActive)}

@@ -1,12 +1,11 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useSiteBranding, useUpdateSiteBranding, useUploadBrandingAsset } from "@/hooks/useSiteBranding";
-import { usePixelSettings, useUpdatePixelSettings } from "@/hooks/usePixelSettings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { Upload, X, Image as ImageIcon, Monitor, Smartphone, Activity, Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
+import { Upload, X, Image as ImageIcon, Monitor, Smartphone, Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,8 +17,6 @@ const AdminSiteSettings = () => {
   const { data: branding, isLoading } = useSiteBranding();
   const updateMutation = useUpdateSiteBranding();
   const uploadMutation = useUploadBrandingAsset();
-  const { data: pixelSettings, isLoading: loadingPixel } = usePixelSettings();
-  const updatePixelMutation = useUpdatePixelSettings();
 
   type ProviderStatus = { configured: boolean; enabled: boolean; masked: string | null; source: string | null };
   type ProviderKey = "gemini" | "openai" | "anthropic" | "openrouter";
@@ -123,19 +120,6 @@ const AdminSiteSettings = () => {
   const [slogan, setSlogan] = useState("");
   const [initialized, setInitialized] = useState(false);
 
-  // Pixel form state
-  const [pixelId, setPixelId] = useState("");
-  const [pixelEnabled, setPixelEnabled] = useState(false);
-  const [testMode, setTestMode] = useState(false);
-  const [advancedMatching, setAdvancedMatching] = useState(true);
-  const [ecommerceEvents, setEcommerceEvents] = useState(false);
-  const [capiEnabled, setCapiEnabled] = useState(false);
-  const [capiAccessToken, setCapiAccessToken] = useState("");
-  const [ga4Enabled, setGa4Enabled] = useState(false);
-  const [ga4MeasurementId, setGa4MeasurementId] = useState("");
-  const [pixelInitialized, setPixelInitialized] = useState(false);
-
-
   const logoRef = useRef<HTMLInputElement>(null);
   const desktopHeroRef = useRef<HTMLInputElement>(null);
   const mobileHeroRef = useRef<HTMLInputElement>(null);
@@ -146,38 +130,6 @@ const AdminSiteSettings = () => {
     setSlogan(branding.slogan);
     setInitialized(true);
   }
-
-  // Initialize pixel form
-  useEffect(() => {
-    if (pixelSettings && !pixelInitialized) {
-      setPixelId(pixelSettings.meta_pixel_id || "");
-      setPixelEnabled(pixelSettings.meta_pixel_enabled);
-      setTestMode(pixelSettings.meta_test_mode);
-      setAdvancedMatching(pixelSettings.meta_advanced_matching);
-      setEcommerceEvents(pixelSettings.meta_ecommerce_events_enabled);
-      setCapiEnabled(pixelSettings.meta_capi_enabled ?? false);
-      setCapiAccessToken(pixelSettings.meta_capi_access_token || "");
-      setGa4Enabled(pixelSettings.ga4_enabled ?? false);
-      setGa4MeasurementId(pixelSettings.ga4_measurement_id || "");
-      setPixelInitialized(true);
-    }
-  }, [pixelSettings, pixelInitialized]);
-
-  const handleSavePixel = async () => {
-    if (!pixelSettings) return;
-    await updatePixelMutation.mutateAsync({
-      id: pixelSettings.id,
-      meta_pixel_id: pixelId.trim() || null,
-      meta_pixel_enabled: pixelEnabled,
-      meta_test_mode: testMode,
-      meta_advanced_matching: advancedMatching,
-      meta_ecommerce_events_enabled: ecommerceEvents,
-      meta_capi_enabled: capiEnabled,
-      meta_capi_access_token: capiAccessToken.trim() || null,
-      ga4_enabled: ga4Enabled,
-      ga4_measurement_id: ga4MeasurementId.trim() || null,
-    } as any);
-  };
 
 
   const handleUpload = async (
@@ -424,129 +376,6 @@ const AdminSiteSettings = () => {
         </div>
       </section>
 
-      {/* ── Tracking & Marketing ───────────────────────────── */}
-      <section className="border border-border p-6 mb-8">
-        <div className="flex items-center gap-2 mb-1">
-          <Activity className="h-5 w-5 text-muted-foreground" />
-          <h2 className="text-base font-medium">Tracking & Marketing</h2>
-        </div>
-        <p className="text-xs text-muted-foreground mb-6">Configure Facebook Pixel for conversion tracking across your store.</p>
-
-        {loadingPixel ? (
-          <div className="space-y-3">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-6 w-48" />
-          </div>
-        ) : !pixelSettings ? (
-          <p className="text-sm text-muted-foreground">No settings row found. Please contact support.</p>
-        ) : (
-          <div className="space-y-5">
-            {/* Pixel ID */}
-            <div>
-              <Label className="text-sm">Facebook Pixel ID</Label>
-              <Input
-                value={pixelId}
-                onChange={(e) => setPixelId(e.target.value)}
-                className="mt-1 rounded-none max-w-sm font-mono"
-                placeholder="e.g. 123456789012345"
-              />
-            </div>
-
-            {/* Toggles */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex items-center justify-between border border-border p-3">
-                <div>
-                  <p className="text-sm font-medium">Enable Pixel</p>
-                  <p className="text-xs text-muted-foreground">Activate tracking on your storefront</p>
-                </div>
-                <Switch checked={pixelEnabled} onCheckedChange={setPixelEnabled} />
-              </div>
-
-              <div className="flex items-center justify-between border border-border p-3">
-                <div>
-                  <p className="text-sm font-medium">Test Mode</p>
-                  <p className="text-xs text-muted-foreground">Log events to console for debugging</p>
-                </div>
-                <Switch checked={testMode} onCheckedChange={setTestMode} />
-              </div>
-
-              <div className="flex items-center justify-between border border-border p-3">
-                <div>
-                  <p className="text-sm font-medium">Advanced Matching</p>
-                  <p className="text-xs text-muted-foreground">Send hashed user data for better attribution</p>
-                </div>
-                <Switch checked={advancedMatching} onCheckedChange={setAdvancedMatching} />
-              </div>
-
-              <div className="flex items-center justify-between border border-border p-3">
-                <div>
-                  <p className="text-sm font-medium">E-Commerce Events</p>
-                  <p className="text-xs text-muted-foreground">ViewContent, AddToCart, Purchase, etc.</p>
-                </div>
-                <Switch checked={ecommerceEvents} onCheckedChange={setEcommerceEvents} />
-              </div>
-
-              <div className="flex items-center justify-between border border-border p-3 sm:col-span-2">
-                <div>
-                  <p className="text-sm font-medium">Conversions API (CAPI)</p>
-                  <p className="text-xs text-muted-foreground">
-                    Server-side event mirror. Recovers ~30% of events lost to ad blockers / iOS.
-                  </p>
-                </div>
-                <Switch checked={capiEnabled} onCheckedChange={setCapiEnabled} />
-              </div>
-            </div>
-
-            {/* CAPI Access Token */}
-            <div>
-              <Label className="text-sm">Meta CAPI Access Token</Label>
-              <Input
-                type="password"
-                value={capiAccessToken}
-                onChange={(e) => setCapiAccessToken(e.target.value)}
-                className="mt-1 rounded-none max-w-xl font-mono"
-                placeholder="EAA... (from Events Manager → Settings → Conversions API)"
-                autoComplete="off"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Required when CAPI is enabled. Get it from Meta Events Manager → your Pixel → Settings → Conversions API → Generate access token.
-              </p>
-            </div>
-
-            {/* GA4 Section */}
-            <div className="border-t border-border pt-5 mt-2">
-              <h3 className="text-sm font-medium mb-3">Google Analytics 4 (GA4)</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm">GA4 Measurement ID</Label>
-                  <Input
-                    value={ga4MeasurementId}
-                    onChange={(e) => setGa4MeasurementId(e.target.value)}
-                    className="mt-1 rounded-none font-mono"
-                    placeholder="G-XXXXXXXXXX"
-                  />
-                </div>
-                <div className="flex items-center justify-between border border-border p-3">
-                  <div>
-                    <p className="text-sm font-medium">Enable GA4</p>
-                    <p className="text-xs text-muted-foreground">Activate Google Analytics tracking</p>
-                  </div>
-                  <Switch checked={ga4Enabled} onCheckedChange={setGa4Enabled} />
-                </div>
-              </div>
-            </div>
-
-            <Button
-              onClick={handleSavePixel}
-              disabled={updatePixelMutation.isPending}
-              className="rounded-none"
-              size="sm"
-            >
-              {updatePixelMutation.isPending ? "Saving…" : "Save Tracking Settings"}
-            </Button>
-          </div>
-        )}
-      </section>
 
       {/* ── AI Provider Credentials ───────────────────────────── */}
       <section className="border border-border p-6 mb-8">

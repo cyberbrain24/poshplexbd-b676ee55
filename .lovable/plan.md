@@ -1,80 +1,54 @@
-## Goal
-Add a Typography panel in **Admin → Site Settings** so you can pick fonts for each text element of the storefront (H1, H2, H3, H4, H5/H6, body/paragraph, navigation/buttons) without touching code. Changes apply site-wide instantly.
+# Tracking & Marketing — Advanced Module
 
-## What you'll see in admin
-A new **"Typography"** card in Site Settings with one row per element:
+Promote the current "Tracking & Marketing" section in Site Settings into a first-class, expandable admin module with its own sidebar group, dedicated routes, and a richer multi-tab UI per channel.
 
-| Element | Font dropdown | Weight | Size scale | Preview |
-|---|---|---|---|---|
-| H1 (Display) | Anton / This is Fire / Bebas Neue / Archivo Black / … | 400–900 | 0.8x–1.4x | live sample |
-| H2 | Natoor / Anton / Space Grotesk / … | | | |
-| H3 | … | | | |
-| H4 | … | | | |
-| H5 / H6 | … | | | |
-| Body / Paragraph | Poppins / Inter / Space Grotesk / DM Sans / Archivo / IBM Plex Sans / Manrope / JetBrains Mono / Geist / Söhne-like | | | |
-| Navigation & Buttons | … | | | |
+## New sidebar group
 
-Each row also has: **Uppercase toggle**, **Letter spacing** (tight/normal/wide), **Reset** button.
+Add a collapsible "Marketing & Tracking" group to `AdminSidebar.tsx` (icon: `Megaphone` or `LineChart`) with sub-items:
 
-A curated catalog of ~20 streetwear-appropriate fonts (Google Fonts + your existing local fonts: Street Culture, Wood Chaos, This is Fire, Natoor) is preloaded — no need to type font names.
+- **Overview** → `/admin/marketing` — status dashboard of every connected channel (Pixel, CAPI, GA4) with health badges (Configured / Live / Disabled / Missing token), last event sent, and quick-toggle switches.
+- **Meta Pixel** → `/admin/marketing/meta-pixel` — Pixel ID, Enable, Test Mode, Advanced Matching, E-commerce Events, event-by-event toggles (PageView, ViewContent, AddToCart, InitiateCheckout, Purchase, Search, AddToWishlist, CompleteRegistration), "Send Test Event" button.
+- **Meta CAPI** → `/admin/marketing/meta-capi` — Access Token (masked, show/hide), Test Event Code, Dataset/Pixel ID confirmation, deduplication info, "Send Server Test Event" button that hits the existing `meta-capi` edge function, last 10 delivery logs.
+- **Google Analytics 4** → `/admin/marketing/ga4` — Measurement ID, Enable toggle, Enhanced Measurement note, validation of `G-XXXXXXXX` format, test ping.
+- **(Future-ready) TikTok Pixel & Google Ads** → placeholder cards marked "Coming soon" so the module is visibly extensible.
 
-A **"Save & Apply"** button writes settings and refreshes the live preview in the same tab.
+The existing Site Settings "Tracking & Marketing" section is removed; the Overview page replaces it.
 
-## How it works (technical section)
+## Pages & components
 
-### 1. Database (migration)
-Add JSON column to existing `site_settings` table:
-```sql
-ALTER TABLE public.site_settings
-ADD COLUMN typography jsonb DEFAULT '{}'::jsonb;
-```
-Shape stored:
-```json
-{
-  "h1": { "family": "This is Fire", "weight": 400, "scale": 1, "uppercase": true, "tracking": "tight" },
-  "h2": { ... }, "h3": {...}, "h4": {...}, "h5": {...},
-  "body": { "family": "Poppins", "weight": 400, "scale": 1, "uppercase": false, "tracking": "normal" },
-  "nav":  { ... }
-}
-```
+Create under `src/pages/admin/marketing/`:
+- `MarketingOverview.tsx`
+- `MetaPixelSettings.tsx`
+- `MetaCapiSettings.tsx`
+- `GA4Settings.tsx`
+- `MarketingLayout.tsx` — wraps children with a sub-nav tab strip (mirrors the sidebar sub-items) so users can switch within the module.
 
-### 2. Font catalog
-New file `src/lib/fontCatalog.ts` — curated list with `{ name, googleHref?, localFamily?, category: 'display'|'sans'|'mono' }`. Includes existing local fonts + Google fonts: Anton, Bebas Neue, Archivo Black, Archivo, Space Grotesk, Space Mono, Inter, DM Sans, Manrope, IBM Plex Sans, JetBrains Mono, Plus Jakarta Sans, Syne, Sora, Urbanist.
+Shared building blocks in `src/components/admin/marketing/`:
+- `ChannelStatusCard.tsx` — channel name, status pill, key field summary, toggle.
+- `MaskedTokenInput.tsx` — password input with show/hide and copy.
+- `TestEventButton.tsx` — fires a sample event and surfaces the response.
 
-### 3. Runtime injection
-New `src/components/TypographyProvider.tsx` mounted in `App.tsx`:
-- Fetches `site_settings.typography` once via React Query (cached, refetched on settings save).
-- Dynamically appends `<link>` tags to `<head>` for any Google fonts referenced.
-- Writes a `<style id="dynamic-typography">` block with CSS variables and overrides, e.g.:
-  ```css
-  :root {
-    --font-h1: 'This is Fire', Impact, sans-serif;
-    --font-body: 'Poppins', sans-serif;
-    --tracking-h1: -0.02em;
-  }
-  h1 { font-family: var(--font-h1) !important; ... }
-  body, p, span, li, a, label { font-family: var(--font-body); }
-  ```
-- Skips override inside `.admin-shell` so the admin panel keeps its system-font reset.
+## Data & wiring
 
-### 4. Admin UI
-New `src/components/admin/TypographySettings.tsx` rendered inside `AdminSiteSettings.tsx`:
-- React Hook Form state seeded from current row.
-- Per-row: `<Select>` for family (grouped: Display / Sans / Mono / Local), weight `<Select>`, scale `<Slider>` (0.8–1.4 step 0.05), `<Switch>` for uppercase, `<Select>` for letter spacing, live preview using inline `style`.
-- "Save & Apply" calls `supabase.from('site_settings').update({ typography }).eq('id', row.id)` then invalidates the React Query cache so `TypographyProvider` reapplies immediately.
-- "Reset to defaults" restores baked-in defaults that match current site (This is Fire H1, Natoor H2, Anton H3+, Poppins body).
+- Reuse `usePixelSettings` / `useUpdatePixelSettings` (`src/hooks/usePixelSettings.ts`) — no schema change required; all fields already exist (`meta_pixel_id`, `meta_pixel_enabled`, `meta_test_mode`, `meta_advanced_matching`, `meta_ecommerce_events_enabled`, `meta_capi_enabled`, `meta_capi_access_token`, `ga4_enabled`, `ga4_measurement_id`).
+- Each subpage scopes its mutation to only its own fields (partial update) so saves are independent per channel.
+- Overview page reads the same hook and derives status badges client-side.
 
-### 5. Files to add/edit
-- **Add**: `supabase/migrations/<ts>_add_typography_to_site_settings.sql`
-- **Add**: `src/lib/fontCatalog.ts`
-- **Add**: `src/components/TypographyProvider.tsx`
-- **Add**: `src/components/admin/TypographySettings.tsx`
-- **Edit**: `src/App.tsx` (mount provider above routes)
-- **Edit**: `src/pages/admin/AdminSiteSettings.tsx` (insert Typography card)
+## Routing
 
-### Out of scope
-- Per-page overrides (only global).
-- Font upload (catalog only — you can request custom additions later).
-- No changes to existing tokens in `index.css`; new overrides layer on top via `!important` for the targeted selectors only.
+Register routes in `src/App.tsx` (or wherever admin routes live) lazily, and add them to `src/lib/adminRoutePrefetch.ts` so the prefetch idle-loop covers them.
 
-Ready to build when you approve.
+## Sidebar implementation detail
+
+Extend `AdminSidebar.tsx`:
+- Add `marketingItems: NavItem[]` array.
+- Add `'marketing'` to the `GroupKey` union and `getInitialOpen` logic.
+- Insert `renderCollapsible(Megaphone, "Marketing & Tracking", marketingItems, ...)` between "Order Management" and "Customer Management".
+
+## Out of scope
+
+- No new DB columns, no new edge functions (existing `meta-capi` is reused).
+- No changes to the storefront pixel firing logic (`useFacebookPixel`, `facebook-pixel.service.ts`).
+- Other Site Settings sections (branding, AI credentials, etc.) stay where they are.
+
+Approve to implement.

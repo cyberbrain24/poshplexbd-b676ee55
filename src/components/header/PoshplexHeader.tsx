@@ -77,12 +77,13 @@ const PoshplexHeader = () => {
     }
   };
 
-  // Build navigation items from categories
+  // Build navigation items from categories (only active)
   const navItems: NavItem[] = useMemo(() => {
-    const parentCategories = allCategories.filter(c => !c.parent_id);
+    const activeCats = allCategories.filter(c => c.is_active !== false);
+    const parentCategories = activeCats.filter(c => !c.parent_id);
     
     return parentCategories.map(parent => {
-      const subcategories = allCategories
+      const subcategories = activeCats
         .filter(c => c.parent_id === parent.id)
         .map(c => ({
           name: c.name,

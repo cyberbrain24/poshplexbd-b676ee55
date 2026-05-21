@@ -152,6 +152,7 @@ const AdminSiteSettings = () => {
       setTestMode(pixelSettings.meta_test_mode);
       setAdvancedMatching(pixelSettings.meta_advanced_matching);
       setEcommerceEvents(pixelSettings.meta_ecommerce_events_enabled);
+      setCapiEnabled((pixelSettings as any).meta_capi_enabled ?? false);
       setPixelInitialized(true);
     }
   }, [pixelSettings, pixelInitialized]);
@@ -165,8 +166,10 @@ const AdminSiteSettings = () => {
       meta_test_mode: testMode,
       meta_advanced_matching: advancedMatching,
       meta_ecommerce_events_enabled: ecommerceEvents,
-    });
+      meta_capi_enabled: capiEnabled,
+    } as any);
   };
+
 
   const handleUpload = async (
     file: File,

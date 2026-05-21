@@ -155,6 +155,31 @@ const getCookie = (name: string): string | undefined => {
   return match ? match[2] : undefined;
 };
 
+const setCookie = (name: string, value: string, days = 90) => {
+  if (typeof document === 'undefined') return;
+  const expires = new Date(Date.now() + days * 864e5).toUTCString();
+  document.cookie = `${name}=${value}; expires=${expires}; path=/; SameSite=Lax`;
+};
+
+/**
+ * Meta auto-creates `_fbc` only when fbevents.js is on the landing page,
+ * which we lazy-load — meaning fast bounces from FB ads can lose Click ID.
+ * Capture `fbclid` from the URL on first load and persist it in the standard
+ * `_fbc` cookie format: `fb.<subdomain_index>.<creation_time_ms>.<fbclid>`.
+ */
+export const captureClickId = () => {
+  try {
+    if (typeof window === 'undefined') return;
+    if (getCookie('_fbc')) return; // already set
+    const params = new URLSearchParams(window.location.search);
+    const fbclid = params.get('fbclid');
+    if (!fbclid) return;
+    const fbc = `fb.1.${Date.now()}.${fbclid}`;
+    setCookie('_fbc', fbc, 90);
+  } catch { /* noop */ }
+};
+
+
 /**
  * Send event to server-side Conversions API for browser+server deduplication.
  * Fired in parallel with fbq — Meta dedupes by (event_name, event_id).

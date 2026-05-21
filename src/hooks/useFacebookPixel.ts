@@ -6,6 +6,7 @@ import {
   setupLazyLoading,
   trackPageView,
   setAdvancedMatchingUser,
+  captureClickId,
 } from "@/services/facebook-pixel.service";
 
 

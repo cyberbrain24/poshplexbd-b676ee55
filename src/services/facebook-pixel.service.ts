@@ -18,10 +18,22 @@ interface PixelConfig {
   advancedMatching: boolean;
 }
 
+export interface AdvancedMatchingUserData {
+  em?: string; // email
+  ph?: string; // phone
+  fn?: string; // first name
+  ln?: string; // last name
+  ct?: string; // city
+  country?: string;
+  external_id?: string;
+}
+
 let _config: PixelConfig | null = null;
+let _userData: AdvancedMatchingUserData | null = null;
 let _scriptInjected = false;
 let _initialized = false;
 let _interactionBound = false;
+
 
 // ─── Configuration ─────────────────────────────────────────────
 export const setPixelConfig = (config: PixelConfig) => {

@@ -129,7 +129,9 @@ const AdminSiteSettings = () => {
   const [testMode, setTestMode] = useState(false);
   const [advancedMatching, setAdvancedMatching] = useState(true);
   const [ecommerceEvents, setEcommerceEvents] = useState(false);
+  const [capiEnabled, setCapiEnabled] = useState(false);
   const [pixelInitialized, setPixelInitialized] = useState(false);
+
 
   const logoRef = useRef<HTMLInputElement>(null);
   const desktopHeroRef = useRef<HTMLInputElement>(null);

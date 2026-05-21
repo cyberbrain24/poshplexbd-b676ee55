@@ -1,6 +1,7 @@
 import { Heart } from "lucide-react";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { cn } from "@/lib/utils";
+import { trackAddToWishlist } from "@/services/facebook-pixel.service";
 
 interface FavoriteButtonProps {
   productId: string;
@@ -21,7 +22,16 @@ const FavoriteButton = ({ productId, name, price, image, slug, className, size =
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
+        const wasActive = active;
         toggleFavorite({ id: productId, name, price, image, slug });
+        // Fire AddToWishlist only when ADDING (not removing)
+        if (!wasActive) {
+          trackAddToWishlist({
+            contentName: name,
+            contentIds: [productId],
+            value: price,
+          });
+        }
       }}
       className={cn(
         "p-1.5 rounded-full transition-colors",
@@ -36,3 +46,4 @@ const FavoriteButton = ({ productId, name, price, image, slug, className, size =
 };
 
 export default FavoriteButton;
+

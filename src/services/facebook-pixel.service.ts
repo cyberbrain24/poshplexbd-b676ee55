@@ -18,10 +18,22 @@ interface PixelConfig {
   advancedMatching: boolean;
 }
 
+export interface AdvancedMatchingUserData {
+  em?: string; // email
+  ph?: string; // phone
+  fn?: string; // first name
+  ln?: string; // last name
+  ct?: string; // city
+  country?: string;
+  external_id?: string;
+}
+
 let _config: PixelConfig | null = null;
+let _userData: AdvancedMatchingUserData | null = null;
 let _scriptInjected = false;
 let _initialized = false;
 let _interactionBound = false;
+
 
 // ─── Configuration ─────────────────────────────────────────────
 export const setPixelConfig = (config: PixelConfig) => {
@@ -29,6 +41,22 @@ export const setPixelConfig = (config: PixelConfig) => {
 };
 
 export const getPixelConfig = () => _config;
+
+/**
+ * Set user data for Advanced Matching. Call after auth/login.
+ * Pass plain values — Facebook SDK auto-hashes em/ph/fn/ln.
+ * Re-inits the pixel with user data if already loaded.
+ */
+export const setAdvancedMatchingUser = (data: AdvancedMatchingUserData | null) => {
+  _userData = data;
+  if (_initialized && _config?.advancedMatching && _config.pixelId) {
+    try {
+      window.fbq('init', _config.pixelId, data || {});
+      if (_config.testMode) console.log('[FB Pixel] Advanced Matching updated:', data);
+    } catch { /* noop */ }
+  }
+};
+
 
 // ─── Script Injection (Singleton, Lazy) ────────────────────────
 const injectScript = () => {
@@ -64,12 +92,13 @@ const injectScript = () => {
   const firstScript = document.getElementsByTagName('script')[0];
   firstScript?.parentNode?.insertBefore(script, firstScript);
 
-  // Initialize pixel
+  // Initialize pixel (with Advanced Matching user data when available)
   if (_config.advancedMatching) {
-    window.fbq('init', _config.pixelId, {});
+    window.fbq('init', _config.pixelId, _userData || {});
   } else {
     window.fbq('init', _config.pixelId);
   }
+
 
   _initialized = true;
 

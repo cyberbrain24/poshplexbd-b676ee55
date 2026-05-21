@@ -1,10 +1,12 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, X, Loader2, Sparkles } from "lucide-react";
 import { useProductSearch, usePopularCategories } from "@/hooks/useProductSearch";
 import { useAISearchSuggest } from "@/hooks/useAISearchSuggest";
 import { generateProductSlug } from "@/lib/slug";
 import { formatCurrency } from "@/lib/currency";
+import { trackSearch } from "@/services/facebook-pixel.service";
+
 
 interface SearchOverlayProps {
   onClose: () => void;
@@ -19,6 +21,19 @@ const SearchOverlay = ({ onClose }: SearchOverlayProps) => {
   const { data: aiSuggest, isFetching: aiFetching } = useAISearchSuggest(query, hasExactResults);
   const existingIds = new Set(results.map((r) => r.id));
   const aiExtras = (aiSuggest?.products || []).filter((p) => !existingIds.has(p.id));
+
+  // Fire Meta Pixel Search event (debounced 800ms after typing stops)
+  const lastTrackedQuery = useRef<string>("");
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2 || q === lastTrackedQuery.current) return;
+    const t = setTimeout(() => {
+      lastTrackedQuery.current = q;
+      trackSearch(q);
+    }, 800);
+    return () => clearTimeout(t);
+  }, [query]);
+
 
   const getMainImage = (images: { image_url: string; is_main: boolean }[]) => {
     const main = images.find((i) => i.is_main);

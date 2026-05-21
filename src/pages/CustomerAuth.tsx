@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
 import PoshplexHeader from "@/components/header/PoshplexHeader";
 import PoshplexFooter from "@/components/footer/PoshplexFooter";
+import { trackCompleteRegistration, setAdvancedMatchingUser } from "@/services/facebook-pixel.service";
+
 
 const isEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 const isPhone = (value: string) => /^(\+?880|0)?1[3-9]\d{8}$/.test(value.replace(/\D/g, ""));
@@ -70,7 +72,13 @@ const CustomerAuth = () => {
           password,
         });
         if (error) throw error;
+        // Advanced Matching: hand user identifiers to Meta Pixel
+        setAdvancedMatchingUser({
+          em: resolved.type === "email" ? resolved.authEmail : undefined,
+          ph: resolved.type === "phone" ? identifier.replace(/\D/g, "") : undefined,
+        });
         toast.success("Welcome back!");
+
       } else {
         if (!name.trim()) throw new Error("Please enter your name");
 
@@ -134,9 +142,26 @@ const CustomerAuth = () => {
           if (accountError) console.error("Failed to create customer account:", accountError);
         }
 
+        // Advanced Matching + CompleteRegistration event for Meta Pixel
+        const phoneDigits = resolved.type === "phone" ? identifier.replace(/\D/g, "") : undefined;
+        const [firstName, ...rest] = name.trim().split(/\s+/);
+        setAdvancedMatchingUser({
+          em: resolved.type === "email" ? identifier.trim() : undefined,
+          ph: phoneDigits,
+          fn: firstName,
+          ln: rest.join(" ") || undefined,
+          country: "bd",
+        });
+        trackCompleteRegistration({
+          status: true,
+          value: 0,
+          currency: "BDT",
+        });
+
         toast.success("Account created! You can now login.");
         setIsLogin(true);
       }
+
     } catch (error: any) {
       if (error.message === "Invalid login credentials") {
         toast.error("Invalid credentials. Please check your details.");

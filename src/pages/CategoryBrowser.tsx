@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 const CategoryBrowser = () => {
   const { data: categories = [], isLoading } = useCategories();
 
-  const mainCategories = categories.filter((c) => !c.parent_id);
+  const mainCategories = categories.filter((c) => !c.parent_id && c.is_active !== false);
   const [activeId, setActiveId] = useState<string | null>(null);
 
   useEffect(() => {

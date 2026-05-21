@@ -72,7 +72,13 @@ const CustomerAuth = () => {
           password,
         });
         if (error) throw error;
+        // Advanced Matching: hand user identifiers to Meta Pixel
+        setAdvancedMatchingUser({
+          em: resolved.type === "email" ? resolved.authEmail : undefined,
+          ph: resolved.type === "phone" ? identifier.replace(/\D/g, "") : undefined,
+        });
         toast.success("Welcome back!");
+
       } else {
         if (!name.trim()) throw new Error("Please enter your name");
 

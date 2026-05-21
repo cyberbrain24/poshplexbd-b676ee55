@@ -62,7 +62,7 @@ const FilterSortBar = ({
 
   // Get subcategories for the current parent category
   const subcategories = parentCategoryId
-    ? allCategories.filter((c) => c.parent_id === parentCategoryId)
+    ? allCategories.filter((c) => c.parent_id === parentCategoryId && c.is_active !== false)
     : [];
 
   const activeFilterCount =

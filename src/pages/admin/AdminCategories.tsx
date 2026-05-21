@@ -195,6 +195,7 @@ const AdminCategories = () => {
               <TableHead>Name</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Subcategories</TableHead>
+              <TableHead className="w-24">Active</TableHead>
               <TableHead>Created</TableHead>
               <TableHead className="w-24">Actions</TableHead>
             </TableRow>
@@ -202,11 +203,11 @@ const AdminCategories = () => {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8">Loading...</TableCell>
+                <TableCell colSpan={8} className="text-center py-8">Loading...</TableCell>
               </TableRow>
             ) : filteredItems.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   No categories found
                 </TableCell>
               </TableRow>

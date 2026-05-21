@@ -27,7 +27,7 @@ const RelatedProducts = ({
   if (isLoading) {
     return (
       <section className="w-full px-6 mb-16">
-        <h2 className="text-sm font-light text-foreground mb-4">{title}</h2>
+        <h5 className="text-sm font-light text-foreground mb-4">{title}</h5>
         <div className="grid grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="space-y-2">

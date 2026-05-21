@@ -41,6 +41,25 @@ export const useFacebookPixel = () => {
         });
 
         setupLazyLoading();
+
+        // Restore Advanced Matching for already-logged-in user
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const u = session.user;
+          const meta: any = u.user_metadata || {};
+          const isPhoneEmail = (u.email || "").endsWith("@phone.local");
+          const phoneDigits = isPhoneEmail ? (u.email || "").split("@")[0] : (meta.phone || "").replace(/\D/g, "");
+          const fullName: string = meta.name || "";
+          const [fn, ...rest] = fullName.split(/\s+/).filter(Boolean);
+          setAdvancedMatchingUser({
+            em: !isPhoneEmail ? u.email : undefined,
+            ph: phoneDigits || undefined,
+            fn: fn || undefined,
+            ln: rest.join(" ") || undefined,
+            external_id: u.id,
+            country: "bd",
+          });
+        }
       } catch {
         // Fail silently
       }
@@ -48,6 +67,7 @@ export const useFacebookPixel = () => {
 
     load();
   }, []);
+
 
   // 2. Track PageView on route change (deduplicated)
   useEffect(() => {

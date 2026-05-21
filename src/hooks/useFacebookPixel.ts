@@ -5,7 +5,9 @@ import {
   setPixelConfig,
   setupLazyLoading,
   trackPageView,
+  setAdvancedMatchingUser,
 } from "@/services/facebook-pixel.service";
+
 
 /**
  * Global hook that:

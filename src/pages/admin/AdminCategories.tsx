@@ -263,6 +263,24 @@ const AdminCategories = () => {
                   <TableCell className="text-muted-foreground">
                     {!item.isChild ? getSubcategoryCount(item.id) : '-'}
                   </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={item.is_active !== false}
+                        onCheckedChange={async (checked) => {
+                          try {
+                            await updateMutation.mutateAsync({ id: item.id, data: { is_active: checked } });
+                            toast.success(checked ? "Category activated" : "Category hidden from storefront");
+                          } catch {
+                            toast.error("Failed to update");
+                          }
+                        }}
+                      />
+                      {item.is_active === false && (
+                        <Badge variant="outline" className="text-[10px] uppercase">Hidden</Badge>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell className="text-muted-foreground">
                     {new Date(item.created_at).toLocaleDateString()}
                   </TableCell>

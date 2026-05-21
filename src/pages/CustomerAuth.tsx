@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
 import PoshplexHeader from "@/components/header/PoshplexHeader";
 import PoshplexFooter from "@/components/footer/PoshplexFooter";
+import { trackCompleteRegistration, setAdvancedMatchingUser } from "@/services/facebook-pixel.service";
+
 
 const isEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 const isPhone = (value: string) => /^(\+?880|0)?1[3-9]\d{8}$/.test(value.replace(/\D/g, ""));

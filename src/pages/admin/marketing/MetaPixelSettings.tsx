@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Facebook, ExternalLink, Send } from "lucide-react";
 import { toast } from "sonner";
-import { trackEvent } from "@/services/facebook-pixel.service";
+import { trackPageView } from "@/services/facebook-pixel.service";
 
 const ECOM_EVENTS = [
   "PageView",
@@ -64,7 +64,7 @@ const MetaPixelSettings = () => {
       toast.error("Enable the pixel and save before testing");
       return;
     }
-    trackEvent("PageView");
+    trackPageView();
     toast.success("Test PageView fired — check Meta Events Manager → Test Events");
   };
 

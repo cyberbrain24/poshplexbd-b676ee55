@@ -202,28 +202,39 @@ export const useOptimizedCategoryProducts = (
         if (!categoryIdRef.current) {
           const { data: categoryData } = await supabase
             .from("categories")
-            .select("id")
+            .select("id, is_active")
             .ilike("name", categorySlug.replace(/-/g, " "))
             .single();
+          // If category is inactive, hide entirely
+          if (categoryData && categoryData.is_active === false) {
+            return { products: [], totalCount: 0, nextPage: pageParam + 1 };
+          }
           categoryIdRef.current = categoryData?.id || null;
         }
 
         if (categoryIdRef.current) {
-          // If subcategory filters are active, use those; otherwise use parent
+          // If subcategory filters are active, use those; otherwise use parent + active subcategories
           if (filters?.subcategoryIds && filters.subcategoryIds.length > 0) {
             categoryIds = filters.subcategoryIds;
           } else {
-            // Include the parent category AND its subcategories
             const { data: subCats } = await supabase
               .from("categories")
               .select("id")
-              .eq("parent_id", categoryIdRef.current);
+              .eq("parent_id", categoryIdRef.current)
+              .eq("is_active", true);
             const subIds = subCats?.map((s) => s.id) || [];
             categoryIds = [categoryIdRef.current, ...subIds];
           }
         }
       } else if (filters?.subcategoryIds && filters.subcategoryIds.length > 0) {
         categoryIds = filters.subcategoryIds;
+      } else {
+        // "All" listing — exclude products whose category is inactive
+        const { data: activeCats } = await supabase
+          .from("categories")
+          .select("id")
+          .eq("is_active", true);
+        categoryIds = (activeCats || []).map((c) => c.id);
       }
 
       // If color or size filters are active, we need to find matching product IDs via variants

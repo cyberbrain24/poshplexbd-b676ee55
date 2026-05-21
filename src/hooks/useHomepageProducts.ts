@@ -18,14 +18,15 @@ export const useHomepageProducts = () => {
           name,
           base_price,
           is_active,
-          category:categories(id, name),
+          category:categories(id, name, is_active),
           images:product_images(id, image_url, is_main, sort_order)
         `)
         .order("created_at", { ascending: false })
-        .limit(10);
+        .limit(20);
 
       if (error) throw error;
-      return data as Product[];
+      const filtered = (data || []).filter((p: any) => !p.category || p.category.is_active !== false).slice(0, 10);
+      return filtered as Product[];
     },
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 10,

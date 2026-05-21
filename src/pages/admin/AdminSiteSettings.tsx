@@ -130,6 +130,9 @@ const AdminSiteSettings = () => {
   const [advancedMatching, setAdvancedMatching] = useState(true);
   const [ecommerceEvents, setEcommerceEvents] = useState(false);
   const [capiEnabled, setCapiEnabled] = useState(false);
+  const [capiAccessToken, setCapiAccessToken] = useState("");
+  const [ga4Enabled, setGa4Enabled] = useState(false);
+  const [ga4MeasurementId, setGa4MeasurementId] = useState("");
   const [pixelInitialized, setPixelInitialized] = useState(false);
 
 
@@ -152,7 +155,10 @@ const AdminSiteSettings = () => {
       setTestMode(pixelSettings.meta_test_mode);
       setAdvancedMatching(pixelSettings.meta_advanced_matching);
       setEcommerceEvents(pixelSettings.meta_ecommerce_events_enabled);
-      setCapiEnabled((pixelSettings as any).meta_capi_enabled ?? false);
+      setCapiEnabled(pixelSettings.meta_capi_enabled ?? false);
+      setCapiAccessToken(pixelSettings.meta_capi_access_token || "");
+      setGa4Enabled(pixelSettings.ga4_enabled ?? false);
+      setGa4MeasurementId(pixelSettings.ga4_measurement_id || "");
       setPixelInitialized(true);
     }
   }, [pixelSettings, pixelInitialized]);
@@ -167,6 +173,9 @@ const AdminSiteSettings = () => {
       meta_advanced_matching: advancedMatching,
       meta_ecommerce_events_enabled: ecommerceEvents,
       meta_capi_enabled: capiEnabled,
+      meta_capi_access_token: capiAccessToken.trim() || null,
+      ga4_enabled: ga4Enabled,
+      ga4_measurement_id: ga4MeasurementId.trim() || null,
     } as any);
   };
 
@@ -481,13 +490,51 @@ const AdminSiteSettings = () => {
                 <div>
                   <p className="text-sm font-medium">Conversions API (CAPI)</p>
                   <p className="text-xs text-muted-foreground">
-                    Server-side event mirror. Recovers ~30% of events lost to ad blockers / iOS. Requires META_CAPI_ACCESS_TOKEN.
+                    Server-side event mirror. Recovers ~30% of events lost to ad blockers / iOS.
                   </p>
                 </div>
                 <Switch checked={capiEnabled} onCheckedChange={setCapiEnabled} />
               </div>
             </div>
 
+            {/* CAPI Access Token */}
+            <div>
+              <Label className="text-sm">Meta CAPI Access Token</Label>
+              <Input
+                type="password"
+                value={capiAccessToken}
+                onChange={(e) => setCapiAccessToken(e.target.value)}
+                className="mt-1 rounded-none max-w-xl font-mono"
+                placeholder="EAA... (from Events Manager → Settings → Conversions API)"
+                autoComplete="off"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Required when CAPI is enabled. Get it from Meta Events Manager → your Pixel → Settings → Conversions API → Generate access token.
+              </p>
+            </div>
+
+            {/* GA4 Section */}
+            <div className="border-t border-border pt-5 mt-2">
+              <h3 className="text-sm font-medium mb-3">Google Analytics 4 (GA4)</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm">GA4 Measurement ID</Label>
+                  <Input
+                    value={ga4MeasurementId}
+                    onChange={(e) => setGa4MeasurementId(e.target.value)}
+                    className="mt-1 rounded-none font-mono"
+                    placeholder="G-XXXXXXXXXX"
+                  />
+                </div>
+                <div className="flex items-center justify-between border border-border p-3">
+                  <div>
+                    <p className="text-sm font-medium">Enable GA4</p>
+                    <p className="text-xs text-muted-foreground">Activate Google Analytics tracking</p>
+                  </div>
+                  <Switch checked={ga4Enabled} onCheckedChange={setGa4Enabled} />
+                </div>
+              </div>
+            </div>
 
             <Button
               onClick={handleSavePixel}
@@ -495,7 +542,7 @@ const AdminSiteSettings = () => {
               className="rounded-none"
               size="sm"
             >
-              {updatePixelMutation.isPending ? "Saving…" : "Save Pixel Settings"}
+              {updatePixelMutation.isPending ? "Saving…" : "Save Tracking Settings"}
             </Button>
           </div>
         )}

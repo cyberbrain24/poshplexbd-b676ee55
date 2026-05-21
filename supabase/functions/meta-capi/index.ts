@@ -84,21 +84,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    const ACCESS_TOKEN = Deno.env.get('META_CAPI_ACCESS_TOKEN');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-    if (!ACCESS_TOKEN) {
-      return new Response(JSON.stringify({ error: 'CAPI access token not configured' }), {
-        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Fetch pixel settings from site_settings
+    // Fetch pixel settings + CAPI access token from site_settings
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const { data: settings, error: settingsErr } = await admin
       .from('site_settings')
-      .select('meta_pixel_id, meta_pixel_enabled, meta_capi_enabled, meta_test_mode')
+      .select('meta_pixel_id, meta_pixel_enabled, meta_capi_enabled, meta_test_mode, meta_capi_access_token')
       .limit(1)
       .maybeSingle();
 
@@ -109,9 +102,16 @@ Deno.serve(async (req) => {
     }
 
     if (!settings.meta_pixel_enabled || !settings.meta_capi_enabled || !settings.meta_pixel_id) {
-      // Silently no-op when CAPI is disabled — don't error
       return new Response(JSON.stringify({ skipped: true, reason: 'CAPI disabled' }), {
         status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Prefer DB-managed token (set from admin UI); fall back to env var for legacy setups
+    const ACCESS_TOKEN = (settings as any).meta_capi_access_token || Deno.env.get('META_CAPI_ACCESS_TOKEN');
+    if (!ACCESS_TOKEN) {
+      return new Response(JSON.stringify({ error: 'CAPI access token not configured in admin' }), {
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 

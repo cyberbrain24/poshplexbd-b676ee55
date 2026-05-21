@@ -204,6 +204,8 @@ const AdminSidebar = () => {
         {renderNavLink("/admin/sms", Send, "SMS Marketing")}
         {renderCollapsible(Package, "Product Management", productManagementItems, openGroup === 'product', () => toggleGroup('product'), isProductMgmtActive)}
         {renderCollapsible(ShoppingCart, "Order Management", orderItems, openGroup === 'orders', () => toggleGroup('orders'), isOrdersActive)}
+        {renderCollapsible(Megaphone, "Marketing & Tracking", marketingItems, openGroup === 'marketing', () => toggleGroup('marketing'), isMarketingActive)}
+        
         
         {renderCollapsible(Users, "Customer Management", customerManagementItems, openGroup === 'customer', () => toggleGroup('customer'), isCustomerMgmtActive)}
         {renderCollapsible(Wallet, "Account Management", accountManagementItems, openGroup === 'account', () => toggleGroup('account'), isAccountMgmtActive)}

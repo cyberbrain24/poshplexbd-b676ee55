@@ -69,6 +69,11 @@ const AdminBulkUpload = lazy(() => import("./pages/admin/AdminBulkUpload"));
 const AdminMusic = lazy(() => import("./pages/admin/AdminMusic"));
 const AdminSMS = lazy(() => import("./pages/admin/AdminSMS"));
 const AdminNotes = lazy(() => import("./pages/admin/AdminNotes"));
+const MarketingLayout = lazy(() => import("./pages/admin/marketing/MarketingLayout"));
+const MarketingOverview = lazy(() => import("./pages/admin/marketing/MarketingOverview"));
+const MetaPixelSettings = lazy(() => import("./pages/admin/marketing/MetaPixelSettings"));
+const MetaCapiSettings = lazy(() => import("./pages/admin/marketing/MetaCapiSettings"));
+const GA4Settings = lazy(() => import("./pages/admin/marketing/GA4Settings"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -169,6 +174,12 @@ const App = () => (
                     <Route path="sms" element={<AdminSMS />} />
                     <Route path="notes" element={<AdminNotes />} />
                     <Route path="site-settings" element={<AdminSiteSettings />} />
+                    <Route path="marketing" element={<MarketingLayout />}>
+                      <Route index element={<MarketingOverview />} />
+                      <Route path="meta-pixel" element={<MetaPixelSettings />} />
+                      <Route path="meta-capi" element={<MetaCapiSettings />} />
+                      <Route path="ga4" element={<GA4Settings />} />
+                    </Route>
                   </Route>
                   
                   <Route path="*" element={<NotFound />} />

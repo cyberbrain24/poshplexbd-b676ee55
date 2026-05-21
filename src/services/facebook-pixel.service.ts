@@ -92,12 +92,13 @@ const injectScript = () => {
   const firstScript = document.getElementsByTagName('script')[0];
   firstScript?.parentNode?.insertBefore(script, firstScript);
 
-  // Initialize pixel
+  // Initialize pixel (with Advanced Matching user data when available)
   if (_config.advancedMatching) {
-    window.fbq('init', _config.pixelId, {});
+    window.fbq('init', _config.pixelId, _userData || {});
   } else {
     window.fbq('init', _config.pixelId);
   }
+
 
   _initialized = true;
 

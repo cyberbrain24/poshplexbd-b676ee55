@@ -9,7 +9,9 @@ export interface PixelSettings {
   meta_test_mode: boolean;
   meta_advanced_matching: boolean;
   meta_ecommerce_events_enabled: boolean;
+  meta_capi_enabled: boolean;
 }
+
 
 export const usePixelSettings = () => {
   return useQuery({

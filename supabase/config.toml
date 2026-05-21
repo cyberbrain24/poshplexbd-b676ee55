@@ -17,3 +17,7 @@ verify_jwt = false
 
 [functions.sms-order-placed]
 verify_jwt = false
+
+[functions.meta-capi]
+verify_jwt = false
+

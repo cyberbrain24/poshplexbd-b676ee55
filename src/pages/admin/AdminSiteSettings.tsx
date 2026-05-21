@@ -129,7 +129,9 @@ const AdminSiteSettings = () => {
   const [testMode, setTestMode] = useState(false);
   const [advancedMatching, setAdvancedMatching] = useState(true);
   const [ecommerceEvents, setEcommerceEvents] = useState(false);
+  const [capiEnabled, setCapiEnabled] = useState(false);
   const [pixelInitialized, setPixelInitialized] = useState(false);
+
 
   const logoRef = useRef<HTMLInputElement>(null);
   const desktopHeroRef = useRef<HTMLInputElement>(null);
@@ -150,6 +152,7 @@ const AdminSiteSettings = () => {
       setTestMode(pixelSettings.meta_test_mode);
       setAdvancedMatching(pixelSettings.meta_advanced_matching);
       setEcommerceEvents(pixelSettings.meta_ecommerce_events_enabled);
+      setCapiEnabled((pixelSettings as any).meta_capi_enabled ?? false);
       setPixelInitialized(true);
     }
   }, [pixelSettings, pixelInitialized]);
@@ -163,8 +166,10 @@ const AdminSiteSettings = () => {
       meta_test_mode: testMode,
       meta_advanced_matching: advancedMatching,
       meta_ecommerce_events_enabled: ecommerceEvents,
-    });
+      meta_capi_enabled: capiEnabled,
+    } as any);
   };
+
 
   const handleUpload = async (
     file: File,
@@ -471,7 +476,18 @@ const AdminSiteSettings = () => {
                 </div>
                 <Switch checked={ecommerceEvents} onCheckedChange={setEcommerceEvents} />
               </div>
+
+              <div className="flex items-center justify-between border border-border p-3 sm:col-span-2">
+                <div>
+                  <p className="text-sm font-medium">Conversions API (CAPI)</p>
+                  <p className="text-xs text-muted-foreground">
+                    Server-side event mirror. Recovers ~30% of events lost to ad blockers / iOS. Requires META_CAPI_ACCESS_TOKEN.
+                  </p>
+                </div>
+                <Switch checked={capiEnabled} onCheckedChange={setCapiEnabled} />
+              </div>
             </div>
+
 
             <Button
               onClick={handleSavePixel}

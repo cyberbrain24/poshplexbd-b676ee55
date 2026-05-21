@@ -146,10 +146,69 @@ const safeFbq = (...args: any[]) => {
   }
 };
 
+// ─── CAPI (Conversions API) Bridge ─────────────────────────────
+// Lightweight UUID v4 (avoids extra dep)
+const uuid = () =>
+  ([1e7] as any + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c: any) =>
+    (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16),
+  );
+
+const getCookie = (name: string): string | undefined => {
+  if (typeof document === 'undefined') return undefined;
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  return match ? match[2] : undefined;
+};
+
+/**
+ * Send event to server-side Conversions API for browser+server deduplication.
+ * Fired in parallel with fbq — Meta dedupes by (event_name, event_id).
+ */
+const sendCapi = async (
+  eventName: string,
+  eventId: string,
+  customData?: Record<string, unknown>,
+) => {
+  try {
+    // Lazy import to avoid pulling supabase client into critical render path
+    const { supabase } = await import('@/integrations/supabase/client');
+    const userData = {
+      ..._userData,
+      fbp: getCookie('_fbp'),
+      fbc: getCookie('_fbc'),
+    };
+    await supabase.functions.invoke('meta-capi', {
+      body: {
+        event_name: eventName,
+        event_id: eventId,
+        event_source_url: typeof window !== 'undefined' ? window.location.href : undefined,
+        user_data: userData,
+        custom_data: customData,
+        action_source: 'website',
+      },
+    });
+  } catch {
+    // Silently fail — CAPI is enhancement, not critical
+  }
+};
+
+/**
+ * Dispatch a standard pixel event with Browser+CAPI dedup.
+ * Generates one event_id used by both the fbq call and the CAPI mirror.
+ */
+const dispatch = (eventName: string, params: Record<string, any>) => {
+  const eventId = uuid();
+  safeFbq('track', eventName, params, { eventID: eventId });
+  // Fire CAPI in background (non-blocking)
+  void sendCapi(eventName, eventId, params);
+};
+
 // ─── Standard Events ───────────────────────────────────────────
 
 export const trackPageView = () => {
-  safeFbq('track', 'PageView');
+  // PageView is high-volume; only fire to CAPI when test mode is on or in prod
+  const eventId = uuid();
+  safeFbq('track', 'PageView', undefined, { eventID: eventId });
+  void sendCapi('PageView', eventId);
 };
 
 export const trackViewContent = (data: {
@@ -159,7 +218,7 @@ export const trackViewContent = (data: {
   value: number;
   currency?: string;
 }) => {
-  safeFbq('track', 'ViewContent', {
+  dispatch('ViewContent', {
     content_name: data.contentName,
     content_ids: data.contentIds,
     content_type: data.contentType || 'product',
@@ -176,7 +235,7 @@ export const trackAddToCart = (data: {
   currency?: string;
   quantity?: number;
 }) => {
-  safeFbq('track', 'AddToCart', {
+  dispatch('AddToCart', {
     content_name: data.contentName,
     content_ids: data.contentIds,
     content_type: data.contentType || 'product',
@@ -192,7 +251,7 @@ export const trackInitiateCheckout = (data: {
   currency?: string;
   numItems: number;
 }) => {
-  safeFbq('track', 'InitiateCheckout', {
+  dispatch('InitiateCheckout', {
     content_ids: data.contentIds,
     value: data.value,
     currency: data.currency || 'BDT',
@@ -207,7 +266,7 @@ export const trackPurchase = (data: {
   numItems: number;
   orderId?: string;
 }) => {
-  safeFbq('track', 'Purchase', {
+  dispatch('Purchase', {
     content_ids: data.contentIds,
     value: data.value,
     currency: data.currency || 'BDT',
@@ -217,7 +276,7 @@ export const trackPurchase = (data: {
 };
 
 export const trackSearch = (searchString: string) => {
-  safeFbq('track', 'Search', { search_string: searchString });
+  dispatch('Search', { search_string: searchString });
 };
 
 export const trackAddToWishlist = (data: {
@@ -226,7 +285,7 @@ export const trackAddToWishlist = (data: {
   value: number;
   currency?: string;
 }) => {
-  safeFbq('track', 'AddToWishlist', {
+  dispatch('AddToWishlist', {
     content_name: data.contentName,
     content_ids: data.contentIds,
     value: data.value,
@@ -239,7 +298,7 @@ export const trackCompleteRegistration = (data?: {
   currency?: string;
   status?: boolean;
 }) => {
-  safeFbq('track', 'CompleteRegistration', {
+  dispatch('CompleteRegistration', {
     value: data?.value || 0,
     currency: data?.currency || 'BDT',
     status: data?.status ?? true,
@@ -247,9 +306,12 @@ export const trackCompleteRegistration = (data?: {
 };
 
 export const trackContact = () => {
-  safeFbq('track', 'Contact');
+  dispatch('Contact', {});
 };
 
 export const trackCustomEvent = (eventName: string, params?: Record<string, any>) => {
-  safeFbq('trackCustom', eventName, params);
+  const eventId = uuid();
+  safeFbq('trackCustom', eventName, params, { eventID: eventId });
+  void sendCapi(eventName, eventId, params);
 };
+

@@ -9,7 +9,9 @@ export interface PixelSettings {
   meta_test_mode: boolean;
   meta_advanced_matching: boolean;
   meta_ecommerce_events_enabled: boolean;
+  meta_capi_enabled: boolean;
 }
+
 
 export const usePixelSettings = () => {
   return useQuery({
@@ -17,7 +19,7 @@ export const usePixelSettings = () => {
     queryFn: async (): Promise<PixelSettings | null> => {
       const { data, error } = await supabase
         .from("site_settings")
-        .select("id, meta_pixel_id, meta_pixel_enabled, meta_test_mode, meta_advanced_matching, meta_ecommerce_events_enabled")
+        .select("id, meta_pixel_id, meta_pixel_enabled, meta_test_mode, meta_advanced_matching, meta_ecommerce_events_enabled, meta_capi_enabled")
         .limit(1)
         .maybeSingle();
 

@@ -1,42 +1,80 @@
 ## Goal
-Replace the heavy multi-section Business Intelligence dashboard with a lighter, simpler version focused only on the most useful KPIs and one or two charts. Remove complex analytics that bloat the page and the data hook.
+Add a Typography panel in **Admin → Site Settings** so you can pick fonts for each text element of the storefront (H1, H2, H3, H4, H5/H6, body/paragraph, navigation/buttons) without touching code. Changes apply site-wide instantly.
 
-## What stays (lightweight dashboard)
-1. **Header** — "Dashboard" title + subtitle
-2. **Top KPIs (4 cards)** — Today's Revenue, Today's Orders, Today's Qty Sold, Today's Profit
-3. **Quick Period Summary (4 cards)** — Revenue for: Today, Last 7 Days, Last 30 Days, This Month
-4. **Order Status row (compact)** — counts for Pending, Processing, Shipped, Delivered, Cancelled
-5. **Product summary (compact)** — Total Products, Active, Categories, Brands
-6. **One chart** — Revenue Last 7 Days (line/bar), full width
+## What you'll see in admin
+A new **"Typography"** card in Site Settings with one row per element:
 
-## What gets removed
-- SmartAlertsBar (low stock / sales spike / drop)
-- ComparisonCard with % indicators vs previous periods
-- PerformanceTable (Fast Moving Category, Top Product, Top Category) — 3 large tables
-- PaymentRatioChart donut + Method-wise Revenue breakdown
-- Payment analytics block (COD/Mobile/Bank cards + COD pending)
-- Sales Intelligence (Top Products / Top Categories tables, Best Size, Best Color)
-- Inventory Health Monitor (Dead Stock / Slow Moving / Fast Moving) — already not rendered but still in code
-- Revenue Last 12 Months chart
-- Orders Last 7 Days chart (keep only Revenue 7d)
-- Extra period cards (Yesterday, Day Before Yesterday, This Year)
+| Element | Font dropdown | Weight | Size scale | Preview |
+|---|---|---|---|---|
+| H1 (Display) | Anton / This is Fire / Bebas Neue / Archivo Black / … | 400–900 | 0.8x–1.4x | live sample |
+| H2 | Natoor / Anton / Space Grotesk / … | | | |
+| H3 | … | | | |
+| H4 | … | | | |
+| H5 / H6 | … | | | |
+| Body / Paragraph | Poppins / Inter / Space Grotesk / DM Sans / Archivo / IBM Plex Sans / Manrope / JetBrains Mono / Geist / Söhne-like | | | |
+| Navigation & Buttons | … | | | |
 
-## Files to change
+Each row also has: **Uppercase toggle**, **Letter spacing** (tight/normal/wide), **Reset** button.
 
-**Rewrite (much shorter)**
-- `src/pages/admin/AdminDashboard.tsx` — ~200 → ~80 lines, only the sections above
-- `src/hooks/useDashboard.ts` — ~544 → ~150 lines, compute only: today/7d/30d/thisMonth totals, status counts, product summary, revenueLast7Days series
-- `src/services/dashboard.service.ts` — drop variant cost/threshold fields and 12-month order range; fetch only last 30 days of orders + minimal product/category/brand counts
+A curated catalog of ~20 streetwear-appropriate fonts (Google Fonts + your existing local fonts: Street Culture, Wood Chaos, This is Fire, Natoor) is preloaded — no need to type font names.
 
-**Delete**
-- `src/components/admin/dashboard/DashboardAdvanced.tsx` (no longer used)
-- Remove unused exports from `DashboardWidgets.tsx` (keep `KPICard`, `SectionTitle`; drop `OrderPeriodCard`, `StatusCard`, `TopItemsTable` if unused)
-- Trim `DashboardCharts.tsx` to just `RevenueLast7DaysChart`
+A **"Save & Apply"** button writes settings and refreshes the live preview in the same tab.
 
-## Out of scope
-- No DB/schema changes
-- No changes to other admin pages, sidebar, or routing
-- AI assistant and other modules untouched
+## How it works (technical section)
 
-## Result
-Dashboard loads with one small query payload, renders ~4 sections instead of ~8, and the hook drops from 544 to ~150 lines — significantly faster and easier to maintain.
+### 1. Database (migration)
+Add JSON column to existing `site_settings` table:
+```sql
+ALTER TABLE public.site_settings
+ADD COLUMN typography jsonb DEFAULT '{}'::jsonb;
+```
+Shape stored:
+```json
+{
+  "h1": { "family": "This is Fire", "weight": 400, "scale": 1, "uppercase": true, "tracking": "tight" },
+  "h2": { ... }, "h3": {...}, "h4": {...}, "h5": {...},
+  "body": { "family": "Poppins", "weight": 400, "scale": 1, "uppercase": false, "tracking": "normal" },
+  "nav":  { ... }
+}
+```
+
+### 2. Font catalog
+New file `src/lib/fontCatalog.ts` — curated list with `{ name, googleHref?, localFamily?, category: 'display'|'sans'|'mono' }`. Includes existing local fonts + Google fonts: Anton, Bebas Neue, Archivo Black, Archivo, Space Grotesk, Space Mono, Inter, DM Sans, Manrope, IBM Plex Sans, JetBrains Mono, Plus Jakarta Sans, Syne, Sora, Urbanist.
+
+### 3. Runtime injection
+New `src/components/TypographyProvider.tsx` mounted in `App.tsx`:
+- Fetches `site_settings.typography` once via React Query (cached, refetched on settings save).
+- Dynamically appends `<link>` tags to `<head>` for any Google fonts referenced.
+- Writes a `<style id="dynamic-typography">` block with CSS variables and overrides, e.g.:
+  ```css
+  :root {
+    --font-h1: 'This is Fire', Impact, sans-serif;
+    --font-body: 'Poppins', sans-serif;
+    --tracking-h1: -0.02em;
+  }
+  h1 { font-family: var(--font-h1) !important; ... }
+  body, p, span, li, a, label { font-family: var(--font-body); }
+  ```
+- Skips override inside `.admin-shell` so the admin panel keeps its system-font reset.
+
+### 4. Admin UI
+New `src/components/admin/TypographySettings.tsx` rendered inside `AdminSiteSettings.tsx`:
+- React Hook Form state seeded from current row.
+- Per-row: `<Select>` for family (grouped: Display / Sans / Mono / Local), weight `<Select>`, scale `<Slider>` (0.8–1.4 step 0.05), `<Switch>` for uppercase, `<Select>` for letter spacing, live preview using inline `style`.
+- "Save & Apply" calls `supabase.from('site_settings').update({ typography }).eq('id', row.id)` then invalidates the React Query cache so `TypographyProvider` reapplies immediately.
+- "Reset to defaults" restores baked-in defaults that match current site (This is Fire H1, Natoor H2, Anton H3+, Poppins body).
+
+### 5. Files to add/edit
+- **Add**: `supabase/migrations/<ts>_add_typography_to_site_settings.sql`
+- **Add**: `src/lib/fontCatalog.ts`
+- **Add**: `src/components/TypographyProvider.tsx`
+- **Add**: `src/components/admin/TypographySettings.tsx`
+- **Edit**: `src/App.tsx` (mount provider above routes)
+- **Edit**: `src/pages/admin/AdminSiteSettings.tsx` (insert Typography card)
+
+### Out of scope
+- Per-page overrides (only global).
+- Font upload (catalog only — you can request custom additions later).
+- No changes to existing tokens in `index.css`; new overrides layer on top via `!important` for the targeted selectors only.
+
+Ready to build when you approve.

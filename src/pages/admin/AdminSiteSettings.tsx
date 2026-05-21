@@ -476,7 +476,18 @@ const AdminSiteSettings = () => {
                 </div>
                 <Switch checked={ecommerceEvents} onCheckedChange={setEcommerceEvents} />
               </div>
+
+              <div className="flex items-center justify-between border border-border p-3 sm:col-span-2">
+                <div>
+                  <p className="text-sm font-medium">Conversions API (CAPI)</p>
+                  <p className="text-xs text-muted-foreground">
+                    Server-side event mirror. Recovers ~30% of events lost to ad blockers / iOS. Requires META_CAPI_ACCESS_TOKEN.
+                  </p>
+                </div>
+                <Switch checked={capiEnabled} onCheckedChange={setCapiEnabled} />
+              </div>
             </div>
+
 
             <Button
               onClick={handleSavePixel}

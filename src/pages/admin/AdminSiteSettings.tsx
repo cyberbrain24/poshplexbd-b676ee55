@@ -10,6 +10,7 @@ import { Upload, X, Image as ImageIcon, Monitor, Smartphone, Activity, Sparkles,
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import TypographySettings from "@/components/admin/TypographySettings";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
@@ -591,6 +592,8 @@ const AdminSiteSettings = () => {
           </div>
         )}
       </section>
+
+      <TypographySettings />
 
     </div>
   );

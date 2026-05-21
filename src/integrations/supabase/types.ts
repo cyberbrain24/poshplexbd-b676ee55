@@ -2211,6 +2211,7 @@ export type Database = {
           openai_enabled: boolean
           openrouter_api_key: string | null
           openrouter_enabled: boolean
+          typography: Json
           updated_at: string
         }
         Insert: {
@@ -2233,6 +2234,7 @@ export type Database = {
           openai_enabled?: boolean
           openrouter_api_key?: string | null
           openrouter_enabled?: boolean
+          typography?: Json
           updated_at?: string
         }
         Update: {
@@ -2255,6 +2257,7 @@ export type Database = {
           openai_enabled?: boolean
           openrouter_api_key?: string | null
           openrouter_enabled?: boolean
+          typography?: Json
           updated_at?: string
         }
         Relationships: []

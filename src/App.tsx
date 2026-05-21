@@ -14,6 +14,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import MobileFooterNav from "./components/navigation/MobileFooterNav";
 import FacebookPixelTracker from "./components/tracking/FacebookPixelTracker";
 import FloatingMusicPlayer from "./components/music/FloatingMusicPlayer";
+import TypographyProvider from "./components/TypographyProvider";
 
 
 // Storefront pages - eagerly loaded (critical path)
@@ -106,6 +107,7 @@ const App = () => (
                 }}
               >
                 <ScrollToTop />
+                <TypographyProvider />
                 <FacebookPixelTracker />
                 <Routes>
                   <Route path="/" element={<Index />} />

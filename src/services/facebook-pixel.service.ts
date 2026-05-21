@@ -42,6 +42,22 @@ export const setPixelConfig = (config: PixelConfig) => {
 
 export const getPixelConfig = () => _config;
 
+/**
+ * Set user data for Advanced Matching. Call after auth/login.
+ * Pass plain values — Facebook SDK auto-hashes em/ph/fn/ln.
+ * Re-inits the pixel with user data if already loaded.
+ */
+export const setAdvancedMatchingUser = (data: AdvancedMatchingUserData | null) => {
+  _userData = data;
+  if (_initialized && _config?.advancedMatching && _config.pixelId) {
+    try {
+      window.fbq('init', _config.pixelId, data || {});
+      if (_config.testMode) console.log('[FB Pixel] Advanced Matching updated:', data);
+    } catch { /* noop */ }
+  }
+};
+
+
 // ─── Script Injection (Singleton, Lazy) ────────────────────────
 const injectScript = () => {
   if (_scriptInjected) return;

@@ -18,7 +18,7 @@ const CategoryBrowser = () => {
     }
   }, [mainCategories, activeId]);
 
-  const subcategories = categories.filter((c) => c.parent_id === activeId);
+  const subcategories = categories.filter((c) => c.parent_id === activeId && c.is_active !== false);
   const sliderRef = useRef<HTMLDivElement>(null);
 
   const handleSelect = (id: string) => {

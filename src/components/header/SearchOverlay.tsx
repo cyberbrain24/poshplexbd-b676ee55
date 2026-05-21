@@ -1,10 +1,12 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, X, Loader2, Sparkles } from "lucide-react";
 import { useProductSearch, usePopularCategories } from "@/hooks/useProductSearch";
 import { useAISearchSuggest } from "@/hooks/useAISearchSuggest";
 import { generateProductSlug } from "@/lib/slug";
 import { formatCurrency } from "@/lib/currency";
+import { trackSearch } from "@/services/facebook-pixel.service";
+
 
 interface SearchOverlayProps {
   onClose: () => void;

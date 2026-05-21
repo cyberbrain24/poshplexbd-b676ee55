@@ -6,6 +6,7 @@ import {
   setupLazyLoading,
   trackPageView,
   setAdvancedMatchingUser,
+  captureClickId,
 } from "@/services/facebook-pixel.service";
 
 
@@ -40,6 +41,7 @@ export const useFacebookPixel = () => {
           advancedMatching: data.meta_advanced_matching ?? true,
         });
 
+        captureClickId();
         setupLazyLoading();
 
         // Restore Advanced Matching for already-logged-in user

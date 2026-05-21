@@ -18,7 +18,7 @@ import { getShippingForLocation, ShippingConfig, SHIPPING_OUTSIDE_DHAKA } from "
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/currency";
-import { trackInitiateCheckout, trackPurchase } from "@/services/facebook-pixel.service";
+import { trackInitiateCheckout, trackPurchase, setAdvancedMatchingUser } from "@/services/facebook-pixel.service";
 
 const DEFAULT_PASSWORD = "poshplex";
 
@@ -466,6 +466,17 @@ const Checkout = () => {
       // Step 3: Store customer session for "auto-login"
       localStorage.setItem('poshplex_customer_phone', customerDetails.phone);
       localStorage.setItem('poshplex_customer_name', customerDetails.name);
+
+      // Forward customer identifiers into Advanced Matching just before Purchase
+      // so Meta receives hashed ph/em/fn/ln even for guest checkouts.
+      const [fn, ...rest] = (customerDetails.name || "").trim().split(/\s+/).filter(Boolean);
+      setAdvancedMatchingUser({
+        ph: (customerDetails.phone || "").replace(/\D/g, "") || undefined,
+        em: customerDetails.email || undefined,
+        fn: fn || undefined,
+        ln: rest.join(" ") || undefined,
+        country: "bd",
+      });
 
       // Fire Purchase pixel event (before cart is cleared by mutation onSuccess)
       trackPurchase({

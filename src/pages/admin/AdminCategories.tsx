@@ -3,6 +3,7 @@ import { Plus, Pencil, Trash2, Search, ChevronRight, AlertTriangle, ArrowUp, Arr
 import MasterDataModal from "@/components/admin/MasterDataModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, useReorderCategories } from "@/hooks/useMasterData";
 import { Category } from "@/types/product";

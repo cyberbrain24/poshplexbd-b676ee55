@@ -3,6 +3,7 @@ import { Plus, Pencil, Trash2, Search, ChevronRight, AlertTriangle, ArrowUp, Arr
 import MasterDataModal from "@/components/admin/MasterDataModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, useReorderCategories } from "@/hooks/useMasterData";
 import { Category } from "@/types/product";
@@ -194,6 +195,7 @@ const AdminCategories = () => {
               <TableHead>Name</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Subcategories</TableHead>
+              <TableHead className="w-24">Active</TableHead>
               <TableHead>Created</TableHead>
               <TableHead className="w-24">Actions</TableHead>
             </TableRow>
@@ -201,11 +203,11 @@ const AdminCategories = () => {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8">Loading...</TableCell>
+                <TableCell colSpan={8} className="text-center py-8">Loading...</TableCell>
               </TableRow>
             ) : filteredItems.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   No categories found
                 </TableCell>
               </TableRow>
@@ -260,6 +262,24 @@ const AdminCategories = () => {
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {!item.isChild ? getSubcategoryCount(item.id) : '-'}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={item.is_active !== false}
+                        onCheckedChange={async (checked) => {
+                          try {
+                            await updateMutation.mutateAsync({ id: item.id, data: { is_active: checked } });
+                            toast.success(checked ? "Category activated" : "Category hidden from storefront");
+                          } catch {
+                            toast.error("Failed to update");
+                          }
+                        }}
+                      />
+                      {item.is_active === false && (
+                        <Badge variant="outline" className="text-[10px] uppercase">Hidden</Badge>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {new Date(item.created_at).toLocaleDateString()}

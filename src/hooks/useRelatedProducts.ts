@@ -7,10 +7,11 @@ const MINIMAL_SELECT = `
   id,
   name,
   base_price,
-  category:categories(name),
+  category:categories(name, is_active),
   images:product_images(image_url, is_main),
   variants:product_variants(selling_price, is_active)
 `;
+const filterActiveCat = (rows: any[]) => rows.filter((p) => !p.category || p.category.is_active !== false);
 
 /**
  * Fetch related products based on category
@@ -34,7 +35,7 @@ export const useRelatedProducts = (
           .limit(limit);
 
         if (error) throw error;
-        return data as unknown as Product[];
+        return filterActiveCat(data as any[]) as unknown as Product[];
       }
 
       const { data, error } = await supabase
@@ -47,11 +48,11 @@ export const useRelatedProducts = (
         .limit(limit);
 
       if (error) throw error;
+      const dataFiltered = filterActiveCat(data as any[]);
 
-      // If not enough products in same category, supplement with others
-      if (data.length < limit) {
-        const remaining = limit - data.length;
-        const existingIds = [productId, ...data.map((p: any) => p.id)].filter(Boolean);
+      if (dataFiltered.length < limit) {
+        const remaining = limit - dataFiltered.length;
+        const existingIds = [productId, ...dataFiltered.map((p: any) => p.id)].filter(Boolean);
 
         const { data: moreProducts, error: moreError } = await supabase
           .from("products")
@@ -62,11 +63,11 @@ export const useRelatedProducts = (
           .limit(remaining);
 
         if (!moreError && moreProducts) {
-          return [...data, ...moreProducts] as unknown as Product[];
+          return [...dataFiltered, ...filterActiveCat(moreProducts as any[])] as unknown as Product[];
         }
       }
 
-      return data as unknown as Product[];
+      return dataFiltered as unknown as Product[];
     },
     enabled: !!productId,
     staleTime: 1000 * 60 * 5,

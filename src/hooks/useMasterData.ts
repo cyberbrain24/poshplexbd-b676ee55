@@ -331,7 +331,7 @@ export const useCategories = () => {
 export const useCreateCategory = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (categoryData: { name: string; parent_id?: string; image_url?: string }) => {
+    mutationFn: async (categoryData: { name: string; parent_id?: string; image_url?: string; is_active?: boolean }) => {
       const { data, error } = await supabase
         .from("categories")
         .insert(categoryData)
@@ -347,7 +347,7 @@ export const useCreateCategory = () => {
 export const useUpdateCategory = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: { name: string; parent_id?: string; image_url?: string } }) => {
+    mutationFn: async ({ id, data }: { id: string; data: { name?: string; parent_id?: string | null; image_url?: string | null; is_active?: boolean } }) => {
       const { data: result, error } = await supabase
         .from("categories")
         .update(data)

@@ -16,7 +16,7 @@ const CategorySection = () => {
   const [api, setApi] = useState<CarouselApi>();
   const [canScrollNext, setCanScrollNext] = useState(false);
 
-  const mainCategories = categories.filter(c => !c.parent_id);
+  const mainCategories = categories.filter(c => !c.parent_id && c.is_active !== false);
 
   useEffect(() => {
     if (!api) return;

@@ -11,6 +11,7 @@ const FiftyFiftySection = () => {
       const { data, error } = await supabase
         .from("categories")
         .select("id, name")
+        .eq("is_active", true)
         .limit(2);
       
       if (error) throw error;

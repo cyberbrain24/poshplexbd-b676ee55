@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 const CategoryBrowser = () => {
   const { data: categories = [], isLoading } = useCategories();
 
-  const mainCategories = categories.filter((c) => !c.parent_id);
+  const mainCategories = categories.filter((c) => !c.parent_id && c.is_active !== false);
   const [activeId, setActiveId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -18,7 +18,7 @@ const CategoryBrowser = () => {
     }
   }, [mainCategories, activeId]);
 
-  const subcategories = categories.filter((c) => c.parent_id === activeId);
+  const subcategories = categories.filter((c) => c.parent_id === activeId && c.is_active !== false);
   const sliderRef = useRef<HTMLDivElement>(null);
 
   const handleSelect = (id: string) => {

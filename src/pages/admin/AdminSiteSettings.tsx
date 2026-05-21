@@ -1,12 +1,11 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useSiteBranding, useUpdateSiteBranding, useUploadBrandingAsset } from "@/hooks/useSiteBranding";
-import { usePixelSettings, useUpdatePixelSettings } from "@/hooks/usePixelSettings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { Upload, X, Image as ImageIcon, Monitor, Smartphone, Activity, Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
+import { Upload, X, Image as ImageIcon, Monitor, Smartphone, Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,8 +17,6 @@ const AdminSiteSettings = () => {
   const { data: branding, isLoading } = useSiteBranding();
   const updateMutation = useUpdateSiteBranding();
   const uploadMutation = useUploadBrandingAsset();
-  const { data: pixelSettings, isLoading: loadingPixel } = usePixelSettings();
-  const updatePixelMutation = useUpdatePixelSettings();
 
   type ProviderStatus = { configured: boolean; enabled: boolean; masked: string | null; source: string | null };
   type ProviderKey = "gemini" | "openai" | "anthropic" | "openrouter";
@@ -123,19 +120,6 @@ const AdminSiteSettings = () => {
   const [slogan, setSlogan] = useState("");
   const [initialized, setInitialized] = useState(false);
 
-  // Pixel form state
-  const [pixelId, setPixelId] = useState("");
-  const [pixelEnabled, setPixelEnabled] = useState(false);
-  const [testMode, setTestMode] = useState(false);
-  const [advancedMatching, setAdvancedMatching] = useState(true);
-  const [ecommerceEvents, setEcommerceEvents] = useState(false);
-  const [capiEnabled, setCapiEnabled] = useState(false);
-  const [capiAccessToken, setCapiAccessToken] = useState("");
-  const [ga4Enabled, setGa4Enabled] = useState(false);
-  const [ga4MeasurementId, setGa4MeasurementId] = useState("");
-  const [pixelInitialized, setPixelInitialized] = useState(false);
-
-
   const logoRef = useRef<HTMLInputElement>(null);
   const desktopHeroRef = useRef<HTMLInputElement>(null);
   const mobileHeroRef = useRef<HTMLInputElement>(null);
@@ -146,38 +130,6 @@ const AdminSiteSettings = () => {
     setSlogan(branding.slogan);
     setInitialized(true);
   }
-
-  // Initialize pixel form
-  useEffect(() => {
-    if (pixelSettings && !pixelInitialized) {
-      setPixelId(pixelSettings.meta_pixel_id || "");
-      setPixelEnabled(pixelSettings.meta_pixel_enabled);
-      setTestMode(pixelSettings.meta_test_mode);
-      setAdvancedMatching(pixelSettings.meta_advanced_matching);
-      setEcommerceEvents(pixelSettings.meta_ecommerce_events_enabled);
-      setCapiEnabled(pixelSettings.meta_capi_enabled ?? false);
-      setCapiAccessToken(pixelSettings.meta_capi_access_token || "");
-      setGa4Enabled(pixelSettings.ga4_enabled ?? false);
-      setGa4MeasurementId(pixelSettings.ga4_measurement_id || "");
-      setPixelInitialized(true);
-    }
-  }, [pixelSettings, pixelInitialized]);
-
-  const handleSavePixel = async () => {
-    if (!pixelSettings) return;
-    await updatePixelMutation.mutateAsync({
-      id: pixelSettings.id,
-      meta_pixel_id: pixelId.trim() || null,
-      meta_pixel_enabled: pixelEnabled,
-      meta_test_mode: testMode,
-      meta_advanced_matching: advancedMatching,
-      meta_ecommerce_events_enabled: ecommerceEvents,
-      meta_capi_enabled: capiEnabled,
-      meta_capi_access_token: capiAccessToken.trim() || null,
-      ga4_enabled: ga4Enabled,
-      ga4_measurement_id: ga4MeasurementId.trim() || null,
-    } as any);
-  };
 
 
   const handleUpload = async (

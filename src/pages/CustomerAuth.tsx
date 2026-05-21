@@ -142,9 +142,26 @@ const CustomerAuth = () => {
           if (accountError) console.error("Failed to create customer account:", accountError);
         }
 
+        // Advanced Matching + CompleteRegistration event for Meta Pixel
+        const phoneDigits = resolved.type === "phone" ? identifier.replace(/\D/g, "") : undefined;
+        const [firstName, ...rest] = name.trim().split(/\s+/);
+        setAdvancedMatchingUser({
+          em: resolved.type === "email" ? identifier.trim() : undefined,
+          ph: phoneDigits,
+          fn: firstName,
+          ln: rest.join(" ") || undefined,
+          country: "bd",
+        });
+        trackCompleteRegistration({
+          status: true,
+          value: 0,
+          currency: "BDT",
+        });
+
         toast.success("Account created! You can now login.");
         setIsLogin(true);
       }
+
     } catch (error: any) {
       if (error.message === "Invalid login credentials") {
         toast.error("Invalid credentials. Please check your details.");

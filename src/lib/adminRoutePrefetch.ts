@@ -29,6 +29,10 @@ export const adminRouteLoaders: Record<string, Loader> = {
   "/admin/customer-types": () => import("@/pages/admin/AdminCustomerTypes"),
   "/admin/media": () => import("@/pages/admin/AdminMedia"),
   "/admin/site-settings": () => import("@/pages/admin/AdminSiteSettings"),
+  "/admin/marketing": () => import("@/pages/admin/marketing/MarketingOverview"),
+  "/admin/marketing/meta-pixel": () => import("@/pages/admin/marketing/MetaPixelSettings"),
+  "/admin/marketing/meta-capi": () => import("@/pages/admin/marketing/MetaCapiSettings"),
+  "/admin/marketing/ga4": () => import("@/pages/admin/marketing/GA4Settings"),
 };
 
 const prefetched = new Set<string>();

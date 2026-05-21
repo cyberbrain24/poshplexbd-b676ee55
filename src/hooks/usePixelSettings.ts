@@ -10,16 +10,21 @@ export interface PixelSettings {
   meta_advanced_matching: boolean;
   meta_ecommerce_events_enabled: boolean;
   meta_capi_enabled: boolean;
+  meta_capi_access_token: string | null;
+  ga4_enabled: boolean;
+  ga4_measurement_id: string | null;
 }
 
+const SELECT_COLS =
+  "id, meta_pixel_id, meta_pixel_enabled, meta_test_mode, meta_advanced_matching, meta_ecommerce_events_enabled, meta_capi_enabled, meta_capi_access_token, ga4_enabled, ga4_measurement_id";
 
 export const usePixelSettings = () => {
   return useQuery({
     queryKey: ["pixel-settings"],
     queryFn: async (): Promise<PixelSettings | null> => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("site_settings")
-        .select("id, meta_pixel_id, meta_pixel_enabled, meta_test_mode, meta_advanced_matching, meta_ecommerce_events_enabled, meta_capi_enabled")
+        .select(SELECT_COLS)
         .limit(1)
         .maybeSingle();
 
@@ -35,7 +40,7 @@ export const useUpdatePixelSettings = () => {
   return useMutation({
     mutationFn: async (updates: Partial<PixelSettings> & { id: string }) => {
       const { id, ...rest } = updates;
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("site_settings")
         .update(rest)
         .eq("id", id);
@@ -43,7 +48,8 @@ export const useUpdatePixelSettings = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pixel-settings"] });
-      toast.success("Pixel settings saved");
+      queryClient.invalidateQueries({ queryKey: ["public-site-settings"] });
+      toast.success("Settings saved");
     },
     onError: (err: Error) => {
       toast.error("Failed to save: " + err.message);

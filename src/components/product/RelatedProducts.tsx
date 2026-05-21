@@ -62,7 +62,7 @@ const RelatedProducts = ({
 
   return (
     <section className="w-full px-6 mb-16">
-      <h2 className="text-sm font-light text-foreground mb-4">{title}</h2>
+      <h5 className="text-sm font-light text-foreground mb-4">{title}</h5>
       {/* Grid: 3 cols on mobile (2 rows of 3), 6 cols on desktop (1 row of 6) */}
       <div className="grid grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
         {products.slice(0, 6).map((product) => (

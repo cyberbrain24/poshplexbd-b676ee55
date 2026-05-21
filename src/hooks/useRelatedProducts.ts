@@ -7,10 +7,11 @@ const MINIMAL_SELECT = `
   id,
   name,
   base_price,
-  category:categories(name),
+  category:categories(name, is_active),
   images:product_images(image_url, is_main),
   variants:product_variants(selling_price, is_active)
 `;
+const filterActiveCat = (rows: any[]) => rows.filter((p) => !p.category || p.category.is_active !== false);
 
 /**
  * Fetch related products based on category

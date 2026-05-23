@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Send, Loader2, Check, X, Sparkles, Image as ImageIcon, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -244,7 +244,7 @@ export default function AdminProductAI({ embedded = false }: Props) {
         </div>
       )}
 
-      <div className="border-t border-border p-2 flex gap-2">
+      <div className="border-t border-border p-2 flex gap-2 items-end">
         <input
           ref={fileRef}
           type="file"
@@ -252,17 +252,24 @@ export default function AdminProductAI({ embedded = false }: Props) {
           className="hidden"
           onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])}
         />
-        <Button size="icon" variant="outline" disabled={attaching || loading} onClick={() => fileRef.current?.click()} title="Upload image">
+        <Button size="icon" variant="outline" disabled={attaching || loading} onClick={() => fileRef.current?.click()} title="Upload image" className="shrink-0">
           {attaching ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />}
         </Button>
-        <Input
+        <Textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), send())}
-          placeholder={pending ? "Approve or reject above…" : "Ask anything about products…"}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              send();
+            }
+          }}
+          placeholder={pending ? "Approve or reject above…" : "Ask anything about products… (Shift+Enter for new line)"}
           disabled={loading || !!pending}
+          rows={3}
+          className="flex-1 min-h-[72px] max-h-48 resize-y leading-relaxed text-sm"
         />
-        <Button onClick={send} disabled={loading || !!pending || (!input.trim() && !attachedImageUrl)}>
+        <Button onClick={send} disabled={loading || !!pending || (!input.trim() && !attachedImageUrl)} className="shrink-0 h-[72px]">
           <Send className="h-4 w-4" />
         </Button>
       </div>

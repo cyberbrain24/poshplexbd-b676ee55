@@ -186,8 +186,13 @@ async function callProvider(provider: Provider, state: ProviderState, body: any)
   });
 }
 
-function shouldFailover(status: number): boolean {
-  return status === 429 || status === 408 || status === 503 || status === 502 || status === 504 || status === 500;
+function shouldFailover(status: number, provider?: Provider, errorText = ""): boolean {
+  const transient = status === 429 || status === 408 || status === 503 || status === 502 || status === 504 || status === 500;
+  const openRouterAutoBlocked =
+    provider === "openrouter" &&
+    status === 404 &&
+    /No endpoints available matching your guardrail restrictions and data policy/i.test(errorText);
+  return transient || openRouterAutoBlocked;
 }
 
 export async function aiChatCompletion(body: any, _opts: { stream?: boolean } = {}): Promise<Response> {
@@ -216,11 +221,11 @@ export async function aiChatCompletion(body: any, _opts: { stream?: boolean } = 
     try {
       const resp = await callProvider(provider, state, body);
       if (resp.ok) return resp;
-      if (!shouldFailover(resp.status) || i === order.length - 1) {
+      const errorText = await resp.clone().text().catch(() => "");
+      if (!shouldFailover(resp.status, provider, errorText) || i === order.length - 1) {
         return resp;
       }
-      try { await resp.text(); } catch { /* ignore */ }
-      console.warn(`AI provider ${provider} returned ${resp.status}, failing over...`);
+      console.warn(`AI provider ${provider} returned ${resp.status}, failing over...`, errorText);
       lastResp = resp;
     } catch (e) {
       console.error(`AI provider ${provider} threw:`, e);

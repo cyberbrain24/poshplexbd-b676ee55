@@ -22,25 +22,6 @@ interface Props {
   embedded?: boolean;
 }
 
-/**
- * Split a pasted block into multiple prompts.
- * Rules (in priority order):
- *   1. Blank-line separated paragraphs → each paragraph is one prompt.
- *   2. Otherwise, numbered lines (1. / 1) / -) → each line is one prompt.
- *   3. Otherwise → single prompt.
- */
-function splitPrompts(raw: string): string[] {
-  const text = raw.trim();
-  if (!text) return [];
-  // Blank-line separated
-  const byBlank = text.split(/\n\s*\n+/).map((s) => s.trim()).filter(Boolean);
-  if (byBlank.length > 1) return byBlank;
-  // Numbered / bulleted list
-  const lines = text.split(/\n+/).map((s) => s.trim()).filter(Boolean);
-  const looksListy = lines.length > 1 && lines.every((l) => /^(\d+[.)]|[-*•])\s+/.test(l));
-  if (looksListy) return lines.map((l) => l.replace(/^(\d+[.)]|[-*•])\s+/, "").trim()).filter(Boolean);
-  return [text];
-}
 
 export default function AdminProductAI({ embedded = false }: Props) {
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -116,23 +97,23 @@ export default function AdminProductAI({ embedded = false }: Props) {
 
   const send = async () => {
     if (!input.trim() && !attachedImageUrl) return;
-    const prompts = splitPrompts(input);
-    const first = prompts[0] || "";
-    const rest = prompts.slice(1);
-
-    let firstText = first;
+    let text = input.trim();
     if (attachedImageUrl) {
-      firstText = `[Image uploaded: ${attachedImageUrl}]\n\n${firstText || "Please use this image."}`;
+      text = `[Image uploaded: ${attachedImageUrl}]\n\n${text || "Please use this image."}`;
     }
-    const next: Msg[] = [...messages, { role: "user", content: firstText }];
-    setMessages(next);
-    messagesRef.current = next;
     setInput("");
     setAttachedImageUrl(null);
-    if (rest.length > 0) {
-      setQueue((q) => [...q, ...rest]);
-      toast.message(`Queued ${rest.length} more prompt${rest.length === 1 ? "" : "s"}`);
+
+    // If the assistant is busy (loading) or awaiting confirmation, queue the prompt.
+    if (loading || pending || queue.length > 0) {
+      setQueue((q) => [...q, text]);
+      toast.message(`Queued (position ${queue.length + 1})`);
+      return;
     }
+
+    const next: Msg[] = [...messages, { role: "user", content: text }];
+    setMessages(next);
+    messagesRef.current = next;
     await callBackend(next);
   };
 
@@ -229,7 +210,7 @@ export default function AdminProductAI({ embedded = false }: Props) {
               <li>"Deactivate Mummy"</li>
             </ul>
             <p className="text-xs pt-2">
-              <strong className="text-foreground">Tip:</strong> paste multiple prompts separated by a blank line (or as a numbered list) to queue them. Use <em>Approve All Queue</em> to auto-run every step.
+              <strong className="text-foreground">Tip:</strong> press Enter to send. While the AI is working, any new prompt you Enter goes into the queue and runs in order. Use <em>Approve All Queue</em> to auto-run every step.
             </p>
           </div>
         )}
@@ -337,12 +318,12 @@ export default function AdminProductAI({ embedded = false }: Props) {
               send();
             }
           }}
-          placeholder={pending ? "Approve or reject above…" : "Ask anything… paste multiple prompts separated by a blank line to queue them (Shift+Enter for new line)"}
-          disabled={loading || !!pending}
+          placeholder={loading || pending ? "Type next prompt and press Enter to queue…" : "Ask anything… press Enter to send (Shift+Enter for new line)"}
+          disabled={false}
           rows={3}
           className="flex-1 min-h-[72px] max-h-48 resize-y leading-relaxed text-sm"
         />
-        <Button onClick={send} disabled={loading || !!pending || (!input.trim() && !attachedImageUrl)} className="shrink-0 h-[72px]">
+        <Button onClick={send} disabled={!input.trim() && !attachedImageUrl} className="shrink-0 h-[72px]" title={loading || pending ? "Add to queue" : "Send"}>
           <Send className="h-4 w-4" />
         </Button>
       </div>

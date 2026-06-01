@@ -3,7 +3,7 @@ import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Loader2, Check, X, Sparkles, Image as ImageIcon, Wand2 } from "lucide-react";
+import { Send, Loader2, Check, X, Sparkles, Image as ImageIcon, ListChecks } from "lucide-react";
 import { toast } from "sonner";
 
 type Msg = {
@@ -22,6 +22,26 @@ interface Props {
   embedded?: boolean;
 }
 
+/**
+ * Split a pasted block into multiple prompts.
+ * Rules (in priority order):
+ *   1. Blank-line separated paragraphs → each paragraph is one prompt.
+ *   2. Otherwise, numbered lines (1. / 1) / -) → each line is one prompt.
+ *   3. Otherwise → single prompt.
+ */
+function splitPrompts(raw: string): string[] {
+  const text = raw.trim();
+  if (!text) return [];
+  // Blank-line separated
+  const byBlank = text.split(/\n\s*\n+/).map((s) => s.trim()).filter(Boolean);
+  if (byBlank.length > 1) return byBlank;
+  // Numbered / bulleted list
+  const lines = text.split(/\n+/).map((s) => s.trim()).filter(Boolean);
+  const looksListy = lines.length > 1 && lines.every((l) => /^(\d+[.)]|[-*•])\s+/.test(l));
+  if (looksListy) return lines.map((l) => l.replace(/^(\d+[.)]|[-*•])\s+/, "").trim()).filter(Boolean);
+  return [text];
+}
+
 export default function AdminProductAI({ embedded = false }: Props) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
@@ -30,12 +50,20 @@ export default function AdminProductAI({ embedded = false }: Props) {
   const [bulkMode, setBulkMode] = useState(false);
   const [attachedImageUrl, setAttachedImageUrl] = useState<string | null>(null);
   const [attaching, setAttaching] = useState(false);
+
+  // Prompt queue
+  const [queue, setQueue] = useState<string[]>([]);
+  const [queueAutoApprove, setQueueAutoApprove] = useState(false);
+
   const fileRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Latest messages, accessible inside async queue runner without stale closure
+  const messagesRef = useRef<Msg[]>([]);
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, loading, pending]);
+  }, [messages, loading, pending, queue]);
 
   const callBackend = async (newMessages: Msg[], confirmedAction?: PendingAction, autoApproveWrites?: boolean) => {
     setLoading(true);
@@ -48,36 +76,82 @@ export default function AdminProductAI({ embedded = false }: Props) {
         body: JSON.stringify({
           messages: newMessages,
           confirmed_action: confirmedAction,
-          auto_approve_writes: autoApproveWrites ?? bulkMode,
+          auto_approve_writes: autoApproveWrites ?? (bulkMode || queueAutoApprove),
         }),
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || "Request failed");
 
-      setMessages(data.messages || newMessages);
+      const updated: Msg[] = data.messages || newMessages;
+      setMessages(updated);
+      messagesRef.current = updated;
       if (data.type === "confirm") {
         setPending(data.pending_action);
+        return { confirm: true as const, action: data.pending_action as PendingAction };
       } else {
         setPending(null);
+        return { confirm: false as const };
       }
     } catch (e: any) {
       toast.error(e.message || "Failed");
+      return { error: true as const };
     } finally {
       setLoading(false);
     }
   };
 
+  // Drain the queue. Called whenever the runner is idle (no pending confirm,
+  // not currently loading) and there are items waiting.
+  useEffect(() => {
+    if (loading || pending) return;
+    if (queue.length === 0) return;
+    const [next, ...rest] = queue;
+    setQueue(rest);
+    const nextMessages: Msg[] = [...messagesRef.current, { role: "user", content: next }];
+    setMessages(nextMessages);
+    messagesRef.current = nextMessages;
+    void callBackend(nextMessages);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queue, loading, pending]);
+
   const send = async () => {
     if (!input.trim() && !attachedImageUrl) return;
-    let text = input.trim();
+    const prompts = splitPrompts(input);
+    const first = prompts[0] || "";
+    const rest = prompts.slice(1);
+
+    let firstText = first;
     if (attachedImageUrl) {
-      text = `[Image uploaded: ${attachedImageUrl}]\n\n${text || "Please use this image."}`;
+      firstText = `[Image uploaded: ${attachedImageUrl}]\n\n${firstText || "Please use this image."}`;
     }
-    const next: Msg[] = [...messages, { role: "user", content: text }];
+    const next: Msg[] = [...messages, { role: "user", content: firstText }];
     setMessages(next);
+    messagesRef.current = next;
     setInput("");
     setAttachedImageUrl(null);
+    if (rest.length > 0) {
+      setQueue((q) => [...q, ...rest]);
+      toast.message(`Queued ${rest.length} more prompt${rest.length === 1 ? "" : "s"}`);
+    }
     await callBackend(next);
+  };
+
+  const approveAllQueue = () => {
+    setQueueAutoApprove(true);
+    setBulkMode(true);
+    toast.success("Bulk approval on — queue will auto-run");
+    // If currently awaiting confirmation, auto-approve it to keep moving.
+    if (pending) {
+      const action = pending;
+      setPending(null);
+      void callBackend(messagesRef.current, action, true);
+    }
+  };
+
+  const clearQueue = () => {
+    setQueue([]);
+    setQueueAutoApprove(false);
+    toast.message("Queue cleared");
   };
 
   const approve = async (autoRest = false) => {
@@ -88,7 +162,7 @@ export default function AdminProductAI({ embedded = false }: Props) {
       setBulkMode(true);
       toast.success("Bulk mode on — remaining steps will auto-run");
     }
-    await callBackend(messages, action, autoRest || bulkMode);
+    await callBackend(messages, action, autoRest || bulkMode || queueAutoApprove);
   };
 
   const reject = () => {
@@ -99,6 +173,7 @@ export default function AdminProductAI({ embedded = false }: Props) {
     ];
     setPending(null);
     setMessages(next);
+    messagesRef.current = next;
     callBackend(next);
   };
 
@@ -118,37 +193,6 @@ export default function AdminProductAI({ embedded = false }: Props) {
     }
   };
 
-  const generateImage = async () => {
-    const prompt = window.prompt("Describe the image to generate:");
-    if (!prompt) return;
-    setAttaching(true);
-    try {
-      const { data: session } = await supabase.auth.getSession();
-      const token = session.session?.access_token;
-      // Use Lovable AI image gen via a tiny inline call to the same gateway-style image model
-      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-seo-generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ kind: "image", prompt }),
-      }).catch(() => null);
-      // Fallback: tell user image gen requires a separate function
-      if (!resp || !resp.ok) {
-        // Quick path: ask AI to use an external generated image URL via uploads instead
-        toast.info("Tip: upload an image instead, or describe the product and the AI will create it.");
-        return;
-      }
-      const data = await resp.json();
-      if (data.image_url) {
-        setAttachedImageUrl(data.image_url);
-        toast.success("Image generated");
-      }
-    } catch (e: any) {
-      toast.error("Image generation failed");
-    } finally {
-      setAttaching(false);
-    }
-  };
-
   const visibleMessages = messages.filter((m) => m.role === "user" || (m.role === "assistant" && m.content));
 
   return (
@@ -157,19 +201,19 @@ export default function AdminProductAI({ embedded = false }: Props) {
         <Sparkles className="h-4 w-4" />
         <div className="flex-1">
           <div className="text-sm font-semibold uppercase tracking-wide">Product AI</div>
-          <div className="text-[11px] text-muted-foreground">Manage products in plain English</div>
+          <div className="text-[11px] text-muted-foreground">Manage products in plain English · paste multiple prompts to queue them</div>
         </div>
         {bulkMode && (
           <button
-            onClick={() => { setBulkMode(false); toast.message("Bulk mode off"); }}
+            onClick={() => { setBulkMode(false); setQueueAutoApprove(false); toast.message("Bulk mode off"); }}
             className="text-[10px] uppercase tracking-wide bg-amber-500/15 text-amber-700 dark:text-amber-400 px-2 py-1 rounded border border-amber-500/30 hover:bg-amber-500/25"
             title="Click to turn off auto-approve"
           >
             Bulk: ON
           </button>
         )}
-        {messages.length > 0 && (
-          <Button size="sm" variant="ghost" onClick={() => { setMessages([]); setPending(null); setBulkMode(false); }}>Clear</Button>
+        {(messages.length > 0 || queue.length > 0) && (
+          <Button size="sm" variant="ghost" onClick={() => { setMessages([]); setPending(null); setBulkMode(false); setQueue([]); setQueueAutoApprove(false); }}>Clear</Button>
         )}
       </div>
 
@@ -183,8 +227,10 @@ export default function AdminProductAI({ embedded = false }: Props) {
               <li>"Mark Crop Crore as featured"</li>
               <li>"Create a new t-shirt called Night Wolf at 549 Taka"</li>
               <li>"Deactivate Mummy"</li>
-              <li>"How many orders do we have?"</li>
             </ul>
+            <p className="text-xs pt-2">
+              <strong className="text-foreground">Tip:</strong> paste multiple prompts separated by a blank line (or as a numbered list) to queue them. Use <em>Approve All Queue</em> to auto-run every step.
+            </p>
           </div>
         )}
 
@@ -234,6 +280,33 @@ export default function AdminProductAI({ embedded = false }: Props) {
         )}
       </div>
 
+      {queue.length > 0 && (
+        <div className="border-t border-border bg-muted/30 px-4 py-2 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide">
+              <ListChecks className="h-4 w-4" />
+              Queue · {queue.length} pending
+              {queueAutoApprove && <span className="text-[10px] text-amber-700 dark:text-amber-400 normal-case font-medium">(auto-approve on)</span>}
+            </div>
+            <div className="flex gap-2">
+              {!queueAutoApprove && (
+                <Button size="sm" variant="secondary" onClick={approveAllQueue} disabled={loading} className="h-7 text-[11px]">
+                  <Check className="h-3 w-3 mr-1" /> Approve All Queue
+                </Button>
+              )}
+              <Button size="sm" variant="ghost" onClick={clearQueue} className="h-7 text-[11px]">
+                <X className="h-3 w-3 mr-1" /> Clear
+              </Button>
+            </div>
+          </div>
+          <ol className="text-[11px] text-muted-foreground space-y-0.5 max-h-24 overflow-y-auto list-decimal pl-5">
+            {queue.map((q, i) => (
+              <li key={i} className="truncate" title={q}>{q.length > 120 ? q.slice(0, 120) + "…" : q}</li>
+            ))}
+          </ol>
+        </div>
+      )}
+
       {attachedImageUrl && (
         <div className="px-4 py-2 border-t border-border bg-muted/20 flex items-center gap-2">
           <img src={attachedImageUrl} alt="" className="h-10 w-10 object-cover rounded" />
@@ -264,7 +337,7 @@ export default function AdminProductAI({ embedded = false }: Props) {
               send();
             }
           }}
-          placeholder={pending ? "Approve or reject above…" : "Ask anything about products… (Shift+Enter for new line)"}
+          placeholder={pending ? "Approve or reject above…" : "Ask anything… paste multiple prompts separated by a blank line to queue them (Shift+Enter for new line)"}
           disabled={loading || !!pending}
           rows={3}
           className="flex-1 min-h-[72px] max-h-48 resize-y leading-relaxed text-sm"

@@ -22,25 +22,6 @@ interface Props {
   embedded?: boolean;
 }
 
-/**
- * Split a pasted block into multiple prompts.
- * Rules (in priority order):
- *   1. Blank-line separated paragraphs → each paragraph is one prompt.
- *   2. Otherwise, numbered lines (1. / 1) / -) → each line is one prompt.
- *   3. Otherwise → single prompt.
- */
-function splitPrompts(raw: string): string[] {
-  const text = raw.trim();
-  if (!text) return [];
-  // Blank-line separated
-  const byBlank = text.split(/\n\s*\n+/).map((s) => s.trim()).filter(Boolean);
-  if (byBlank.length > 1) return byBlank;
-  // Numbered / bulleted list
-  const lines = text.split(/\n+/).map((s) => s.trim()).filter(Boolean);
-  const looksListy = lines.length > 1 && lines.every((l) => /^(\d+[.)]|[-*•])\s+/.test(l));
-  if (looksListy) return lines.map((l) => l.replace(/^(\d+[.)]|[-*•])\s+/, "").trim()).filter(Boolean);
-  return [text];
-}
 
 export default function AdminProductAI({ embedded = false }: Props) {
   const [messages, setMessages] = useState<Msg[]>([]);

@@ -121,6 +121,31 @@ function mapModelForOpenRouter(_model?: string): string {
   return "openrouter/auto";
 }
 
+function isOpenRouterPolicyError(status: number, errorText = ""): boolean {
+  return status === 404 && /No endpoints available matching your guardrail restrictions and data policy/i.test(errorText);
+}
+
+async function pickAllowedOpenRouterModel(state: ProviderState, needsTools: boolean): Promise<string | null> {
+  try {
+    const resp = await fetch("https://openrouter.ai/api/v1/models/user", {
+      headers: { Authorization: `Bearer ${state.openrouter.key}` },
+    });
+    if (!resp.ok) return null;
+    const json = await resp.json();
+    const models = Array.isArray(json?.data) ? json.data : [];
+    const eligible = models.filter((model: any) => {
+      const id = String(model?.id || "");
+      const supported = Array.isArray(model?.supported_parameters) ? model.supported_parameters : [];
+      if (!id || /image|tts|whisper|embedding|moderation/i.test(id)) return false;
+      return needsTools ? supported.includes("tools") : true;
+    });
+    return eligible[0]?.id || null;
+  } catch (e) {
+    console.error("OpenRouter model discovery failed:", e);
+    return null;
+  }
+}
+
 async function callProvider(provider: Provider, state: ProviderState, body: any): Promise<Response> {
   if (provider === "gemini") {
     const payload = { ...body, model: mapModelForGemini(body.model) };
@@ -146,7 +171,7 @@ async function callProvider(provider: Provider, state: ProviderState, body: any)
       model: mapModelForOpenRouter(body.model),
       max_tokens: typeof body.max_tokens === "number" ? Math.min(body.max_tokens, 4096) : 2048,
     };
-    return fetch(OPENROUTER_URL, {
+    const send = (nextPayload: any) => fetch(OPENROUTER_URL, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${state.openrouter.key}`,
@@ -154,8 +179,17 @@ async function callProvider(provider: Provider, state: ProviderState, body: any)
         "HTTP-Referer": Deno.env.get("SUPABASE_URL") || "https://poshplexbd.com",
         "X-Title": "POSHPLEX",
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(nextPayload),
     });
+    const resp = await send(payload);
+    if (!resp.ok && payload.model === "openrouter/auto") {
+      const errorText = await resp.clone().text().catch(() => "");
+      if (isOpenRouterPolicyError(resp.status, errorText)) {
+        const fallbackModel = await pickAllowedOpenRouterModel(state, Array.isArray(body.tools) && body.tools.length > 0);
+        if (fallbackModel) return send({ ...payload, model: fallbackModel });
+      }
+    }
+    return resp;
   }
   // Anthropic
   const messages = (body.messages || []).filter((m: any) => m.role !== "system");
@@ -188,10 +222,7 @@ async function callProvider(provider: Provider, state: ProviderState, body: any)
 
 function shouldFailover(status: number, provider?: Provider, errorText = ""): boolean {
   const transient = status === 429 || status === 408 || status === 503 || status === 502 || status === 504 || status === 500;
-  const openRouterAutoBlocked =
-    provider === "openrouter" &&
-    status === 404 &&
-    /No endpoints available matching your guardrail restrictions and data policy/i.test(errorText);
+  const openRouterAutoBlocked = provider === "openrouter" && isOpenRouterPolicyError(status, errorText);
   return transient || openRouterAutoBlocked;
 }
 

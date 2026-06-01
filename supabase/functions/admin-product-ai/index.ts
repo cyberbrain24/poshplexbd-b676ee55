@@ -910,8 +910,11 @@ Deno.serve(async (req) => {
     // Tool-calling loop (max 8 iterations)
     let convo = [{ role: "system", content: SYSTEM_PROMPT }, ...messages];
 
+    // Gemini's OpenAI-compat endpoint rejects null content; normalize everywhere.
+    const sanitize = (arr: any[]) => arr.map((m) => ({ ...m, content: m.content == null ? "" : m.content }));
+
     for (let i = 0; i < 30; i++) {
-      const aiResp = await aiChatCompletion({ model: MODEL, messages: convo, tools, tool_choice: "auto" });
+      const aiResp = await aiChatCompletion({ model: MODEL, messages: sanitize(convo), tools, tool_choice: "auto" });
 
       if (!aiResp.ok) {
         const txt = await aiResp.text();

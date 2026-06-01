@@ -910,8 +910,25 @@ Deno.serve(async (req) => {
     // Tool-calling loop (max 8 iterations)
     let convo = [{ role: "system", content: SYSTEM_PROMPT }, ...messages];
 
-    // Gemini's OpenAI-compat endpoint rejects null content; normalize everywhere.
-    const sanitize = (arr: any[]) => arr.map((m) => ({ ...m, content: m.content == null ? "" : m.content }));
+    // Gemini's OpenAI-compat endpoint rejects null strings in message/tool-call history.
+    const sanitize = (arr: any[]) => arr.map((m) => {
+      const next: any = { ...m, content: typeof m.content === "string" ? m.content : m.content == null ? "" : JSON.stringify(m.content) };
+      if (Array.isArray(m.tool_calls)) {
+        next.tool_calls = m.tool_calls.map((call: any) => ({
+          ...call,
+          id: typeof call?.id === "string" ? call.id : String(call?.id || crypto.randomUUID()),
+          type: "function",
+          function: {
+            name: typeof call?.function?.name === "string" ? call.function.name : "unknown_tool",
+            arguments: typeof call?.function?.arguments === "string"
+              ? call.function.arguments
+              : JSON.stringify(call?.function?.arguments || {}),
+          },
+        }));
+      }
+      if (next.role === "tool" && typeof next.tool_call_id !== "string") next.tool_call_id = String(next.tool_call_id || "");
+      return next;
+    });
 
     for (let i = 0; i < 30; i++) {
       const aiResp = await aiChatCompletion({ model: MODEL, messages: sanitize(convo), tools, tool_choice: "auto" });

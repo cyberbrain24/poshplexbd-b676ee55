@@ -114,16 +114,11 @@ function mapModelForAnthropic(model?: string): string {
   return m;
 }
 
-function mapModelForOpenRouter(model?: string): string {
-  // OpenRouter accepts identifiers like "openai/gpt-4o-mini", "google/gemini-2.5-flash",
-  // "anthropic/claude-3-5-sonnet". Pass through, normalising bare names to a vendor prefix.
-  if (!model) return "google/gemini-2.5-flash";
-  let m = model.replace(/^openrouter\//, "");
-  if (m.includes("/")) return m;
-  if (m.startsWith("gemini")) return `google/${m}`;
-  if (m.startsWith("gpt-")) return `openai/${m}`;
-  if (m.startsWith("claude")) return `anthropic/${m}`;
-  return m;
+function mapModelForOpenRouter(_model?: string): string {
+  // Universal routing: always use OpenRouter's auto-router so OpenRouter picks
+  // the best model for the incoming prompt. This ignores any caller-specified
+  // model on purpose — admin requested OpenRouter run in fully universal mode.
+  return "openrouter/auto";
 }
 
 async function callProvider(provider: Provider, state: ProviderState, body: any): Promise<Response> {

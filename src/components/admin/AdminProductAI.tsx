@@ -318,12 +318,12 @@ export default function AdminProductAI({ embedded = false }: Props) {
               send();
             }
           }}
-          placeholder={pending ? "Approve or reject above…" : "Ask anything… paste multiple prompts separated by a blank line to queue them (Shift+Enter for new line)"}
-          disabled={loading || !!pending}
+          placeholder={loading || pending ? "Type next prompt and press Enter to queue…" : "Ask anything… press Enter to send (Shift+Enter for new line)"}
+          disabled={false}
           rows={3}
           className="flex-1 min-h-[72px] max-h-48 resize-y leading-relaxed text-sm"
         />
-        <Button onClick={send} disabled={loading || !!pending || (!input.trim() && !attachedImageUrl)} className="shrink-0 h-[72px]">
+        <Button onClick={send} disabled={!input.trim() && !attachedImageUrl} className="shrink-0 h-[72px]" title={loading || pending ? "Add to queue" : "Send"}>
           <Send className="h-4 w-4" />
         </Button>
       </div>

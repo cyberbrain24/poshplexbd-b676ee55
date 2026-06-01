@@ -210,7 +210,7 @@ export default function AdminProductAI({ embedded = false }: Props) {
               <li>"Deactivate Mummy"</li>
             </ul>
             <p className="text-xs pt-2">
-              <strong className="text-foreground">Tip:</strong> paste multiple prompts separated by a blank line (or as a numbered list) to queue them. Use <em>Approve All Queue</em> to auto-run every step.
+              <strong className="text-foreground">Tip:</strong> press Enter to send. While the AI is working, any new prompt you Enter goes into the queue and runs in order. Use <em>Approve All Queue</em> to auto-run every step.
             </p>
           </div>
         )}

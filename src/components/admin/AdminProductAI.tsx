@@ -116,23 +116,23 @@ export default function AdminProductAI({ embedded = false }: Props) {
 
   const send = async () => {
     if (!input.trim() && !attachedImageUrl) return;
-    const prompts = splitPrompts(input);
-    const first = prompts[0] || "";
-    const rest = prompts.slice(1);
-
-    let firstText = first;
+    let text = input.trim();
     if (attachedImageUrl) {
-      firstText = `[Image uploaded: ${attachedImageUrl}]\n\n${firstText || "Please use this image."}`;
+      text = `[Image uploaded: ${attachedImageUrl}]\n\n${text || "Please use this image."}`;
     }
-    const next: Msg[] = [...messages, { role: "user", content: firstText }];
-    setMessages(next);
-    messagesRef.current = next;
     setInput("");
     setAttachedImageUrl(null);
-    if (rest.length > 0) {
-      setQueue((q) => [...q, ...rest]);
-      toast.message(`Queued ${rest.length} more prompt${rest.length === 1 ? "" : "s"}`);
+
+    // If the assistant is busy (loading) or awaiting confirmation, queue the prompt.
+    if (loading || pending || queue.length > 0) {
+      setQueue((q) => [...q, text]);
+      toast.message(`Queued (position ${queue.length + 1})`);
+      return;
     }
+
+    const next: Msg[] = [...messages, { role: "user", content: text }];
+    setMessages(next);
+    messagesRef.current = next;
     await callBackend(next);
   };
 

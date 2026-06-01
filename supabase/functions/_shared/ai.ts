@@ -166,8 +166,9 @@ async function callProvider(provider: Provider, state: ProviderState, body: any)
   if (provider === "openrouter") {
     // OpenRouter requires an explicit max_tokens; without it, the upstream model
     // reserves its full context window and small-credit keys get a 402.
+    const { tool_choice: _toolChoice, ...openRouterBody } = body;
     const payload = {
-      ...body,
+      ...openRouterBody,
       model: mapModelForOpenRouter(body.model),
       max_tokens: typeof body.max_tokens === "number" ? Math.min(body.max_tokens, 4096) : 2048,
     };

@@ -957,6 +957,24 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                                   </SelectContent>
                                 </Select>
                               </TableCell>
+                              {appliedAttributes.map((attr) => (
+                                <TableCell key={attr.id}>
+                                  <Select
+                                    value={(variant.attribute_values || {})[attr.id] || "none"}
+                                    onValueChange={(value) => updateVariantAttribute(index, attr.id, value === "none" ? null : value)}
+                                  >
+                                    <SelectTrigger className="w-32">
+                                      <SelectValue placeholder={attr.name} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="none">-</SelectItem>
+                                      {(attr.values || []).map((v) => (
+                                        <SelectItem key={v.id} value={v.id}>{v.value}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </TableCell>
+                              ))}
                               <TableCell>
                                 <Input
                                   type="number"

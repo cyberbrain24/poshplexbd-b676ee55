@@ -1,8 +1,7 @@
-// Admin Product AI Assistant — Gemini tool calling
+// Admin Product AI Agent — tool calling
 // Read tools auto-execute; write tools require client confirmation.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { aiChatCompletion } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,7 +12,8 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const MODEL = "google/gemini-3-flash-preview";
+const AI_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const AI_MODELS = ["openai/gpt-5-mini", "google/gemini-3-flash-preview"];
 
 const READ_TOOLS = new Set([
   // Catalog

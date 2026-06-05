@@ -26,6 +26,7 @@ interface Props {
 export default function AdminProductAI({ embedded = false }: Props) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
+  const [textareaHeight, setTextareaHeight] = useState(140);
   const [loading, setLoading] = useState(false);
   const [pending, setPending] = useState<PendingAction | null>(null);
   const [bulkMode, setBulkMode] = useState(false);

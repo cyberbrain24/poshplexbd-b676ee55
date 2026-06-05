@@ -264,12 +264,15 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
           });
         }
 
-        // Add variants for new product
+        // Add variants for new product and sync per-variant attribute values
         for (const variant of variants) {
-          await addVariant.mutateAsync({
+          const inserted = await addVariant.mutateAsync({
             productId: newProduct.id,
             variantData: variant,
           });
+          if (inserted?.id) {
+            await syncVariantAttributeValues(inserted.id, variant.attribute_values, selectedAttributeIds);
+          }
         }
 
         toast.success("Product created successfully");

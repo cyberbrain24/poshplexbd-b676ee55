@@ -201,7 +201,7 @@ const AdminSidebar = () => {
       
       <nav className="flex-1 p-3 md:p-4 space-y-0.5 overflow-y-auto">
         {renderNavLink("/admin", LayoutDashboard, "Business Intelligence")}
-        {renderNavLink("/admin/ai-assistant", Sparkles, "AI Assistant")}
+        {renderNavLink("/admin/ai-assistant", Sparkles, "AI Agent")}
         {renderNavLink("/admin/sms", Send, "SMS Marketing")}
         {renderCollapsible(Package, "Product Management", productManagementItems, openGroup === 'product', () => toggleGroup('product'), isProductMgmtActive)}
         {renderCollapsible(ShoppingCart, "Order Management", orderItems, openGroup === 'orders', () => toggleGroup('orders'), isOrdersActive)}

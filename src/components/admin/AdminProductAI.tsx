@@ -181,7 +181,7 @@ export default function AdminProductAI({ embedded = false }: Props) {
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/30">
         <Sparkles className="h-4 w-4" />
         <div className="flex-1">
-          <div className="text-sm font-semibold uppercase tracking-wide">Product AI</div>
+          <div className="text-sm font-semibold uppercase tracking-wide">AI Agent</div>
           <div className="text-[11px] text-muted-foreground">Manage products in plain English · paste multiple prompts to queue them</div>
         </div>
         {bulkMode && (

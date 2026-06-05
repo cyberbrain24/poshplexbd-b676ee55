@@ -61,6 +61,20 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
   const syncCategories = useSyncProductCategories();
   const { data: appliedAttributeIds = [] } = useProductAppliedAttributeIds(product?.id);
   const syncAttributes = useSyncProductAttributes();
+  const { data: allAttributes = [] } = useProductAttributes();
+  const { data: variantAttrValuesMap = {} } = useProductVariantAttributeValues(product?.id);
+
+  // Derived: attributes applied to this product (full objects with values)
+  const appliedAttributes = useMemo(
+    () => allAttributes.filter((a) => selectedAttributeIds.includes(a.id)),
+    [allAttributes, selectedAttributeIds]
+  );
+
+  const toggleAppliedAttribute = useCallback((attributeId: string) => {
+    setSelectedAttributeIds((prev) =>
+      prev.includes(attributeId) ? prev.filter((id) => id !== attributeId) : [...prev, attributeId]
+    );
+  }, []);
 
   // Derived: parent categories and their subcategories (for display grouping)
   const parentCategories = useMemo(() => categories.filter(c => !c.parent_id), [categories]);

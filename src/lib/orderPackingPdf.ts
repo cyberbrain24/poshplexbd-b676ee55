@@ -38,10 +38,20 @@ interface PackingItem {
   phone: string;
   productName: string;
   variant: string;
+  size: string;
   quantity: number;
   parcelId: string | null;
   callNote: string | null;
 }
+
+const extractSize = (variantDetails: Record<string, any> | null | undefined): string => {
+  if (!variantDetails) return "";
+  for (const [k, v] of Object.entries(variantDetails)) {
+    if (!v) continue;
+    if (/size/i.test(k)) return String(v);
+  }
+  return "";
+};
 
 const UNSHIPPED_KEY = "__unshipped__";
 

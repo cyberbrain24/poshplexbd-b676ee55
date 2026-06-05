@@ -176,14 +176,37 @@ export async function generatePackingListPdf(orders: Order[]) {
   const cellH = imgH + textH + 6;
   const headerH = 26;
 
+  // Start grid on a fresh page after summary
+  doc.addPage();
+  let rowY = margin;
+  let firstParcel = true;
+
   for (const key of groupKeys) {
     const groupItems = groups.get(key)!;
     const isShipped = key !== UNSHIPPED_KEY;
     const parcelLabel = isShipped ? `Parcel ID: ${key}` : "Not Shipped Yet (No Parcel ID)";
 
-    // Start each parcel on a new page for clarity
-    doc.addPage();
-    let rowY = margin;
+    // Thick divider between parcels (continue on same page)
+    if (!firstParcel) {
+      rowY += 6;
+      if (rowY + headerH + cellH > pageH - margin) {
+        doc.addPage();
+        rowY = margin;
+      } else {
+        doc.setDrawColor(0, 0, 0);
+        doc.setLineWidth(2.5);
+        doc.line(margin, rowY, pageW - margin, rowY);
+        doc.setLineWidth(0.2);
+        rowY += 14;
+      }
+    }
+    firstParcel = false;
+
+    // Ensure room for header + at least one row
+    if (rowY + headerH + cellH > pageH - margin) {
+      doc.addPage();
+      rowY = margin;
+    }
 
     // Parcel header
     doc.setFont("helvetica", "bold");

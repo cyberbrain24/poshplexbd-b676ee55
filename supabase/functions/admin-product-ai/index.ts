@@ -931,14 +931,14 @@ Deno.serve(async (req) => {
     });
 
     for (let i = 0; i < 30; i++) {
-      const aiResp = await aiChatCompletion({ model: MODEL, messages: sanitize(convo), tools, tool_choice: "auto" });
+      const aiResp = await callAI({ messages: sanitize(convo), tools, tool_choice: "auto" });
 
       if (!aiResp.ok) {
         const txt = await aiResp.text();
         if (aiResp.status === 429) return jsonResp({ error: "Rate limit. Try again in a moment." }, 429);
         if (aiResp.status === 402) return jsonResp({ error: "AI credits exhausted. Add credits in workspace settings." }, 402);
         console.error("AI error", aiResp.status, txt);
-        return jsonResp({ error: "AI service error" }, 500);
+        return jsonResp({ error: "AI Agent is temporarily unavailable. Please try again." }, 200);
       }
 
       const data = await aiResp.json();
@@ -1004,4 +1004,28 @@ function jsonResp(body: any, status = 200) {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+}
+
+async function callAI(body: any): Promise<Response> {
+  const key = Deno.env.get("LOVABLE_API_KEY");
+  if (!key) {
+    return new Response(JSON.stringify({ error: "AI key is not configured" }), { status: 503 });
+  }
+
+  let lastResp: Response | null = null;
+  for (const model of AI_MODELS) {
+    const resp = await fetch(AI_GATEWAY_URL, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ ...body, model }),
+    });
+    if (resp.ok) return resp;
+
+    const errorText = await resp.clone().text().catch(() => "");
+    console.error(`AI model ${model} error`, resp.status, errorText);
+    lastResp = resp;
+
+    if (resp.status === 402 || resp.status === 429 || resp.status >= 500) return resp;
+  }
+  return lastResp || new Response(JSON.stringify({ error: "AI unavailable" }), { status: 503 });
 }

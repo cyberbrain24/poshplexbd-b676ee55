@@ -844,6 +844,9 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                       existingVariants={variants}
                       basePrice={formData.base_price}
                       onGenerate={handleBuilderGenerate}
+                      attributes={allAttributes}
+                      selectedAttributeIds={selectedAttributeIds}
+                      onToggleAttribute={toggleAppliedAttribute}
                     />
                   )}
 

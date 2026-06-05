@@ -895,6 +895,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                                   </SelectContent>
                                 </Select>
                               </TableCell>
+                              <TableCell>
                                 <Input
                                   type="number"
                                   step="0.01"

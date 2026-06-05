@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import VariantBuilder from "@/components/admin/VariantBuilder";
 import ProductImagePickerModal from "@/components/admin/ProductImagePickerModal";
 import { useProductCategoryIds, useSyncProductCategories } from "@/hooks/useProductCategories";
+import { useProductAppliedAttributeIds, useSyncProductAttributes } from "@/hooks/useProductAttributes";
+import ProductAttributesPicker from "@/components/admin/ProductAttributesPicker";
 import { compressProductImage } from "@/lib/imageCompress";
 
 interface ProductModalProps {
@@ -52,11 +54,14 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
   const [showBuilder, setShowBuilder] = useState(false);
   const [mediaPickerIndex, setMediaPickerIndex] = useState<number | null>(null);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [selectedAttributeIds, setSelectedAttributeIds] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: categories = [] } = useCategories();
   const { data: productCategoryIds = [] } = useProductCategoryIds(product?.id);
   const syncCategories = useSyncProductCategories();
+  const { data: appliedAttributeIds = [] } = useProductAppliedAttributeIds(product?.id);
+  const syncAttributes = useSyncProductAttributes();
 
   // Derived: parent categories and their subcategories (for display grouping)
   const parentCategories = useMemo(() => categories.filter(c => !c.parent_id), [categories]);

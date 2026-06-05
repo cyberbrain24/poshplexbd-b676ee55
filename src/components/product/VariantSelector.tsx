@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { ProductVariant, Color, Size } from "@/types/product";
+import { ProductVariant, Color, Size, CustomVariant } from "@/types/product";
 import { cn } from "@/lib/utils";
 
 interface VariantSelectorProps {
@@ -10,95 +10,64 @@ interface VariantSelectorProps {
 const VariantSelector = ({ variants, onVariantChange }: VariantSelectorProps) => {
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [selectedCustom, setSelectedCustom] = useState<string | null>(null);
 
-  // Get unique colors and sizes from variants
   const uniqueColors = useMemo(() => {
-    const colorMap = new Map<string, Color>();
-    variants.forEach((v) => {
-      if (v.color && v.is_active) {
-        colorMap.set(v.color.id, v.color);
-      }
-    });
-    return Array.from(colorMap.values());
+    const m = new Map<string, Color>();
+    variants.forEach((v) => { if (v.color && v.is_active) m.set(v.color.id, v.color); });
+    return Array.from(m.values());
   }, [variants]);
 
   const uniqueSizes = useMemo(() => {
-    const sizeMap = new Map<string, Size>();
-    variants.forEach((v) => {
-      if (v.size && v.is_active) {
-        sizeMap.set(v.size.id, v.size);
-      }
-    });
-    return Array.from(sizeMap.values()).sort((a, b) => a.sort_order - b.sort_order);
+    const m = new Map<string, Size>();
+    variants.forEach((v) => { if (v.size && v.is_active) m.set(v.size.id, v.size); });
+    return Array.from(m.values()).sort((a, b) => a.sort_order - b.sort_order);
   }, [variants]);
 
-  // Get available sizes for selected color - all active variants are in stock
-  const availableSizes = useMemo(() => {
-    if (!selectedColor) return uniqueSizes;
-    return variants
-      .filter((v) => v.color?.id === selectedColor && v.is_active)
-      .map((v) => v.size)
-      .filter((s): s is Size => s !== null);
-  }, [selectedColor, variants, uniqueSizes]);
+  const uniqueCustoms = useMemo(() => {
+    const m = new Map<string, CustomVariant>();
+    variants.forEach((v) => { if (v.custom_variant && v.is_active) m.set(v.custom_variant.id, v.custom_variant); });
+    return Array.from(m.values()).sort((a, b) => a.sort_order - b.sort_order);
+  }, [variants]);
 
-  // Get available colors for selected size - all active variants are in stock
-  const availableColors = useMemo(() => {
-    if (!selectedSize) return uniqueColors;
-    return variants
-      .filter((v) => v.size?.id === selectedSize && v.is_active)
-      .map((v) => v.color)
-      .filter((c): c is Color => c !== null);
-  }, [selectedSize, variants, uniqueColors]);
+  const matches = (v: ProductVariant, axis: "color" | "size" | "custom", id: string) => {
+    if (!v.is_active) return false;
+    if (axis !== "color" && selectedColor && v.color?.id !== selectedColor) return false;
+    if (axis !== "size" && selectedSize && v.size?.id !== selectedSize) return false;
+    if (axis !== "custom" && selectedCustom && v.custom_variant?.id !== selectedCustom) return false;
+    if (axis === "color") return v.color?.id === id;
+    if (axis === "size") return v.size?.id === id;
+    return v.custom_variant?.id === id;
+  };
 
-  // Auto-select first color if only one
   useEffect(() => {
-    if (uniqueColors.length === 1 && !selectedColor) {
-      setSelectedColor(uniqueColors[0].id);
-    }
+    if (uniqueColors.length === 1 && !selectedColor) setSelectedColor(uniqueColors[0].id);
   }, [uniqueColors, selectedColor]);
-
-  // Find matching variant when both color and size are selected
   useEffect(() => {
-    if (selectedColor && selectedSize) {
-      const matchingVariant = variants.find(
-        (v) =>
-          v.color?.id === selectedColor &&
-          v.size?.id === selectedSize &&
-          v.is_active
-      );
-      onVariantChange(matchingVariant || null);
-    } else if (selectedColor && uniqueSizes.length === 0) {
-      // Product has color but no sizes
-      const matchingVariant = variants.find(
-        (v) => v.color?.id === selectedColor && v.is_active
-      );
-      onVariantChange(matchingVariant || null);
-    } else if (selectedSize && uniqueColors.length === 0) {
-      // Product has size but no colors
-      const matchingVariant = variants.find(
-        (v) => v.size?.id === selectedSize && v.is_active
-      );
-      onVariantChange(matchingVariant || null);
-    } else {
-      onVariantChange(null);
-    }
-  }, [selectedColor, selectedSize, variants, uniqueColors.length, uniqueSizes.length, onVariantChange]);
+    if (uniqueCustoms.length === 1 && !selectedCustom) setSelectedCustom(uniqueCustoms[0].id);
+  }, [uniqueCustoms, selectedCustom]);
+
+  useEffect(() => {
+    const needColor = uniqueColors.length > 0;
+    const needSize = uniqueSizes.length > 0;
+    const needCustom = uniqueCustoms.length > 0;
+    if (needColor && !selectedColor) return onVariantChange(null);
+    if (needSize && !selectedSize) return onVariantChange(null);
+    if (needCustom && !selectedCustom) return onVariantChange(null);
+    const match = variants.find((v) =>
+      v.is_active &&
+      (!needColor || v.color?.id === selectedColor) &&
+      (!needSize || v.size?.id === selectedSize) &&
+      (!needCustom || v.custom_variant?.id === selectedCustom)
+    );
+    onVariantChange(match || null);
+  }, [selectedColor, selectedSize, selectedCustom, variants, uniqueColors.length, uniqueSizes.length, uniqueCustoms.length, onVariantChange]);
 
   if (variants.length === 0) return null;
 
-  const isColorAvailable = (colorId: string) => {
-    return availableColors.some((c) => c.id === colorId);
-  };
-
-  const isSizeAvailable = (sizeId: string) => {
-    return availableSizes.some((s) => s.id === sizeId);
-  };
-
   return (
     <div className="space-y-4 lg:space-y-0">
-      {/* Desktop: side by side | Mobile: stacked */}
-      <div className="flex flex-col lg:flex-row lg:gap-6">
-        {/* Color Selection */}
+      <div className="flex flex-col lg:flex-row lg:gap-6 lg:flex-wrap">
         {uniqueColors.length > 0 && (
           <div className="flex items-center justify-center gap-3 lg:block lg:space-y-1.5">
             <div className="hidden lg:flex items-center shrink-0">
@@ -106,37 +75,27 @@ const VariantSelector = ({ variants, onVariantChange }: VariantSelectorProps) =>
             </div>
             <div className="flex flex-wrap gap-3 lg:gap-2 justify-center lg:justify-start">
               {uniqueColors.map((color) => {
-                const isAvailable = isColorAvailable(color.id);
+                const available = uniqueColors.some((c) => c.id === color.id) && variants.some((v) => matches(v, "color", color.id));
                 const isSelected = selectedColor === color.id;
-                
                 return (
                   <button
                     key={color.id}
-                    onClick={() => setSelectedColor(color.id)}
-                    disabled={!isAvailable && selectedSize !== null}
+                    onClick={() => setSelectedColor(isSelected ? null : color.id)}
+                    disabled={!available && (selectedSize !== null || selectedCustom !== null)}
                     className={cn(
                       "w-10 h-10 lg:w-8 lg:h-8 rounded-full border-2 transition-all relative",
-                      isSelected
-                        ? "border-foreground ring-2 ring-offset-2 ring-foreground"
-                        : "border-border hover:border-foreground/50",
-                      !isAvailable && selectedSize !== null && "opacity-30 cursor-not-allowed"
+                      isSelected ? "border-foreground ring-2 ring-offset-2 ring-foreground" : "border-border hover:border-foreground/50",
+                      !available && (selectedSize !== null || selectedCustom !== null) && "opacity-30 cursor-not-allowed"
                     )}
                     style={{ backgroundColor: color.hex_code }}
                     title={color.name}
-                  >
-                    {!isAvailable && selectedSize !== null && (
-                      <span className="absolute inset-0 flex items-center justify-center">
-                        <span className="w-full h-0.5 bg-muted-foreground rotate-45 absolute" />
-                      </span>
-                    )}
-                  </button>
+                  />
                 );
               })}
             </div>
           </div>
         )}
 
-        {/* Size Selection */}
         {uniqueSizes.length > 0 && (
           <div className="flex items-center justify-center gap-3 lg:block lg:space-y-1.5 mt-4 lg:mt-0">
             <div className="hidden lg:flex items-center shrink-0">
@@ -144,23 +103,48 @@ const VariantSelector = ({ variants, onVariantChange }: VariantSelectorProps) =>
             </div>
             <div className="flex flex-wrap gap-3 lg:gap-2 justify-center lg:justify-start">
               {uniqueSizes.map((size) => {
-                const isAvailable = isSizeAvailable(size.id);
+                const available = variants.some((v) => matches(v, "size", size.id));
                 const isSelected = selectedSize === size.id;
-                
                 return (
                   <button
                     key={size.id}
-                    onClick={() => setSelectedSize(size.id)}
-                    disabled={!isAvailable && selectedColor !== null}
+                    onClick={() => setSelectedSize(isSelected ? null : size.id)}
+                    disabled={!available && (selectedColor !== null || selectedCustom !== null)}
                     className={cn(
-                      "min-w-14 h-10 lg:min-w-12 lg:h-8 px-4 lg:px-3 border text-sm font-light transition-all relative",
-                      isSelected
-                        ? "border-foreground bg-foreground text-background"
-                        : "border-border hover:border-foreground text-foreground",
-                      !isAvailable && selectedColor !== null && "opacity-30 cursor-not-allowed line-through"
+                      "min-w-14 h-10 lg:min-w-12 lg:h-8 px-4 lg:px-3 border text-sm font-light transition-all",
+                      isSelected ? "border-foreground bg-foreground text-background" : "border-border hover:border-foreground text-foreground",
+                      !available && (selectedColor !== null || selectedCustom !== null) && "opacity-30 cursor-not-allowed line-through"
                     )}
                   >
                     {size.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {uniqueCustoms.length > 0 && (
+          <div className="flex items-center justify-center gap-3 lg:block lg:space-y-1.5 mt-4 lg:mt-0">
+            <div className="hidden lg:flex items-center shrink-0">
+              <span className="text-sm font-light text-foreground">Option</span>
+            </div>
+            <div className="flex flex-wrap gap-3 lg:gap-2 justify-center lg:justify-start">
+              {uniqueCustoms.map((cv) => {
+                const available = variants.some((v) => matches(v, "custom", cv.id));
+                const isSelected = selectedCustom === cv.id;
+                return (
+                  <button
+                    key={cv.id}
+                    onClick={() => setSelectedCustom(isSelected ? null : cv.id)}
+                    disabled={!available && (selectedColor !== null || selectedSize !== null)}
+                    className={cn(
+                      "min-w-14 h-10 lg:min-w-12 lg:h-8 px-4 lg:px-3 border text-sm font-light transition-all",
+                      isSelected ? "border-foreground bg-foreground text-background" : "border-border hover:border-foreground text-foreground",
+                      !available && (selectedColor !== null || selectedSize !== null) && "opacity-30 cursor-not-allowed line-through"
+                    )}
+                  >
+                    {cv.label}
                   </button>
                 );
               })}

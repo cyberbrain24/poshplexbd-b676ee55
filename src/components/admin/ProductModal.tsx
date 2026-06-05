@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import VariantBuilder from "@/components/admin/VariantBuilder";
 import ProductImagePickerModal from "@/components/admin/ProductImagePickerModal";
 import { useProductCategoryIds, useSyncProductCategories } from "@/hooks/useProductCategories";
+import { useProductAppliedAttributeIds, useSyncProductAttributes } from "@/hooks/useProductAttributes";
+import ProductAttributesPicker from "@/components/admin/ProductAttributesPicker";
 import { compressProductImage } from "@/lib/imageCompress";
 
 interface ProductModalProps {
@@ -52,11 +54,14 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
   const [showBuilder, setShowBuilder] = useState(false);
   const [mediaPickerIndex, setMediaPickerIndex] = useState<number | null>(null);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [selectedAttributeIds, setSelectedAttributeIds] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: categories = [] } = useCategories();
   const { data: productCategoryIds = [] } = useProductCategoryIds(product?.id);
   const syncCategories = useSyncProductCategories();
+  const { data: appliedAttributeIds = [] } = useProductAppliedAttributeIds(product?.id);
+  const syncAttributes = useSyncProductAttributes();
 
   // Derived: parent categories and their subcategories (for display grouping)
   const parentCategories = useMemo(() => categories.filter(c => !c.parent_id), [categories]);
@@ -103,6 +108,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
       setImages([]);
       setVariants([]);
       setSelectedCategoryIds([]);
+      setSelectedAttributeIds([]);
     }
   }, [product]);
 
@@ -115,6 +121,11 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
       setSelectedCategoryIds([product.category_id]);
     }
   }, [productCategoryIds, product?.category_id]);
+
+  // Load applied attributes when editing
+  useEffect(() => {
+    setSelectedAttributeIds(appliedAttributeIds);
+  }, [appliedAttributeIds]);
 
   // Load existing variants when editing
   useEffect(() => {
@@ -148,6 +159,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
 
         // 2. Sync multi-category junction table
         await syncCategories.mutateAsync({ productId: product.id, categoryIds: selectedCategoryIds });
+        await syncAttributes.mutateAsync({ productId: product.id, attributeIds: selectedAttributeIds });
         // 2. Sync variants for existing product
         const existingVariantIds = (product.variants || []).map(v => v.id);
         const currentVariantIds = variants.filter(v => v.id).map(v => v.id!);
@@ -201,6 +213,10 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
         if (selectedCategoryIds.length > 0) {
           await syncCategories.mutateAsync({ productId: newProduct.id, categoryIds: selectedCategoryIds });
         }
+        if (selectedAttributeIds.length > 0) {
+          await syncAttributes.mutateAsync({ productId: newProduct.id, attributeIds: selectedAttributeIds });
+        }
+        
         
         // Upload images for new product
         for (const img of images) {
@@ -631,6 +647,13 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                   onCheckedChange={(checked) => setFormData({ ...formData, is_featured: checked })}
                 />
                 <Label htmlFor="is_featured">Featured (show on homepage)</Label>
+              </div>
+
+              <div className="pt-2 border-t border-border">
+                <ProductAttributesPicker
+                  selectedAttributeIds={selectedAttributeIds}
+                  onChange={setSelectedAttributeIds}
+                />
               </div>
             </TabsContent>
 

@@ -1399,6 +1399,110 @@ export type Database = {
         }
         Relationships: []
       }
+      product_applied_attributes: {
+        Row: {
+          attribute_id: string
+          created_at: string
+          id: string
+          product_id: string
+          sort_order: number
+        }
+        Insert: {
+          attribute_id: string
+          created_at?: string
+          id?: string
+          product_id: string
+          sort_order?: number
+        }
+        Update: {
+          attribute_id?: string
+          created_at?: string
+          id?: string
+          product_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_applied_attributes_attribute_id_fkey"
+            columns: ["attribute_id"]
+            isOneToOne: false
+            referencedRelation: "product_attributes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_applied_attributes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_attribute_values: {
+        Row: {
+          attribute_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          sort_order: number
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          attribute_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          attribute_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          updated_at?: string
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_attribute_values_attribute_id_fkey"
+            columns: ["attribute_id"]
+            isOneToOne: false
+            referencedRelation: "product_attributes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_attributes: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       product_categories: {
         Row: {
           category_id: string
@@ -1499,6 +1603,52 @@ export type Database = {
             columns: ["size_id"]
             isOneToOne: false
             referencedRelation: "sizes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_variant_attribute_values: {
+        Row: {
+          attribute_id: string
+          attribute_value_id: string
+          created_at: string
+          id: string
+          variant_id: string
+        }
+        Insert: {
+          attribute_id: string
+          attribute_value_id: string
+          created_at?: string
+          id?: string
+          variant_id: string
+        }
+        Update: {
+          attribute_id?: string
+          attribute_value_id?: string
+          created_at?: string
+          id?: string
+          variant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variant_attribute_values_attribute_id_fkey"
+            columns: ["attribute_id"]
+            isOneToOne: false
+            referencedRelation: "product_attributes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_variant_attribute_values_attribute_value_id_fkey"
+            columns: ["attribute_value_id"]
+            isOneToOne: false
+            referencedRelation: "product_attribute_values"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_variant_attribute_values_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
             referencedColumns: ["id"]
           },
         ]

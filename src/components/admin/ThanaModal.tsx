@@ -146,6 +146,21 @@ const ThanaModal = ({ open, onOpenChange, thana }: ThanaModalProps) => {
 
             <FormField
               control={form.control}
+              name="shipping_cost"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Delivery Charge (৳) *</FormLabel>
+                  <FormControl>
+                    <Input type="number" min={0} step="1" placeholder="120" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+
+              control={form.control}
               name="is_active"
               render={({ field }) => (
                 <FormItem className="flex items-center justify-between rounded-lg border p-4">

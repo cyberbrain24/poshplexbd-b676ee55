@@ -63,7 +63,12 @@ const WRITE_TOOLS = new Set([
   // SMS Marketing
   "update_sms_settings", "update_sms_template", "create_sms_template", "delete_sms_template",
   "send_sms", "send_bulk_sms",
+  // Shipping (thanas with shipping_cost)
+  "create_thana", "update_thana", "delete_thana", "set_thana_shipping_cost", "bulk_set_thana_shipping_cost",
+  // Custom variants
+  "create_custom_variant", "update_custom_variant", "delete_custom_variant",
 ]);
+
 
 const tools = [
   // READ

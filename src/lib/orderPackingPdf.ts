@@ -303,6 +303,10 @@ export async function generatePackingListPdf(orders: Order[]) {
         rowY += cellH + 8;
       }
     }
+    // Flush trailing partial row so next parcel starts below it
+    if (col !== 0) {
+      rowY += cellH + 8;
+    }
   }
 
   doc.save(`packing-list-${new Date().toISOString().slice(0, 10)}.pdf`);

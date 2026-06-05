@@ -334,78 +334,41 @@ const Checkout = () => {
     }
   };
 
-  // Find or create customer by phone, and update their details
+  // Find or create customer by phone via SECURITY DEFINER RPC.
+  // Works for guests too — bypasses the "auth.uid() IS NOT NULL" insert RLS
+  // that previously caused guest checkouts to silently skip customer creation.
   const findOrCreateCustomer = async (): Promise<string | null> => {
     const phone = customerDetails.phone.trim();
-    
+
     try {
-      // Check if customer exists (uses SECURITY DEFINER RPC, no public read)
-      const { data: existingId, error: findError } = await supabase
-        .rpc('find_customer_id_by_phone', { p_phone: phone });
-
-      if (findError) {
-        console.error('Error finding customer:', findError);
-        return null;
-      }
-
-      const existingCustomer = existingId ? { id: existingId as string } : null;
-
-      if (existingCustomer) {
-        // Customer exists - update their details with latest order info
-        const updateData: Record<string, unknown> = {
-          name: customerDetails.name,
-          updated_at: new Date().toISOString(),
-        };
-        
-        // Only update if values are provided (don't overwrite with empty)
-        if (customerDetails.email) updateData.email = customerDetails.email;
-        if (customerDetails.gender) updateData.gender = customerDetails.gender;
-        if (customerDetails.address) updateData.address = customerDetails.address;
-        if (customerDetails.divisionId) updateData.division_id = customerDetails.divisionId;
-        if (customerDetails.thanaId) updateData.thana_id = customerDetails.thanaId;
-        
-        const { error: updateError } = await supabase
-          .from('customers')
-          .update(updateData)
-          .eq('id', existingCustomer.id);
-        
-        if (updateError) {
-          console.warn('Error updating customer:', updateError);
+      const { data: customerId, error: rpcError } = await supabase.rpc(
+        'upsert_checkout_customer',
+        {
+          p_name: customerDetails.name,
+          p_phone: phone,
+          p_email: customerDetails.email || null,
+          p_gender: customerDetails.gender || 'other',
+          p_address: customerDetails.address || null,
+          p_division_id: customerDetails.divisionId || null,
+          p_thana_id: customerDetails.thanaId || null,
         }
-        
-        // Ensure customer has an account
-        await createCustomerAccount(existingCustomer.id, phone, customerDetails.email, customerDetails.name, customerDetails.password);
-        
-        return existingCustomer.id;
-      }
+      );
 
-      // Create new customer with all details
-      const { data: newCustomer, error: createError } = await supabase
-        .from('customers')
-        .insert({
-          name: customerDetails.name,
-          phone: phone,
-          email: customerDetails.email || null,
-          gender: customerDetails.gender || 'other',
-          address: customerDetails.address || null,
-          division_id: customerDetails.divisionId || null,
-          thana_id: customerDetails.thanaId || null,
-          is_active: true,
-        })
-        .select('id')
-        .single();
-
-      if (createError) {
-        console.error('Error creating customer:', createError);
+      if (rpcError || !customerId) {
+        console.error('Error upserting customer:', rpcError);
         return null;
       }
 
-      // Create account for new customer
-      if (newCustomer?.id) {
-        await createCustomerAccount(newCustomer.id, phone, customerDetails.email, customerDetails.name, customerDetails.password);
-      }
+      // Ensure customer auth account exists + auto-login (unchanged)
+      await createCustomerAccount(
+        customerId as string,
+        phone,
+        customerDetails.email,
+        customerDetails.name,
+        customerDetails.password,
+      );
 
-      return newCustomer?.id || null;
+      return customerId as string;
     } catch (error) {
       console.error('Error in findOrCreateCustomer:', error);
       return null;

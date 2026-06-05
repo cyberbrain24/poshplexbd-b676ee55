@@ -154,9 +154,10 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
         selling_price: v.selling_price,
         is_active: v.is_active,
         image_url: v.image_url || null,
+        attribute_values: variantAttrValuesMap[v.id] || {},
       })));
     }
-  }, [product]);
+  }, [product, variantAttrValuesMap]);
 
   const getYouTubeVideoId = (url: string) => {
     const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);

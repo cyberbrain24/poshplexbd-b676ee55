@@ -184,7 +184,8 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
           await deleteVariant.mutateAsync(id);
         }
 
-        // Update existing variants & add new ones
+        // Update existing variants & add new ones — capture variant id for attribute sync
+        const variantIdsWithAttrValues: Array<{ id: string; attribute_values: Record<string, string | null> }> = [];
         for (const variant of variants) {
           if (variant.id && existingVariantIds.includes(variant.id)) {
             // Update existing
@@ -202,13 +203,22 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                 image_url: variant.image_url,
               },
             });
+            variantIdsWithAttrValues.push({ id: variant.id, attribute_values: variant.attribute_values || {} });
           } else {
             // Add new variant
-            await addVariant.mutateAsync({
+            const inserted = await addVariant.mutateAsync({
               productId: product.id,
               variantData: variant,
             });
+            if (inserted?.id) {
+              variantIdsWithAttrValues.push({ id: inserted.id, attribute_values: variant.attribute_values || {} });
+            }
           }
+        }
+
+        // Sync per-variant attribute value picks
+        for (const v of variantIdsWithAttrValues) {
+          await syncVariantAttributeValues(v.id, v.attribute_values, selectedAttributeIds);
         }
 
         // Sync image sort_order and is_main for existing images

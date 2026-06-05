@@ -33,8 +33,10 @@ const READ_TOOLS = new Set([
   "list_accounts", "list_transactions", "list_order_payments",
   // Marketing
   "list_promo_codes", "list_payment_methods",
-  // Locations
-  "list_divisions", "list_thanas",
+  // Locations & shipping
+  "list_divisions", "list_thanas", "list_shipping_rates",
+  // Variants library
+  "list_custom_variants",
   // Site / Analytics
   "get_site_overview", "get_sales_analytics", "get_top_products", "get_top_customers",
   "get_site_settings", "get_site_branding",
@@ -43,6 +45,7 @@ const READ_TOOLS = new Set([
   // Universal DB introspection (auto-discovers any new module)
   "db_list_tables", "db_query_table", "db_count_table",
 ]);
+
 
 const WRITE_TOOLS = new Set([
   // Products
@@ -60,7 +63,12 @@ const WRITE_TOOLS = new Set([
   // SMS Marketing
   "update_sms_settings", "update_sms_template", "create_sms_template", "delete_sms_template",
   "send_sms", "send_bulk_sms",
+  // Shipping (thanas with shipping_cost)
+  "create_thana", "update_thana", "delete_thana", "set_thana_shipping_cost", "bulk_set_thana_shipping_cost",
+  // Custom variants
+  "create_custom_variant", "update_custom_variant", "delete_custom_variant",
 ]);
+
 
 const tools = [
   // READ
@@ -133,7 +141,18 @@ const tools = [
   { type: "function", function: { name: "list_promo_codes", description: "List promo codes with usage.", parameters: { type: "object", properties: { is_active: { type: "boolean" } } } } },
   { type: "function", function: { name: "list_payment_methods", description: "List configured payment methods.", parameters: { type: "object", properties: {} } } },
   { type: "function", function: { name: "list_divisions", description: "List shipping divisions/districts.", parameters: { type: "object", properties: {} } } },
-  { type: "function", function: { name: "list_thanas", description: "List thanas (delivery zones), optionally filter by division.", parameters: { type: "object", properties: { division_id: { type: "string" } } } } },
+  { type: "function", function: { name: "list_thanas", description: "List thanas (delivery zones) with shipping_cost, optionally filter by division.", parameters: { type: "object", properties: { division_id: { type: "string" } } } } },
+  { type: "function", function: { name: "list_shipping_rates", description: "List delivery/shipping charges per thana. Optional filter by division_id or search by thana name.", parameters: { type: "object", properties: { division_id: { type: "string" }, search: { type: "string" } } } } },
+  { type: "function", function: { name: "list_custom_variants", description: "List custom variant attributes (global library, e.g. fit, style).", parameters: { type: "object", properties: { is_active: { type: "boolean" } } } } },
+  { type: "function", function: { name: "create_thana", description: "Create a new thana (delivery zone) under a division with a shipping_cost.", parameters: { type: "object", properties: { name: { type: "string" }, division_id: { type: "string" }, shipping_cost: { type: "number" }, is_active: { type: "boolean" } }, required: ["name", "division_id"] } } },
+  { type: "function", function: { name: "update_thana", description: "Update a thana: name, division, shipping_cost, is_active.", parameters: { type: "object", properties: { thana_id: { type: "string" }, name: { type: "string" }, division_id: { type: "string" }, shipping_cost: { type: "number" }, is_active: { type: "boolean" } }, required: ["thana_id"] } } },
+  { type: "function", function: { name: "delete_thana", description: "Delete a thana by id.", parameters: { type: "object", properties: { thana_id: { type: "string" } }, required: ["thana_id"] } } },
+  { type: "function", function: { name: "set_thana_shipping_cost", description: "Set the delivery charge (shipping_cost) for one thana. Identify by thana_id OR thana_name (+ optional division_id).", parameters: { type: "object", properties: { thana_id: { type: "string" }, thana_name: { type: "string" }, division_id: { type: "string" }, shipping_cost: { type: "number" } }, required: ["shipping_cost"] } } },
+  { type: "function", function: { name: "bulk_set_thana_shipping_cost", description: "Set the same shipping_cost for many thanas at once. Scope by division_id, or pass thana_ids, or omit both to apply to ALL thanas.", parameters: { type: "object", properties: { shipping_cost: { type: "number" }, division_id: { type: "string" }, thana_ids: { type: "array", items: { type: "string" } } }, required: ["shipping_cost"] } } },
+  { type: "function", function: { name: "create_custom_variant", description: "Create a custom variant attribute in the global library.", parameters: { type: "object", properties: { label: { type: "string" }, sort_order: { type: "number" }, is_active: { type: "boolean" } }, required: ["label"] } } },
+  { type: "function", function: { name: "update_custom_variant", description: "Update a custom variant.", parameters: { type: "object", properties: { custom_variant_id: { type: "string" }, label: { type: "string" }, sort_order: { type: "number" }, is_active: { type: "boolean" } }, required: ["custom_variant_id"] } } },
+  { type: "function", function: { name: "delete_custom_variant", description: "Delete a custom variant.", parameters: { type: "object", properties: { custom_variant_id: { type: "string" } }, required: ["custom_variant_id"] } } },
+
   { type: "function", function: { name: "get_sales_analytics", description: "Sales analytics: revenue, order count, AOV over a window.", parameters: { type: "object", properties: { days: { type: "number", description: "Window size, default 30" } } } } },
   { type: "function", function: { name: "get_top_products", description: "Best-selling products by quantity.", parameters: { type: "object", properties: { limit: { type: "number" }, days: { type: "number" } } } } },
   { type: "function", function: { name: "get_top_customers", description: "Top customers by total spent.", parameters: { type: "object", properties: { limit: { type: "number" } } } } },
@@ -571,12 +590,82 @@ async function executeTool(name: string, args: any, sb: any) {
       case "list_payment_methods": return { payment_methods: (await sb.from("payment_methods").select("id, name, type, is_active, instructions, account_details")).data };
       case "list_divisions": return { divisions: (await sb.from("divisions").select("id, name, is_active").order("name")).data };
       case "list_thanas": {
-        let q = sb.from("thanas").select("id, name, division_id").order("name");
+        let q = sb.from("thanas").select("id, name, division_id, shipping_cost, is_active").order("name");
         if (args.division_id) q = q.eq("division_id", args.division_id);
         const { data, error } = await q;
         if (error) throw error;
         return { thanas: data };
       }
+      case "list_shipping_rates": {
+        let q = sb.from("thanas").select("id, name, division_id, shipping_cost, is_active, divisions(name)").order("name");
+        if (args.division_id) q = q.eq("division_id", args.division_id);
+        if (args.search) q = q.ilike("name", `%${args.search}%`);
+        const { data, error } = await q;
+        if (error) throw error;
+        return { shipping_rates: (data || []).map((t: any) => ({ thana_id: t.id, thana: t.name, division: t.divisions?.name, shipping_cost: Number(t.shipping_cost), is_active: t.is_active })) };
+      }
+      case "list_custom_variants": {
+        let q = sb.from("custom_variants").select("id, label, sort_order, is_active").order("sort_order");
+        if (args.is_active !== undefined) q = q.eq("is_active", args.is_active);
+        const { data, error } = await q;
+        if (error) throw error;
+        return { custom_variants: data };
+      }
+      case "create_thana": {
+        const { data, error } = await sb.from("thanas").insert({ name: args.name, division_id: args.division_id, shipping_cost: args.shipping_cost ?? 120, is_active: args.is_active ?? true }).select().single();
+        if (error) throw error;
+        return { success: true, thana: data };
+      }
+      case "update_thana": {
+        const { thana_id, ...patch } = args;
+        const { data, error } = await sb.from("thanas").update(patch).eq("id", thana_id).select().single();
+        if (error) throw error;
+        return { success: true, thana: data };
+      }
+      case "delete_thana": {
+        const { error } = await sb.from("thanas").delete().eq("id", args.thana_id);
+        if (error) throw error;
+        return { success: true };
+      }
+      case "set_thana_shipping_cost": {
+        let id = args.thana_id;
+        if (!id && args.thana_name) {
+          let q = sb.from("thanas").select("id").ilike("name", args.thana_name);
+          if (args.division_id) q = q.eq("division_id", args.division_id);
+          const { data } = await q.limit(1).maybeSingle();
+          id = data?.id;
+        }
+        if (!id) throw new Error("Thana not found");
+        const { data, error } = await sb.from("thanas").update({ shipping_cost: args.shipping_cost }).eq("id", id).select().single();
+        if (error) throw error;
+        return { success: true, thana: data };
+      }
+      case "bulk_set_thana_shipping_cost": {
+        let q = sb.from("thanas").update({ shipping_cost: args.shipping_cost });
+        if (args.thana_ids?.length) q = q.in("id", args.thana_ids);
+        else if (args.division_id) q = q.eq("division_id", args.division_id);
+        else q = q.not("id", "is", null);
+        const { data, error } = await q.select("id");
+        if (error) throw error;
+        return { success: true, updated_count: data?.length || 0 };
+      }
+      case "create_custom_variant": {
+        const { data, error } = await sb.from("custom_variants").insert({ label: args.label, sort_order: args.sort_order ?? 0, is_active: args.is_active ?? true }).select().single();
+        if (error) throw error;
+        return { success: true, custom_variant: data };
+      }
+      case "update_custom_variant": {
+        const { custom_variant_id, ...patch } = args;
+        const { data, error } = await sb.from("custom_variants").update(patch).eq("id", custom_variant_id).select().single();
+        if (error) throw error;
+        return { success: true, custom_variant: data };
+      }
+      case "delete_custom_variant": {
+        const { error } = await sb.from("custom_variants").delete().eq("id", args.custom_variant_id);
+        if (error) throw error;
+        return { success: true };
+      }
+
       case "get_sales_analytics": {
         const days = args.days || 30;
         const since = new Date(Date.now() - days * 86400000).toISOString();

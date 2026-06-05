@@ -16,8 +16,7 @@ import { toast } from "sonner";
 import VariantBuilder from "@/components/admin/VariantBuilder";
 import ProductImagePickerModal from "@/components/admin/ProductImagePickerModal";
 import { useProductCategoryIds, useSyncProductCategories } from "@/hooks/useProductCategories";
-import { useProductAppliedAttributeIds, useSyncProductAttributes } from "@/hooks/useProductAttributes";
-import ProductAttributesPicker from "@/components/admin/ProductAttributesPicker";
+import { useProductAppliedAttributeIds, useSyncProductAttributes, useProductAttributes, useProductVariantAttributeValues, syncVariantAttributeValues } from "@/hooks/useProductAttributes";
 import { compressProductImage } from "@/lib/imageCompress";
 
 interface ProductModalProps {

@@ -301,7 +301,7 @@ const VariantBuilder = ({
         variant="outline"
         size="sm"
         onClick={handleGenerate}
-        disabled={selectedColorIds.length === 0 && selectedSizeIds.length === 0 && selectedMaterialIds.length === 0}
+        disabled={selectedColorIds.length === 0 && selectedSizeIds.length === 0 && selectedCustomIds.length === 0 && selectedMaterialIds.length === 0}
         className="w-full"
       >
         <Wand2 className="h-4 w-4 mr-2" />

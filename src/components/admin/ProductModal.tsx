@@ -800,6 +800,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                             <TableHead>Color</TableHead>
                             <TableHead>Size</TableHead>
                             <TableHead>Material</TableHead>
+                            <TableHead>Custom</TableHead>
                              <TableHead>Price</TableHead>
                             <TableHead>SKU</TableHead>
                             <TableHead className="w-16"></TableHead>
@@ -879,6 +880,21 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                                 </Select>
                               </TableCell>
                               <TableCell>
+                                <Select
+                                  value={variant.custom_variant_id || "none"}
+                                  onValueChange={(value) => updateVariantField(index, "custom_variant_id", value === "none" ? null : value)}
+                                >
+                                  <SelectTrigger className="w-32">
+                                    <SelectValue placeholder="Custom" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">-</SelectItem>
+                                    {customVariants.map((cv) => (
+                                      <SelectItem key={cv.id} value={cv.id}>{cv.label}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
                                 <Input
                                   type="number"
                                   step="0.01"

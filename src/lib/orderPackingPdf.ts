@@ -172,7 +172,7 @@ export async function generatePackingListPdf(orders: Order[]) {
   const gap = 10;
   const cellW = (pageW - margin * 2 - gap * (cols - 1)) / cols;
   const imgH = cellW;
-  const textH = 50; // a bit taller to fit parcel id line
+  const textH = 60; // taller to fit size + parcel id lines
   const cellH = imgH + textH + 6;
   const headerH = 26;
 

@@ -328,6 +328,33 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_variants: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          label: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customer_accounts: {
         Row: {
           auth_user_id: string
@@ -1519,6 +1546,7 @@ export type Database = {
         Row: {
           color_id: string | null
           created_at: string
+          custom_variant_id: string | null
           id: string
           image_url: string | null
           is_active: boolean
@@ -1536,6 +1564,7 @@ export type Database = {
         Insert: {
           color_id?: string | null
           created_at?: string
+          custom_variant_id?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean
@@ -1553,6 +1582,7 @@ export type Database = {
         Update: {
           color_id?: string | null
           created_at?: string
+          custom_variant_id?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean
@@ -1573,6 +1603,13 @@ export type Database = {
             columns: ["color_id"]
             isOneToOne: false
             referencedRelation: "colors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_variants_custom_variant_id_fkey"
+            columns: ["custom_variant_id"]
+            isOneToOne: false
+            referencedRelation: "custom_variants"
             referencedColumns: ["id"]
           },
           {

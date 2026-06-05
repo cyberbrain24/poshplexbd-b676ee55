@@ -774,12 +774,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
             </TabsContent>
 
             <TabsContent value="variants" className="mt-6 space-y-6">
-              <div className="pb-4 border-b border-border">
-                <ProductAttributesPicker
-                  selectedAttributeIds={selectedAttributeIds}
-                  onChange={setSelectedAttributeIds}
-                />
-              </div>
+
               {formData.product_type === "variable" ? (
                 <>
                   <div className="flex items-center justify-between">

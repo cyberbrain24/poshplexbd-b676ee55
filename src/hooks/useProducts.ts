@@ -69,7 +69,8 @@ export const useProducts = () => {
             *,
             color:colors(*),
             size:sizes(*),
-            material:materials(*)
+            material:materials(*),
+            custom_variant:custom_variants(*)
           )
         `)
         .order("created_at", { ascending: false })
@@ -108,7 +109,8 @@ export const useProduct = (slugOrId: string | undefined) => {
           *,
           color:colors(*),
           size:sizes(*),
-          material:materials(*)
+          material:materials(*),
+          custom_variant:custom_variants(*)
         )
       `;
       
@@ -373,12 +375,13 @@ export const useAddProductVariant = () => {
           color_id: variantData.color_id || null,
           size_id: variantData.size_id || null,
           material_id: variantData.material_id || null,
+          custom_variant_id: variantData.custom_variant_id || null,
           sku: variantData.sku || undefined,
           purchase_price: variantData.purchase_price,
           selling_price: variantData.selling_price,
           is_active: variantData.is_active,
           image_url: variantData.image_url || null,
-        })
+        } as any)
         .select()
         .single();
 
@@ -402,6 +405,7 @@ export const useUpdateProductVariant = () => {
       if (variantData.color_id !== undefined) updates.color_id = variantData.color_id || null;
       if (variantData.size_id !== undefined) updates.size_id = variantData.size_id || null;
       if (variantData.material_id !== undefined) updates.material_id = variantData.material_id || null;
+      if (variantData.custom_variant_id !== undefined) updates.custom_variant_id = variantData.custom_variant_id || null;
       if (variantData.sku !== undefined) updates.sku = variantData.sku || undefined;
       if (variantData.purchase_price !== undefined) updates.purchase_price = variantData.purchase_price;
       if (variantData.selling_price !== undefined) updates.selling_price = variantData.selling_price;

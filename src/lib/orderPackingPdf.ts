@@ -138,18 +138,33 @@ export async function generatePackingListPdf(orders: Order[]) {
   y += 24;
 
   doc.setFontSize(11);
-  doc.text("Quantity by Category", margin, y);
+  doc.text("Quantity by Category (per size)", margin, y);
   y += 14;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  const sortedCats = Object.entries(categoryQty).sort((a, b) => b[1] - a[1]);
-  for (const [cat, qty] of sortedCats) {
+  const catTotals = Object.entries(categoryQty).map(([cat, sizes]) => {
+    const total = Object.values(sizes).reduce((s, n) => s + n, 0);
+    return { cat, sizes, total };
+  }).sort((a, b) => b.total - a.total);
+  for (const { cat, sizes, total } of catTotals) {
     if (y > pageH - margin) {
       doc.addPage();
       y = margin;
     }
-    doc.text(`• ${cat}: ${qty} pcs`, margin + 8, y);
-    y += 14;
+    doc.setFont("helvetica", "bold");
+    doc.text(`• ${cat}: ${total} pcs`, margin + 8, y);
+    y += 12;
+    doc.setFont("helvetica", "normal");
+    const sizeEntries = Object.entries(sizes).sort((a, b) => b[1] - a[1]);
+    for (const [sz, qty] of sizeEntries) {
+      if (y > pageH - margin) {
+        doc.addPage();
+        y = margin;
+      }
+      doc.text(`   – Size ${sz}: ${qty} pcs`, margin + 16, y);
+      y += 12;
+    }
+    y += 4;
   }
 
   // ===== Per-parcel image grids =====

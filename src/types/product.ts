@@ -161,4 +161,6 @@ export interface VariantFormData {
   selling_price: number;
   is_active: boolean;
   image_url: string | null;
+  // Map of attribute_id -> selected attribute_value_id (or null)
+  attribute_values?: Record<string, string | null>;
 }

@@ -17,9 +17,11 @@ export interface Thana {
   division_id: string;
   division?: Division;
   is_active: boolean;
+  shipping_cost?: number;
   created_at: string;
   updated_at: string;
 }
+
 
 export interface CustomerType {
   id: string;

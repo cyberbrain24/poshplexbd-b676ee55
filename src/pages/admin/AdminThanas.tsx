@@ -109,6 +109,7 @@ const AdminThanas = () => {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>District</TableHead>
+                  <TableHead className="text-right">Delivery Charge</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -118,11 +119,15 @@ const AdminThanas = () => {
                   <TableRow key={thana.id}>
                     <TableCell className="font-medium">{thana.name}</TableCell>
                     <TableCell>{thana.division?.name || "-"}</TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      ৳{Number(thana.shipping_cost ?? 0).toLocaleString("en-BD")}
+                    </TableCell>
                     <TableCell>
                       <Badge variant={thana.is_active ? "default" : "secondary"}>
                         {thana.is_active ? "Active" : "Inactive"}
                       </Badge>
                     </TableCell>
+
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button size="icon" variant="ghost" onClick={() => handleEdit(thana)}>

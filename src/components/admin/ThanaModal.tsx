@@ -37,6 +37,7 @@ const thanaSchema = z.object({
   name: z.string().min(1, "Name is required"),
   division_id: z.string().min(1, "Division is required"),
   is_active: z.boolean(),
+  shipping_cost: z.coerce.number().min(0, "Must be 0 or greater"),
 });
 
 type ThanaFormValues = z.infer<typeof thanaSchema>;
@@ -58,6 +59,7 @@ const ThanaModal = ({ open, onOpenChange, thana }: ThanaModalProps) => {
       name: "",
       division_id: "",
       is_active: true,
+      shipping_cost: 120,
     },
   });
 
@@ -67,12 +69,14 @@ const ThanaModal = ({ open, onOpenChange, thana }: ThanaModalProps) => {
         name: thana.name,
         division_id: thana.division_id,
         is_active: thana.is_active,
+        shipping_cost: thana.shipping_cost ?? 120,
       });
     } else {
       form.reset({
         name: "",
         division_id: "",
         is_active: true,
+        shipping_cost: 120,
       });
     }
   }, [thana, form]);
@@ -82,6 +86,7 @@ const ThanaModal = ({ open, onOpenChange, thana }: ThanaModalProps) => {
       name: values.name,
       division_id: values.division_id,
       is_active: values.is_active,
+      shipping_cost: values.shipping_cost,
     };
     if (thana) {
       await updateThana.mutateAsync({ id: thana.id, ...data });
@@ -90,6 +95,7 @@ const ThanaModal = ({ open, onOpenChange, thana }: ThanaModalProps) => {
     }
     onOpenChange(false);
   };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -139,6 +145,21 @@ const ThanaModal = ({ open, onOpenChange, thana }: ThanaModalProps) => {
             />
 
             <FormField
+              control={form.control}
+              name="shipping_cost"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Delivery Charge (৳) *</FormLabel>
+                  <FormControl>
+                    <Input type="number" min={0} step="1" placeholder="120" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+
               control={form.control}
               name="is_active"
               render={({ field }) => (

@@ -38,10 +38,20 @@ interface PackingItem {
   phone: string;
   productName: string;
   variant: string;
+  size: string;
   quantity: number;
   parcelId: string | null;
   callNote: string | null;
 }
+
+const extractSize = (variantDetails: Record<string, any> | null | undefined): string => {
+  if (!variantDetails) return "";
+  for (const [k, v] of Object.entries(variantDetails)) {
+    if (!v) continue;
+    if (/size/i.test(k)) return String(v);
+  }
+  return "";
+};
 
 const UNSHIPPED_KEY = "__unshipped__";
 
@@ -54,7 +64,7 @@ export async function generatePackingListPdf(orders: Order[]) {
   // Aggregate
   const customerSet = new Set<string>();
   let totalQty = 0;
-  const categoryQty: Record<string, number> = {};
+  const categoryQty: Record<string, Record<string, number>> = {};
   const items: PackingItem[] = [];
 
   for (const order of orders) {
@@ -62,15 +72,16 @@ export async function generatePackingListPdf(orders: Order[]) {
     const parcelId =
       (order as any).consignment_id || (order as any).tracking_number || null;
     for (const it of (order.items || []) as any[]) {
-      totalQty += it.quantity || 0;
+      const qty = it.quantity || 0;
+      totalQty += qty;
+      const size = extractSize(it.variant_details) || "—";
       const cats: any[] = it.product?.product_categories || [];
-      if (cats.length > 0) {
-        for (const c of cats) {
-          const name = c.category?.name || "Uncategorized";
-          categoryQty[name] = (categoryQty[name] || 0) + (it.quantity || 0);
-        }
-      } else {
-        categoryQty["Uncategorized"] = (categoryQty["Uncategorized"] || 0) + (it.quantity || 0);
+      const catNames = cats.length > 0
+        ? cats.map((c) => c.category?.name || "Uncategorized")
+        : ["Uncategorized"];
+      for (const name of catNames) {
+        if (!categoryQty[name]) categoryQty[name] = {};
+        categoryQty[name][size] = (categoryQty[name][size] || 0) + qty;
       }
       const imgs: any[] = it.product?.product_images || [];
       const main = imgs.find((i) => i.is_main) || imgs.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))[0];
@@ -82,7 +93,8 @@ export async function generatePackingListPdf(orders: Order[]) {
         phone: order.customer?.phone || order.shipping_phone || "—",
         productName: it.product_name,
         variant,
-        quantity: it.quantity || 1,
+        size,
+        quantity: qty || 1,
         parcelId,
         callNote: (order as any).call_center_notes || null,
       });
@@ -126,18 +138,33 @@ export async function generatePackingListPdf(orders: Order[]) {
   y += 24;
 
   doc.setFontSize(11);
-  doc.text("Quantity by Category", margin, y);
+  doc.text("Quantity by Category (per size)", margin, y);
   y += 14;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  const sortedCats = Object.entries(categoryQty).sort((a, b) => b[1] - a[1]);
-  for (const [cat, qty] of sortedCats) {
+  const catTotals = Object.entries(categoryQty).map(([cat, sizes]) => {
+    const total = Object.values(sizes).reduce((s, n) => s + n, 0);
+    return { cat, sizes, total };
+  }).sort((a, b) => b.total - a.total);
+  for (const { cat, sizes, total } of catTotals) {
     if (y > pageH - margin) {
       doc.addPage();
       y = margin;
     }
-    doc.text(`• ${cat}: ${qty} pcs`, margin + 8, y);
-    y += 14;
+    doc.setFont("helvetica", "bold");
+    doc.text(`• ${cat}: ${total} pcs`, margin + 8, y);
+    y += 12;
+    doc.setFont("helvetica", "normal");
+    const sizeEntries = Object.entries(sizes).sort((a, b) => b[1] - a[1]);
+    for (const [sz, qty] of sizeEntries) {
+      if (y > pageH - margin) {
+        doc.addPage();
+        y = margin;
+      }
+      doc.text(`   – Size ${sz}: ${qty} pcs`, margin + 16, y);
+      y += 12;
+    }
+    y += 4;
   }
 
   // ===== Per-parcel image grids =====
@@ -145,18 +172,41 @@ export async function generatePackingListPdf(orders: Order[]) {
   const gap = 10;
   const cellW = (pageW - margin * 2 - gap * (cols - 1)) / cols;
   const imgH = cellW;
-  const textH = 50; // a bit taller to fit parcel id line
+  const textH = 60; // taller to fit size + parcel id lines
   const cellH = imgH + textH + 6;
   const headerH = 26;
+
+  // Start grid on a fresh page after summary
+  doc.addPage();
+  let rowY = margin;
+  let firstParcel = true;
 
   for (const key of groupKeys) {
     const groupItems = groups.get(key)!;
     const isShipped = key !== UNSHIPPED_KEY;
     const parcelLabel = isShipped ? `Parcel ID: ${key}` : "Not Shipped Yet (No Parcel ID)";
 
-    // Start each parcel on a new page for clarity
-    doc.addPage();
-    let rowY = margin;
+    // Thick divider between parcels (continue on same page)
+    if (!firstParcel) {
+      rowY += 6;
+      if (rowY + headerH + cellH > pageH - margin) {
+        doc.addPage();
+        rowY = margin;
+      } else {
+        doc.setDrawColor(0, 0, 0);
+        doc.setLineWidth(2.5);
+        doc.line(margin, rowY, pageW - margin, rowY);
+        doc.setLineWidth(0.2);
+        rowY += 14;
+      }
+    }
+    firstParcel = false;
+
+    // Ensure room for header + at least one row
+    if (rowY + headerH + cellH > pageH - margin) {
+      doc.addPage();
+      rowY = margin;
+    }
 
     // Parcel header
     doc.setFont("helvetica", "bold");
@@ -208,6 +258,12 @@ export async function generatePackingListPdf(orders: Order[]) {
       doc.setFontSize(7.5);
       doc.text(`#${item.orderNumber} × ${item.quantity}`, x, ty);
       ty += 9;
+      // Size line (prominent)
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Size: ${item.size || "—"}`, x, ty);
+      ty += 10;
       doc.setFont("helvetica", "normal");
       doc.setFontSize(7);
       const nameLine = doc.splitTextToSize(item.customerName, cellW)[0];
@@ -246,6 +302,10 @@ export async function generatePackingListPdf(orders: Order[]) {
         col = 0;
         rowY += cellH + 8;
       }
+    }
+    // Flush trailing partial row so next parcel starts below it
+    if (col !== 0) {
+      rowY += cellH + 8;
     }
   }
 

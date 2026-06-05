@@ -13,6 +13,7 @@ interface VariantBuilderProps {
   colors: Array<{ id: string; name: string; hex_code: string }>;
   sizes: Array<{ id: string; label: string }>;
   materials: Array<{ id: string; name: string }>;
+  customVariants: Array<{ id: string; label: string }>;
   existingVariants: VariantFormData[];
   basePrice: number;
   onGenerate: (newVariants: VariantFormData[]) => void;
@@ -22,6 +23,7 @@ const VariantBuilder = ({
   colors,
   sizes,
   materials,
+  customVariants,
   existingVariants,
   basePrice,
   onGenerate,
@@ -29,6 +31,7 @@ const VariantBuilder = ({
   // Multi-select state
   const [selectedColorIds, setSelectedColorIds] = useState<string[]>([]);
   const [selectedSizeIds, setSelectedSizeIds] = useState<string[]>([]);
+  const [selectedCustomIds, setSelectedCustomIds] = useState<string[]>([]);
   const [selectedMaterialIds, setSelectedMaterialIds] = useState<string[]>([]);
 
   // Bulk apply toggles
@@ -51,14 +54,16 @@ const VariantBuilder = ({
   const previewCount = useMemo(() => {
     const c = selectedColorIds.length || 1;
     const s = selectedSizeIds.length || 1;
+    const cv = selectedCustomIds.length || 1;
     const m = selectedMaterialIds.length || 1;
-    return c * s * m;
-  }, [selectedColorIds, selectedSizeIds, selectedMaterialIds]);
+    return c * s * cv * m;
+  }, [selectedColorIds, selectedSizeIds, selectedCustomIds, selectedMaterialIds]);
 
   // Generate cartesian product
   const handleGenerate = useCallback(() => {
     const colorsToUse = selectedColorIds.length > 0 ? selectedColorIds : [null];
     const sizesToUse = selectedSizeIds.length > 0 ? selectedSizeIds : [null];
+    const customsToUse = selectedCustomIds.length > 0 ? selectedCustomIds : [null];
     const materialsToUse = selectedMaterialIds.length > 0
       ? selectedMaterialIds
       : useBulkMaterial && bulkMaterialId
@@ -68,7 +73,7 @@ const VariantBuilder = ({
     // Build existing combination keys for dedup
     const existingKeys = new Set(
       existingVariants.map(
-        (v) => `${v.color_id || ""}|${v.size_id || ""}|${v.material_id || ""}`
+        (v) => `${v.color_id || ""}|${v.size_id || ""}|${v.custom_variant_id || ""}|${v.material_id || ""}`
       )
     );
 
@@ -76,20 +81,23 @@ const VariantBuilder = ({
 
     for (const colorId of colorsToUse) {
       for (const sizeId of sizesToUse) {
-        for (const materialId of materialsToUse) {
-          const key = `${colorId || ""}|${sizeId || ""}|${materialId || ""}`;
-          if (existingKeys.has(key)) continue;
+        for (const customId of customsToUse) {
+          for (const materialId of materialsToUse) {
+            const key = `${colorId || ""}|${sizeId || ""}|${customId || ""}|${materialId || ""}`;
+            if (existingKeys.has(key)) continue;
 
-          newVariants.push({
-            color_id: colorId,
-            size_id: sizeId,
-            material_id: useBulkMaterial && bulkMaterialId ? bulkMaterialId : materialId,
-            sku: "",
-            purchase_price: useBulkPurchasePrice ? bulkPurchasePrice : 0,
-            selling_price: useBulkSellingPrice ? bulkSellingPrice : basePrice,
-            is_active: true,
-            image_url: null,
-          });
+            newVariants.push({
+              color_id: colorId,
+              size_id: sizeId,
+              custom_variant_id: customId,
+              material_id: useBulkMaterial && bulkMaterialId ? bulkMaterialId : materialId,
+              sku: "",
+              purchase_price: useBulkPurchasePrice ? bulkPurchasePrice : 0,
+              selling_price: useBulkSellingPrice ? bulkSellingPrice : basePrice,
+              is_active: true,
+              image_url: null,
+            });
+          }
         }
       }
     }
@@ -102,7 +110,7 @@ const VariantBuilder = ({
     onGenerate(newVariants);
     toast.success(`Generated ${newVariants.length} new variant(s)`);
   }, [
-    selectedColorIds, selectedSizeIds, selectedMaterialIds,
+    selectedColorIds, selectedSizeIds, selectedCustomIds, selectedMaterialIds,
     useBulkMaterial, bulkMaterialId, useBulkPurchasePrice,
     bulkPurchasePrice, useBulkSellingPrice, bulkSellingPrice,
     basePrice, existingVariants, onGenerate,

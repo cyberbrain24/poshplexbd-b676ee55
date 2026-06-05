@@ -1025,7 +1025,7 @@ async function callAI(body: any): Promise<Response> {
     console.error(`AI model ${model} error`, resp.status, errorText);
     lastResp = resp;
 
-    if (resp.status === 402 || resp.status === 429 || resp.status >= 500) return resp;
+    if (resp.status === 402 || resp.status === 429) return resp;
   }
   return lastResp || new Response(JSON.stringify({ error: "AI unavailable" }), { status: 503 });
 }

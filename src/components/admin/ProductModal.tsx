@@ -16,8 +16,7 @@ import { toast } from "sonner";
 import VariantBuilder from "@/components/admin/VariantBuilder";
 import ProductImagePickerModal from "@/components/admin/ProductImagePickerModal";
 import { useProductCategoryIds, useSyncProductCategories } from "@/hooks/useProductCategories";
-import { useProductAppliedAttributeIds, useSyncProductAttributes } from "@/hooks/useProductAttributes";
-import ProductAttributesPicker from "@/components/admin/ProductAttributesPicker";
+import { useProductAppliedAttributeIds, useSyncProductAttributes, useProductAttributes, useProductVariantAttributeValues, syncVariantAttributeValues } from "@/hooks/useProductAttributes";
 import { compressProductImage } from "@/lib/imageCompress";
 
 interface ProductModalProps {
@@ -62,6 +61,20 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
   const syncCategories = useSyncProductCategories();
   const { data: appliedAttributeIds = [] } = useProductAppliedAttributeIds(product?.id);
   const syncAttributes = useSyncProductAttributes();
+  const { data: allAttributes = [] } = useProductAttributes();
+  const { data: variantAttrValuesMap = {} } = useProductVariantAttributeValues(product?.id);
+
+  // Derived: attributes applied to this product (full objects with values)
+  const appliedAttributes = useMemo(
+    () => allAttributes.filter((a) => selectedAttributeIds.includes(a.id)),
+    [allAttributes, selectedAttributeIds]
+  );
+
+  const toggleAppliedAttribute = useCallback((attributeId: string) => {
+    setSelectedAttributeIds((prev) =>
+      prev.includes(attributeId) ? prev.filter((id) => id !== attributeId) : [...prev, attributeId]
+    );
+  }, []);
 
   // Derived: parent categories and their subcategories (for display grouping)
   const parentCategories = useMemo(() => categories.filter(c => !c.parent_id), [categories]);
@@ -141,9 +154,10 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
         selling_price: v.selling_price,
         is_active: v.is_active,
         image_url: v.image_url || null,
+        attribute_values: variantAttrValuesMap[v.id] || {},
       })));
     }
-  }, [product]);
+  }, [product, variantAttrValuesMap]);
 
   const getYouTubeVideoId = (url: string) => {
     const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
@@ -170,7 +184,8 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
           await deleteVariant.mutateAsync(id);
         }
 
-        // Update existing variants & add new ones
+        // Update existing variants & add new ones — capture variant id for attribute sync
+        const variantIdsWithAttrValues: Array<{ id: string; attribute_values: Record<string, string | null> }> = [];
         for (const variant of variants) {
           if (variant.id && existingVariantIds.includes(variant.id)) {
             // Update existing
@@ -188,13 +203,22 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                 image_url: variant.image_url,
               },
             });
+            variantIdsWithAttrValues.push({ id: variant.id, attribute_values: variant.attribute_values || {} });
           } else {
             // Add new variant
-            await addVariant.mutateAsync({
+            const inserted = await addVariant.mutateAsync({
               productId: product.id,
               variantData: variant,
             });
+            if (inserted?.id) {
+              variantIdsWithAttrValues.push({ id: inserted.id, attribute_values: variant.attribute_values || {} });
+            }
           }
+        }
+
+        // Sync per-variant attribute value picks
+        for (const v of variantIdsWithAttrValues) {
+          await syncVariantAttributeValues(v.id, v.attribute_values, selectedAttributeIds);
         }
 
         // Sync image sort_order and is_main for existing images
@@ -240,12 +264,15 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
           });
         }
 
-        // Add variants for new product
+        // Add variants for new product and sync per-variant attribute values
         for (const variant of variants) {
-          await addVariant.mutateAsync({
+          const inserted = await addVariant.mutateAsync({
             productId: newProduct.id,
             variantData: variant,
           });
+          if (inserted?.id) {
+            await syncVariantAttributeValues(inserted.id, variant.attribute_values, selectedAttributeIds);
+          }
         }
 
         toast.success("Product created successfully");
@@ -434,11 +461,22 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
       selling_price: formData.base_price,
       is_active: true,
       image_url: null,
+      attribute_values: {},
     }]);
   };
 
   const updateVariantField = (index: number, field: keyof VariantFormData, value: any) => {
     setVariants(prev => prev.map((v, i) => i === index ? { ...v, [field]: value } : v));
+  };
+
+  const updateVariantAttribute = (index: number, attributeId: string, valueId: string | null) => {
+    setVariants(prev => prev.map((v, i) => {
+      if (i !== index) return v;
+      const next = { ...(v.attribute_values || {}) };
+      if (valueId) next[attributeId] = valueId;
+      else delete next[attributeId];
+      return { ...v, attribute_values: next };
+    }));
   };
 
   const removeVariant = (index: number) => {
@@ -649,12 +687,6 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                 <Label htmlFor="is_featured">Featured (show on homepage)</Label>
               </div>
 
-              <div className="pt-2 border-t border-border">
-                <ProductAttributesPicker
-                  selectedAttributeIds={selectedAttributeIds}
-                  onChange={setSelectedAttributeIds}
-                />
-              </div>
             </TabsContent>
 
             <TabsContent value="media" className="mt-6 space-y-6">
@@ -781,12 +813,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
             </TabsContent>
 
             <TabsContent value="variants" className="mt-6 space-y-6">
-              <div className="pb-4 border-b border-border">
-                <ProductAttributesPicker
-                  selectedAttributeIds={selectedAttributeIds}
-                  onChange={setSelectedAttributeIds}
-                />
-              </div>
+
               {formData.product_type === "variable" ? (
                 <>
                   <div className="flex items-center justify-between">
@@ -817,6 +844,9 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                       existingVariants={variants}
                       basePrice={formData.base_price}
                       onGenerate={handleBuilderGenerate}
+                      attributes={allAttributes}
+                      selectedAttributeIds={selectedAttributeIds}
+                      onToggleAttribute={toggleAppliedAttribute}
                     />
                   )}
 
@@ -830,6 +860,9 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                             <TableHead>Size</TableHead>
                             <TableHead>Material</TableHead>
                             <TableHead>Custom</TableHead>
+                            {appliedAttributes.map((attr) => (
+                              <TableHead key={attr.id}>{attr.name}</TableHead>
+                            ))}
                              <TableHead>Price</TableHead>
                             <TableHead>SKU</TableHead>
                             <TableHead className="w-16"></TableHead>
@@ -924,6 +957,24 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                                   </SelectContent>
                                 </Select>
                               </TableCell>
+                              {appliedAttributes.map((attr) => (
+                                <TableCell key={attr.id}>
+                                  <Select
+                                    value={(variant.attribute_values || {})[attr.id] || "none"}
+                                    onValueChange={(value) => updateVariantAttribute(index, attr.id, value === "none" ? null : value)}
+                                  >
+                                    <SelectTrigger className="w-32">
+                                      <SelectValue placeholder={attr.name} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="none">-</SelectItem>
+                                      {(attr.values || []).map((v) => (
+                                        <SelectItem key={v.id} value={v.id}>{v.value}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </TableCell>
+                              ))}
                               <TableCell>
                                 <Input
                                   type="number"

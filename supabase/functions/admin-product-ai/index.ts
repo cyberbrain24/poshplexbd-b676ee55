@@ -33,8 +33,10 @@ const READ_TOOLS = new Set([
   "list_accounts", "list_transactions", "list_order_payments",
   // Marketing
   "list_promo_codes", "list_payment_methods",
-  // Locations
-  "list_divisions", "list_thanas",
+  // Locations & shipping
+  "list_divisions", "list_thanas", "list_shipping_rates",
+  // Variants library
+  "list_custom_variants",
   // Site / Analytics
   "get_site_overview", "get_sales_analytics", "get_top_products", "get_top_customers",
   "get_site_settings", "get_site_branding",
@@ -43,6 +45,7 @@ const READ_TOOLS = new Set([
   // Universal DB introspection (auto-discovers any new module)
   "db_list_tables", "db_query_table", "db_count_table",
 ]);
+
 
 const WRITE_TOOLS = new Set([
   // Products

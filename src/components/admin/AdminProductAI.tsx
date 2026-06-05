@@ -62,6 +62,7 @@ export default function AdminProductAI({ embedded = false }: Props) {
         }),
       });
       const data = await resp.json();
+      if (data?.error) throw new Error(data.error);
       if (!resp.ok) throw new Error(data.error || "Request failed");
 
       const updated: Msg[] = data.messages || newMessages;

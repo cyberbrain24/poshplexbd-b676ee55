@@ -108,6 +108,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
       setImages([]);
       setVariants([]);
       setSelectedCategoryIds([]);
+      setSelectedAttributeIds([]);
     }
   }, [product]);
 
@@ -120,6 +121,11 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
       setSelectedCategoryIds([product.category_id]);
     }
   }, [productCategoryIds, product?.category_id]);
+
+  // Load applied attributes when editing
+  useEffect(() => {
+    setSelectedAttributeIds(appliedAttributeIds);
+  }, [appliedAttributeIds]);
 
   // Load existing variants when editing
   useEffect(() => {
@@ -153,6 +159,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
 
         // 2. Sync multi-category junction table
         await syncCategories.mutateAsync({ productId: product.id, categoryIds: selectedCategoryIds });
+        await syncAttributes.mutateAsync({ productId: product.id, attributeIds: selectedAttributeIds });
         // 2. Sync variants for existing product
         const existingVariantIds = (product.variants || []).map(v => v.id);
         const currentVariantIds = variants.filter(v => v.id).map(v => v.id!);
@@ -206,6 +213,10 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
         if (selectedCategoryIds.length > 0) {
           await syncCategories.mutateAsync({ productId: newProduct.id, categoryIds: selectedCategoryIds });
         }
+        if (selectedAttributeIds.length > 0) {
+          await syncAttributes.mutateAsync({ productId: newProduct.id, attributeIds: selectedAttributeIds });
+        }
+        
         
         // Upload images for new product
         for (const img of images) {

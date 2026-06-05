@@ -177,3 +177,61 @@ export const useProductAppliedAttributesFull = (productId?: string) => {
     staleTime: STALE,
   });
 };
+
+// ---- Variant attribute values ----
+// Fetch all variant-attribute-value rows for a product's variants
+export const useProductVariantAttributeValues = (productId?: string) => {
+  return useQuery({
+    queryKey: ["productVariantAttributeValues", productId],
+    queryFn: async () => {
+      if (!productId) return {} as Record<string, Record<string, string>>;
+      // Get variant ids first
+      const { data: variants, error: vErr } = await (supabase as any)
+        .from("product_variants")
+        .select("id")
+        .eq("product_id", productId);
+      if (vErr) throw vErr;
+      const variantIds = ((variants || []) as Array<{ id: string }>).map((v) => v.id);
+      if (variantIds.length === 0) return {} as Record<string, Record<string, string>>;
+      const { data, error } = await (supabase as any)
+        .from("product_variant_attribute_values")
+        .select("variant_id, attribute_id, attribute_value_id")
+        .in("variant_id", variantIds);
+      if (error) throw error;
+      const map: Record<string, Record<string, string>> = {};
+      for (const row of (data || []) as Array<{ variant_id: string; attribute_id: string; attribute_value_id: string }>) {
+        if (!map[row.variant_id]) map[row.variant_id] = {};
+        map[row.variant_id][row.attribute_id] = row.attribute_value_id;
+      }
+      return map;
+    },
+    enabled: !!productId,
+    staleTime: STALE,
+  });
+};
+
+// Replace all attribute value picks for a single variant
+export const syncVariantAttributeValues = async (
+  variantId: string,
+  attributeValues: Record<string, string | null> | undefined,
+  validAttributeIds: string[]
+) => {
+  const { error: delErr } = await (supabase as any)
+    .from("product_variant_attribute_values")
+    .delete()
+    .eq("variant_id", variantId);
+  if (delErr) throw delErr;
+  if (!attributeValues) return;
+  const rows = Object.entries(attributeValues)
+    .filter(([attrId, valId]) => !!valId && validAttributeIds.includes(attrId))
+    .map(([attribute_id, attribute_value_id]) => ({
+      variant_id: variantId,
+      attribute_id,
+      attribute_value_id: attribute_value_id as string,
+    }));
+  if (rows.length === 0) return;
+  const { error: insErr } = await (supabase as any)
+    .from("product_variant_attribute_values")
+    .insert(rows);
+  if (insErr) throw insErr;
+};

@@ -448,11 +448,22 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
       selling_price: formData.base_price,
       is_active: true,
       image_url: null,
+      attribute_values: {},
     }]);
   };
 
   const updateVariantField = (index: number, field: keyof VariantFormData, value: any) => {
     setVariants(prev => prev.map((v, i) => i === index ? { ...v, [field]: value } : v));
+  };
+
+  const updateVariantAttribute = (index: number, attributeId: string, valueId: string | null) => {
+    setVariants(prev => prev.map((v, i) => {
+      if (i !== index) return v;
+      const next = { ...(v.attribute_values || {}) };
+      if (valueId) next[attributeId] = valueId;
+      else delete next[attributeId];
+      return { ...v, attribute_values: next };
+    }));
   };
 
   const removeVariant = (index: number) => {

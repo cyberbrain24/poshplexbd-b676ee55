@@ -648,6 +648,13 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                 />
                 <Label htmlFor="is_featured">Featured (show on homepage)</Label>
               </div>
+
+              <div className="pt-2 border-t border-border">
+                <ProductAttributesPicker
+                  selectedAttributeIds={selectedAttributeIds}
+                  onChange={setSelectedAttributeIds}
+                />
+              </div>
             </TabsContent>
 
             <TabsContent value="media" className="mt-6 space-y-6">

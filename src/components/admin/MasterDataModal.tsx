@@ -21,7 +21,7 @@ interface MasterDataModalProps {
   onClose: () => void;
   onSave: (data: any) => void;
   title: string;
-  type: "color" | "size" | "material" | "size-guide" | "care-instruction" | "category" | "brand";
+  type: "color" | "size" | "material" | "size-guide" | "care-instruction" | "category" | "brand" | "custom-variant";
   initialData?: any;
 }
 
@@ -65,6 +65,9 @@ const MasterDataModal = ({ isOpen, onClose, onSave, title, type, initialData }: 
           break;
         case "brand":
           setFormData({ name: "" });
+          break;
+        case "custom-variant":
+          setFormData({ label: "", sort_order: 0, is_active: true });
           break;
       }
     }
@@ -359,6 +362,30 @@ const MasterDataModal = ({ isOpen, onClose, onSave, title, type, initialData }: 
           </div>
         );
 
+      case "custom-variant":
+        return (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="label">Custom Variant Label *</Label>
+              <Input
+                id="label"
+                value={formData.label || ""}
+                onChange={(e) => setFormData({ ...formData, label: e.target.value })}
+                placeholder="e.g., Slim Fit, Long, Gift Wrap"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="sort_order">Sort Order</Label>
+              <Input
+                id="sort_order"
+                type="number"
+                value={formData.sort_order ?? 0}
+                onChange={(e) => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })}
+              />
+            </div>
+          </>
+        );
+
       default:
         return null;
     }
@@ -379,6 +406,8 @@ const MasterDataModal = ({ isOpen, onClose, onSave, title, type, initialData }: 
       case "category":
       case "brand":
         return formData.name;
+      case "custom-variant":
+        return formData.label;
       default:
         return false;
     }

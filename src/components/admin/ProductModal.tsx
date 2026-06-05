@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useCategories, useBrands, useSizeGuides, useCareInstructions, useColors, useSizes, useMaterials } from "@/hooks/useMasterData";
+import { useCategories, useBrands, useSizeGuides, useCareInstructions, useColors, useSizes, useMaterials, useCustomVariants } from "@/hooks/useMasterData";
 import { useCreateProduct, useUpdateProduct, useAddProductImage, useDeleteProductImage, useUpdateProductImage, useAddProductVariant, useUpdateProductVariant, useDeleteProductVariant, uploadProductImage } from "@/hooks/useProducts";
 import { Product, ProductFormData, VariantFormData, ProductImage } from "@/types/product";
 import { toast } from "sonner";
@@ -66,6 +66,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
   const { data: colors = [] } = useColors();
   const { data: sizes = [] } = useSizes();
   const { data: materials = [] } = useMaterials();
+  const { data: customVariants = [] } = useCustomVariants();
 
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
@@ -123,6 +124,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
         color_id: v.color_id,
         size_id: v.size_id,
         material_id: v.material_id,
+        custom_variant_id: (v as any).custom_variant_id ?? null,
         sku: v.sku,
         purchase_price: v.purchase_price,
         selling_price: v.selling_price,
@@ -166,6 +168,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                 color_id: variant.color_id,
                 size_id: variant.size_id,
                 material_id: variant.material_id,
+                custom_variant_id: variant.custom_variant_id ?? null,
                 sku: variant.sku,
                 purchase_price: variant.purchase_price,
                 selling_price: variant.selling_price,
@@ -409,6 +412,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
       color_id: null,
       size_id: null,
       material_id: null,
+      custom_variant_id: null,
       sku: "",
       purchase_price: 0,
       selling_price: formData.base_price,
@@ -780,6 +784,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                       colors={colors}
                       sizes={sizes}
                       materials={materials}
+                      customVariants={customVariants}
                       existingVariants={variants}
                       basePrice={formData.base_price}
                       onGenerate={handleBuilderGenerate}
@@ -795,6 +800,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                             <TableHead>Color</TableHead>
                             <TableHead>Size</TableHead>
                             <TableHead>Material</TableHead>
+                            <TableHead>Custom</TableHead>
                              <TableHead>Price</TableHead>
                             <TableHead>SKU</TableHead>
                             <TableHead className="w-16"></TableHead>
@@ -869,6 +875,22 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                                     <SelectItem value="none">-</SelectItem>
                                     {materials.map((m) => (
                                       <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                              <TableCell>
+                                <Select
+                                  value={variant.custom_variant_id || "none"}
+                                  onValueChange={(value) => updateVariantField(index, "custom_variant_id", value === "none" ? null : value)}
+                                >
+                                  <SelectTrigger className="w-32">
+                                    <SelectValue placeholder="Custom" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">-</SelectItem>
+                                    {customVariants.map((cv) => (
+                                      <SelectItem key={cv.id} value={cv.id}>{cv.label}</SelectItem>
                                     ))}
                                   </SelectContent>
                                 </Select>

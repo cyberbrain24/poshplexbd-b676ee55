@@ -1,54 +1,35 @@
-# Tracking & Marketing — Advanced Module
+## Problem
 
-Promote the current "Tracking & Marketing" section in Site Settings into a first-class, expandable admin module with its own sidebar group, dedicated routes, and a richer multi-tab UI per channel.
+The 6 recent orders all have `customer_id = NULL` and no matching record in the `customers` table. Root cause: Checkout calls `supabase.from('customers').insert(...)` directly, but RLS only allows authenticated users to insert customers:
 
-## New sidebar group
+```
+Policy "Authenticated users can insert customers": WITH CHECK (auth.uid() IS NOT NULL)
+```
 
-Add a collapsible "Marketing & Tracking" group to `AdminSidebar.tsx` (icon: `Megaphone` or `LineChart`) with sub-items:
+Guest checkouts (no logged-in user) silently fail the insert (`createError` is logged to console but ignored), so no customer record is created and the order keeps `customer_id = NULL`. Admin's Customers page therefore doesn't show them.
 
-- **Overview** → `/admin/marketing` — status dashboard of every connected channel (Pixel, CAPI, GA4) with health badges (Configured / Live / Disabled / Missing token), last event sent, and quick-toggle switches.
-- **Meta Pixel** → `/admin/marketing/meta-pixel` — Pixel ID, Enable, Test Mode, Advanced Matching, E-commerce Events, event-by-event toggles (PageView, ViewContent, AddToCart, InitiateCheckout, Purchase, Search, AddToWishlist, CompleteRegistration), "Send Test Event" button.
-- **Meta CAPI** → `/admin/marketing/meta-capi` — Access Token (masked, show/hide), Test Event Code, Dataset/Pixel ID confirmation, deduplication info, "Send Server Test Event" button that hits the existing `meta-capi` edge function, last 10 delivery logs.
-- **Google Analytics 4** → `/admin/marketing/ga4` — Measurement ID, Enable toggle, Enhanced Measurement note, validation of `G-XXXXXXXX` format, test ping.
-- **(Future-ready) TikTok Pixel & Google Ads** → placeholder cards marked "Coming soon" so the module is visibly extensible.
+## Fix (minimal, non-disruptive)
 
-The existing Site Settings "Tracking & Marketing" section is removed; the Overview page replaces it.
+### 1. New SECURITY DEFINER RPC: `upsert_customer_for_checkout`
 
-## Pages & components
+Migration creates one function that anon/authenticated can call. It:
+- Looks up customer by phone.
+- If found: updates name + any provided non-null fields (email, gender, address, division_id, thana_id, postal_code).
+- If not found: inserts a new row with the provided fields.
+- Returns the customer UUID.
 
-Create under `src/pages/admin/marketing/`:
-- `MarketingOverview.tsx`
-- `MetaPixelSettings.tsx`
-- `MetaCapiSettings.tsx`
-- `GA4Settings.tsx`
-- `MarketingLayout.tsx` — wraps children with a sub-nav tab strip (mirrors the sidebar sub-items) so users can switch within the module.
+Granted EXECUTE to `anon` and `authenticated`. No table grants or RLS changes — the function runs as definer and bypasses the insert policy safely (only writes the checkout fields, never roles/membership).
 
-Shared building blocks in `src/components/admin/marketing/`:
-- `ChannelStatusCard.tsx` — channel name, status pill, key field summary, toggle.
-- `MaskedTokenInput.tsx` — password input with show/hide and copy.
-- `TestEventButton.tsx` — fires a sample event and surfaces the response.
+### 2. Update `src/pages/Checkout.tsx` → `findOrCreateCustomer`
 
-## Data & wiring
+Replace the manual lookup-update-insert block (lines ~338-412) with a single `supabase.rpc('upsert_customer_for_checkout', { ... })` call. Then still call `createCustomerAccount(...)` afterward (unchanged) so the auth account + auto-login keep working.
 
-- Reuse `usePixelSettings` / `useUpdatePixelSettings` (`src/hooks/usePixelSettings.ts`) — no schema change required; all fields already exist (`meta_pixel_id`, `meta_pixel_enabled`, `meta_test_mode`, `meta_advanced_matching`, `meta_ecommerce_events_enabled`, `meta_capi_enabled`, `meta_capi_access_token`, `ga4_enabled`, `ga4_measurement_id`).
-- Each subpage scopes its mutation to only its own fields (partial update) so saves are independent per channel.
-- Overview page reads the same hook and derives status badges client-side.
+### 3. Backfill the 6 existing guest orders
 
-## Routing
+One-off data update: for each of the 6 orders with `customer_id IS NULL`, upsert a `customers` row by `guest_phone` (using shipping_name/email/division/thana from the order) and set `orders.customer_id` to that id. This makes the existing orders show up under the right customer immediately.
 
-Register routes in `src/App.tsx` (or wherever admin routes live) lazily, and add them to `src/lib/adminRoutePrefetch.ts` so the prefetch idle-loop covers them.
+## Out of scope (untouched)
 
-## Sidebar implementation detail
-
-Extend `AdminSidebar.tsx`:
-- Add `marketingItems: NavItem[]` array.
-- Add `'marketing'` to the `GroupKey` union and `getInitialOpen` logic.
-- Insert `renderCollapsible(Megaphone, "Marketing & Tracking", marketingItems, ...)` between "Order Management" and "Customer Management".
-
-## Out of scope
-
-- No new DB columns, no new edge functions (existing `meta-capi` is reused).
-- No changes to the storefront pixel firing logic (`useFacebookPixel`, `facebook-pixel.service.ts`).
-- Other Site Settings sections (branding, AI credentials, etc.) stay where they are.
-
-Approve to implement.
+- `useCheckout.ts`, order creation RPC, payment flow, edge functions, auth/login flow.
+- `create-customer-account` edge function (already works once a customer_id exists).
+- RLS policies on `customers` (unchanged — RPC is the only new write path).

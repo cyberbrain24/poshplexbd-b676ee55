@@ -306,24 +306,52 @@ export default function AdminProductAI({ embedded = false }: Props) {
           className="hidden"
           onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])}
         />
-        <Button size="icon" variant="outline" disabled={attaching || loading} onClick={() => fileRef.current?.click()} title="Upload image" className="shrink-0">
+        <Button size="icon" variant="outline" disabled={attaching || loading} onClick={() => fileRef.current?.click()} title="Upload image" className="shrink-0 h-[140px]">
           {attaching ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />}
         </Button>
-        <Textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
+        <div
+          className="relative flex-1"
+          style={{ height: textareaHeight }}
+        >
+          <div
+            onPointerDown={(e) => {
               e.preventDefault();
-              send();
-            }
-          }}
-          placeholder={loading || pending ? "Type next prompt and press Enter to queue…" : "Ask anything… press Enter to send (Shift+Enter for new line)"}
-          disabled={false}
-          rows={3}
-          className="flex-1 min-h-[72px] max-h-48 resize-y leading-relaxed text-sm"
-        />
-        <Button onClick={send} disabled={!input.trim() && !attachedImageUrl} className="shrink-0 h-[72px]" title={loading || pending ? "Add to queue" : "Send"}>
+              const startY = e.clientY;
+              const startH = textareaHeight;
+              const target = e.currentTarget;
+              target.setPointerCapture(e.pointerId);
+              const onMove = (ev: PointerEvent) => {
+                const next = Math.min(600, Math.max(100, startH - (ev.clientY - startY)));
+                setTextareaHeight(next);
+              };
+              const onUp = (ev: PointerEvent) => {
+                target.releasePointerCapture(ev.pointerId);
+                window.removeEventListener("pointermove", onMove);
+                window.removeEventListener("pointerup", onUp);
+              };
+              window.addEventListener("pointermove", onMove);
+              window.addEventListener("pointerup", onUp);
+            }}
+            title="Drag to resize"
+            className="absolute top-1 right-1 z-10 h-4 w-4 cursor-ns-resize rounded-sm bg-muted hover:bg-muted-foreground/30 flex items-center justify-center select-none"
+          >
+            <div className="h-[2px] w-2 bg-foreground/60" />
+          </div>
+          <Textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                send();
+              }
+            }}
+            placeholder={loading || pending ? "Type next prompt and press Enter to queue…" : "Ask anything… press Enter to send (Shift+Enter for new line)"}
+            disabled={false}
+            className="h-full w-full resize-none leading-relaxed text-base pr-7"
+          />
+        </div>
+        <Button onClick={send} disabled={!input.trim() && !attachedImageUrl} className="shrink-0 h-[140px]" title={loading || pending ? "Add to queue" : "Send"}>
           <Send className="h-4 w-4" />
         </Button>
       </div>

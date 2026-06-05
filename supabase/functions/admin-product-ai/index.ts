@@ -590,12 +590,82 @@ async function executeTool(name: string, args: any, sb: any) {
       case "list_payment_methods": return { payment_methods: (await sb.from("payment_methods").select("id, name, type, is_active, instructions, account_details")).data };
       case "list_divisions": return { divisions: (await sb.from("divisions").select("id, name, is_active").order("name")).data };
       case "list_thanas": {
-        let q = sb.from("thanas").select("id, name, division_id").order("name");
+        let q = sb.from("thanas").select("id, name, division_id, shipping_cost, is_active").order("name");
         if (args.division_id) q = q.eq("division_id", args.division_id);
         const { data, error } = await q;
         if (error) throw error;
         return { thanas: data };
       }
+      case "list_shipping_rates": {
+        let q = sb.from("thanas").select("id, name, division_id, shipping_cost, is_active, divisions(name)").order("name");
+        if (args.division_id) q = q.eq("division_id", args.division_id);
+        if (args.search) q = q.ilike("name", `%${args.search}%`);
+        const { data, error } = await q;
+        if (error) throw error;
+        return { shipping_rates: (data || []).map((t: any) => ({ thana_id: t.id, thana: t.name, division: t.divisions?.name, shipping_cost: Number(t.shipping_cost), is_active: t.is_active })) };
+      }
+      case "list_custom_variants": {
+        let q = sb.from("custom_variants").select("id, label, sort_order, is_active").order("sort_order");
+        if (args.is_active !== undefined) q = q.eq("is_active", args.is_active);
+        const { data, error } = await q;
+        if (error) throw error;
+        return { custom_variants: data };
+      }
+      case "create_thana": {
+        const { data, error } = await sb.from("thanas").insert({ name: args.name, division_id: args.division_id, shipping_cost: args.shipping_cost ?? 120, is_active: args.is_active ?? true }).select().single();
+        if (error) throw error;
+        return { success: true, thana: data };
+      }
+      case "update_thana": {
+        const { thana_id, ...patch } = args;
+        const { data, error } = await sb.from("thanas").update(patch).eq("id", thana_id).select().single();
+        if (error) throw error;
+        return { success: true, thana: data };
+      }
+      case "delete_thana": {
+        const { error } = await sb.from("thanas").delete().eq("id", args.thana_id);
+        if (error) throw error;
+        return { success: true };
+      }
+      case "set_thana_shipping_cost": {
+        let id = args.thana_id;
+        if (!id && args.thana_name) {
+          let q = sb.from("thanas").select("id").ilike("name", args.thana_name);
+          if (args.division_id) q = q.eq("division_id", args.division_id);
+          const { data } = await q.limit(1).maybeSingle();
+          id = data?.id;
+        }
+        if (!id) throw new Error("Thana not found");
+        const { data, error } = await sb.from("thanas").update({ shipping_cost: args.shipping_cost }).eq("id", id).select().single();
+        if (error) throw error;
+        return { success: true, thana: data };
+      }
+      case "bulk_set_thana_shipping_cost": {
+        let q = sb.from("thanas").update({ shipping_cost: args.shipping_cost });
+        if (args.thana_ids?.length) q = q.in("id", args.thana_ids);
+        else if (args.division_id) q = q.eq("division_id", args.division_id);
+        else q = q.not("id", "is", null);
+        const { data, error } = await q.select("id");
+        if (error) throw error;
+        return { success: true, updated_count: data?.length || 0 };
+      }
+      case "create_custom_variant": {
+        const { data, error } = await sb.from("custom_variants").insert({ label: args.label, sort_order: args.sort_order ?? 0, is_active: args.is_active ?? true }).select().single();
+        if (error) throw error;
+        return { success: true, custom_variant: data };
+      }
+      case "update_custom_variant": {
+        const { custom_variant_id, ...patch } = args;
+        const { data, error } = await sb.from("custom_variants").update(patch).eq("id", custom_variant_id).select().single();
+        if (error) throw error;
+        return { success: true, custom_variant: data };
+      }
+      case "delete_custom_variant": {
+        const { error } = await sb.from("custom_variants").delete().eq("id", args.custom_variant_id);
+        if (error) throw error;
+        return { success: true };
+      }
+
       case "get_sales_analytics": {
         const days = args.days || 30;
         const since = new Date(Date.now() - days * 86400000).toISOString();

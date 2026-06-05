@@ -1,8 +1,7 @@
-// Admin Product AI Assistant — Gemini tool calling
+// Admin Product AI Agent — tool calling
 // Read tools auto-execute; write tools require client confirmation.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { aiChatCompletion } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,7 +12,8 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const MODEL = "google/gemini-3-flash-preview";
+const AI_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const AI_MODELS = ["openai/gpt-5-mini", "google/gemini-3-flash-preview"];
 
 const READ_TOOLS = new Set([
   // Catalog
@@ -931,14 +931,14 @@ Deno.serve(async (req) => {
     });
 
     for (let i = 0; i < 30; i++) {
-      const aiResp = await aiChatCompletion({ model: MODEL, messages: sanitize(convo), tools, tool_choice: "auto" });
+      const aiResp = await callAI({ messages: sanitize(convo), tools, tool_choice: "auto" });
 
       if (!aiResp.ok) {
         const txt = await aiResp.text();
         if (aiResp.status === 429) return jsonResp({ error: "Rate limit. Try again in a moment." }, 429);
         if (aiResp.status === 402) return jsonResp({ error: "AI credits exhausted. Add credits in workspace settings." }, 402);
         console.error("AI error", aiResp.status, txt);
-        return jsonResp({ error: "AI service error" }, 500);
+        return jsonResp({ error: "AI Agent is temporarily unavailable. Please try again." }, 200);
       }
 
       const data = await aiResp.json();
@@ -1004,4 +1004,28 @@ function jsonResp(body: any, status = 200) {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+}
+
+async function callAI(body: any): Promise<Response> {
+  const key = Deno.env.get("LOVABLE_API_KEY");
+  if (!key) {
+    return new Response(JSON.stringify({ error: "AI key is not configured" }), { status: 503 });
+  }
+
+  let lastResp: Response | null = null;
+  for (const model of AI_MODELS) {
+    const resp = await fetch(AI_GATEWAY_URL, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ ...body, model }),
+    });
+    if (resp.ok) return resp;
+
+    const errorText = await resp.clone().text().catch(() => "");
+    console.error(`AI model ${model} error`, resp.status, errorText);
+    lastResp = resp;
+
+    if (resp.status === 402 || resp.status === 429) return resp;
+  }
+  return lastResp || new Response(JSON.stringify({ error: "AI unavailable" }), { status: 503 });
 }

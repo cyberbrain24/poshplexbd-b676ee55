@@ -64,7 +64,7 @@ export async function generatePackingListPdf(orders: Order[]) {
   // Aggregate
   const customerSet = new Set<string>();
   let totalQty = 0;
-  const categoryQty: Record<string, number> = {};
+  const categoryQty: Record<string, Record<string, number>> = {};
   const items: PackingItem[] = [];
 
   for (const order of orders) {
@@ -72,15 +72,16 @@ export async function generatePackingListPdf(orders: Order[]) {
     const parcelId =
       (order as any).consignment_id || (order as any).tracking_number || null;
     for (const it of (order.items || []) as any[]) {
-      totalQty += it.quantity || 0;
+      const qty = it.quantity || 0;
+      totalQty += qty;
+      const size = extractSize(it.variant_details) || "—";
       const cats: any[] = it.product?.product_categories || [];
-      if (cats.length > 0) {
-        for (const c of cats) {
-          const name = c.category?.name || "Uncategorized";
-          categoryQty[name] = (categoryQty[name] || 0) + (it.quantity || 0);
-        }
-      } else {
-        categoryQty["Uncategorized"] = (categoryQty["Uncategorized"] || 0) + (it.quantity || 0);
+      const catNames = cats.length > 0
+        ? cats.map((c) => c.category?.name || "Uncategorized")
+        : ["Uncategorized"];
+      for (const name of catNames) {
+        if (!categoryQty[name]) categoryQty[name] = {};
+        categoryQty[name][size] = (categoryQty[name][size] || 0) + qty;
       }
       const imgs: any[] = it.product?.product_images || [];
       const main = imgs.find((i) => i.is_main) || imgs.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))[0];
@@ -92,7 +93,8 @@ export async function generatePackingListPdf(orders: Order[]) {
         phone: order.customer?.phone || order.shipping_phone || "—",
         productName: it.product_name,
         variant,
-        quantity: it.quantity || 1,
+        size,
+        quantity: qty || 1,
         parcelId,
         callNote: (order as any).call_center_notes || null,
       });

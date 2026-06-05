@@ -860,6 +860,9 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                             <TableHead>Size</TableHead>
                             <TableHead>Material</TableHead>
                             <TableHead>Custom</TableHead>
+                            {appliedAttributes.map((attr) => (
+                              <TableHead key={attr.id}>{attr.name}</TableHead>
+                            ))}
                              <TableHead>Price</TableHead>
                             <TableHead>SKU</TableHead>
                             <TableHead className="w-16"></TableHead>

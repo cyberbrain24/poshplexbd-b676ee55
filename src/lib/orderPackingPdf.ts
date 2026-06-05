@@ -258,6 +258,12 @@ export async function generatePackingListPdf(orders: Order[]) {
       doc.setFontSize(7.5);
       doc.text(`#${item.orderNumber} × ${item.quantity}`, x, ty);
       ty += 9;
+      // Size line (prominent)
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Size: ${item.size || "—"}`, x, ty);
+      ty += 10;
       doc.setFont("helvetica", "normal");
       doc.setFontSize(7);
       const nameLine = doc.splitTextToSize(item.customerName, cellW)[0];

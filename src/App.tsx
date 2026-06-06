@@ -119,13 +119,13 @@ const App = () => (
                 <FacebookPixelTracker />
                 <Routes>
                   <Route path="/" element={<Index />} />
-                  <Route path="/categories" element={<CategoryBrowser />} />
-                  <Route path="/category/:category" element={<Category />} />
-                  <Route path="/product/:productSlug" element={<ProductDetail />} />
-                  <Route path="/checkout" element={<Checkout />} />
-                  <Route path="/order-tracking" element={<OrderTracking />} />
-                  <Route path="/my-orders" element={<MyOrders />} />
-                  <Route path="/account" element={<CustomerAccount />} />
+                  <Route path="/categories" element={<Suspense fallback={<LoadingFallback />}><CategoryBrowser /></Suspense>} />
+                  <Route path="/category/:category" element={<Suspense fallback={<LoadingFallback />}><Category /></Suspense>} />
+                  <Route path="/product/:productSlug" element={<Suspense fallback={<LoadingFallback />}><ProductDetail /></Suspense>} />
+                  <Route path="/checkout" element={<Suspense fallback={<LoadingFallback />}><Checkout /></Suspense>} />
+                  <Route path="/order-tracking" element={<Suspense fallback={<LoadingFallback />}><OrderTracking /></Suspense>} />
+                  <Route path="/my-orders" element={<Suspense fallback={<LoadingFallback />}><MyOrders /></Suspense>} />
+                  <Route path="/account" element={<Suspense fallback={<LoadingFallback />}><CustomerAccount /></Suspense>} />
                   <Route path="/favorites" element={<Suspense fallback={<LoadingFallback />}><Favorites /></Suspense>} />
                   <Route path="/membership" element={<Suspense fallback={<LoadingFallback />}><Membership /></Suspense>} />
                   <Route path="/reviews" element={<Suspense fallback={<LoadingFallback />}><CustomerReviews /></Suspense>} />
@@ -139,7 +139,7 @@ const App = () => (
                   <Route path="/terms-of-service" element={<Suspense fallback={<LoadingFallback />}><TermsConditions /></Suspense>} />
                   <Route path="/shipping-delivery" element={<Suspense fallback={<LoadingFallback />}><ShippingDelivery /></Suspense>} />
                   <Route path="/auth" element={<Suspense fallback={<LoadingFallback />}><Auth /></Suspense>} />
-                  <Route path="/login" element={<CustomerAuth />} />
+                  <Route path="/login" element={<Suspense fallback={<LoadingFallback />}><CustomerAuth /></Suspense>} />
                   
                   
                   {/* Admin Routes - Lazy loaded */}

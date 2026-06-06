@@ -157,6 +157,10 @@ const ProductGrid = () => {
               <p className="text-sm font-bold text-foreground tracking-tight">
                 {formatPrice(product.base_price)}
               </p>
+              <ProductRatingBadge
+                count={ratings?.[product.id]?.count ?? 0}
+                average={ratings?.[product.id]?.average ?? 0}
+              />
             </div>
           </div>
         ))}

@@ -30,7 +30,7 @@ import AdminCreateReviewDialog from "@/components/admin/AdminCreateReviewDialog"
 
 interface Review {
   id: string;
-  customer_id: string;
+  customer_id: string | null;
   product_id: string;
   rating: number;
   title: string | null;
@@ -38,6 +38,7 @@ interface Review {
   images: string[] | null;
   is_approved: boolean;
   created_at: string;
+  reviewer_name?: string | null;
   customer?: {
     id: string;
     name: string;

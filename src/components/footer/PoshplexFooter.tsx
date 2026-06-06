@@ -9,6 +9,7 @@ const FOOTER_COLUMNS = [
     links: [
       { label: "All Products", path: "/category/all" },
       { label: "New Arrivals", path: "/category/new-arrivals" },
+      { label: "Customer Reviews", path: "/reviews" },
       { label: "Members", path: "/membership" },
     ],
   },

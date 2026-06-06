@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Check, X, Star, Trash2, Eye } from "lucide-react";
+import { Check, X, Star, Trash2, Eye, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import ReviewImages from "@/components/product/ReviewImages";
@@ -37,6 +37,7 @@ interface Review {
   content: string;
   images: string[] | null;
   is_approved: boolean;
+  is_featured?: boolean;
   created_at: string;
   reviewer_name?: string | null;
   customer?: {
@@ -53,7 +54,7 @@ interface Review {
 }
 
 const AdminReviews = () => {
-  const [filter, setFilter] = useState<"all" | "pending" | "approved">("all");
+  const [filter, setFilter] = useState<"all" | "pending" | "approved" | "featured">("all");
   const queryClient = useQueryClient();
 
   const { data: reviews = [], isLoading } = useQuery({
@@ -77,6 +78,8 @@ const AdminReviews = () => {
         query = query.eq("is_approved", false);
       } else if (filter === "approved") {
         query = query.eq("is_approved", true);
+      } else if (filter === "featured") {
+        query = query.eq("is_featured", true);
       }
 
       const { data, error } = await query;

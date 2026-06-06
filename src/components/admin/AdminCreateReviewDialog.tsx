@@ -44,11 +44,11 @@ const AdminCreateReviewDialog = () => {
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Product picker
+  // Product picker (multi-select)
   const [productSearch, setProductSearch] = useState("");
   const debouncedProduct = useDebounced(productSearch, 300);
   const [productResults, setProductResults] = useState<ProductOption[]>([]);
-  const [selectedProduct, setSelectedProduct] = useState<ProductOption | null>(null);
+  const [selectedProducts, setSelectedProducts] = useState<ProductOption[]>([]);
 
   // Customer picker (optional)
   const [customerSearch, setCustomerSearch] = useState("");
@@ -68,7 +68,7 @@ const AdminCreateReviewDialog = () => {
   const resetForm = () => {
     setProductSearch("");
     setProductResults([]);
-    setSelectedProduct(null);
+    setSelectedProducts([]);
     setCustomerSearch("");
     setCustomerResults([]);
     setSelectedCustomer(null);
@@ -83,7 +83,7 @@ const AdminCreateReviewDialog = () => {
 
   // Product search
   useEffect(() => {
-    if (!debouncedProduct || selectedProduct) {
+    if (!debouncedProduct) {
       setProductResults([]);
       return;
     }
@@ -109,7 +109,7 @@ const AdminCreateReviewDialog = () => {
     return () => {
       cancelled = true;
     };
-  }, [debouncedProduct, selectedProduct]);
+  }, [debouncedProduct]);
 
   // Customer search
   useEffect(() => {
@@ -132,21 +132,29 @@ const AdminCreateReviewDialog = () => {
     };
   }, [debouncedCustomer, selectedCustomer]);
 
+  const addProduct = (p: ProductOption) => {
+    setSelectedProducts((prev) =>
+      prev.some((x) => x.id === p.id) ? prev : [...prev, p]
+    );
+    setProductSearch("");
+    setProductResults([]);
+  };
+  const removeProduct = (id: string) =>
+    setSelectedProducts((prev) => prev.filter((p) => p.id !== id));
+
   const canSubmit = useMemo(() => {
-    if (!selectedProduct) return false;
+    if (selectedProducts.length === 0) return false;
     if (!content.trim()) return false;
     if (rating < 1 || rating > 5) return false;
-    // need either a linked customer or a typed reviewer name
     if (!selectedCustomer && !reviewerName.trim()) return false;
     return true;
-  }, [selectedProduct, content, rating, selectedCustomer, reviewerName]);
+  }, [selectedProducts, content, rating, selectedCustomer, reviewerName]);
 
   const submit = async () => {
-    if (!selectedProduct) return;
+    if (selectedProducts.length === 0) return;
     setSubmitting(true);
     try {
-      const payload: any = {
-        product_id: selectedProduct.id,
+      const basePayload: any = {
         customer_id: selectedCustomer?.id ?? null,
         reviewer_name: selectedCustomer ? null : reviewerName.trim(),
         rating,
@@ -156,22 +164,35 @@ const AdminCreateReviewDialog = () => {
         is_approved: approved,
       };
       if (customDate) {
-        payload.created_at = new Date(customDate).toISOString();
+        basePayload.created_at = new Date(customDate).toISOString();
       }
 
-      const { error } = await supabase.from("reviews").insert(payload);
+      const rows = selectedProducts.map((p) => ({
+        ...basePayload,
+        product_id: p.id,
+      }));
+
+      const { error } = await supabase.from("reviews").insert(rows);
       if (error) {
         if ((error as any).code === "23505") {
-          toast.error("This customer already reviewed this product. Pick another customer or leave it unlinked.");
+          toast.error(
+            "This customer has already reviewed one of these products. Remove it or pick another customer."
+          );
         } else {
           toast.error(error.message || "Failed to create review");
         }
         return;
       }
 
-      toast.success("Review created");
+      toast.success(
+        selectedProducts.length === 1
+          ? "Review created"
+          : `Review added to ${selectedProducts.length} products`
+      );
       qc.invalidateQueries({ queryKey: ["admin-reviews"] });
-      qc.invalidateQueries({ queryKey: ["product-reviews", selectedProduct.id] });
+      selectedProducts.forEach((p) =>
+        qc.invalidateQueries({ queryKey: ["product-reviews", p.id] })
+      );
       resetForm();
       setOpen(false);
     } catch (e: any) {
@@ -200,59 +221,74 @@ const AdminCreateReviewDialog = () => {
         </DialogHeader>
 
         <div className="space-y-5 pt-2">
-          {/* Product picker */}
+          {/* Product picker (multi) */}
           <div className="space-y-2">
-            <Label>Product *</Label>
-            {selectedProduct ? (
-              <div className="flex items-center gap-3 p-2 border rounded">
-                {selectedProduct.image && (
-                  <img src={selectedProduct.image} alt="" className="w-10 h-10 object-cover rounded" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{selectedProduct.name}</p>
-                  <p className="text-xs text-muted-foreground">{selectedProduct.sku}</p>
-                </div>
-                <Button size="sm" variant="ghost" onClick={() => setSelectedProduct(null)}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
-              <>
-                <div className="relative">
-                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    value={productSearch}
-                    onChange={(e) => setProductSearch(e.target.value)}
-                    placeholder="Search by name or SKU"
-                    className="pl-8"
-                  />
-                </div>
-                {productResults.length > 0 && (
-                  <div className="border rounded max-h-48 overflow-y-auto divide-y">
-                    {productResults.map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedProduct(p);
-                          setProductSearch("");
-                        }}
-                        className="w-full flex items-center gap-2 p-2 hover:bg-muted text-left"
-                      >
-                        {p.image && (
-                          <img src={p.image} alt="" className="w-8 h-8 object-cover rounded" />
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm truncate">{p.name}</p>
-                          <p className="text-xs text-muted-foreground">{p.sku}</p>
-                        </div>
-                      </button>
-                    ))}
+            <Label>Products * <span className="text-xs text-muted-foreground font-normal">(select one or more)</span></Label>
+
+            {selectedProducts.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {selectedProducts.map((p) => (
+                  <div
+                    key={p.id}
+                    className="flex items-center gap-2 pl-1 pr-1 py-1 border rounded bg-muted/40 max-w-full"
+                  >
+                    {p.image && (
+                      <img src={p.image} alt="" className="w-7 h-7 object-cover rounded flex-shrink-0" />
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium truncate max-w-[180px]">{p.name}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{p.sku}</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0"
+                      onClick={() => removeProduct(p.id)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
                   </div>
-                )}
-              </>
+                ))}
+              </div>
+            )}
+
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={productSearch}
+                onChange={(e) => setProductSearch(e.target.value)}
+                placeholder="Search and add products by name or SKU"
+                className="pl-8"
+              />
+            </div>
+            {productResults.length > 0 && (
+              <div className="border rounded max-h-48 overflow-y-auto divide-y">
+                {productResults.map((p) => {
+                  const already = selectedProducts.some((x) => x.id === p.id);
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      disabled={already}
+                      onClick={() => addProduct(p)}
+                      className="w-full flex items-center gap-2 p-2 hover:bg-muted text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {p.image && (
+                        <img src={p.image} alt="" className="w-8 h-8 object-cover rounded" />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm truncate">{p.name}</p>
+                        <p className="text-xs text-muted-foreground">{p.sku}</p>
+                      </div>
+                      {already && <span className="text-[10px] text-muted-foreground">Added</span>}
+                    </button>
+                  );
+                })}
+              </div>
             )}
           </div>
+
+
 
           {/* Reviewer name */}
           <div className="space-y-2">

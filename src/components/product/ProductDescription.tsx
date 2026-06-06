@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import ReviewProduct from "./ReviewProduct";
 import ReviewImages from "./ReviewImages";
 import EditMyReviewDialog from "./EditMyReviewDialog";
+import ReviewLightbox from "./ReviewLightbox";
 import { Product } from "@/types/product";
 import { useProductReviews } from "@/hooks/useReviews";
 import { parseSizeGuideContent } from "@/components/admin/SizeGuideTableEditor";
@@ -46,6 +47,20 @@ const ProductDescription = ({ product }: ProductDescriptionProps) => {
   const [currentCustomerId, setCurrentCustomerId] = useState<string | null>(null);
   const [editingReview, setEditingReview] = useState<any | null>(null);
   const [viewingReview, setViewingReview] = useState<any | null>(null);
+  const [lightbox, setLightbox] = useState<{ images: string[]; index: number } | null>(null);
+  const [isDesktop, setIsDesktop] = useState(() => typeof window !== "undefined" && window.innerWidth >= 1024);
+  const pageSize = isDesktop ? 5 : 4;
+  const [visibleCount, setVisibleCount] = useState(pageSize);
+
+  useEffect(() => {
+    const onResize = () => setIsDesktop(window.innerWidth >= 1024);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
+    setVisibleCount(pageSize);
+  }, [pageSize, product?.id]);
 
   useEffect(() => {
     let active = true;
@@ -248,63 +263,83 @@ XL: Chest 42-44"`;
                 No reviews yet. Be the first to review this product!
               </p>
             ) : (
-              <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-                {reviews.map((review) => {
-                  const heroImg = review.images?.[0];
-                  const isMine = currentCustomerId && review.customer_id === currentCustomerId;
-                  return (
-                    <div
-                      key={review.id}
-                      className="group relative border border-border rounded-sm overflow-hidden bg-card cursor-pointer hover:shadow-md transition-shadow"
-                      onClick={() => setViewingReview(review)}
-                    >
-                      {heroImg ? (
-                        <div className="aspect-square bg-muted overflow-hidden">
-                          <img
-                            src={heroImg}
-                            alt=""
-                            loading="lazy"
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          />
-                        </div>
-                      ) : (
-                        <div className="aspect-square bg-muted flex items-center justify-center">
+              <>
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+                  {reviews.slice(0, visibleCount).map((review) => {
+                    const heroImg = review.images?.[0];
+                    const isMine = currentCustomerId && review.customer_id === currentCustomerId;
+                    return (
+                      <div
+                        key={review.id}
+                        className="group relative border border-border rounded-sm overflow-hidden bg-card cursor-pointer hover:shadow-md transition-shadow"
+                        onClick={() => setViewingReview(review)}
+                      >
+                        {heroImg ? (
+                          <div
+                            className="aspect-square bg-muted overflow-hidden"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setLightbox({ images: review.images || [heroImg], index: 0 });
+                            }}
+                          >
+                            <img
+                              src={heroImg}
+                              alt=""
+                              loading="lazy"
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
+                          </div>
+                        ) : (
+                          <div className="aspect-square bg-muted flex items-center justify-center">
+                            <div className="flex items-center gap-0.5">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <CustomStar key={star} filled={star <= review.rating} className="w-4 h-4" />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        <div className="p-2 space-y-1">
                           <div className="flex items-center gap-0.5">
                             {[1, 2, 3, 4, 5].map((star) => (
-                              <CustomStar key={star} filled={star <= review.rating} className="w-4 h-4" />
+                              <CustomStar key={star} filled={star <= review.rating} />
                             ))}
                           </div>
+                          {review.title && (
+                            <p className="text-xs font-semibold line-clamp-1">{review.title}</p>
+                          )}
+                          <p className="text-[11px] font-light text-muted-foreground line-clamp-3">
+                            {review.content}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground truncate">
+                            {review.reviewer_name || "Customer"} · {new Date(review.created_at).toLocaleDateString()}
+                          </p>
                         </div>
-                      )}
-                      <div className="p-2 space-y-1">
-                        <div className="flex items-center gap-0.5">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <CustomStar key={star} filled={star <= review.rating} />
-                          ))}
-                        </div>
-                        {review.title && (
-                          <p className="text-xs font-semibold line-clamp-1">{review.title}</p>
+                        {isMine && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setEditingReview(review); }}
+                            className="absolute top-1.5 right-1.5 bg-background/90 backdrop-blur border border-border rounded p-1 hover:bg-background"
+                            title="Edit your review"
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </button>
                         )}
-                        <p className="text-[11px] font-light text-muted-foreground line-clamp-3">
-                          {review.content}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground truncate">
-                          {review.reviewer_name || "Customer"} · {new Date(review.created_at).toLocaleDateString()}
-                        </p>
                       </div>
-                      {isMine && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setEditingReview(review); }}
-                          className="absolute top-1.5 right-1.5 bg-background/90 backdrop-blur border border-border rounded p-1 hover:bg-background"
-                          title="Edit your review"
-                        >
-                          <Pencil className="h-3 w-3" />
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+
+                {visibleCount < reviews.length && (
+                  <div className="flex justify-center pt-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setVisibleCount((v) => v + pageSize)}
+                      className="rounded-sm uppercase text-xs tracking-widest font-semibold px-8 h-10"
+                    >
+                      View More ({reviews.length - visibleCount})
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
 
             {/* View Review Dialog */}
@@ -323,7 +358,20 @@ XL: Chest 42-44"`;
                     <p className="text-sm font-light text-muted-foreground leading-relaxed whitespace-pre-line">
                       {viewingReview.content}
                     </p>
-                    <ReviewImages images={viewingReview.images || []} size="md" />
+                    {viewingReview.images?.length > 0 && (
+                      <div className="grid grid-cols-3 gap-2">
+                        {viewingReview.images.map((img: string, i: number) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setLightbox({ images: viewingReview.images, index: i })}
+                            className="aspect-square overflow-hidden bg-muted rounded-sm border border-border hover:opacity-90"
+                          >
+                            <img src={img} alt="" loading="lazy" className="w-full h-full object-cover" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
                     <p className="text-xs text-muted-foreground">
                       {viewingReview.reviewer_name || "Customer"} · {new Date(viewingReview.created_at).toLocaleDateString()}
                     </p>
@@ -337,6 +385,15 @@ XL: Chest 42-44"`;
               open={!!editingReview}
               onOpenChange={(o) => !o && setEditingReview(null)}
             />
+
+            {lightbox && (
+              <ReviewLightbox
+                images={lightbox.images}
+                index={lightbox.index}
+                onClose={() => setLightbox(null)}
+                onIndexChange={(i) => setLightbox((p) => p ? { ...p, index: i } : p)}
+              />
+            )}
           </div>
         )}
       </div>

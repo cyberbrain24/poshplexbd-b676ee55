@@ -85,10 +85,6 @@ const ReviewLookCard = ({ review }: { review: ReviewLookData }) => {
           {format(new Date(review.created_at), "MMM d, yyyy")}
         </div>
 
-        <div className="flex flex-wrap gap-1 pt-1">
-          <span className="text-[9px] font-bold uppercase text-white/70">#PoshplexFit</span>
-          <span className="text-[9px] font-bold uppercase text-white/70">#StreetwearDaily</span>
-        </div>
       </div>
     </Link>
   );

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import ReviewProduct from "./ReviewProduct";
 import ReviewImages from "./ReviewImages";
 import EditMyReviewDialog from "./EditMyReviewDialog";
+import ReviewLightbox from "./ReviewLightbox";
 import { Product } from "@/types/product";
 import { useProductReviews } from "@/hooks/useReviews";
 import { parseSizeGuideContent } from "@/components/admin/SizeGuideTableEditor";

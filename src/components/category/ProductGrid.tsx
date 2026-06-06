@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { generateProductSlug } from "@/lib/slug";
 import FavoriteButton from "@/components/product/FavoriteButton";
+import ProductRatingBadge from "@/components/product/ProductRatingBadge";
+import { useProductRatings } from "@/hooks/useProductRatings";
 import { ResponsiveImage } from "@/components/ui/responsive-image";
 import type { SortOption, ProductFilters } from "./FilterSortBar";
 

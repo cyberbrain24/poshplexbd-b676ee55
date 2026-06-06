@@ -71,13 +71,15 @@ const CustomerReviewsSection = () => {
           plugins={[autoplay.current]}
           className="hidden md:block w-full group"
         >
-          <CarouselContent className="-ml-3 md:-ml-4">
+          <CarouselContent className="-ml-3 md:-ml-4 items-stretch">
             {reviews.map((r) => (
               <CarouselItem
                 key={r.id}
-                className="pl-3 md:pl-4 sm:basis-1/3 md:basis-1/4 lg:basis-1/6"
+                className="pl-3 md:pl-4 sm:basis-1/3 md:basis-1/4 lg:basis-1/6 h-auto"
               >
-                <ReviewLookCard review={r} />
+                <div className="h-full">
+                  <ReviewLookCard review={r} />
+                </div>
               </CarouselItem>
             ))}
           </CarouselContent>

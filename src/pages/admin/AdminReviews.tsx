@@ -136,6 +136,22 @@ const AdminReviews = () => {
     },
   });
 
+  const toggleFeatured = useMutation({
+    mutationFn: async ({ id, value }: { id: string; value: boolean }) => {
+      const { error } = await supabase
+        .from("reviews")
+        .update({ is_featured: value })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-reviews"] });
+      queryClient.invalidateQueries({ queryKey: ["featured-reviews"] });
+      toast.success(vars.value ? "Marked as featured" : "Removed from featured");
+    },
+    onError: () => toast.error("Failed to update featured status"),
+  });
+
   const getProductImage = (review: Review) => {
     const mainImage = review.product?.product_images?.find((img) => img.is_main);
     return mainImage?.image_url || review.product?.product_images?.[0]?.image_url;
@@ -182,6 +198,7 @@ const AdminReviews = () => {
               <SelectItem value="all">All Reviews</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="approved">Approved</SelectItem>
+              <SelectItem value="featured">Featured</SelectItem>
             </SelectContent>
           </Select>
           <AdminCreateReviewDialog />

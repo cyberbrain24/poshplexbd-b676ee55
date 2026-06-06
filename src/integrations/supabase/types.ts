@@ -391,6 +391,13 @@ export type Database = {
             referencedRelation: "customers"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "customer_accounts_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "public_members"
+            referencedColumns: ["id"]
+          },
         ]
       }
       customer_risk_profiles: {
@@ -454,6 +461,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: true
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_risk_profiles_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: true
+            referencedRelation: "public_members"
             referencedColumns: ["id"]
           },
         ]
@@ -1334,6 +1348,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "public_members"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "orders_payment_method_id_fkey"
             columns: ["payment_method_id"]
             isOneToOne: false
@@ -1921,6 +1942,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "promo_code_usages_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "public_members"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "promo_code_usages_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
@@ -2071,6 +2099,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "return_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "public_members"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "return_requests_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
@@ -2135,6 +2170,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "public_members"
             referencedColumns: ["id"]
           },
           {
@@ -2855,7 +2897,38 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_members: {
+        Row: {
+          customer_type_id: string | null
+          id: string | null
+          membership_assigned_at: string | null
+          name: string | null
+          profile_image_url: string | null
+        }
+        Insert: {
+          customer_type_id?: string | null
+          id?: string | null
+          membership_assigned_at?: string | null
+          name?: string | null
+          profile_image_url?: string | null
+        }
+        Update: {
+          customer_type_id?: string | null
+          id?: string | null
+          membership_assigned_at?: string | null
+          name?: string | null
+          profile_image_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customers_customer_type_id_fkey"
+            columns: ["customer_type_id"]
+            isOneToOne: false
+            referencedRelation: "customer_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       admin_list_schema: { Args: never; Returns: Json }

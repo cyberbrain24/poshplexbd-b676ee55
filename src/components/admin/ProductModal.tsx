@@ -137,8 +137,10 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
 
   // Load applied attributes when editing
   useEffect(() => {
-    setSelectedAttributeIds(appliedAttributeIds);
-  }, [appliedAttributeIds]);
+    if (product?.id && appliedAttributeIds) {
+      setSelectedAttributeIds(appliedAttributeIds);
+    }
+  }, [product?.id, appliedAttributeIds]);
 
   // Load existing variants when editing
   useEffect(() => {

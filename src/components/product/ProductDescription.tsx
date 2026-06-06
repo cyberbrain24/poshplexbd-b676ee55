@@ -248,7 +248,7 @@ XL: Chest 42-44"`;
                     </p>
                     <ReviewImages images={review.images || []} size="sm" />
                     <p className="text-xs text-muted-foreground">
-                      {new Date(review.created_at).toLocaleDateString()}
+                      {(review.reviewer_name || "Anonymous")} · {new Date(review.created_at).toLocaleDateString()}
                     </p>
                   </div>
                 ))}

@@ -242,39 +242,101 @@ XL: Chest 42-44"`;
             {/* Review Product Button */}
             <ReviewProduct productId={product?.id || ""} />
 
-            {/* Reviews List */}
+            {/* Reviews Grid */}
             {reviews.length === 0 ? (
               <p className="text-sm font-light text-muted-foreground text-center py-4">
                 No reviews yet. Be the first to review this product!
               </p>
             ) : (
-              <div className="space-y-6">
-                {reviews.map((review) => (
-                  <div key={review.id} className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <CustomStar
-                            key={star}
-                            filled={star <= review.rating}
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+                {reviews.map((review) => {
+                  const heroImg = review.images?.[0];
+                  const isMine = currentCustomerId && review.customer_id === currentCustomerId;
+                  return (
+                    <div
+                      key={review.id}
+                      className="group relative border border-border rounded-sm overflow-hidden bg-card cursor-pointer hover:shadow-md transition-shadow"
+                      onClick={() => setViewingReview(review)}
+                    >
+                      {heroImg ? (
+                        <div className="aspect-square bg-muted overflow-hidden">
+                          <img
+                            src={heroImg}
+                            alt=""
+                            loading="lazy"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />
-                        ))}
+                        </div>
+                      ) : (
+                        <div className="aspect-square bg-muted flex items-center justify-center">
+                          <div className="flex items-center gap-0.5">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <CustomStar key={star} filled={star <= review.rating} className="w-4 h-4" />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      <div className="p-2 space-y-1">
+                        <div className="flex items-center gap-0.5">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <CustomStar key={star} filled={star <= review.rating} />
+                          ))}
+                        </div>
+                        {review.title && (
+                          <p className="text-xs font-semibold line-clamp-1">{review.title}</p>
+                        )}
+                        <p className="text-[11px] font-light text-muted-foreground line-clamp-3">
+                          {review.content}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground truncate">
+                          {review.reviewer_name || "Customer"} · {new Date(review.created_at).toLocaleDateString()}
+                        </p>
                       </div>
-                      {review.title && (
-                        <span className="text-sm font-medium text-foreground">{review.title}</span>
+                      {isMine && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setEditingReview(review); }}
+                          className="absolute top-1.5 right-1.5 bg-background/90 backdrop-blur border border-border rounded p-1 hover:bg-background"
+                          title="Edit your review"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </button>
                       )}
                     </div>
-                    <p className="text-sm font-light text-muted-foreground leading-relaxed">
-                      {review.content}
-                    </p>
-                    <ReviewImages images={review.images || []} size="sm" />
-                    <p className="text-xs text-muted-foreground">
-                      {review.reviewer_name ? `${review.reviewer_name} · ` : ""}{new Date(review.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
+
+            {/* View Review Dialog */}
+            <Dialog open={!!viewingReview} onOpenChange={(o) => !o && setViewingReview(null)}>
+              <DialogContent className="sm:max-w-lg !rounded-none max-h-[90vh] overflow-y-auto">
+                {viewingReview && (
+                  <div className="space-y-4 pt-2">
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <CustomStar key={s} filled={s <= viewingReview.rating} className="w-4 h-4" />
+                      ))}
+                    </div>
+                    {viewingReview.title && (
+                      <h3 className="text-base font-semibold">{viewingReview.title}</h3>
+                    )}
+                    <p className="text-sm font-light text-muted-foreground leading-relaxed whitespace-pre-line">
+                      {viewingReview.content}
+                    </p>
+                    <ReviewImages images={viewingReview.images || []} size="md" />
+                    <p className="text-xs text-muted-foreground">
+                      {viewingReview.reviewer_name || "Customer"} · {new Date(viewingReview.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
+
+            <EditMyReviewDialog
+              review={editingReview}
+              open={!!editingReview}
+              onOpenChange={(o) => !o && setEditingReview(null)}
+            />
           </div>
         )}
       </div>

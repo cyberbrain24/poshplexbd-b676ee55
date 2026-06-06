@@ -44,11 +44,11 @@ const AdminCreateReviewDialog = () => {
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Product picker
+  // Product picker (multi-select)
   const [productSearch, setProductSearch] = useState("");
   const debouncedProduct = useDebounced(productSearch, 300);
   const [productResults, setProductResults] = useState<ProductOption[]>([]);
-  const [selectedProduct, setSelectedProduct] = useState<ProductOption | null>(null);
+  const [selectedProducts, setSelectedProducts] = useState<ProductOption[]>([]);
 
   // Customer picker (optional)
   const [customerSearch, setCustomerSearch] = useState("");
@@ -68,7 +68,7 @@ const AdminCreateReviewDialog = () => {
   const resetForm = () => {
     setProductSearch("");
     setProductResults([]);
-    setSelectedProduct(null);
+    setSelectedProducts([]);
     setCustomerSearch("");
     setCustomerResults([]);
     setSelectedCustomer(null);

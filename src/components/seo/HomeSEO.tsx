@@ -17,8 +17,8 @@ const HomeSEO = () => {
   return (
     <>
       <SEO
-        title="Premium Fashion & Jewelry"
-        description="Discover Poshplex - your destination for premium fashion and elegant jewelry. Shop our curated collection of modern pieces designed for style-conscious individuals."
+        title="Be Posh With Poshplex"
+        description="Discover Poshplex - Be Posh With Poshplex. Shop our curated streetwear collection designed for style-conscious individuals."
         url="/"
         type="website"
       />

@@ -66,9 +66,13 @@ const VariantBuilder = ({
     setSelectedValueIdsByAttr((prev) => {
       const cur = prev[attrId] || [];
       const next = cur.includes(valueId) ? cur.filter((v) => v !== valueId) : [...cur, valueId];
+      const isAppliedNow = selectedAttributeIds.includes(attrId);
+      // Auto-apply attribute when first value is picked; un-apply when all values are removed
+      if (next.length > 0 && !isAppliedNow) onToggleAttribute?.(attrId);
+      if (next.length === 0 && isAppliedNow) onToggleAttribute?.(attrId);
       return { ...prev, [attrId]: next };
     });
-  }, []);
+  }, [selectedAttributeIds, onToggleAttribute]);
 
   // Applied attributes (only those checked in product applied list)
   const appliedAttributes = useMemo(

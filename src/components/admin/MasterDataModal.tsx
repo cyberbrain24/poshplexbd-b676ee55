@@ -400,7 +400,11 @@ const MasterDataModal = ({ isOpen, onClose, onSave, title, type, initialData }: 
       case "material":
         return formData.name;
       case "size-guide":
-        return formData.name && sizeGuideTable.columns.length > 0 && sizeGuideTable.rows.length > 0;
+        return Boolean(
+          formData.name &&
+            sizeGuideTable.tables.length > 0 &&
+            sizeGuideTable.tables.every((t) => t.columns.length > 0 && t.rows.length > 0)
+        );
       case "care-instruction":
         return formData.name && formData.content;
       case "category":

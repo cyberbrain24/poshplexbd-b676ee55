@@ -143,39 +143,47 @@ XL: Chest 42-44"`;
         {isSizeGuideOpen && (
           <div className="pb-6 space-y-4">
             {(() => {
-              const tableData = parseSizeGuideContent(sizeGuideContent);
-              if (tableData) {
-                // Render as structured table
+              const parsed = parseSizeGuideContent(sizeGuideContent);
+              if (parsed && parsed.tables.length > 0) {
                 return (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm border-collapse">
-                      <thead>
-                        <tr>
-                          {tableData.columns.map((col, i) => (
-                            <th
-                              key={i}
-                              className="text-left font-medium text-foreground py-2 px-3 border-b border-border"
-                            >
-                              {col}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {tableData.rows.map((row, ri) => (
-                          <tr key={ri} className="border-b border-border last:border-b-0">
-                            {row.map((cell, ci) => (
-                              <td
-                                key={ci}
-                                className={`py-2 px-3 text-sm font-light ${ci === 0 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}
-                              >
-                                {cell || "—"}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  <div className="space-y-5">
+                    {parsed.tables.map((tableData, tIdx) => (
+                      <div key={tIdx}>
+                        {tableData.title && (
+                          <h4 className="font-medium text-foreground mb-2 mt-2 text-sm">{tableData.title}</h4>
+                        )}
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm border-collapse">
+                            <thead>
+                              <tr>
+                                {tableData.columns.map((col, i) => (
+                                  <th
+                                    key={i}
+                                    className="text-left font-medium text-foreground py-2 px-3 border-b border-border"
+                                  >
+                                    {col}
+                                  </th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {tableData.rows.map((row, ri) => (
+                                <tr key={ri} className="border-b border-border last:border-b-0">
+                                  {row.map((cell, ci) => (
+                                    <td
+                                      key={ci}
+                                      className={`py-2 px-3 text-sm font-light ${ci === 0 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}
+                                    >
+                                      {cell || "—"}
+                                    </td>
+                                  ))}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 );
               }

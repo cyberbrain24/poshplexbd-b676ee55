@@ -38,6 +38,7 @@ import OrderTracking from "./pages/OrderTracking";
 import MyOrders from "./pages/MyOrders";
 const Membership = lazy(() => import("./pages/Membership"));
 const Favorites = lazy(() => import("./pages/Favorites"));
+const CustomerReviews = lazy(() => import("./pages/CustomerReviews"));
 
 // Admin pages - lazy loaded (separate chunk, never downloaded by storefront users)
 const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
@@ -127,6 +128,7 @@ const App = () => (
                   <Route path="/account" element={<CustomerAccount />} />
                   <Route path="/favorites" element={<Suspense fallback={<LoadingFallback />}><Favorites /></Suspense>} />
                   <Route path="/membership" element={<Suspense fallback={<LoadingFallback />}><Membership /></Suspense>} />
+                  <Route path="/reviews" element={<Suspense fallback={<LoadingFallback />}><CustomerReviews /></Suspense>} />
                   <Route path="/pages/our-story" element={<Suspense fallback={<LoadingFallback />}><OurStory /></Suspense>} />
                   <Route path="/pages/store-locator" element={<Suspense fallback={<LoadingFallback />}><StoreLocator /></Suspense>} />
                   <Route path="/pages/privacy-policy" element={<Suspense fallback={<LoadingFallback />}><PrivacyPolicy /></Suspense>} />

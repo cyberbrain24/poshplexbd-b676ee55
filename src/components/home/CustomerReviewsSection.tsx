@@ -17,8 +17,17 @@ const CustomerReviewsSection = () => {
   const autoplay = useRef(
     Autoplay({ delay: 3500, stopOnInteraction: false, stopOnMouseEnter: true })
   );
+  const mobileAutoplay = useRef(
+    Autoplay({ delay: 4000, stopOnInteraction: false, stopOnMouseEnter: true })
+  );
 
   if (!isLoading && reviews.length === 0) return null;
+
+  // Chunk reviews into pages of 6 for mobile (3 cols x 2 rows)
+  const mobilePages: typeof reviews[] = [];
+  for (let i = 0; i < reviews.length; i += 6) {
+    mobilePages.push(reviews.slice(i, i + 6));
+  }
 
   return (
     <section className="w-full px-4 md:px-8 py-12 md:py-20 bg-background">
@@ -37,16 +46,36 @@ const CustomerReviewsSection = () => {
           </p>
         </div>
 
+        {/* Mobile: 3 cols x 2 rows auto-sliding pages */}
+        <Carousel
+          opts={{ loop: true, align: "start" }}
+          plugins={[mobileAutoplay.current]}
+          className="w-full md:hidden"
+        >
+          <CarouselContent>
+            {mobilePages.map((page, idx) => (
+              <CarouselItem key={idx} className="basis-full">
+                <div className="grid grid-cols-3 grid-rows-2 gap-2">
+                  {page.map((r) => (
+                    <ReviewLookCard key={r.id} review={r} />
+                  ))}
+                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+        </Carousel>
+
+        {/* Desktop / tablet carousel */}
         <Carousel
           opts={{ loop: true, align: "start" }}
           plugins={[autoplay.current]}
-          className="w-full group"
+          className="hidden md:block w-full group"
         >
           <CarouselContent className="-ml-3 md:-ml-4">
             {reviews.map((r) => (
               <CarouselItem
                 key={r.id}
-                className="pl-3 md:pl-4 basis-1/2 sm:basis-1/3 md:basis-1/4 lg:basis-1/6"
+                className="pl-3 md:pl-4 sm:basis-1/3 md:basis-1/4 lg:basis-1/6"
               >
                 <ReviewLookCard review={r} />
               </CarouselItem>

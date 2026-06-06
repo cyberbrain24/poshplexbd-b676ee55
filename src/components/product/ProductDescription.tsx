@@ -47,6 +47,20 @@ const ProductDescription = ({ product }: ProductDescriptionProps) => {
   const [currentCustomerId, setCurrentCustomerId] = useState<string | null>(null);
   const [editingReview, setEditingReview] = useState<any | null>(null);
   const [viewingReview, setViewingReview] = useState<any | null>(null);
+  const [lightbox, setLightbox] = useState<{ images: string[]; index: number } | null>(null);
+  const [isDesktop, setIsDesktop] = useState(() => typeof window !== "undefined" && window.innerWidth >= 1024);
+  const pageSize = isDesktop ? 5 : 4;
+  const [visibleCount, setVisibleCount] = useState(pageSize);
+
+  useEffect(() => {
+    const onResize = () => setIsDesktop(window.innerWidth >= 1024);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
+    setVisibleCount(pageSize);
+  }, [pageSize, product?.id]);
 
   useEffect(() => {
     let active = true;

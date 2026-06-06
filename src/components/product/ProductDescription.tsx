@@ -43,6 +43,24 @@ const ProductDescription = ({ product }: ProductDescriptionProps) => {
   const isReviewsOpen = openSection === 'reviews';
 
   const { data: reviews = [] } = useProductReviews(product?.id || null);
+  const [currentCustomerId, setCurrentCustomerId] = useState<string | null>(null);
+  const [editingReview, setEditingReview] = useState<any | null>(null);
+  const [viewingReview, setViewingReview] = useState<any | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+      const { data } = await supabase
+        .from("customer_accounts")
+        .select("customer_id")
+        .eq("auth_user_id", session.user.id)
+        .maybeSingle();
+      if (active && data?.customer_id) setCurrentCustomerId(data.customer_id);
+    })();
+    return () => { active = false; };
+  }, []);
 
   // Calculate average rating
   const averageRating = reviews.length > 0 

@@ -2870,6 +2870,18 @@ export type Database = {
       }
       find_product_by_short_id: { Args: { short_id: string }; Returns: string }
       get_my_customer_id: { Args: never; Returns: string }
+      get_public_members: {
+        Args: { p_customer_type_id?: string }
+        Returns: {
+          customer_type_id: string
+          customer_type_name: string
+          id: string
+          membership_assigned_at: string
+          name: string
+          profile_image_url: string
+          show_member_since: boolean
+        }[]
+      }
       get_public_site_settings: {
         Args: never
         Returns: {

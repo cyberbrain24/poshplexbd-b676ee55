@@ -41,24 +41,21 @@ export const usePublicMembers = (membershipTypeId?: string) => {
   return useQuery({
     queryKey: ["publicMembers", membershipTypeId],
     queryFn: async () => {
-      let query = supabase
-        .from("customers")
-        .select(`
-          id, name, profile_image_url, membership_assigned_at,
-          customer_type:customer_types!inner(id, name, show_member_since)
-        `)
-        .eq("public_profile_visible", true)
-        .eq("is_active", true)
-        .not("customer_type_id", "is", null)
-        .order("name");
-
-      if (membershipTypeId) {
-        query = query.eq("customer_type_id", membershipTypeId);
-      }
-
-      const { data, error } = await query;
+      const { data, error } = await supabase.rpc("get_public_members", {
+        p_customer_type_id: membershipTypeId ?? null,
+      });
       if (error) throw error;
-      return (data || []) as unknown as PublicMember[];
+      return ((data as any[]) || []).map((row) => ({
+        id: row.id,
+        name: row.name,
+        profile_image_url: row.profile_image_url,
+        membership_assigned_at: row.membership_assigned_at,
+        customer_type: {
+          id: row.customer_type_id,
+          name: row.customer_type_name,
+          show_member_since: row.show_member_since,
+        },
+      })) as PublicMember[];
     },
     staleTime: 1000 * 60 * 5,
   });

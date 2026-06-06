@@ -4,11 +4,14 @@ import { useHomepageProducts } from "@/hooks/useHomepageProducts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { generateProductSlug } from "@/lib/slug";
 import FavoriteButton from "@/components/product/FavoriteButton";
+import ProductRatingBadge from "@/components/product/ProductRatingBadge";
+import { useProductRatings } from "@/hooks/useProductRatings";
 
 const ProductGrid = () => {
   const { data: products, isLoading } = useHomepageProducts();
 
   const displayProducts = products?.slice(0, 10) || [];
+  const { data: ratings } = useProductRatings(displayProducts.map((p) => p.id));
 
   const formatPrice = (price: number) => `৳${price.toLocaleString()}`;
 

@@ -147,7 +147,13 @@
   }
 
   html {
-    font-size: 15px; /* Slightly smaller base font */
+    font-size: 14px; /* Mobile base */
+  }
+  @media (min-width: 768px) {
+    html { font-size: 15px; } /* Tablet+ */
+  }
+  @media (min-width: 1024px) {
+    html { font-size: 16px; } /* Desktop */
   }
 
   body {
@@ -172,20 +178,25 @@
   h2 {
     font-family: 'Natoor', 'This is Fire', 'Anton', Impact, sans-serif;
   }
-  h1 {
-    font-size: 1.75em !important;
-  }
-  h2 {
-    font-size: 1.5em !important;
-  }
+  /* Mobile-first heading sizes */
+  h1 { font-size: 1.5em !important; }
+  h2 { font-size: 1.3em !important; }
+  h3 { font-size: 1.15em !important; }
+  h4 { font-size: 1.05em !important; }
+  h5 { font-size: 1em !important; }
+  h6 { font-size: 0.95em !important; }
   @media (min-width: 768px) {
-    h1 { font-size: 2.5em !important; }
-    h2 { font-size: 2.25em !important; }
+    h1 { font-size: 2.25em !important; }
+    h2 { font-size: 2em !important; }
+    h3 { font-size: 1.5em !important; }
+    h4 { font-size: 1.25em !important; }
   }
   @media (min-width: 1024px) {
     h1 { font-size: 3em !important; }
-    h2 { font-size: 3em !important; }
+    h2 { font-size: 2.5em !important; }
+    h3 { font-size: 1.75em !important; }
   }
+
   
   /* Reduced spacing for main content sections only */
   main > section {

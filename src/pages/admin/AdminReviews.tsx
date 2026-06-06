@@ -26,10 +26,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import AdminCreateReviewDialog from "@/components/admin/AdminCreateReviewDialog";
 
 interface Review {
   id: string;
-  customer_id: string;
+  customer_id: string | null;
   product_id: string;
   rating: number;
   title: string | null;
@@ -37,6 +38,7 @@ interface Review {
   images: string[] | null;
   is_approved: boolean;
   created_at: string;
+  reviewer_name?: string | null;
   customer?: {
     id: string;
     name: string;
@@ -179,6 +181,7 @@ const AdminReviews = () => {
               <SelectItem value="approved">Approved</SelectItem>
             </SelectContent>
           </Select>
+          <AdminCreateReviewDialog />
         </div>
       </div>
 
@@ -317,7 +320,7 @@ const AdminReviews = () => {
                     <ReviewImages images={review.images || []} size="sm" />
 
                     <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
-                      <span>By: {review.customer?.name || "Unknown"}</span>
+                      <span>By: {review.customer?.name || review.reviewer_name || "Anonymous"}</span>
                       <span>•</span>
                       <span>{format(new Date(review.created_at), "MMM d, yyyy")}</span>
                     </div>

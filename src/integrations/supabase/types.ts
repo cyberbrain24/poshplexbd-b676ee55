@@ -2090,36 +2090,39 @@ export type Database = {
         Row: {
           content: string
           created_at: string
-          customer_id: string
+          customer_id: string | null
           id: string
           images: string[] | null
           is_approved: boolean
           product_id: string
           rating: number
+          reviewer_name: string | null
           title: string | null
           updated_at: string
         }
         Insert: {
           content: string
           created_at?: string
-          customer_id: string
+          customer_id?: string | null
           id?: string
           images?: string[] | null
           is_approved?: boolean
           product_id: string
           rating: number
+          reviewer_name?: string | null
           title?: string | null
           updated_at?: string
         }
         Update: {
           content?: string
           created_at?: string
-          customer_id?: string
+          customer_id?: string | null
           id?: string
           images?: string[] | null
           is_approved?: boolean
           product_id?: string
           rating?: number
+          reviewer_name?: string | null
           title?: string | null
           updated_at?: string
         }

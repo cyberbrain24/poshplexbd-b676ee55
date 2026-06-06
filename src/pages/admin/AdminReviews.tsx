@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Check, X, Star, Trash2, Eye } from "lucide-react";
+import { Check, X, Star, Trash2, Eye, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import ReviewImages from "@/components/product/ReviewImages";
@@ -37,6 +37,7 @@ interface Review {
   content: string;
   images: string[] | null;
   is_approved: boolean;
+  is_featured?: boolean;
   created_at: string;
   reviewer_name?: string | null;
   customer?: {
@@ -53,7 +54,7 @@ interface Review {
 }
 
 const AdminReviews = () => {
-  const [filter, setFilter] = useState<"all" | "pending" | "approved">("all");
+  const [filter, setFilter] = useState<"all" | "pending" | "approved" | "featured">("all");
   const queryClient = useQueryClient();
 
   const { data: reviews = [], isLoading } = useQuery({
@@ -77,6 +78,8 @@ const AdminReviews = () => {
         query = query.eq("is_approved", false);
       } else if (filter === "approved") {
         query = query.eq("is_approved", true);
+      } else if (filter === "featured") {
+        query = query.eq("is_featured", true);
       }
 
       const { data, error } = await query;
@@ -133,6 +136,22 @@ const AdminReviews = () => {
     },
   });
 
+  const toggleFeatured = useMutation({
+    mutationFn: async ({ id, value }: { id: string; value: boolean }) => {
+      const { error } = await supabase
+        .from("reviews")
+        .update({ is_featured: value })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-reviews"] });
+      queryClient.invalidateQueries({ queryKey: ["featured-reviews"] });
+      toast.success(vars.value ? "Marked as featured" : "Removed from featured");
+    },
+    onError: () => toast.error("Failed to update featured status"),
+  });
+
   const getProductImage = (review: Review) => {
     const mainImage = review.product?.product_images?.find((img) => img.is_main);
     return mainImage?.image_url || review.product?.product_images?.[0]?.image_url;
@@ -179,6 +198,7 @@ const AdminReviews = () => {
               <SelectItem value="all">All Reviews</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="approved">Approved</SelectItem>
+              <SelectItem value="featured">Featured</SelectItem>
             </SelectContent>
           </Select>
           <AdminCreateReviewDialog />
@@ -230,6 +250,11 @@ const AdminReviews = () => {
                           >
                             {review.is_approved ? "Approved" : "Pending"}
                           </Badge>
+                          {review.is_featured && (
+                            <Badge className="bg-foreground text-background hover:bg-foreground gap-1">
+                              <Sparkles className="h-3 w-3" /> Featured
+                            </Badge>
+                          )}
                         </div>
                         <div className="flex items-center gap-1 mb-2">
                           {[1, 2, 3, 4, 5].map((star) => (
@@ -245,6 +270,17 @@ const AdminReviews = () => {
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
+                        {review.is_approved && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            title={review.is_featured ? "Unfeature from homepage" : "Feature on homepage"}
+                            className={`h-8 w-8 p-0 ${review.is_featured ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                            onClick={() => toggleFeatured.mutate({ id: review.id, value: !review.is_featured })}
+                          >
+                            <Sparkles className={`h-4 w-4 ${review.is_featured ? "fill-foreground" : ""}`} />
+                          </Button>
+                        )}
                         {!review.is_approved && (
                           <Button
                             size="sm"

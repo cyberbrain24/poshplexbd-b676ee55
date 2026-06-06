@@ -10,6 +10,7 @@ const CategorySection = lazy(() => import("../components/home/CategorySection"))
 const FeaturedProducts = lazy(() => import("../components/home/FeaturedProducts"));
 const ProductGrid = lazy(() => import("../components/home/ProductGrid"));
 const OurStorySection = lazy(() => import("../components/home/OurStorySection"));
+const CustomerReviewsSection = lazy(() => import("../components/home/CustomerReviewsSection"));
 const HomeSEO = lazy(() => import("@/components/seo/HomeSEO"));
 
 // Reserving space in fallbacks to prevent CLS when lazy sections load
@@ -42,6 +43,9 @@ const Index = () => {
         </Suspense>
         <Suspense fallback={<GridFallback />}>
           <ProductGrid />
+        </Suspense>
+        <Suspense fallback={<GridFallback />}>
+          <CustomerReviewsSection />
         </Suspense>
         <Suspense fallback={<StoryFallback />}>
           <OurStorySection />

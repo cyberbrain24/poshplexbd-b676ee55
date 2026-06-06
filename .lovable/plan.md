@@ -1,50 +1,52 @@
-
 ## Goal
-Let admins post fake reviews from `/admin/reviews` — pick a product, optionally attach a customer (or just type a reviewer name), set rating/title/content, upload photos, and publish.
+Add a "Customer Reviews" showcase to the homepage (bottom, above footer) styled like the attached "Fit Check Community Archive" mockup, plus a dedicated `/reviews` page and a "Featured" toggle on the admin reviews page so admins control which reviews appear on the homepage.
 
-## Schema change (migration)
-The current `reviews` table requires `customer_id` and uniquely constrains `(customer_id, product_id)`. Both block customer-less / multiple-fake reviews.
-
+## 1. Schema change
+Add a `is_featured` flag to `reviews`:
 ```sql
-ALTER TABLE public.reviews ALTER COLUMN customer_id DROP NOT NULL;
-ALTER TABLE public.reviews DROP CONSTRAINT reviews_customer_id_product_id_key;
-ALTER TABLE public.reviews ADD COLUMN reviewer_name text;
--- Partial unique index so real customers still can't double-review the same product,
--- but admin-created (customer_id IS NULL) rows are unrestricted.
-CREATE UNIQUE INDEX reviews_customer_product_unique
-  ON public.reviews(customer_id, product_id)
-  WHERE customer_id IS NOT NULL;
+ALTER TABLE public.reviews ADD COLUMN is_featured boolean NOT NULL DEFAULT false;
+CREATE INDEX reviews_featured_idx ON public.reviews(is_featured) WHERE is_featured = true;
 ```
+No RLS/GRANT changes — existing policies cover the column.
 
-No GRANT/RLS changes (table already exists). The admin "manage all" policy still covers inserts.
+## 2. Admin: feature toggle
+`src/pages/admin/AdminReviews.tsx`
+- Add a star icon button next to the approve/reject/view/delete row that toggles `is_featured` (only enabled when review is approved). Filled star = featured.
+- Add "Featured" filter option in the existing Select.
+- Show a "Featured" badge next to the Approved/Pending badge when set.
 
-## New component
-`src/components/admin/AdminCreateReviewDialog.tsx`:
+## 3. Homepage section
+New `src/components/home/CustomerReviewsSection.tsx`:
+- Heading block matching the mockup: huge bold uppercase title "THE FIT CHECK / COMMUNITY / ARCHIVE" with a graffiti-style accent, subtitle "POSHPLEX // CUSTOMER REVIEWS // #POSHPLEXFIT".
+- Masonry/asymmetric grid of up to 8 featured + approved reviews (newest first). Each card uses the polaroid/taped-photo aesthetic from the mockup:
+  - Large review image (first photo from `images[]`, falls back to product main image if none).
+  - Small avatar circle (initials chip if no avatar), reviewer display name (`@handle`-style derived from `customer.name` or `reviewer_name`), "Verified Purchase" tag when `customer_id` is set.
+  - Star rating, review content (line-clamp-3), date, and two hashtag chips (#HoodieSeason #StreetwearDaily as static brand tags).
+  - Entire card links to `/product/<product_id>`.
+- "LOAD MORE LOOKS" button bottom-right linking to `/reviews`.
+- Hidden entirely if there are zero featured approved reviews.
 
-1. **Product** — searchable select (debounced name/SKU, thumbnail + name).
-2. **Reviewer** — single section with two optional inputs:
-   - **Display name** (text) — written to new `reviewer_name` column. Required if no customer linked.
-   - **Link customer (optional)** — searchable picker of existing customers. If chosen, `customer_id` is set; otherwise left NULL.
-3. **Rating** — 1–5 stars.
-4. **Title** (optional) and **Content** (textarea, required).
-5. **Photos** — reuse `ReviewImageUpload` (uploads to `review-images` bucket). Up to 5 for admin.
-6. **Approve immediately** — checkbox, default on.
-7. **Custom date** (optional) — backdates `created_at`.
+Hook: `src/hooks/useFeaturedReviews.ts` — query `reviews` where `is_approved=true AND is_featured=true`, embed product + main image + customer name, limit 8.
 
-## Submit flow
-- Insert into `reviews` with `product_id`, `rating`, `title`, `content`, `images`, `is_approved`, `reviewer_name`, and `customer_id` (or NULL).
-- If customer linked AND that customer already reviewed the product, catch `23505` and toast: "This customer already reviewed this product."
-- Invalidate `["admin-reviews"]` and close.
+Mount in `src/pages/Index.tsx` just before `OurStorySection` (lazy-loaded, same Suspense pattern).
 
-## Display updates
-- `AdminReviews.tsx` listing: show `customer?.name ?? reviewer_name ?? "Anonymous"`.
-- `ReviewsSection` on product page: show the same fallback so fake reviews render with the typed name.
+## 4. Dedicated `/reviews` page
+New `src/pages/CustomerReviews.tsx`:
+- PoshplexHeader + Footer wrapper.
+- Same heading style as the homepage section.
+- Filter bar: rating filter (All / 5★ / 4★+ / with photos).
+- Infinite-scroll/paginated grid (20 per page) of ALL approved reviews using the same card component as the homepage. Featured reviews float to the top, then newest first.
+- Each card links to the linked product page.
+- Route added in `src/App.tsx`: `/reviews` → `CustomerReviews` (lazy-loaded).
 
-## Files touched
-- **Migration**: nullable `customer_id`, drop unique, add `reviewer_name`, partial unique index.
-- **New**: `src/components/admin/AdminCreateReviewDialog.tsx`
-- **Edited**: `src/pages/admin/AdminReviews.tsx` (header button + reviewer name fallback), `src/components/product/ReviewsSection.tsx` (or equivalent that renders public reviews) for name fallback.
+Extract `ReviewLookCard.tsx` so homepage and reviews page share the same card.
+
+## 5. Files touched
+- **Migration**: add `is_featured` column + partial index.
+- **New**: `src/hooks/useFeaturedReviews.ts`, `src/hooks/useAllReviews.ts`, `src/components/home/CustomerReviewsSection.tsx`, `src/components/reviews/ReviewLookCard.tsx`, `src/pages/CustomerReviews.tsx`.
+- **Edited**: `src/pages/admin/AdminReviews.tsx` (feature toggle + filter + badge), `src/pages/Index.tsx` (mount section), `src/App.tsx` (add `/reviews` route).
 
 ## Notes
-- Reuses existing `ReviewImageUpload` and `review-images` bucket.
-- No customer-facing flow change — customers still create reviews tied to their own `customer_id`.
+- Uses existing `review-images` URLs; no new uploads or buckets.
+- Customer handle is generated client-side from the name (lowercase, spaces → underscore, prefixed with `@`). No DB handle field needed.
+- Hashtag chips are static brand decoration to match the mockup — not editable per review (can be added later if you want).

@@ -385,6 +385,15 @@ XL: Chest 42-44"`;
               open={!!editingReview}
               onOpenChange={(o) => !o && setEditingReview(null)}
             />
+
+            {lightbox && (
+              <ReviewLightbox
+                images={lightbox.images}
+                index={lightbox.index}
+                onClose={() => setLightbox(null)}
+                onIndexChange={(i) => setLightbox((p) => p ? { ...p, index: i } : p)}
+              />
+            )}
           </div>
         )}
       </div>

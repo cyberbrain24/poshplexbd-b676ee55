@@ -12,6 +12,7 @@ import { FavoritesProvider } from "./contexts/FavoritesContext";
 import { MusicPlayerProvider } from "./contexts/MusicPlayerContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import MobileFooterNav from "./components/navigation/MobileFooterNav";
+import AmbientSmoke from "./components/effects/AmbientSmoke";
 import FacebookPixelTracker from "./components/tracking/FacebookPixelTracker";
 import FloatingMusicPlayer from "./components/music/FloatingMusicPlayer";
 import TypographyProvider from "./components/TypographyProvider";
@@ -190,6 +191,7 @@ const App = () => (
                   
                   <Route path="*" element={<NotFound />} />
                 </Routes>
+                <AmbientSmoke />
                 <MobileFooterNav />
                 <FloatingMusicPlayer />
               </BrowserRouter>

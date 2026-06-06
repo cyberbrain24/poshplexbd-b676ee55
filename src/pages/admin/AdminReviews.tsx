@@ -250,6 +250,11 @@ const AdminReviews = () => {
                           >
                             {review.is_approved ? "Approved" : "Pending"}
                           </Badge>
+                          {review.is_featured && (
+                            <Badge className="bg-foreground text-background hover:bg-foreground gap-1">
+                              <Sparkles className="h-3 w-3" /> Featured
+                            </Badge>
+                          )}
                         </div>
                         <div className="flex items-center gap-1 mb-2">
                           {[1, 2, 3, 4, 5].map((star) => (
@@ -265,6 +270,17 @@ const AdminReviews = () => {
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
+                        {review.is_approved && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            title={review.is_featured ? "Unfeature from homepage" : "Feature on homepage"}
+                            className={`h-8 w-8 p-0 ${review.is_featured ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                            onClick={() => toggleFeatured.mutate({ id: review.id, value: !review.is_featured })}
+                          >
+                            <Sparkles className={`h-4 w-4 ${review.is_featured ? "fill-foreground" : ""}`} />
+                          </Button>
+                        )}
                         {!review.is_approved && (
                           <Button
                             size="sm"

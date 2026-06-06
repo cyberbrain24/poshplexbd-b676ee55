@@ -40,10 +40,10 @@ const ReviewLookCard = ({ review }: { review: ReviewLookData }) => {
   return (
     <Link
       to={`/product/${review.product_id}`}
-      className="group block bg-card border border-border rounded-sm overflow-hidden hover:shadow-lg transition-shadow"
+      className="group flex h-full flex-col bg-[#2f2f2f] text-white border border-[#2f2f2f] rounded-sm overflow-hidden hover:shadow-lg transition-shadow"
     >
       {heroImage && (
-        <div className="aspect-[4/5] bg-muted overflow-hidden">
+        <div className="aspect-[4/5] bg-[#1f1f1f] overflow-hidden">
           <img
             src={heroImage}
             alt={review.product?.name || "Customer look"}
@@ -52,16 +52,16 @@ const ReviewLookCard = ({ review }: { review: ReviewLookData }) => {
           />
         </div>
       )}
-      <div className="p-3 space-y-2">
+      <div className="p-3 space-y-2 flex-1 flex flex-col">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-7 h-7 rounded-full bg-foreground text-background flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+            <div className="w-7 h-7 rounded-full bg-white text-[#2f2f2f] flex items-center justify-center text-[10px] font-bold flex-shrink-0">
               {initials(displayName) || "?"}
             </div>
-            <span className="font-bold text-xs truncate">{handle}</span>
+            <span className="font-bold text-xs truncate text-white">{handle}</span>
           </div>
           {isVerified && (
-            <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase bg-foreground text-background px-1.5 py-0.5 rounded">
+            <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase bg-white text-[#2f2f2f] px-1.5 py-0.5 rounded">
               <BadgeCheck className="h-3 w-3" /> Verified
             </span>
           )}
@@ -71,23 +71,23 @@ const ReviewLookCard = ({ review }: { review: ReviewLookData }) => {
           {[1, 2, 3, 4, 5].map((s) => (
             <Star
               key={s}
-              className={`h-3 w-3 ${s <= review.rating ? "text-foreground fill-foreground" : "text-muted-foreground/30"}`}
+              className={`h-3 w-3 ${s <= review.rating ? "text-white fill-white" : "text-white/30"}`}
             />
           ))}
         </div>
 
-        <p className="text-xs leading-snug line-clamp-3 text-foreground">
+        <p className="text-xs leading-snug line-clamp-3 text-white">
           {review.title ? <span className="font-semibold">{review.title}. </span> : null}
           {review.content}
         </p>
 
-        <div className="text-[10px] text-muted-foreground">
+        <div className="text-[10px] text-white/60 mt-auto">
           {format(new Date(review.created_at), "MMM d, yyyy")}
         </div>
 
         <div className="flex flex-wrap gap-1 pt-1">
-          <span className="text-[9px] font-bold uppercase text-muted-foreground">#PoshplexFit</span>
-          <span className="text-[9px] font-bold uppercase text-muted-foreground">#StreetwearDaily</span>
+          <span className="text-[9px] font-bold uppercase text-white/70">#PoshplexFit</span>
+          <span className="text-[9px] font-bold uppercase text-white/70">#StreetwearDaily</span>
         </div>
       </div>
     </Link>

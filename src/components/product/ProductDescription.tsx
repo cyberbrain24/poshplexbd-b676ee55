@@ -358,7 +358,20 @@ XL: Chest 42-44"`;
                     <p className="text-sm font-light text-muted-foreground leading-relaxed whitespace-pre-line">
                       {viewingReview.content}
                     </p>
-                    <ReviewImages images={viewingReview.images || []} size="md" />
+                    {viewingReview.images?.length > 0 && (
+                      <div className="grid grid-cols-3 gap-2">
+                        {viewingReview.images.map((img: string, i: number) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setLightbox({ images: viewingReview.images, index: i })}
+                            className="aspect-square overflow-hidden bg-muted rounded-sm border border-border hover:opacity-90"
+                          >
+                            <img src={img} alt="" loading="lazy" className="w-full h-full object-cover" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
                     <p className="text-xs text-muted-foreground">
                       {viewingReview.reviewer_name || "Customer"} · {new Date(viewingReview.created_at).toLocaleDateString()}
                     </p>

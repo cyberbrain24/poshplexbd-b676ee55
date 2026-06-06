@@ -22,20 +22,20 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
 // Storefront pages - lazy loaded (non-critical)
-import Category from "./pages/Category";
-import CategoryBrowser from "./pages/CategoryBrowser";
-import ProductDetail from "./pages/ProductDetail";
-import Checkout from "./pages/Checkout";
+const Category = lazy(() => import("./pages/Category"));
+const CategoryBrowser = lazy(() => import("./pages/CategoryBrowser"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const Checkout = lazy(() => import("./pages/Checkout"));
 const OurStory = lazy(() => import("./pages/about/OurStory"));
 const StoreLocator = lazy(() => import("./pages/about/StoreLocator"));
 const PrivacyPolicy = lazy(() => import("./pages/about/PrivacyPolicy"));
 const TermsConditions = lazy(() => import("./pages/about/TermsConditions"));
 const ShippingDelivery = lazy(() => import("./pages/about/ShippingDelivery"));
 const Auth = lazy(() => import("./pages/Auth"));
-import CustomerAuth from "./pages/CustomerAuth";
-import CustomerAccount from "./pages/CustomerAccount";
-import OrderTracking from "./pages/OrderTracking";
-import MyOrders from "./pages/MyOrders";
+const CustomerAuth = lazy(() => import("./pages/CustomerAuth"));
+const CustomerAccount = lazy(() => import("./pages/CustomerAccount"));
+const OrderTracking = lazy(() => import("./pages/OrderTracking"));
+const MyOrders = lazy(() => import("./pages/MyOrders"));
 const Membership = lazy(() => import("./pages/Membership"));
 const Favorites = lazy(() => import("./pages/Favorites"));
 const CustomerReviews = lazy(() => import("./pages/CustomerReviews"));

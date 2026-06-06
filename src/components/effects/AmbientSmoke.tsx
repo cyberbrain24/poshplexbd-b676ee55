@@ -14,33 +14,41 @@ const AmbientSmoke = () => {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none fixed inset-x-0 bottom-16 md:bottom-0 h-40 md:h-48 overflow-hidden z-[5]"
+      className="pointer-events-none fixed inset-x-0 bottom-16 md:bottom-0 h-56 md:h-64 overflow-hidden z-[40]"
     >
       <span
-        className="smoke-blob absolute -bottom-16 left-[15%] h-72 w-72 rounded-full blur-3xl"
+        className="smoke-blob absolute -bottom-24 left-[10%] h-80 w-80 rounded-full blur-2xl"
         style={{
           background:
-            "radial-gradient(circle at center, hsl(var(--foreground) / 0.08), transparent 70%)",
+            "radial-gradient(circle at center, hsl(var(--foreground) / 0.28), transparent 65%)",
           animation: "smoke-rise 14s ease-out infinite",
-          animationDelay: "0s",
         }}
       />
       <span
-        className="smoke-blob absolute -bottom-20 left-[45%] h-96 w-96 rounded-full blur-3xl"
+        className="smoke-blob absolute -bottom-28 left-[40%] h-96 w-96 rounded-full blur-2xl"
         style={{
           background:
-            "radial-gradient(circle at center, hsl(var(--foreground) / 0.06), transparent 70%)",
+            "radial-gradient(circle at center, hsl(var(--foreground) / 0.22), transparent 65%)",
           animation: "smoke-rise 18s ease-out infinite",
           animationDelay: "-6s",
         }}
       />
       <span
-        className="smoke-blob absolute -bottom-24 right-[10%] h-[28rem] w-[28rem] rounded-full blur-3xl"
+        className="smoke-blob absolute -bottom-32 right-[8%] h-[28rem] w-[28rem] rounded-full blur-2xl"
         style={{
           background:
-            "radial-gradient(circle at center, hsl(var(--foreground) / 0.05), transparent 70%)",
+            "radial-gradient(circle at center, hsl(var(--foreground) / 0.20), transparent 65%)",
           animation: "smoke-rise 22s ease-out infinite",
           animationDelay: "-11s",
+        }}
+      />
+      <span
+        className="smoke-blob absolute -bottom-20 left-[65%] h-72 w-72 rounded-full blur-2xl"
+        style={{
+          background:
+            "radial-gradient(circle at center, hsl(var(--foreground) / 0.18), transparent 65%)",
+          animation: "smoke-rise 16s ease-out infinite",
+          animationDelay: "-3s",
         }}
       />
     </div>

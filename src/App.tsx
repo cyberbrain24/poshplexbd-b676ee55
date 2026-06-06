@@ -22,20 +22,20 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
 // Storefront pages - lazy loaded (non-critical)
-import Category from "./pages/Category";
-import CategoryBrowser from "./pages/CategoryBrowser";
-import ProductDetail from "./pages/ProductDetail";
-import Checkout from "./pages/Checkout";
+const Category = lazy(() => import("./pages/Category"));
+const CategoryBrowser = lazy(() => import("./pages/CategoryBrowser"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const Checkout = lazy(() => import("./pages/Checkout"));
 const OurStory = lazy(() => import("./pages/about/OurStory"));
 const StoreLocator = lazy(() => import("./pages/about/StoreLocator"));
 const PrivacyPolicy = lazy(() => import("./pages/about/PrivacyPolicy"));
 const TermsConditions = lazy(() => import("./pages/about/TermsConditions"));
 const ShippingDelivery = lazy(() => import("./pages/about/ShippingDelivery"));
 const Auth = lazy(() => import("./pages/Auth"));
-import CustomerAuth from "./pages/CustomerAuth";
-import CustomerAccount from "./pages/CustomerAccount";
-import OrderTracking from "./pages/OrderTracking";
-import MyOrders from "./pages/MyOrders";
+const CustomerAuth = lazy(() => import("./pages/CustomerAuth"));
+const CustomerAccount = lazy(() => import("./pages/CustomerAccount"));
+const OrderTracking = lazy(() => import("./pages/OrderTracking"));
+const MyOrders = lazy(() => import("./pages/MyOrders"));
 const Membership = lazy(() => import("./pages/Membership"));
 const Favorites = lazy(() => import("./pages/Favorites"));
 const CustomerReviews = lazy(() => import("./pages/CustomerReviews"));
@@ -119,13 +119,13 @@ const App = () => (
                 <FacebookPixelTracker />
                 <Routes>
                   <Route path="/" element={<Index />} />
-                  <Route path="/categories" element={<CategoryBrowser />} />
-                  <Route path="/category/:category" element={<Category />} />
-                  <Route path="/product/:productSlug" element={<ProductDetail />} />
-                  <Route path="/checkout" element={<Checkout />} />
-                  <Route path="/order-tracking" element={<OrderTracking />} />
-                  <Route path="/my-orders" element={<MyOrders />} />
-                  <Route path="/account" element={<CustomerAccount />} />
+                  <Route path="/categories" element={<Suspense fallback={<LoadingFallback />}><CategoryBrowser /></Suspense>} />
+                  <Route path="/category/:category" element={<Suspense fallback={<LoadingFallback />}><Category /></Suspense>} />
+                  <Route path="/product/:productSlug" element={<Suspense fallback={<LoadingFallback />}><ProductDetail /></Suspense>} />
+                  <Route path="/checkout" element={<Suspense fallback={<LoadingFallback />}><Checkout /></Suspense>} />
+                  <Route path="/order-tracking" element={<Suspense fallback={<LoadingFallback />}><OrderTracking /></Suspense>} />
+                  <Route path="/my-orders" element={<Suspense fallback={<LoadingFallback />}><MyOrders /></Suspense>} />
+                  <Route path="/account" element={<Suspense fallback={<LoadingFallback />}><CustomerAccount /></Suspense>} />
                   <Route path="/favorites" element={<Suspense fallback={<LoadingFallback />}><Favorites /></Suspense>} />
                   <Route path="/membership" element={<Suspense fallback={<LoadingFallback />}><Membership /></Suspense>} />
                   <Route path="/reviews" element={<Suspense fallback={<LoadingFallback />}><CustomerReviews /></Suspense>} />
@@ -139,7 +139,7 @@ const App = () => (
                   <Route path="/terms-of-service" element={<Suspense fallback={<LoadingFallback />}><TermsConditions /></Suspense>} />
                   <Route path="/shipping-delivery" element={<Suspense fallback={<LoadingFallback />}><ShippingDelivery /></Suspense>} />
                   <Route path="/auth" element={<Suspense fallback={<LoadingFallback />}><Auth /></Suspense>} />
-                  <Route path="/login" element={<CustomerAuth />} />
+                  <Route path="/login" element={<Suspense fallback={<LoadingFallback />}><CustomerAuth /></Suspense>} />
                   
                   
                   {/* Admin Routes - Lazy loaded */}

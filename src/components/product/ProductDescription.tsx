@@ -279,12 +279,12 @@ XL: Chest 42-44"`;
                     return (
                       <div
                         key={review.id}
-                        className="group relative border border-border rounded-sm overflow-hidden bg-card cursor-pointer hover:shadow-md transition-shadow"
+                        className="group relative border border-[#2f2f2f] rounded-sm overflow-hidden bg-[#2f2f2f] text-white cursor-pointer hover:shadow-md transition-shadow"
                         onClick={() => setViewingReview(review)}
                       >
                         {heroImg ? (
                           <div
-                            className="aspect-square bg-muted overflow-hidden"
+                            className="aspect-square bg-[#1f1f1f] overflow-hidden"
                             onClick={(e) => {
                               e.stopPropagation();
                               setLightbox({ images: review.images || [heroImg], index: 0 });
@@ -298,10 +298,10 @@ XL: Chest 42-44"`;
                             />
                           </div>
                         ) : (
-                          <div className="aspect-square bg-muted flex items-center justify-center">
+                          <div className="aspect-square bg-[#1f1f1f] flex items-center justify-center">
                             <div className="flex items-center gap-0.5">
                               {[1, 2, 3, 4, 5].map((star) => (
-                                <CustomStar key={star} filled={star <= review.rating} className="w-4 h-4" />
+                                <CustomStar key={star} filled={star <= review.rating} className={`w-4 h-4 ${star <= review.rating ? 'text-white' : 'text-white/30'}`} />
                               ))}
                             </div>
                           </div>
@@ -309,23 +309,23 @@ XL: Chest 42-44"`;
                         <div className="p-2 space-y-1">
                           <div className="flex items-center gap-0.5">
                             {[1, 2, 3, 4, 5].map((star) => (
-                              <CustomStar key={star} filled={star <= review.rating} />
+                              <CustomStar key={star} filled={star <= review.rating} className={star <= review.rating ? 'text-white' : 'text-white/30'} />
                             ))}
                           </div>
                           {review.title && (
-                            <p className="text-xs font-semibold line-clamp-1">{review.title}</p>
+                            <p className="text-xs font-semibold line-clamp-1 text-white">{review.title}</p>
                           )}
-                          <p className="text-[11px] font-light text-muted-foreground line-clamp-3">
+                          <p className="text-[11px] font-light text-white/80 line-clamp-3">
                             {review.content}
                           </p>
-                          <p className="text-[10px] text-muted-foreground truncate">
+                          <p className="text-[10px] text-white/60 truncate">
                             {review.reviewer_name || "Customer"} · {new Date(review.created_at).toLocaleDateString()}
                           </p>
                         </div>
                         {isMine && (
                           <button
                             onClick={(e) => { e.stopPropagation(); setEditingReview(review); }}
-                            className="absolute top-1.5 right-1.5 bg-background/90 backdrop-blur border border-border rounded p-1 hover:bg-background"
+                            className="absolute top-1.5 right-1.5 bg-white/90 backdrop-blur border border-white rounded p-1 hover:bg-white text-[#2f2f2f]"
                             title="Edit your review"
                           >
                             <Pencil className="h-3 w-3" />

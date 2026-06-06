@@ -1,33 +1,43 @@
-Upgrade the Photos field in the admin "Create Review" dialog (and the existing customer review uploader) so admins can either click to browse their computer or drag-and-drop image files directly from any folder.
+## Reviews Section Overhaul
 
-## What changes
+### 1. Admin Reviews — Grid view, Edit, and Search
+File: `src/pages/admin/AdminReviews.tsx`
 
-Update `src/components/product/ReviewImageUpload.tsx` (used by both `AdminCreateReviewDialog` and the customer review form, so both benefit):
+- Replace the vertical list with a **6-column responsive grid** (`grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6`, `gap-3`).
+- Each tile: square product/review image, rating stars, product name (truncate), reviewer name, content (line-clamp-2), status badges (Approved/Pending/Featured), compact action bar: Approve/Reject, Feature toggle, **Edit**, View, Delete.
+- Keep existing status filter dropdown, counts, and "Create Review" button.
+- **New search bar** in the header (300ms debounced) — searches across customer name, customer phone, reviewer name (for unlinked reviews), product name, product SKU, and review title/content.
+  - Implementation: fetch reviews with their joined `customer` + `product` as today, then client-side filter the result set by the debounced query (case-insensitive substring match across `customer.name`, `customer.phone`, `reviewer_name`, `product.name`, `product.sku`, `title`, `content`). Keeps it simple and works with the existing query.
+  - Add a small "X" clear button and result count ("Showing N of M reviews").
+- New **Edit Review dialog** (`src/components/admin/AdminEditReviewDialog.tsx`) — reuses fields from `AdminCreateReviewDialog` (rating, title, content, images via `ReviewImageUpload`, reviewer name, approved, created_at date). Product and linked customer are read-only in edit mode. Updates via `supabase.from("reviews").update(...).eq("id", id)`.
+- After save, invalidate `admin-reviews`, `featured-reviews`, `all-public-reviews`, `product-reviews`.
 
-1. **Click-to-upload (bigger target)**
-   - Replace the small 16x16 icon tile with a wider dashed dropzone (full width of the field, ~28-32 tall) showing an upload icon, "Click to upload or drag and drop", and a hint line ("PNG, JPG up to 5MB · max N images").
-   - Clicking anywhere on the dropzone opens the native OS file picker (multi-select enabled, `accept="image/*"`).
+### 2. Product Page Reviews — Grid + Customer Edit
+File: `src/components/product/ProductDescription.tsx` (Customer Reviews accordion body)
 
-2. **Drag & drop from computer**
-   - Add `onDragEnter`, `onDragOver`, `onDragLeave`, `onDrop` handlers on the dropzone.
-   - On `dragover`, prevent default and show an "active" state (solid border + subtle bg using design tokens, e.g. `border-foreground bg-muted`).
-   - On `drop`, read `e.dataTransfer.files`, filter to `image/*`, then run the existing upload pipeline (same validation: image-only, ≤5MB, respects `maxImages`).
-   - Prevent the browser's default behaviour so dropping outside the zone doesn't navigate away (scoped listeners only on the dropzone — no global window listeners).
+- Replace stacked list with a **grid**: `grid-cols-2 lg:grid-cols-5 gap-3` (2 cols mobile, 5 cols desktop).
+- Each tile: square first review image (fallback to product image), rating stars, title (if any), content (line-clamp-3), reviewer name + date. Image-forward, compact.
+- Clicking a tile opens a lightbox/dialog with full review and full-size images (reuse `ImageLightbox`).
+- **Customer edit**: if logged-in customer authored the review (`review.customer_id === currentCustomer.id`), show a pencil "Edit" button on their own tile. Opens `src/components/product/EditMyReviewDialog.tsx` for rating/title/content/images, using existing `useUpdateReview`. On save, set `is_approved = false` (pending re-moderation). Invalidate `product-reviews`.
+- Use the same auth/customer source `ReviewProduct.tsx` already uses.
 
-3. **Thumbnails row (unchanged behaviour, lightly restyled)**
-   - Keep the existing uploaded thumbnails with the hover ✕ remove button, shown above the dropzone in a flex-wrap grid.
-   - Hide the dropzone once `images.length >= maxImages` and show a small note "Maximum N photos reached".
+### 3. Homepage Customer Reviews — 6-col Auto Carousel
+File: `src/components/home/CustomerReviewsSection.tsx`
 
-4. **States**
-   - Disabled / loading state shows the spinner inside the dropzone and ignores drops.
-   - Toast errors stay the same (non-image, oversize, max reached).
+- Replace the static 4-col grid with a **carousel showing 6 cards per view on desktop** (`lg:basis-1/6`, `md:basis-1/4`, `sm:basis-1/3`, `basis-1/2` mobile) using the existing shadcn `Carousel` (embla).
+- Configure embla with `loop: true` plus **autoplay** (`embla-carousel-autoplay`, `bun add embla-carousel-autoplay`), `delay: 3500`, `stopOnInteraction: false`, `stopOnMouseEnter: true`.
+- Raise featured-reviews fetch limit to ~18 (`src/hooks/useFeaturedReviews.ts`).
+- Keep heading, kicker, and "Load More Looks" CTA. Subtle prev/next arrows on desktop hover.
+- Slides reuse existing `ReviewLookCard`.
 
-## Files touched
+### 4. No DB changes
+All needed columns (`is_approved`, `is_featured`, `images`, `reviewer_name`, `customer_id`) already exist.
 
-- `src/components/product/ReviewImageUpload.tsx` — only file edited.
-- No DB, no storage, no other component changes. `AdminCreateReviewDialog.tsx` and the customer-side review form keep using the same props (`images`, `onChange`, `maxImages`), so they pick up the new UX automatically.
-
-## Out of scope
-
-- No changes to the existing `review-images` storage bucket, RLS, or upload path.
-- No reordering / cropping features.
+### Files
+- Edit: `src/pages/admin/AdminReviews.tsx`
+- Edit: `src/components/product/ProductDescription.tsx`
+- Edit: `src/components/home/CustomerReviewsSection.tsx`
+- Edit: `src/hooks/useFeaturedReviews.ts`
+- New: `src/components/admin/AdminEditReviewDialog.tsx`
+- New: `src/components/product/EditMyReviewDialog.tsx`
+- Install: `embla-carousel-autoplay`

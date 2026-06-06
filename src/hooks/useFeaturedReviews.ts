@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { ReviewLookData } from "@/components/reviews/ReviewLookCard";
 
-export const useFeaturedReviews = (limit = 8) => {
+export const useFeaturedReviews = (limit = 18) => {
   return useQuery({
     queryKey: ["featured-reviews", limit],
     queryFn: async () => {

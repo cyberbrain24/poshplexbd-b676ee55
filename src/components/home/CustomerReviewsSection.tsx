@@ -1,10 +1,22 @@
+import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import Autoplay from "embla-carousel-autoplay";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 import { useFeaturedReviews } from "@/hooks/useFeaturedReviews";
 import ReviewLookCard from "@/components/reviews/ReviewLookCard";
 
 const CustomerReviewsSection = () => {
-  const { data: reviews = [], isLoading } = useFeaturedReviews(8);
+  const { data: reviews = [], isLoading } = useFeaturedReviews(18);
+  const autoplay = useRef(
+    Autoplay({ delay: 3500, stopOnInteraction: false, stopOnMouseEnter: true })
+  );
 
   if (!isLoading && reviews.length === 0) return null;
 
@@ -25,11 +37,24 @@ const CustomerReviewsSection = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-          {reviews.map((r) => (
-            <ReviewLookCard key={r.id} review={r} />
-          ))}
-        </div>
+        <Carousel
+          opts={{ loop: true, align: "start" }}
+          plugins={[autoplay.current]}
+          className="w-full group"
+        >
+          <CarouselContent className="-ml-3 md:-ml-4">
+            {reviews.map((r) => (
+              <CarouselItem
+                key={r.id}
+                className="pl-3 md:pl-4 basis-1/2 sm:basis-1/3 md:basis-1/4 lg:basis-1/6"
+              >
+                <ReviewLookCard review={r} />
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <CarouselPrevious className="hidden md:flex -left-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CarouselNext className="hidden md:flex -right-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+        </Carousel>
 
         <div className="flex justify-end mt-8">
           <Link

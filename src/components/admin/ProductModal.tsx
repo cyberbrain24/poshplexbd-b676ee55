@@ -59,7 +59,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
   const { data: categories = [] } = useCategories();
   const { data: productCategoryIds = [] } = useProductCategoryIds(product?.id);
   const syncCategories = useSyncProductCategories();
-  const { data: appliedAttributeIds = [] } = useProductAppliedAttributeIds(product?.id);
+  const { data: appliedAttributeIds } = useProductAppliedAttributeIds(product?.id);
   const syncAttributes = useSyncProductAttributes();
   const { data: allAttributes = [] } = useProductAttributes();
   const { data: variantAttrValuesMap = {} } = useProductVariantAttributeValues(product?.id);

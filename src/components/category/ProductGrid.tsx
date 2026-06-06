@@ -127,6 +127,10 @@ const ProductGrid = ({ sortBy = "newest", filters }: ProductGridProps) => {
                         {formatPrice(product.base_price)}
                       </p>
                     </div>
+                    <ProductRatingBadge
+                      count={ratings?.[product.id]?.count ?? 0}
+                      average={ratings?.[product.id]?.average ?? 0}
+                    />
                   </div>
                 </CardContent>
               </Card>

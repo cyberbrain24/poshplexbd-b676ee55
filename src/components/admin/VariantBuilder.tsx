@@ -66,9 +66,13 @@ const VariantBuilder = ({
     setSelectedValueIdsByAttr((prev) => {
       const cur = prev[attrId] || [];
       const next = cur.includes(valueId) ? cur.filter((v) => v !== valueId) : [...cur, valueId];
+      const isAppliedNow = selectedAttributeIds.includes(attrId);
+      // Auto-apply attribute when first value is picked; un-apply when all values are removed
+      if (next.length > 0 && !isAppliedNow) onToggleAttribute?.(attrId);
+      if (next.length === 0 && isAppliedNow) onToggleAttribute?.(attrId);
       return { ...prev, [attrId]: next };
     });
-  }, []);
+  }, [selectedAttributeIds, onToggleAttribute]);
 
   // Applied attributes (only those checked in product applied list)
   const appliedAttributes = useMemo(
@@ -305,48 +309,36 @@ const VariantBuilder = ({
         </div>
       </div>
 
-      {/* Product Attributes (global) */}
+      {/* Product Attributes (global) — chip-style multi-select, matches Materials/Sizes */}
       {attributes.length > 0 && (
         <div className="space-y-3 border-t border-border pt-4">
           <Label className="text-xs">Product Attributes</Label>
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {attributes.map((attr) => {
-              const isApplied = selectedAttributeIds.includes(attr.id);
               const pickedVals = selectedValueIdsByAttr[attr.id] || [];
               return (
                 <div key={attr.id} className="space-y-1.5">
-                  <label className="flex items-center gap-2 text-xs cursor-pointer">
-                    <Checkbox
-                      checked={isApplied}
-                      onCheckedChange={() => onToggleAttribute?.(attr.id)}
-                    />
-                    <span className="font-medium">{attr.name}</span>
-                    <span className="text-muted-foreground">
-                      ({(attr.values || []).map((v) => v.value).join(", ")})
-                    </span>
-                  </label>
-                  {isApplied && (attr.values || []).length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 pl-6">
-                      {(attr.values || []).map((v) => {
-                        const selected = pickedVals.includes(v.id);
-                        return (
-                          <button
-                            key={v.id}
-                            type="button"
-                            onClick={() => toggleValueId(attr.id, v.id)}
-                            className={`px-2.5 py-1 text-xs rounded-md border transition-colors ${
-                              selected
-                                ? "bg-foreground text-background border-foreground"
-                                : "bg-background text-foreground border-border hover:border-foreground/50"
-                            }`}
-                          >
-                            {v.value}
-                            {selected && " ✕"}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
+                  <div className="text-xs text-muted-foreground">{attr.name}</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(attr.values || []).map((v) => {
+                      const selected = pickedVals.includes(v.id);
+                      return (
+                        <button
+                          key={v.id}
+                          type="button"
+                          onClick={() => toggleValueId(attr.id, v.id)}
+                          className={`px-2.5 py-1 text-xs rounded-md border transition-colors ${
+                            selected
+                              ? "bg-foreground text-background border-foreground"
+                              : "bg-background text-foreground border-border hover:border-foreground/50"
+                          }`}
+                        >
+                          {v.value}
+                          {selected && " ✕"}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               );
             })}

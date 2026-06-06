@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import AdminCreateReviewDialog from "@/components/admin/AdminCreateReviewDialog";
 
 interface Review {
   id: string;

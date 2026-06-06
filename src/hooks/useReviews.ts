@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface Review {
   id: string;
-  customer_id: string;
+  customer_id: string | null;
   product_id: string;
   rating: number;
   title: string | null;
@@ -12,6 +12,7 @@ export interface Review {
   is_approved: boolean;
   created_at: string;
   updated_at: string;
+  reviewer_name?: string | null;
   product?: {
     id: string;
     name: string;

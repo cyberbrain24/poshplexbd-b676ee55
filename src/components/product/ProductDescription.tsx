@@ -1,11 +1,14 @@
-import { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ChevronDown, ChevronUp, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ReviewProduct from "./ReviewProduct";
 import ReviewImages from "./ReviewImages";
+import EditMyReviewDialog from "./EditMyReviewDialog";
 import { Product } from "@/types/product";
 import { useProductReviews } from "@/hooks/useReviews";
 import { parseSizeGuideContent } from "@/components/admin/SizeGuideTableEditor";
+import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 const CustomStar = ({ filled, className }: { filled: boolean; className?: string }) => (
   <svg 

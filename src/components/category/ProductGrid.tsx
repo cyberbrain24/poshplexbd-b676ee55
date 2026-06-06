@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { generateProductSlug } from "@/lib/slug";
 import FavoriteButton from "@/components/product/FavoriteButton";
+import ProductRatingBadge from "@/components/product/ProductRatingBadge";
+import { useProductRatings } from "@/hooks/useProductRatings";
 import { ResponsiveImage } from "@/components/ui/responsive-image";
 import type { SortOption, ProductFilters } from "./FilterSortBar";
 
@@ -17,6 +19,7 @@ interface ProductGridProps {
 const ProductGrid = ({ sortBy = "newest", filters }: ProductGridProps) => {
   const { category } = useParams();
   const { products, isLoading, isLoadingMore, totalCount, hasMore, loadMore } = useOptimizedCategoryProducts(category, sortBy, filters);
+  const { data: ratings } = useProductRatings(products.map((p) => p.id));
 
   const formatPrice = (price: number) => {
     return `৳${price.toLocaleString()}`;
@@ -124,6 +127,10 @@ const ProductGrid = ({ sortBy = "newest", filters }: ProductGridProps) => {
                         {formatPrice(product.base_price)}
                       </p>
                     </div>
+                    <ProductRatingBadge
+                      count={ratings?.[product.id]?.count ?? 0}
+                      average={ratings?.[product.id]?.average ?? 0}
+                    />
                   </div>
                 </CardContent>
               </Card>

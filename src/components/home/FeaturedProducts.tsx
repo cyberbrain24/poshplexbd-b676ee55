@@ -4,9 +4,12 @@ import { useFeaturedProducts } from "@/hooks/useFeaturedProducts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { generateProductSlug } from "@/lib/slug";
 import FavoriteButton from "@/components/product/FavoriteButton";
+import ProductRatingBadge from "@/components/product/ProductRatingBadge";
+import { useProductRatings } from "@/hooks/useProductRatings";
 
 const FeaturedProducts = () => {
   const { data: products, isLoading } = useFeaturedProducts();
+  const { data: ratings } = useProductRatings((products ?? []).map((p) => p.id));
 
   const formatPrice = (price: number) => `৳${price.toLocaleString()}`;
 
@@ -91,6 +94,10 @@ const FeaturedProducts = () => {
               <p className="text-sm font-bold text-foreground tracking-tight">
                 {formatPrice(product.base_price)}
               </p>
+              <ProductRatingBadge
+                count={ratings?.[product.id]?.count ?? 0}
+                average={ratings?.[product.id]?.average ?? 0}
+              />
             </div>
           </div>
         ))}

@@ -19,6 +19,7 @@ interface ProductGridProps {
 const ProductGrid = ({ sortBy = "newest", filters }: ProductGridProps) => {
   const { category } = useParams();
   const { products, isLoading, isLoadingMore, totalCount, hasMore, loadMore } = useOptimizedCategoryProducts(category, sortBy, filters);
+  const { data: ratings } = useProductRatings(products.map((p) => p.id));
 
   const formatPrice = (price: number) => {
     return `৳${price.toLocaleString()}`;

@@ -181,6 +181,7 @@ const AdminReviews = () => {
               <SelectItem value="approved">Approved</SelectItem>
             </SelectContent>
           </Select>
+          <AdminCreateReviewDialog />
         </div>
       </div>
 

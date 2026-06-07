@@ -13,6 +13,7 @@ import { MusicPlayerProvider } from "./contexts/MusicPlayerContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import MobileFooterNav from "./components/navigation/MobileFooterNav";
 import FacebookPixelTracker from "./components/tracking/FacebookPixelTracker";
+import VisitorTracker from "./components/tracking/VisitorTracker";
 import FloatingMusicPlayer from "./components/music/FloatingMusicPlayer";
 import TypographyProvider from "./components/TypographyProvider";
 

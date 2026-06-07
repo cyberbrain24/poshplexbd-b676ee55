@@ -163,7 +163,19 @@ Deno.serve(async (req) => {
       user_data: hashedUser,
     };
     if (body.custom_data && Object.keys(body.custom_data).length > 0) {
-      eventPayload.custom_data = body.custom_data;
+      // Server-side safety net: enforce Meta's "value must be > 0" rule.
+      // If value is missing/zero/invalid, drop value+currency entirely.
+      const customData: Record<string, unknown> = { ...body.custom_data };
+      const v = Number(customData.value);
+      if (!Number.isFinite(v) || v <= 0) {
+        delete customData.value;
+        delete customData.currency;
+      } else {
+        customData.value = Math.round(v * 100) / 100;
+      }
+      if (Object.keys(customData).length > 0) {
+        eventPayload.custom_data = customData;
+      }
     }
 
     const fbBody: Record<string, unknown> = {

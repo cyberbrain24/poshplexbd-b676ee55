@@ -61,7 +61,28 @@ export const getPixelConfig = () => _config;
  * Merges with existing data so partial updates don't wipe prior fields.
  */
 export const setAdvancedMatchingUser = (data: AdvancedMatchingUserData | null) => {
-  const merged = data ? { ...(_userData || {}), ...data } : null;
+  // Sanitize: drop invalid em/ph BEFORE merging so we never persist garbage.
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const clean: AdvancedMatchingUserData = {};
+  if (data) {
+    if (data.em) {
+      const e = String(data.em).trim().toLowerCase();
+      if (EMAIL_RE.test(e) && !e.endsWith('@phone.local') && !e.endsWith('@example.com') && !e.endsWith('@test.com')) {
+        clean.em = e;
+      }
+    }
+    if (data.ph) {
+      const digits = String(data.ph).replace(/\D/g, '');
+      if (digits.length >= 7 && digits.length <= 15) clean.ph = digits;
+    }
+    if (data.fn && String(data.fn).trim()) clean.fn = String(data.fn).trim();
+    if (data.ln && String(data.ln).trim()) clean.ln = String(data.ln).trim();
+    if (data.ct && String(data.ct).trim()) clean.ct = String(data.ct).trim();
+    if (data.country && String(data.country).trim()) clean.country = String(data.country).trim();
+    if (data.external_id) clean.external_id = String(data.external_id);
+  }
+
+  const merged = data ? { ...(_userData || {}), ...clean } : null;
   _userData = merged;
 
   try {

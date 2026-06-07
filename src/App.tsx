@@ -186,6 +186,7 @@ const App = () => (
                       <Route path="meta-pixel" element={<MetaPixelSettings />} />
                       <Route path="meta-capi" element={<MetaCapiSettings />} />
                       <Route path="ga4" element={<GA4Settings />} />
+                      <Route path="visitors" element={<VisitorAnalytics />} />
                     </Route>
                   </Route>
                   

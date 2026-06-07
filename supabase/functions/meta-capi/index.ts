@@ -41,15 +41,40 @@ async function sha256Hex(input: string): Promise<string> {
     .join('');
 }
 
+// Strict RFC-5322-ish email check + reject internal shadow domains so we
+// never send invalid/placeholder addresses to Meta.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const isValidEmail = (raw: string): boolean => {
+  const e = raw.trim().toLowerCase();
+  if (!e || !EMAIL_RE.test(e)) return false;
+  if (e.endsWith('@phone.local')) return false;       // POSHPLEX shadow account
+  if (e.endsWith('@example.com')) return false;
+  if (e.endsWith('@example.org')) return false;
+  if (e.endsWith('@test.com')) return false;
+  return true;
+};
+
+// Phones must be all-digit, 7-15 chars per Meta spec (E.164 without "+")
+const isValidPhone = (raw: string): boolean => {
+  const digits = raw.replace(/\D/g, '');
+  return digits.length >= 7 && digits.length <= 15;
+};
+
 async function hashUserData(u: UserData) {
   const out: Record<string, string | string[]> = {};
-  if (u.em) out.em = await sha256Hex(u.em);
-  if (u.ph) out.ph = await sha256Hex(u.ph.replace(/\D/g, ''));
-  if (u.fn) out.fn = await sha256Hex(u.fn);
-  if (u.ln) out.ln = await sha256Hex(u.ln);
-  if (u.ct) out.ct = await sha256Hex(u.ct);
-  if (u.country) out.country = await sha256Hex(u.country);
-  if (u.external_id) out.external_id = await sha256Hex(u.external_id);
+
+  if (u.em && isValidEmail(u.em)) {
+    out.em = await sha256Hex(u.em);
+  }
+  if (u.ph && isValidPhone(u.ph)) {
+    out.ph = await sha256Hex(u.ph.replace(/\D/g, ''));
+  }
+  if (u.fn && u.fn.trim()) out.fn = await sha256Hex(u.fn);
+  if (u.ln && u.ln.trim()) out.ln = await sha256Hex(u.ln);
+  if (u.ct && u.ct.trim()) out.ct = await sha256Hex(u.ct);
+  if (u.country && u.country.trim()) out.country = await sha256Hex(u.country);
+  if (u.external_id && u.external_id.trim()) out.external_id = await sha256Hex(u.external_id);
+
   // These are NOT hashed
   if (u.client_ip_address) out.client_ip_address = u.client_ip_address;
   if (u.client_user_agent) out.client_user_agent = u.client_user_agent;

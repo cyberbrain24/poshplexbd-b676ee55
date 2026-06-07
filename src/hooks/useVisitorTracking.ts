@@ -65,16 +65,5 @@ export function useVisitorTracking() {
     };
   }, [location.pathname, location.search]);
 
-  // Heartbeat every 60s while on page (so "active visitors" stays accurate)
-  useEffect(() => {
-    const beat = window.setInterval(() => {
-      const path = window.location.pathname + window.location.search;
-      if (path.startsWith("/admin")) return;
-      const session_id = getSessionId();
-      supabase.functions.invoke("track-visit", {
-        body: { path, referrer: document.referrer || null, session_id },
-      }).catch(() => {});
-    }, 60_000);
-    return () => window.clearInterval(beat);
-  }, []);
 }
+

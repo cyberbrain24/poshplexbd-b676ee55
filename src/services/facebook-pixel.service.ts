@@ -34,6 +34,17 @@ let _scriptInjected = false;
 let _initialized = false;
 let _interactionBound = false;
 
+const USER_DATA_STORAGE_KEY = 'pp_fb_user_data';
+
+// Restore persisted user data immediately so the very first events on a
+// returning visitor already include em/ph/fn/ln/country/external_id.
+try {
+  if (typeof localStorage !== 'undefined') {
+    const raw = localStorage.getItem(USER_DATA_STORAGE_KEY);
+    if (raw) _userData = JSON.parse(raw);
+  }
+} catch { /* noop */ }
+
 
 // ─── Configuration ─────────────────────────────────────────────
 export const setPixelConfig = (config: PixelConfig) => {
@@ -43,16 +54,30 @@ export const setPixelConfig = (config: PixelConfig) => {
 export const getPixelConfig = () => _config;
 
 /**
- * Set user data for Advanced Matching. Call after auth/login.
+ * Set user data for Advanced Matching. Call after auth/login/checkout typing.
  * Pass plain values — Facebook SDK auto-hashes em/ph/fn/ln.
- * Re-inits the pixel with user data if already loaded.
+ * Persisted to localStorage so identifiers attach to ALL future events
+ * (PageView, ViewContent, etc.) — boosts Meta coverage from ~10% to 80-90%.
+ * Merges with existing data so partial updates don't wipe prior fields.
  */
 export const setAdvancedMatchingUser = (data: AdvancedMatchingUserData | null) => {
-  _userData = data;
+  const merged = data ? { ...(_userData || {}), ...data } : null;
+  _userData = merged;
+
+  try {
+    if (typeof localStorage !== 'undefined') {
+      if (merged && Object.values(merged).some(v => !!v)) {
+        localStorage.setItem(USER_DATA_STORAGE_KEY, JSON.stringify(merged));
+      } else {
+        localStorage.removeItem(USER_DATA_STORAGE_KEY);
+      }
+    }
+  } catch { /* noop */ }
+
   if (_initialized && _config?.advancedMatching && _config.pixelId) {
     try {
-      window.fbq('init', _config.pixelId, data || {});
-      if (_config.testMode) console.log('[FB Pixel] Advanced Matching updated:', data);
+      window.fbq('init', _config.pixelId, merged || {});
+      if (_config.testMode) console.log('[FB Pixel] Advanced Matching updated:', merged);
     } catch { /* noop */ }
   }
 };

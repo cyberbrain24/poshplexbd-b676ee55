@@ -167,16 +167,39 @@ const Checkout = () => {
     loadCustomerData();
   }, []);
 
-  // Fire InitiateCheckout pixel event
+  // Keep Meta Advanced Matching in sync with the checkout form so CAPI events
+  // (InitiateCheckout, Purchase, etc.) receive hashed em/ph/fn/ln even for guests.
+  // Debounced to avoid spamming fbq init on every keystroke.
   useEffect(() => {
-    if (cartItems.length > 0) {
-      trackInitiateCheckout({
-        contentIds: cartItems.map(i => i.productId || i.id),
-        value: cartTotal,
-        numItems: cartItems.reduce((s, i) => s + i.quantity, 0),
+    const timer = setTimeout(() => {
+      const name = (customerDetails.name || "").trim();
+      const phone = (customerDetails.phone || "").replace(/\D/g, "");
+      const email = (customerDetails.email || "").trim();
+      if (!phone && !email) return;
+      const [fn, ...rest] = name.split(/\s+/).filter(Boolean);
+      setAdvancedMatchingUser({
+        ph: phone || undefined,
+        em: email || undefined,
+        fn: fn || undefined,
+        ln: rest.join(" ") || undefined,
+        country: "bd",
       });
-    }
-  }, []); // Only on mount
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [customerDetails.name, customerDetails.phone, customerDetails.email]);
+
+  // Fire InitiateCheckout pixel event — wait for customer auto-fill so Advanced
+  // Matching identifiers (phone/email) are attached for logged-in customers.
+  useEffect(() => {
+    if (isLoadingCustomer) return;
+    if (cartItems.length === 0) return;
+    trackInitiateCheckout({
+      contentIds: cartItems.map(i => i.productId || i.id),
+      value: cartTotal,
+      numItems: cartItems.reduce((s, i) => s + i.quantity, 0),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoadingCustomer]);
 
   const selectedPaymentMethod = paymentMethods?.find(pm => pm.id === selectedPaymentMethodId);
 

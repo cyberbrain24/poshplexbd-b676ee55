@@ -13,6 +13,7 @@ import { MusicPlayerProvider } from "./contexts/MusicPlayerContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import MobileFooterNav from "./components/navigation/MobileFooterNav";
 import FacebookPixelTracker from "./components/tracking/FacebookPixelTracker";
+import VisitorTracker from "./components/tracking/VisitorTracker";
 import FloatingMusicPlayer from "./components/music/FloatingMusicPlayer";
 import TypographyProvider from "./components/TypographyProvider";
 
@@ -77,6 +78,7 @@ const MarketingOverview = lazy(() => import("./pages/admin/marketing/MarketingOv
 const MetaPixelSettings = lazy(() => import("./pages/admin/marketing/MetaPixelSettings"));
 const MetaCapiSettings = lazy(() => import("./pages/admin/marketing/MetaCapiSettings"));
 const GA4Settings = lazy(() => import("./pages/admin/marketing/GA4Settings"));
+const VisitorAnalytics = lazy(() => import("./pages/admin/marketing/VisitorAnalytics"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -117,6 +119,7 @@ const App = () => (
                 <ScrollToTop />
                 <TypographyProvider />
                 <FacebookPixelTracker />
+                <VisitorTracker />
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/categories" element={<Suspense fallback={<LoadingFallback />}><CategoryBrowser /></Suspense>} />
@@ -185,6 +188,7 @@ const App = () => (
                       <Route path="meta-pixel" element={<MetaPixelSettings />} />
                       <Route path="meta-capi" element={<MetaCapiSettings />} />
                       <Route path="ga4" element={<GA4Settings />} />
+                      <Route path="visitors" element={<VisitorAnalytics />} />
                     </Route>
                   </Route>
                   

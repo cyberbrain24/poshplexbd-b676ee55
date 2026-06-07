@@ -259,14 +259,33 @@ const sendCapi = async (
 };
 
 /**
+ * Sanitize params before sending: Meta requires `value` to be a positive number.
+ * If value is 0/NaN/invalid, drop BOTH value and currency (currency without value
+ * is meaningless and also flagged by Meta diagnostics).
+ */
+const sanitizeParams = (params: Record<string, any>): Record<string, any> => {
+  const out = { ...params };
+  const v = Number(out.value);
+  if (!Number.isFinite(v) || v <= 0) {
+    delete out.value;
+    delete out.currency;
+  } else {
+    // Round to 2 decimals to avoid float precision noise (e.g. 9.990000001)
+    out.value = Math.round(v * 100) / 100;
+  }
+  return out;
+};
+
+/**
  * Dispatch a standard pixel event with Browser+CAPI dedup.
  * Generates one event_id used by both the fbq call and the CAPI mirror.
  */
 const dispatch = (eventName: string, params: Record<string, any>) => {
   const eventId = uuid();
-  safeFbq('track', eventName, params, { eventID: eventId });
+  const clean = sanitizeParams(params);
+  safeFbq('track', eventName, clean, { eventID: eventId });
   // Fire CAPI in background (non-blocking)
-  void sendCapi(eventName, eventId, params);
+  void sendCapi(eventName, eventId, clean);
 };
 
 // ─── Standard Events ───────────────────────────────────────────

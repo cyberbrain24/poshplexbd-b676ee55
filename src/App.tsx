@@ -118,6 +118,7 @@ const App = () => (
                 <ScrollToTop />
                 <TypographyProvider />
                 <FacebookPixelTracker />
+                <VisitorTracker />
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/categories" element={<Suspense fallback={<LoadingFallback />}><CategoryBrowser /></Suspense>} />

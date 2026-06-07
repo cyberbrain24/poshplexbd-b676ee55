@@ -77,6 +77,7 @@ const MarketingOverview = lazy(() => import("./pages/admin/marketing/MarketingOv
 const MetaPixelSettings = lazy(() => import("./pages/admin/marketing/MetaPixelSettings"));
 const MetaCapiSettings = lazy(() => import("./pages/admin/marketing/MetaCapiSettings"));
 const GA4Settings = lazy(() => import("./pages/admin/marketing/GA4Settings"));
+const VisitorAnalytics = lazy(() => import("./pages/admin/marketing/VisitorAnalytics"));
 
 const queryClient = new QueryClient({
   defaultOptions: {

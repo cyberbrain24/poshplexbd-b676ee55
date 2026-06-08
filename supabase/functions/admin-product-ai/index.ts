@@ -101,12 +101,10 @@ const tools = [
     size_guide_id: { type: "string" }, care_instruction_id: { type: "string" },
     is_active: { type: "boolean" }, is_featured: { type: "boolean" },
   }, required: ["product_id"] } } },
-  { type: "function", function: { name: "delete_product", description: "Delete a product by id (also removes its variants and images).", parameters: { type: "object", properties: { product_id: { type: "string" } }, required: ["product_id"] } } },
   { type: "function", function: { name: "set_product_active", description: "Toggle product active status.", parameters: { type: "object", properties: { product_id: { type: "string" }, is_active: { type: "boolean" } }, required: ["product_id", "is_active"] } } },
   { type: "function", function: { name: "set_product_featured", description: "Toggle product featured status.", parameters: { type: "object", properties: { product_id: { type: "string" }, is_featured: { type: "boolean" } }, required: ["product_id", "is_featured"] } } },
   { type: "function", function: { name: "add_product_image", description: "Attach an image URL to a product.", parameters: { type: "object", properties: { product_id: { type: "string" }, image_url: { type: "string" }, is_main: { type: "boolean" }, alt_text: { type: "string" }, color_id: { type: "string" }, sort_order: { type: "number" } }, required: ["product_id", "image_url"] } } },
   { type: "function", function: { name: "update_product_image", description: "Update fields on a product image (is_main, alt_text, sort_order, color_id).", parameters: { type: "object", properties: { image_id: { type: "string" }, is_main: { type: "boolean" }, alt_text: { type: "string" }, sort_order: { type: "number" }, color_id: { type: "string" } }, required: ["image_id"] } } },
-  { type: "function", function: { name: "delete_product_image", description: "Delete a product image by id.", parameters: { type: "object", properties: { image_id: { type: "string" } }, required: ["image_id"] } } },
   // Variants
   { type: "function", function: { name: "list_product_variants", description: "List variants for a product, including color/size/material names, SKU, prices, and stock.", parameters: { type: "object", properties: { product_id: { type: "string" } }, required: ["product_id"] } } },
   { type: "function", function: { name: "list_product_images", description: "List images for a product.", parameters: { type: "object", properties: { product_id: { type: "string" } }, required: ["product_id"] } } },
@@ -121,7 +119,6 @@ const tools = [
     color_id: { type: "string" }, size_id: { type: "string" }, material_id: { type: "string" },
     image_url: { type: "string" }, stock_quantity: { type: "number" }, low_stock_threshold: { type: "number" }, is_active: { type: "boolean" },
   }, required: ["variant_id"] } } },
-  { type: "function", function: { name: "delete_product_variant", description: "Delete a variant by id.", parameters: { type: "object", properties: { variant_id: { type: "string" } }, required: ["variant_id"] } } },
   { type: "function", function: { name: "bulk_update_variant_prices", description: "Update selling_price (and optionally purchase_price) for ALL variants of ONE product in a single call, AND aligns the product's base_price. Works for both simple and variable products.", parameters: { type: "object", properties: {
     product_id: { type: "string" }, selling_price: { type: "number" }, purchase_price: { type: "number" },
   }, required: ["product_id", "selling_price"] } } },
@@ -150,12 +147,10 @@ const tools = [
   { type: "function", function: { name: "list_custom_variants", description: "List custom variant attributes (global library, e.g. fit, style).", parameters: { type: "object", properties: { is_active: { type: "boolean" } } } } },
   { type: "function", function: { name: "create_thana", description: "Create a new thana (delivery zone) under a division with a shipping_cost.", parameters: { type: "object", properties: { name: { type: "string" }, division_id: { type: "string" }, shipping_cost: { type: "number" }, is_active: { type: "boolean" } }, required: ["name", "division_id"] } } },
   { type: "function", function: { name: "update_thana", description: "Update a thana: name, division, shipping_cost, is_active.", parameters: { type: "object", properties: { thana_id: { type: "string" }, name: { type: "string" }, division_id: { type: "string" }, shipping_cost: { type: "number" }, is_active: { type: "boolean" } }, required: ["thana_id"] } } },
-  { type: "function", function: { name: "delete_thana", description: "Delete a thana by id.", parameters: { type: "object", properties: { thana_id: { type: "string" } }, required: ["thana_id"] } } },
   { type: "function", function: { name: "set_thana_shipping_cost", description: "Set the delivery charge (shipping_cost) for one thana. Identify by thana_id OR thana_name (+ optional division_id).", parameters: { type: "object", properties: { thana_id: { type: "string" }, thana_name: { type: "string" }, division_id: { type: "string" }, shipping_cost: { type: "number" } }, required: ["shipping_cost"] } } },
   { type: "function", function: { name: "bulk_set_thana_shipping_cost", description: "Set the same shipping_cost for many thanas at once. Scope by division_id, or pass thana_ids, or omit both to apply to ALL thanas.", parameters: { type: "object", properties: { shipping_cost: { type: "number" }, division_id: { type: "string" }, thana_ids: { type: "array", items: { type: "string" } } }, required: ["shipping_cost"] } } },
   { type: "function", function: { name: "create_custom_variant", description: "Create a custom variant attribute in the global library.", parameters: { type: "object", properties: { label: { type: "string" }, sort_order: { type: "number" }, is_active: { type: "boolean" } }, required: ["label"] } } },
   { type: "function", function: { name: "update_custom_variant", description: "Update a custom variant.", parameters: { type: "object", properties: { custom_variant_id: { type: "string" }, label: { type: "string" }, sort_order: { type: "number" }, is_active: { type: "boolean" } }, required: ["custom_variant_id"] } } },
-  { type: "function", function: { name: "delete_custom_variant", description: "Delete a custom variant.", parameters: { type: "object", properties: { custom_variant_id: { type: "string" } }, required: ["custom_variant_id"] } } },
 
   { type: "function", function: { name: "get_sales_analytics", description: "Sales analytics: revenue, order count, AOV over a window.", parameters: { type: "object", properties: { days: { type: "number", description: "Window size, default 30" } } } } },
   { type: "function", function: { name: "get_top_products", description: "Best-selling products by quantity.", parameters: { type: "object", properties: { limit: { type: "number" }, days: { type: "number" } } } } },
@@ -176,7 +171,6 @@ const tools = [
     customer_type_id: { type: "string" }, notes: { type: "string" }, is_active: { type: "boolean" },
     birthdate: { type: "string" },
   }, required: ["customer_id"] } } },
-  { type: "function", function: { name: "delete_customer", description: "Delete a customer by id. Will fail if linked orders exist.", parameters: { type: "object", properties: { customer_id: { type: "string" } }, required: ["customer_id"] } } },
   // WRITE — Orders
   { type: "function", function: { name: "update_order", description: "Update mutable order fields (shipping info, notes, tracking, courier, amounts).", parameters: { type: "object", properties: {
     order_id: { type: "string" }, shipping_name: { type: "string" }, shipping_phone: { type: "string" },
@@ -205,7 +199,6 @@ const tools = [
     order_id: { type: "string" }, account_id: { type: "string" }, amount: { type: "number" },
     payment_reference: { type: "string" },
   }, required: ["order_id", "account_id", "amount"] } } },
-  { type: "function", function: { name: "delete_order", description: "Delete an order by id (irreversible).", parameters: { type: "object", properties: { order_id: { type: "string" } }, required: ["order_id"] } } },
 
 
   // ====== SMS Marketing ======
@@ -225,7 +218,6 @@ const tools = [
   { type: "function", function: { name: "create_sms_template", description: "Create a new custom SMS template. Provide a unique event_key slug, name, body, enabled.", parameters: { type: "object", properties: {
     event_key: { type: "string" }, name: { type: "string" }, body: { type: "string" }, enabled: { type: "boolean" },
   }, required: ["event_key", "name", "body"] } } },
-  { type: "function", function: { name: "delete_sms_template", description: "Delete a custom (non-system) SMS template by event_key.", parameters: { type: "object", properties: { event_key: { type: "string" } }, required: ["event_key"] } } },
   { type: "function", function: { name: "send_sms", description: "Send a one-off SMS to a single phone number now.", parameters: { type: "object", properties: {
     phone: { type: "string" }, message: { type: "string" },
   }, required: ["phone", "message"] } } },

@@ -69,7 +69,10 @@ export async function generatePackingListPdf(orders: Order[]) {
   // Aggregate
   const customerSet = new Set<string>();
   let totalQty = 0;
+  // categoryQty[category][color | size] = qty
   const categoryQty: Record<string, Record<string, number>> = {};
+  // parentTree[parent][subcategory] = qty (subcategory "—" for root-level)
+  const parentTree: Record<string, Record<string, number>> = {};
   const items: PackingItem[] = [];
 
   for (const order of orders) {
@@ -80,13 +83,21 @@ export async function generatePackingListPdf(orders: Order[]) {
       const qty = it.quantity || 0;
       totalQty += qty;
       const size = extractSize(it.variant_details) || "—";
+      const color = extractColor(it.variant_details) || "—";
+      const variantKey = `${color} / ${size}`;
       const cats: any[] = it.product?.product_categories || [];
-      const catNames = cats.length > 0
-        ? cats.map((c) => c.category?.name || "Uncategorized")
-        : ["Uncategorized"];
-      for (const name of catNames) {
+      const catRefs = cats.length > 0
+        ? cats.map((c) => c.category).filter(Boolean)
+        : [{ name: "Uncategorized", parent: null }];
+      for (const cat of catRefs) {
+        const name = cat?.name || "Uncategorized";
         if (!categoryQty[name]) categoryQty[name] = {};
-        categoryQty[name][size] = (categoryQty[name][size] || 0) + qty;
+        categoryQty[name][variantKey] = (categoryQty[name][variantKey] || 0) + qty;
+
+        const parentName = cat?.parent?.name || name;
+        const subName = cat?.parent?.name ? name : "—";
+        if (!parentTree[parentName]) parentTree[parentName] = {};
+        parentTree[parentName][subName] = (parentTree[parentName][subName] || 0) + qty;
       }
       const imgs: any[] = it.product?.product_images || [];
       const main = imgs.find((i) => i.is_main) || imgs.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))[0];

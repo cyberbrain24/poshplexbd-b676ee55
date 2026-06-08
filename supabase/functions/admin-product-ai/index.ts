@@ -958,6 +958,29 @@ async function executeTool(name: string, args: any, sb: any) {
         if (error) return { error: error.message };
         return { count };
       }
+      case "db_insert_row": {
+        const table = String(args.table || "").trim();
+        if (!table || !/^[a-z_][a-z0-9_]*$/i.test(table)) return { error: "Invalid table name" };
+        if (!args.values || typeof args.values !== "object" || Array.isArray(args.values)) return { error: "values must be an object" };
+        const { data, error } = await sb.from(table).insert(args.values).select();
+        if (error) return { error: error.message };
+        return { success: true, inserted: data };
+      }
+      case "db_update_row": {
+        const table = String(args.table || "").trim();
+        if (!table || !/^[a-z_][a-z0-9_]*$/i.test(table)) return { error: "Invalid table name" };
+        if (!args.values || typeof args.values !== "object" || Array.isArray(args.values)) return { error: "values must be an object" };
+        if (!args.filters || typeof args.filters !== "object" || Array.isArray(args.filters) || Object.keys(args.filters).length === 0) {
+          return { error: "filters object with at least one column is required to avoid mass updates" };
+        }
+        let q = sb.from(table).update(args.values);
+        for (const [k, v] of Object.entries(args.filters)) {
+          if (v === null) q = q.is(k, null); else q = q.eq(k, v as any);
+        }
+        const { data, error } = await q.select();
+        if (error) return { error: error.message };
+        return { success: true, updated: data };
+      }
 
       default: return { error: `Unknown tool: ${name}` };
     }

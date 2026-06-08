@@ -6,7 +6,7 @@ import {
   LayoutDashboard, ArrowLeft, ChevronDown, Wallet, CreditCard, TrendingUp,
   TrendingDown, Users, MapPin, Map, Crown, ShoppingCart, ExternalLink,
   LucideIcon, RefreshCw, MessageSquare, Image, Tag, Settings, Send,
-  Upload, Menu, X, Music, StickyNote, Megaphone, Facebook, Server, BarChart3, LayoutGrid,
+  Upload, Menu, X, Music, StickyNote, Megaphone, Facebook, Server, BarChart3, LayoutGrid, Activity,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -61,6 +61,7 @@ const customerManagementItems: NavItem[] = [
 
 const marketingItems: NavItem[] = [
   { icon: LayoutGrid, label: "Overview", path: "/admin/marketing" },
+  { icon: Activity, label: "Visitors", path: "/admin/marketing/visitors" },
   { icon: Facebook, label: "Meta Pixel", path: "/admin/marketing/meta-pixel" },
   { icon: Server, label: "Meta CAPI", path: "/admin/marketing/meta-capi" },
   { icon: BarChart3, label: "Google Analytics 4", path: "/admin/marketing/ga4" },

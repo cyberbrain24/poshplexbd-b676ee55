@@ -602,6 +602,18 @@ const AdminOrders = () => {
                     {order.payment_method?.name || 'Unknown'}
                   </div>
 
+                  {(() => {
+                    const div = order.shipping_division?.name?.trim().toLowerCase();
+                    let label = "Outside Dhaka";
+                    if (div === "dhaka city") label = "Dhaka City";
+                    else if (div === "dhaka sub-urban") label = "Dhaka Sub-Urban";
+                    return (
+                      <div className="text-[11px] font-medium text-purple-600 truncate">
+                        Location: {label}
+                      </div>
+                    );
+                  })()}
+
                   {/* Parcel + Courier */}
                   <div className="space-y-1 pt-1 border-t border-border">
                     <div className="flex items-center justify-between gap-1">

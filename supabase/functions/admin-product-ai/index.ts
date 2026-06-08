@@ -773,9 +773,7 @@ async function executeTool(name: string, args: any, sb: any) {
       }
       case "update_order_item": {
         if (args.delete) {
-          const { error } = await sb.from("order_items").delete().eq("id", args.item_id);
-          if (error) throw error;
-          return { success: true, deleted: true };
+          return { error: "Delete operations are not permitted. Remove the item from the admin order page." };
         }
         const patch: any = {};
         if (args.quantity !== undefined) patch.quantity = args.quantity;

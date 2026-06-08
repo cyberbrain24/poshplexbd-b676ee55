@@ -6,7 +6,7 @@ import {
   LayoutDashboard, ArrowLeft, ChevronDown, Wallet, CreditCard, TrendingUp,
   TrendingDown, Users, MapPin, Map, Crown, ShoppingCart, ExternalLink,
   LucideIcon, RefreshCw, MessageSquare, Image, Tag, Settings, Send,
-  Upload, Menu, X, Music, StickyNote, Megaphone, Facebook, Server, BarChart3, LayoutGrid,
+  Upload, Menu, X, Music, StickyNote, Megaphone, Facebook, Server, BarChart3, LayoutGrid, Activity,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";

@@ -47,26 +47,30 @@ const READ_TOOLS = new Set([
 ]);
 
 
+// NOTE: Delete tools are intentionally OMITTED — the AI agent has full read/write
+// access across every module but is NOT permitted to delete rows.
 const WRITE_TOOLS = new Set([
   // Products
-  "create_product", "update_product", "delete_product",
-  "add_product_image", "update_product_image", "delete_product_image",
+  "create_product", "update_product",
+  "add_product_image", "update_product_image", "remove_product_image_marker",
   "set_product_active", "set_product_featured",
-  "create_product_variant", "update_product_variant", "delete_product_variant",
+  "create_product_variant", "update_product_variant",
   "bulk_update_variant_prices", "bulk_update_category_prices",
   "add_product_category", "remove_product_category",
   // Customers
-  "create_customer", "update_customer", "delete_customer",
+  "create_customer", "update_customer",
   // Orders
-  "update_order", "delete_order", "set_order_status", "set_payment_status",
+  "update_order", "set_order_status", "set_payment_status",
   "update_order_item", "add_order_payment",
   // SMS Marketing
-  "update_sms_settings", "update_sms_template", "create_sms_template", "delete_sms_template",
+  "update_sms_settings", "update_sms_template", "create_sms_template",
   "send_sms", "send_bulk_sms",
-  // Shipping (thanas with shipping_cost)
-  "create_thana", "update_thana", "delete_thana", "set_thana_shipping_cost", "bulk_set_thana_shipping_cost",
+  // Shipping
+  "create_thana", "update_thana", "set_thana_shipping_cost", "bulk_set_thana_shipping_cost",
   // Custom variants
-  "create_custom_variant", "update_custom_variant", "delete_custom_variant",
+  "create_custom_variant", "update_custom_variant",
+  // Universal write (any table, insert/update only — no delete)
+  "db_insert_row", "db_update_row",
 ]);
 
 

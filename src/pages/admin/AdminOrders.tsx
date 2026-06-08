@@ -604,9 +604,7 @@ const AdminOrders = () => {
 
                   {(() => {
                     const div = order.shipping_division?.name?.trim().toLowerCase();
-                    let label = "Outside Dhaka";
-                    if (div === "dhaka city") label = "Dhaka City";
-                    else if (div === "dhaka sub-urban") label = "Dhaka Sub-Urban";
+                    const label = (div === "dhaka city" || div === "dhaka sub-urban") ? "Inside Dhaka" : "Outside Dhaka";
                     return (
                       <div className="text-[11px] font-medium text-purple-600 truncate">
                         Location: {label}

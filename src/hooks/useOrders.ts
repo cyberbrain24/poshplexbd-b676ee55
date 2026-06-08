@@ -141,7 +141,7 @@ export const useOrders = (filters?: {
           *,
           customer:customers(id, name, phone, email),
           payment_method:payment_methods(id, name, type),
-          items:order_items(*, product:products(id, product_images(image_url, is_main, sort_order), product_categories(category:categories(id, name))))
+          items:order_items(*, product:products(id, product_images(image_url, is_main, sort_order), product_categories(category:categories(id, name, parent_id, parent:categories!parent_id(id, name)))))
         `)
         .order("created_at", { ascending: false })
         .limit(100);

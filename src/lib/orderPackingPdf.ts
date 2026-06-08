@@ -44,14 +44,19 @@ interface PackingItem {
   callNote: string | null;
 }
 
-const extractSize = (variantDetails: Record<string, any> | null | undefined): string => {
+const extractAttr = (
+  variantDetails: Record<string, any> | null | undefined,
+  regex: RegExp,
+): string => {
   if (!variantDetails) return "";
   for (const [k, v] of Object.entries(variantDetails)) {
     if (!v) continue;
-    if (/size/i.test(k)) return String(v);
+    if (regex.test(k)) return String(v);
   }
   return "";
 };
+const extractSize = (vd: Record<string, any> | null | undefined) => extractAttr(vd, /size/i);
+const extractColor = (vd: Record<string, any> | null | undefined) => extractAttr(vd, /colou?r/i);
 
 const UNSHIPPED_KEY = "__unshipped__";
 
@@ -64,7 +69,10 @@ export async function generatePackingListPdf(orders: Order[]) {
   // Aggregate
   const customerSet = new Set<string>();
   let totalQty = 0;
+  // categoryQty[category][color | size] = qty
   const categoryQty: Record<string, Record<string, number>> = {};
+  // parentTree[parent][subcategory] = qty (subcategory "—" for root-level)
+  const parentTree: Record<string, Record<string, number>> = {};
   const items: PackingItem[] = [];
 
   for (const order of orders) {
@@ -75,13 +83,21 @@ export async function generatePackingListPdf(orders: Order[]) {
       const qty = it.quantity || 0;
       totalQty += qty;
       const size = extractSize(it.variant_details) || "—";
+      const color = extractColor(it.variant_details) || "—";
+      const variantKey = `${color} / ${size}`;
       const cats: any[] = it.product?.product_categories || [];
-      const catNames = cats.length > 0
-        ? cats.map((c) => c.category?.name || "Uncategorized")
-        : ["Uncategorized"];
-      for (const name of catNames) {
+      const catRefs = cats.length > 0
+        ? cats.map((c) => c.category).filter(Boolean)
+        : [{ name: "Uncategorized", parent: null }];
+      for (const cat of catRefs) {
+        const name = cat?.name || "Uncategorized";
         if (!categoryQty[name]) categoryQty[name] = {};
-        categoryQty[name][size] = (categoryQty[name][size] || 0) + qty;
+        categoryQty[name][variantKey] = (categoryQty[name][variantKey] || 0) + qty;
+
+        const parentName = cat?.parent?.name || name;
+        const subName = cat?.parent?.name ? name : "—";
+        if (!parentTree[parentName]) parentTree[parentName] = {};
+        parentTree[parentName][subName] = (parentTree[parentName][subName] || 0) + qty;
       }
       const imgs: any[] = it.product?.product_images || [];
       const main = imgs.find((i) => i.is_main) || imgs.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))[0];
@@ -138,7 +154,7 @@ export async function generatePackingListPdf(orders: Order[]) {
   y += 24;
 
   doc.setFontSize(11);
-  doc.text("Quantity by Category (per size)", margin, y);
+  doc.text("Quantity by Category (per color / size)", margin, y);
   y += 14;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
@@ -156,12 +172,50 @@ export async function generatePackingListPdf(orders: Order[]) {
     y += 12;
     doc.setFont("helvetica", "normal");
     const sizeEntries = Object.entries(sizes).sort((a, b) => b[1] - a[1]);
-    for (const [sz, qty] of sizeEntries) {
+    for (const [combo, qty] of sizeEntries) {
       if (y > pageH - margin) {
         doc.addPage();
         y = margin;
       }
-      doc.text(`   – Size ${sz}: ${qty} pcs`, margin + 16, y);
+      doc.text(`   – ${combo}: ${qty} pcs`, margin + 16, y);
+      y += 12;
+    }
+    y += 4;
+  }
+
+  // Quantity by Category with Subcategory breakdown
+  y += 6;
+  if (y > pageH - margin - 30) {
+    doc.addPage();
+    y = margin;
+  }
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text("Quantity by Category (with subcategory)", margin, y);
+  y += 14;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  const parentTotals = Object.entries(parentTree).map(([parent, subs]) => {
+    const total = Object.values(subs).reduce((s, n) => s + n, 0);
+    return { parent, subs, total };
+  }).sort((a, b) => b.total - a.total);
+  for (const { parent, subs, total } of parentTotals) {
+    if (y > pageH - margin) {
+      doc.addPage();
+      y = margin;
+    }
+    doc.setFont("helvetica", "bold");
+    doc.text(`• ${parent}: ${total} pcs`, margin + 8, y);
+    y += 12;
+    doc.setFont("helvetica", "normal");
+    const subEntries = Object.entries(subs).sort((a, b) => b[1] - a[1]);
+    for (const [sub, qty] of subEntries) {
+      if (y > pageH - margin) {
+        doc.addPage();
+        y = margin;
+      }
+      const label = sub === "—" ? "(no subcategory)" : sub;
+      doc.text(`   – ${label}: ${qty} pcs`, margin + 16, y);
       y += 12;
     }
     y += 4;

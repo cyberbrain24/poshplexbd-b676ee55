@@ -154,7 +154,7 @@ export async function generatePackingListPdf(orders: Order[]) {
   y += 24;
 
   doc.setFontSize(11);
-  doc.text("Quantity by Category (per size)", margin, y);
+  doc.text("Quantity by Category (per color / size)", margin, y);
   y += 14;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
@@ -172,12 +172,50 @@ export async function generatePackingListPdf(orders: Order[]) {
     y += 12;
     doc.setFont("helvetica", "normal");
     const sizeEntries = Object.entries(sizes).sort((a, b) => b[1] - a[1]);
-    for (const [sz, qty] of sizeEntries) {
+    for (const [combo, qty] of sizeEntries) {
       if (y > pageH - margin) {
         doc.addPage();
         y = margin;
       }
-      doc.text(`   – Size ${sz}: ${qty} pcs`, margin + 16, y);
+      doc.text(`   – ${combo}: ${qty} pcs`, margin + 16, y);
+      y += 12;
+    }
+    y += 4;
+  }
+
+  // Quantity by Category with Subcategory breakdown
+  y += 6;
+  if (y > pageH - margin - 30) {
+    doc.addPage();
+    y = margin;
+  }
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text("Quantity by Category (with subcategory)", margin, y);
+  y += 14;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  const parentTotals = Object.entries(parentTree).map(([parent, subs]) => {
+    const total = Object.values(subs).reduce((s, n) => s + n, 0);
+    return { parent, subs, total };
+  }).sort((a, b) => b.total - a.total);
+  for (const { parent, subs, total } of parentTotals) {
+    if (y > pageH - margin) {
+      doc.addPage();
+      y = margin;
+    }
+    doc.setFont("helvetica", "bold");
+    doc.text(`• ${parent}: ${total} pcs`, margin + 8, y);
+    y += 12;
+    doc.setFont("helvetica", "normal");
+    const subEntries = Object.entries(subs).sort((a, b) => b[1] - a[1]);
+    for (const [sub, qty] of subEntries) {
+      if (y > pageH - margin) {
+        doc.addPage();
+        y = margin;
+      }
+      const label = sub === "—" ? "(no subcategory)" : sub;
+      doc.text(`   – ${label}: ${qty} pcs`, margin + 16, y);
       y += 12;
     }
     y += 4;

@@ -165,10 +165,12 @@ Deno.serve(async (req) => {
           )
           .join(", ") || "";
 
+        const thanaName = order.shipping_thana?.name;
+        const districtName = order.shipping_division?.name;
         const addressParts = [
           order.shipping_address,
-          order.shipping_thana?.name,
-          order.shipping_division?.name
+          thanaName ? `Thana: ${thanaName}` : null,
+          districtName ? `District: ${districtName}` : null,
         ].filter(Boolean);
         const fullAddress = addressParts.join(", ");
 

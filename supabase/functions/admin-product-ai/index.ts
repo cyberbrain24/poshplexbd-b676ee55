@@ -190,10 +190,9 @@ const tools = [
     payment_status: { type: "string", description: "unpaid|partial|paid|refunded" },
     notes: { type: "string" },
   }, required: ["order_id", "payment_status"] } } },
-  { type: "function", function: { name: "update_order_item", description: "Update an order item: quantity, unit_price, fulfillment_status, or delete.", parameters: { type: "object", properties: {
+  { type: "function", function: { name: "update_order_item", description: "Update an order item: quantity, unit_price, or fulfillment_status. Deleting items is NOT permitted.", parameters: { type: "object", properties: {
     item_id: { type: "string" }, quantity: { type: "number" }, unit_price: { type: "number" },
     fulfillment_status: { type: "string", description: "pending|processing|shipped|delivered|cancelled|out_of_stock|returned" },
-    delete: { type: "boolean", description: "If true, delete the item." },
   }, required: ["item_id"] } } },
   { type: "function", function: { name: "add_order_payment", description: "Record a manual payment against an order into a financial account.", parameters: { type: "object", properties: {
     order_id: { type: "string" }, account_id: { type: "string" }, amount: { type: "number" },

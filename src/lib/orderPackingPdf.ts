@@ -44,14 +44,19 @@ interface PackingItem {
   callNote: string | null;
 }
 
-const extractSize = (variantDetails: Record<string, any> | null | undefined): string => {
+const extractAttr = (
+  variantDetails: Record<string, any> | null | undefined,
+  regex: RegExp,
+): string => {
   if (!variantDetails) return "";
   for (const [k, v] of Object.entries(variantDetails)) {
     if (!v) continue;
-    if (/size/i.test(k)) return String(v);
+    if (regex.test(k)) return String(v);
   }
   return "";
 };
+const extractSize = (vd: Record<string, any> | null | undefined) => extractAttr(vd, /size/i);
+const extractColor = (vd: Record<string, any> | null | undefined) => extractAttr(vd, /colou?r/i);
 
 const UNSHIPPED_KEY = "__unshipped__";
 

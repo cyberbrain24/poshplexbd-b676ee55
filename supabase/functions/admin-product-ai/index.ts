@@ -47,26 +47,30 @@ const READ_TOOLS = new Set([
 ]);
 
 
+// NOTE: Delete tools are intentionally OMITTED — the AI agent has full read/write
+// access across every module but is NOT permitted to delete rows.
 const WRITE_TOOLS = new Set([
   // Products
-  "create_product", "update_product", "delete_product",
-  "add_product_image", "update_product_image", "delete_product_image",
+  "create_product", "update_product",
+  "add_product_image", "update_product_image", "remove_product_image_marker",
   "set_product_active", "set_product_featured",
-  "create_product_variant", "update_product_variant", "delete_product_variant",
+  "create_product_variant", "update_product_variant",
   "bulk_update_variant_prices", "bulk_update_category_prices",
   "add_product_category", "remove_product_category",
   // Customers
-  "create_customer", "update_customer", "delete_customer",
+  "create_customer", "update_customer",
   // Orders
-  "update_order", "delete_order", "set_order_status", "set_payment_status",
+  "update_order", "set_order_status", "set_payment_status",
   "update_order_item", "add_order_payment",
   // SMS Marketing
-  "update_sms_settings", "update_sms_template", "create_sms_template", "delete_sms_template",
+  "update_sms_settings", "update_sms_template", "create_sms_template",
   "send_sms", "send_bulk_sms",
-  // Shipping (thanas with shipping_cost)
-  "create_thana", "update_thana", "delete_thana", "set_thana_shipping_cost", "bulk_set_thana_shipping_cost",
+  // Shipping
+  "create_thana", "update_thana", "set_thana_shipping_cost", "bulk_set_thana_shipping_cost",
   // Custom variants
-  "create_custom_variant", "update_custom_variant", "delete_custom_variant",
+  "create_custom_variant", "update_custom_variant",
+  // Universal write (any table, insert/update only — no delete)
+  "db_insert_row", "db_update_row",
 ]);
 
 
@@ -97,12 +101,10 @@ const tools = [
     size_guide_id: { type: "string" }, care_instruction_id: { type: "string" },
     is_active: { type: "boolean" }, is_featured: { type: "boolean" },
   }, required: ["product_id"] } } },
-  { type: "function", function: { name: "delete_product", description: "Delete a product by id (also removes its variants and images).", parameters: { type: "object", properties: { product_id: { type: "string" } }, required: ["product_id"] } } },
   { type: "function", function: { name: "set_product_active", description: "Toggle product active status.", parameters: { type: "object", properties: { product_id: { type: "string" }, is_active: { type: "boolean" } }, required: ["product_id", "is_active"] } } },
   { type: "function", function: { name: "set_product_featured", description: "Toggle product featured status.", parameters: { type: "object", properties: { product_id: { type: "string" }, is_featured: { type: "boolean" } }, required: ["product_id", "is_featured"] } } },
   { type: "function", function: { name: "add_product_image", description: "Attach an image URL to a product.", parameters: { type: "object", properties: { product_id: { type: "string" }, image_url: { type: "string" }, is_main: { type: "boolean" }, alt_text: { type: "string" }, color_id: { type: "string" }, sort_order: { type: "number" } }, required: ["product_id", "image_url"] } } },
   { type: "function", function: { name: "update_product_image", description: "Update fields on a product image (is_main, alt_text, sort_order, color_id).", parameters: { type: "object", properties: { image_id: { type: "string" }, is_main: { type: "boolean" }, alt_text: { type: "string" }, sort_order: { type: "number" }, color_id: { type: "string" } }, required: ["image_id"] } } },
-  { type: "function", function: { name: "delete_product_image", description: "Delete a product image by id.", parameters: { type: "object", properties: { image_id: { type: "string" } }, required: ["image_id"] } } },
   // Variants
   { type: "function", function: { name: "list_product_variants", description: "List variants for a product, including color/size/material names, SKU, prices, and stock.", parameters: { type: "object", properties: { product_id: { type: "string" } }, required: ["product_id"] } } },
   { type: "function", function: { name: "list_product_images", description: "List images for a product.", parameters: { type: "object", properties: { product_id: { type: "string" } }, required: ["product_id"] } } },
@@ -117,7 +119,6 @@ const tools = [
     color_id: { type: "string" }, size_id: { type: "string" }, material_id: { type: "string" },
     image_url: { type: "string" }, stock_quantity: { type: "number" }, low_stock_threshold: { type: "number" }, is_active: { type: "boolean" },
   }, required: ["variant_id"] } } },
-  { type: "function", function: { name: "delete_product_variant", description: "Delete a variant by id.", parameters: { type: "object", properties: { variant_id: { type: "string" } }, required: ["variant_id"] } } },
   { type: "function", function: { name: "bulk_update_variant_prices", description: "Update selling_price (and optionally purchase_price) for ALL variants of ONE product in a single call, AND aligns the product's base_price. Works for both simple and variable products.", parameters: { type: "object", properties: {
     product_id: { type: "string" }, selling_price: { type: "number" }, purchase_price: { type: "number" },
   }, required: ["product_id", "selling_price"] } } },
@@ -146,12 +147,10 @@ const tools = [
   { type: "function", function: { name: "list_custom_variants", description: "List custom variant attributes (global library, e.g. fit, style).", parameters: { type: "object", properties: { is_active: { type: "boolean" } } } } },
   { type: "function", function: { name: "create_thana", description: "Create a new thana (delivery zone) under a division with a shipping_cost.", parameters: { type: "object", properties: { name: { type: "string" }, division_id: { type: "string" }, shipping_cost: { type: "number" }, is_active: { type: "boolean" } }, required: ["name", "division_id"] } } },
   { type: "function", function: { name: "update_thana", description: "Update a thana: name, division, shipping_cost, is_active.", parameters: { type: "object", properties: { thana_id: { type: "string" }, name: { type: "string" }, division_id: { type: "string" }, shipping_cost: { type: "number" }, is_active: { type: "boolean" } }, required: ["thana_id"] } } },
-  { type: "function", function: { name: "delete_thana", description: "Delete a thana by id.", parameters: { type: "object", properties: { thana_id: { type: "string" } }, required: ["thana_id"] } } },
   { type: "function", function: { name: "set_thana_shipping_cost", description: "Set the delivery charge (shipping_cost) for one thana. Identify by thana_id OR thana_name (+ optional division_id).", parameters: { type: "object", properties: { thana_id: { type: "string" }, thana_name: { type: "string" }, division_id: { type: "string" }, shipping_cost: { type: "number" } }, required: ["shipping_cost"] } } },
   { type: "function", function: { name: "bulk_set_thana_shipping_cost", description: "Set the same shipping_cost for many thanas at once. Scope by division_id, or pass thana_ids, or omit both to apply to ALL thanas.", parameters: { type: "object", properties: { shipping_cost: { type: "number" }, division_id: { type: "string" }, thana_ids: { type: "array", items: { type: "string" } } }, required: ["shipping_cost"] } } },
   { type: "function", function: { name: "create_custom_variant", description: "Create a custom variant attribute in the global library.", parameters: { type: "object", properties: { label: { type: "string" }, sort_order: { type: "number" }, is_active: { type: "boolean" } }, required: ["label"] } } },
   { type: "function", function: { name: "update_custom_variant", description: "Update a custom variant.", parameters: { type: "object", properties: { custom_variant_id: { type: "string" }, label: { type: "string" }, sort_order: { type: "number" }, is_active: { type: "boolean" } }, required: ["custom_variant_id"] } } },
-  { type: "function", function: { name: "delete_custom_variant", description: "Delete a custom variant.", parameters: { type: "object", properties: { custom_variant_id: { type: "string" } }, required: ["custom_variant_id"] } } },
 
   { type: "function", function: { name: "get_sales_analytics", description: "Sales analytics: revenue, order count, AOV over a window.", parameters: { type: "object", properties: { days: { type: "number", description: "Window size, default 30" } } } } },
   { type: "function", function: { name: "get_top_products", description: "Best-selling products by quantity.", parameters: { type: "object", properties: { limit: { type: "number" }, days: { type: "number" } } } } },
@@ -172,7 +171,6 @@ const tools = [
     customer_type_id: { type: "string" }, notes: { type: "string" }, is_active: { type: "boolean" },
     birthdate: { type: "string" },
   }, required: ["customer_id"] } } },
-  { type: "function", function: { name: "delete_customer", description: "Delete a customer by id. Will fail if linked orders exist.", parameters: { type: "object", properties: { customer_id: { type: "string" } }, required: ["customer_id"] } } },
   // WRITE — Orders
   { type: "function", function: { name: "update_order", description: "Update mutable order fields (shipping info, notes, tracking, courier, amounts).", parameters: { type: "object", properties: {
     order_id: { type: "string" }, shipping_name: { type: "string" }, shipping_phone: { type: "string" },
@@ -192,16 +190,14 @@ const tools = [
     payment_status: { type: "string", description: "unpaid|partial|paid|refunded" },
     notes: { type: "string" },
   }, required: ["order_id", "payment_status"] } } },
-  { type: "function", function: { name: "update_order_item", description: "Update an order item: quantity, unit_price, fulfillment_status, or delete.", parameters: { type: "object", properties: {
+  { type: "function", function: { name: "update_order_item", description: "Update an order item: quantity, unit_price, or fulfillment_status. Deleting items is NOT permitted.", parameters: { type: "object", properties: {
     item_id: { type: "string" }, quantity: { type: "number" }, unit_price: { type: "number" },
     fulfillment_status: { type: "string", description: "pending|processing|shipped|delivered|cancelled|out_of_stock|returned" },
-    delete: { type: "boolean", description: "If true, delete the item." },
   }, required: ["item_id"] } } },
   { type: "function", function: { name: "add_order_payment", description: "Record a manual payment against an order into a financial account.", parameters: { type: "object", properties: {
     order_id: { type: "string" }, account_id: { type: "string" }, amount: { type: "number" },
     payment_reference: { type: "string" },
   }, required: ["order_id", "account_id", "amount"] } } },
-  { type: "function", function: { name: "delete_order", description: "Delete an order by id (irreversible).", parameters: { type: "object", properties: { order_id: { type: "string" } }, required: ["order_id"] } } },
 
 
   // ====== SMS Marketing ======
@@ -221,7 +217,6 @@ const tools = [
   { type: "function", function: { name: "create_sms_template", description: "Create a new custom SMS template. Provide a unique event_key slug, name, body, enabled.", parameters: { type: "object", properties: {
     event_key: { type: "string" }, name: { type: "string" }, body: { type: "string" }, enabled: { type: "boolean" },
   }, required: ["event_key", "name", "body"] } } },
-  { type: "function", function: { name: "delete_sms_template", description: "Delete a custom (non-system) SMS template by event_key.", parameters: { type: "object", properties: { event_key: { type: "string" } }, required: ["event_key"] } } },
   { type: "function", function: { name: "send_sms", description: "Send a one-off SMS to a single phone number now.", parameters: { type: "object", properties: {
     phone: { type: "string" }, message: { type: "string" },
   }, required: ["phone", "message"] } } },
@@ -237,42 +232,51 @@ const tools = [
   { type: "function", function: { name: "db_count_table", description: "Count rows in any public table with optional equality filters.", parameters: { type: "object", properties: {
     table: { type: "string" }, filters: { type: "object" },
   }, required: ["table"] } } },
+  { type: "function", function: { name: "db_insert_row", description: "Insert a new row into ANY public table when no dedicated create_* tool exists. Pass table and values (object of column=value). Returns the inserted row.", parameters: { type: "object", properties: {
+    table: { type: "string" }, values: { type: "object" },
+  }, required: ["table", "values"] } } },
+  { type: "function", function: { name: "db_update_row", description: "Update rows in ANY public table when no dedicated update_* tool exists. Pass table, filters (equality match, REQUIRED — never empty), and values to set. Returns the updated rows.", parameters: { type: "object", properties: {
+    table: { type: "string" }, filters: { type: "object" }, values: { type: "object" },
+  }, required: ["table", "filters", "values"] } } },
 ];
 
 const SYSTEM_PROMPT = `You are POSHPLEX's admin AI assistant. The brand is a Bangladesh streetwear store ("BE POSH WITH POSHPLEX"). Currency is Taka (৳), locale en-BD.
 
-You have READ access to EVERY module of the system: products, orders, customers, reviews, inventory, financial accounts, transactions, payments, promo codes, payment methods, shipping locations (Districts/Thanas), site settings, analytics, and SMS. Use the appropriate tool to look up real data — never guess numbers.
+You have FULL READ and WRITE access to EVERY module of the system: products, orders, customers, reviews, inventory, financial accounts, transactions, payments, promo codes, payment methods, shipping locations (Districts/Thanas), site settings, branding, analytics, SMS marketing, and any future module. Use the appropriate tool to look up real data — never guess numbers.
 
-UNIVERSAL DATABASE ACCESS: For ANY module or table that does not have a dedicated tool (including newly created modules added later), use db_list_tables to discover the full schema, then db_query_table / db_count_table to read its data. Always prefer the dedicated tool when one exists. When the admin asks "what tables / modules do you have access to?", call db_list_tables.
+DELETE IS NOT PERMITTED. You have NO authority to delete any row from any table — no products, variants, images, orders, order items, customers, payments, templates, thanas, custom variants, or rows in ANY other module. If an admin asks you to delete something, politely refuse and tell them to remove it from the corresponding admin page. Do not attempt deletions via workarounds unless the admin explicitly asks to set a flag like is_active=false.
 
-You have WRITE access to: PRODUCTS — full control: create / update / delete products; manage VARIANTS (create / update / delete / bulk price update — this is how you change variation selling_price or purchase_price); manage IMAGES (add / update is_main, sort_order, alt_text, color_id / delete); manage multi-CATEGORY links (add_product_category / remove_product_category); toggle active/featured; update YouTube, size guide, care instruction. CUSTOMERS (create/update/delete), ORDERS (update fields, change status, change payment status, edit/delete items, record payments, delete order). For other modules (finance accounts, inventory entries, promo codes, etc.) explain what you see and tell the admin to use that admin page.
+UNIVERSAL DATABASE ACCESS: For ANY module/table without a dedicated tool (including newly added modules), use db_list_tables to discover the schema, db_query_table / db_count_table to read, and db_insert_row / db_update_row to create or modify rows. Always prefer a dedicated tool when one exists.
 
-VARIANT PRICING: When admin asks to change a single variant price, use update_product_variant. For ALL variants of ONE product, use bulk_update_variant_prices (also aligns base_price). For ALL products in a CATEGORY (e.g. "change every product in Upper Wear to 799"), ALWAYS use bulk_update_category_prices in a SINGLE call — never loop product-by-product. It updates both products.base_price AND every variant's selling_price, covering simple products too. Use list_products with category_name only if you need to preview the affected items first.
+DEDICATED WRITE TOOLS cover: PRODUCTS (create/update, variants create/update, images add/update, multi-category links, active/featured toggles, bulk price updates), CUSTOMERS (create/update), ORDERS (update fields, status, payment status, edit items, record payments), SMS (settings, templates, send one-off & bulk campaigns), SHIPPING (thanas + shipping costs), CUSTOM VARIANTS (create/update). For anything else, fall back to db_insert_row / db_update_row.
 
+VARIANT PRICING: For a single variant use update_product_variant. For ALL variants of ONE product use bulk_update_variant_prices. For ALL products in a CATEGORY use bulk_update_category_prices in a single call.
 
-When the admin asks to change a customer or order, first look it up by phone/email/order_number to get the id, then call the right write tool. Always confirm the destructive action briefly after it runs.
+When the admin asks to change a customer or order, first look it up by phone/email/order_number to get the id, then call the right write tool. Confirm what changed.
 
 Rules:
 - Always look up real data with tools before answering. Don't fabricate.
 - Prefer narrow queries: use search/filters and small limits when scanning a module.
-- For dates use ISO; format Taka as ৳ in user-facing replies.
+- For dates use ISO; format Taka as ৳ in user-facing replies. For DB prices, never include the ৳ symbol.
 - Be terse. Use markdown lists/tables when helpful.
-- For prices in DB, never include the ৳ symbol.
 - When creating products, default product_type to "simple" unless variants are mentioned.
-- NEVER invent UUIDs. Before calling create_product_variant / update_product (with brand_id, category_id, size_guide_id, care_instruction_id) you MUST first call the matching list_* tool (list_colors, list_sizes, list_materials, list_brands, list_categories, list_size_guides, list_care_instructions) and use the real id from the response. The sizes tool returns rows with a 'label' field (e.g. M, L, XL) — match by label, not by name.
-- When creating multiple variants for one product (e.g. one color × several sizes), call create_product_variant once per combination and WAIT for each tool result. Do not summarize success until every call returned success:true. If any call errors, report the failure and stop — do not pretend it succeeded.
-- After making any change, briefly confirm what changed.
+- NEVER invent UUIDs. Before referencing brand_id, category_id, size_guide_id, care_instruction_id, color_id, size_id, material_id, etc., call the matching list_* tool and use the real id.
+- When creating multiple variants for one product, call create_product_variant once per combination and WAIT for each result.
 
 Modules summary:
-- Products: catalog with variants, images, categories (junction), brands, colors, sizes, materials, size guides, care instructions.
-- Orders: PO-XXXXX numbers, status (pending/confirmed/shipped/delivered/...), payment_status (unpaid/partial/paid/refunded), Steadfast courier integration.
-- Customers: linked to auth via customer_accounts; have phone, email, division/thana, customer_type (membership).
-- Inventory: product_variants stock_quantity for the catalog.
-- Finance: accounts (balances), transactions (income/expense/transfer), order_payments (linked to orders).
-- Marketing: promo_codes, payment_methods (COD, Mobile Banking).
+- Products: catalog with variants, images, multi-category junction, brands, colors, sizes, materials, size guides, care instructions.
+- Orders: PO-XXXXX numbers, status, payment_status, Steadfast courier integration.
+- Customers: linked to auth via customer_accounts; phone, email, division/thana, customer_type.
+- Inventory: product_variants stock_quantity; standalone Independent Inventory in inventory_entries.
+- Finance: accounts, transactions, order_payments.
+- Marketing: promo_codes, payment_methods, SMS, Meta Pixel/CAPI, GA4.
 - Locations: divisions (districts) -> thanas (delivery zones).`;
 
 async function executeTool(name: string, args: any, sb: any) {
+  // Global delete guard — the agent must never be able to delete data.
+  if (name.startsWith("delete_") || name === "db_delete_row") {
+    return { error: "Delete operations are not permitted. Please remove the row manually from the admin panel." };
+  }
   try {
     switch (name) {
       case "list_products": {
@@ -769,9 +773,7 @@ async function executeTool(name: string, args: any, sb: any) {
       }
       case "update_order_item": {
         if (args.delete) {
-          const { error } = await sb.from("order_items").delete().eq("id", args.item_id);
-          if (error) throw error;
-          return { success: true, deleted: true };
+          return { error: "Delete operations are not permitted. Remove the item from the admin order page." };
         }
         const patch: any = {};
         if (args.quantity !== undefined) patch.quantity = args.quantity;
@@ -955,6 +957,29 @@ async function executeTool(name: string, args: any, sb: any) {
         const { count, error } = await q;
         if (error) return { error: error.message };
         return { count };
+      }
+      case "db_insert_row": {
+        const table = String(args.table || "").trim();
+        if (!table || !/^[a-z_][a-z0-9_]*$/i.test(table)) return { error: "Invalid table name" };
+        if (!args.values || typeof args.values !== "object" || Array.isArray(args.values)) return { error: "values must be an object" };
+        const { data, error } = await sb.from(table).insert(args.values).select();
+        if (error) return { error: error.message };
+        return { success: true, inserted: data };
+      }
+      case "db_update_row": {
+        const table = String(args.table || "").trim();
+        if (!table || !/^[a-z_][a-z0-9_]*$/i.test(table)) return { error: "Invalid table name" };
+        if (!args.values || typeof args.values !== "object" || Array.isArray(args.values)) return { error: "values must be an object" };
+        if (!args.filters || typeof args.filters !== "object" || Array.isArray(args.filters) || Object.keys(args.filters).length === 0) {
+          return { error: "filters object with at least one column is required to avoid mass updates" };
+        }
+        let q = sb.from(table).update(args.values);
+        for (const [k, v] of Object.entries(args.filters)) {
+          if (v === null) q = q.is(k, null); else q = q.eq(k, v as any);
+        }
+        const { data, error } = await q.select();
+        if (error) return { error: error.message };
+        return { success: true, updated: data };
       }
 
       default: return { error: `Unknown tool: ${name}` };

@@ -1,24 +1,24 @@
-## Plan: Simplify order location badge to Inside/Outside Dhaka
+## Fix: Location badge always shows "Outside Dhaka"
 
-### Goal
-Update the location label on each order card in /admin/orders so it shows only two states instead of three.
+### Root cause
+The list query in `useOrders` (lines 138-147 of `src/hooks/useOrders.ts`) does not select the `shipping_division` relation. The card UI reads `order.shipping_division?.name`, which is always `undefined`, so the conditional falls through to "Outside Dhaka" for every order.
 
-### Current behavior
-- Dhaka City → "Location: Dhaka City"
-- Dhaka Sub-Urban → "Location: Dhaka Sub-Urban"
-- Anything else → "Location: Outside Dhaka"
+The single-order query (line 186) already joins divisions correctly; only the list query is missing it.
 
-### Desired behavior
-- District = "Dhaka City" or "Dhaka Sub-Urban" → "Location: Inside Dhaka"
-- All other districts → "Location: Outside Dhaka"
-- Keep existing purple text styling (`text-purple-600`, `text-[11px]`, `font-medium`)
+### Fix
+Add the division join to the list select:
+
+```ts
+.select(`
+  *,
+  customer:customers(id, name, phone, email),
+  payment_method:payment_methods(id, name, type),
+  shipping_division:divisions(id, name),
+  items:order_items(...)
+`)
+```
 
 ### Files to change
-- `src/pages/admin/AdminOrders.tsx` — the inline location badge added inside each order card grid item.
+- `src/hooks/useOrders.ts` — add `shipping_division:divisions(id, name)` to the list query select.
 
-### Technical details
-The badge already reads `order.shipping_division?.name`. We only need to adjust the conditional string mapping:
-- `trim().toLowerCase()` match against `"dhaka city"` or `"dhaka sub-urban"`
-- Return `"Inside Dhaka"` if matched, otherwise `"Outside Dhaka"`
-
-No backend, schema, or hook changes required.
+No other changes needed; AdminOrders.tsx already handles the data correctly.

@@ -56,6 +56,16 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [selectedAttributeIds, setSelectedAttributeIds] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
+
+  // When opening modal for an existing product, force-refetch attribute-value
+  // mappings (cache may be stale from an earlier edit session).
+  useEffect(() => {
+    if (product?.id) {
+      queryClient.invalidateQueries({ queryKey: ["productVariantAttributeValues", product.id] });
+      queryClient.invalidateQueries({ queryKey: ["productAppliedAttributes", product.id] });
+    }
+  }, [product?.id, queryClient]);
 
   const { data: categories = [] } = useCategories();
   const { data: productCategoryIds = [] } = useProductCategoryIds(product?.id);

@@ -22,10 +22,16 @@ export interface DashboardProductSummary {
   totalBrands: number;
 }
 
+export interface StatusTotal {
+  count: number;
+  amount: number;
+}
+
 export interface LifetimeTotals {
   orders: number;
   revenue: number;
   qty: number;
+  statusTotals: Record<string, StatusTotal>;
 }
 
 export async function fetchDashboardProductSummary(): Promise<DashboardProductSummary> {
@@ -71,6 +77,7 @@ export async function fetchLifetimeOrderTotals(): Promise<LifetimeTotals> {
   let revenue = 0;
   let qty = 0;
   let orders = 0;
+  const statusTotals: Record<string, StatusTotal> = {};
 
   // eslint-disable-next-line no-constant-condition
   while (true) {
@@ -83,13 +90,18 @@ export async function fetchLifetimeOrderTotals(): Promise<LifetimeTotals> {
     const rows = (data || []) as any[];
     for (const o of rows) {
       orders++;
-      if (o.order_status === "cancelled" || o.order_status === "returned") continue;
-      revenue += Number(o.total_amount) || 0;
+      const status = o.order_status || "unknown";
+      const amt = Number(o.total_amount) || 0;
+      if (!statusTotals[status]) statusTotals[status] = { count: 0, amount: 0 };
+      statusTotals[status].count++;
+      statusTotals[status].amount += amt;
+      if (status === "cancelled" || status === "returned") continue;
+      revenue += amt;
       for (const it of o.items || []) qty += Number(it.quantity) || 0;
     }
     if (rows.length < pageSize) break;
     from += pageSize;
     if (from > 50000) break; // safety
   }
-  return { orders, revenue, qty };
+  return { orders, revenue, qty, statusTotals };
 }

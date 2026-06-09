@@ -88,24 +88,21 @@ const AdminDashboard = () => {
         </div>
       </section>
 
-      {/* Revenue across periods */}
+      {/* Order status (lifetime) */}
       <section className="space-y-3">
-        <SectionTitle icon="💰">Revenue</SectionTitle>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-          <KPICard label="Today" value={formatCurrency(today.revenue)} sub={`${today.orders} orders`} />
-          <KPICard label="Last 7 Days" value={formatCurrency(last7Days.revenue)} sub={`${last7Days.orders} orders`} />
-          <KPICard label="Last 30 Days" value={formatCurrency(last30Days.revenue)} sub={`${last30Days.orders} orders`} />
-          <KPICard label="This Month" value={formatCurrency(thisMonth.revenue)} sub={`${thisMonth.orders} orders`} />
-        </div>
-      </section>
-
-      {/* Order status */}
-      <section className="space-y-3">
-        <SectionTitle icon="🔄">Order Status (last 31 days)</SectionTitle>
-        <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
-          {Object.entries(STATUS_LABELS).map(([key, label]) => (
-            <StatusCard key={key} label={label} count={statusCounts[key] || 0} />
-          ))}
+        <SectionTitle icon="🔄">Order Status (Lifetime)</SectionTitle>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+          {Object.entries(STATUS_LABELS).map(([key, label]) => {
+            const s = statusTotals[key] || { count: 0, amount: 0 };
+            return (
+              <KPICard
+                key={key}
+                label={label}
+                value={`${s.count} orders`}
+                sub={formatCurrency(s.amount)}
+              />
+            );
+          })}
         </div>
       </section>
 

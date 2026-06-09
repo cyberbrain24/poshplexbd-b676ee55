@@ -290,6 +290,14 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
 
         toast.success("Product created successfully");
       }
+      // Invalidate attribute caches so re-opening the modal shows fresh picks
+      const pid = product?.id;
+      queryClient.invalidateQueries({ queryKey: ["productVariantAttributeValues"] });
+      queryClient.invalidateQueries({ queryKey: ["productAppliedAttributes"] });
+      if (pid) {
+        queryClient.invalidateQueries({ queryKey: ["productVariantAttributeValues", pid] });
+        queryClient.invalidateQueries({ queryKey: ["productAppliedAttributes", pid] });
+      }
       onClose();
     } catch (error) {
       toast.error("Failed to save product");

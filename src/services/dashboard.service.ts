@@ -1,6 +1,5 @@
 /**
  * Dashboard Service — lightweight version.
- * Only fetches what the simple dashboard needs.
  */
 
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +22,12 @@ export interface DashboardProductSummary {
   totalBrands: number;
 }
 
+export interface LifetimeTotals {
+  orders: number;
+  revenue: number;
+  qty: number;
+}
+
 export async function fetchDashboardProductSummary(): Promise<DashboardProductSummary> {
   const [products, categories, brands] = await Promise.all([
     supabase.from("products").select("id, is_active").limit(5000),
@@ -40,9 +45,9 @@ export async function fetchDashboardProductSummary(): Promise<DashboardProductSu
 }
 
 export async function fetchDashboardOrders() {
-  // Last 31 days is enough for today / 7d / 30d / this month
+  // Last 35 days covers today / yesterday / dby / weekly / 30d / running month
   const since = new Date();
-  since.setDate(since.getDate() - 31);
+  since.setDate(since.getDate() - 35);
 
   const { data, error } = await supabase
     .from("orders")
@@ -53,8 +58,38 @@ export async function fetchDashboardOrders() {
     `)
     .gte("created_at", since.toISOString())
     .order("created_at", { ascending: false })
-    .limit(2000);
+    .limit(3000);
 
   if (error) throw error;
   return (data || []) as unknown as DashboardOrder[];
+}
+
+export async function fetchLifetimeOrderTotals(): Promise<LifetimeTotals> {
+  // Page through all orders, fetching minimal fields for lifetime aggregates.
+  const pageSize = 1000;
+  let from = 0;
+  let revenue = 0;
+  let qty = 0;
+  let orders = 0;
+
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const { data, error } = await supabase
+      .from("orders")
+      .select(`id, order_status, total_amount, items:order_items(quantity)`)
+      .order("created_at", { ascending: false })
+      .range(from, from + pageSize - 1);
+    if (error) throw error;
+    const rows = (data || []) as any[];
+    for (const o of rows) {
+      orders++;
+      if (o.order_status === "cancelled" || o.order_status === "returned") continue;
+      revenue += Number(o.total_amount) || 0;
+      for (const it of o.items || []) qty += Number(it.quantity) || 0;
+    }
+    if (rows.length < pageSize) break;
+    from += pageSize;
+    if (from > 50000) break; // safety
+  }
+  return { orders, revenue, qty };
 }

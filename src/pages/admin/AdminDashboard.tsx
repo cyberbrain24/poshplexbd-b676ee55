@@ -1,15 +1,20 @@
 import { useDashboard } from "@/hooks/useDashboard";
 import { formatCurrency } from "@/lib/currency";
 import { Skeleton } from "@/components/ui/skeleton";
-import { KPICard, SectionTitle, StatusCard } from "@/components/admin/dashboard/DashboardWidgets";
+import { KPICard, SectionTitle } from "@/components/admin/dashboard/DashboardWidgets";
 import { RevenueLast7DaysChart } from "@/components/admin/dashboard/DashboardCharts";
 
 const STATUS_LABELS: Record<string, string> = {
   pending: "Pending",
+  confirmed: "Confirmed",
   processing: "Processing",
   shipped: "Shipped",
   delivered: "Delivered",
+  partially_delivered: "Partially Delivered",
+  returned: "Returned",
   cancelled: "Cancelled",
+  failed: "Failed",
+  rto: "RTO",
 };
 
 function DashboardSkeleton() {

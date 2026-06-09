@@ -74,17 +74,11 @@ const AdminDashboard = () => {
           {orderCard("Today", today)}
           {orderCard("Yesterday", yesterday)}
           {orderCard("Day Before Yesterday", dayBeforeYesterday)}
-        </div>
-      </section>
-
-      {/* Today */}
-      <section className="space-y-3">
-        <SectionTitle icon="📊">Today</SectionTitle>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-          <KPICard label="Revenue" value={formatCurrency(today.revenue)} />
-          <KPICard label="Orders" value={today.orders} />
-          <KPICard label="Qty Sold" value={today.qty} />
-          <KPICard label="Avg Order" value={formatCurrency(today.orders ? today.revenue / today.orders : 0)} />
+          <KPICard
+            label="Avg Order (Today)"
+            value={formatCurrency(today.orders ? today.revenue / today.orders : 0)}
+            sub={`${today.orders} orders today`}
+          />
         </div>
       </section>
 

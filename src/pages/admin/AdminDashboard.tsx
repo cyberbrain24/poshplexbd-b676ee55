@@ -39,8 +39,9 @@ const AdminDashboard = () => {
 
   const {
     product, lifetime, today, yesterday, dayBeforeYesterday, weekly,
-    last7Days, last30Days, thisMonth, statusCounts, revenueLast7Days,
+    last30Days, thisMonth, revenueLast7Days,
   } = analytics;
+  const statusTotals = lifetime.statusTotals || {};
 
   const orderCard = (label: string, p: { orders: number; qty: number; revenue: number }) => (
     <KPICard

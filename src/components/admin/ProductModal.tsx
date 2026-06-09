@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { X, Plus, Trash2, Upload, GripVertical, Play, ChevronDown, ChevronUp, Image as ImageIcon, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -55,6 +56,16 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [selectedAttributeIds, setSelectedAttributeIds] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
+
+  // When opening modal for an existing product, force-refetch attribute-value
+  // mappings (cache may be stale from an earlier edit session).
+  useEffect(() => {
+    if (product?.id) {
+      queryClient.invalidateQueries({ queryKey: ["productVariantAttributeValues", product.id] });
+      queryClient.invalidateQueries({ queryKey: ["productAppliedAttributes", product.id] });
+    }
+  }, [product?.id, queryClient]);
 
   const { data: categories = [] } = useCategories();
   const { data: productCategoryIds = [] } = useProductCategoryIds(product?.id);
@@ -278,6 +289,14 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
         }
 
         toast.success("Product created successfully");
+      }
+      // Invalidate attribute caches so re-opening the modal shows fresh picks
+      const pid = product?.id;
+      queryClient.invalidateQueries({ queryKey: ["productVariantAttributeValues"] });
+      queryClient.invalidateQueries({ queryKey: ["productAppliedAttributes"] });
+      if (pid) {
+        queryClient.invalidateQueries({ queryKey: ["productVariantAttributeValues", pid] });
+        queryClient.invalidateQueries({ queryKey: ["productAppliedAttributes", pid] });
       }
       onClose();
     } catch (error) {

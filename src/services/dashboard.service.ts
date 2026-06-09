@@ -22,10 +22,16 @@ export interface DashboardProductSummary {
   totalBrands: number;
 }
 
+export interface StatusTotal {
+  count: number;
+  amount: number;
+}
+
 export interface LifetimeTotals {
   orders: number;
   revenue: number;
   qty: number;
+  statusTotals: Record<string, StatusTotal>;
 }
 
 export async function fetchDashboardProductSummary(): Promise<DashboardProductSummary> {

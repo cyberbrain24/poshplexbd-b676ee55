@@ -3,8 +3,10 @@ import { useMemo } from "react";
 import {
   fetchDashboardProductSummary,
   fetchDashboardOrders,
+  fetchLifetimeOrderTotals,
   type DashboardOrder,
   type DashboardProductSummary,
+  type LifetimeTotals,
 } from "@/services/dashboard.service";
 
 export interface PeriodTotals {
@@ -20,7 +22,11 @@ export interface ChartPoint {
 
 export interface DashboardAnalytics {
   product: DashboardProductSummary;
+  lifetime: LifetimeTotals;
   today: PeriodTotals;
+  yesterday: PeriodTotals;
+  dayBeforeYesterday: PeriodTotals;
+  weekly: PeriodTotals;
   last7Days: PeriodTotals;
   last30Days: PeriodTotals;
   thisMonth: PeriodTotals;
@@ -58,24 +64,33 @@ export function useDashboard() {
     staleTime: 60 * 1000,
   });
 
+  const lifetimeQ = useQuery({
+    queryKey: ["dashboard", "lifetime"],
+    queryFn: fetchLifetimeOrderTotals,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const analytics = useMemo<DashboardAnalytics | null>(() => {
-    if (!productQ.data || !ordersQ.data) return null;
+    if (!productQ.data || !ordersQ.data || !lifetimeQ.data) return null;
     const orders = ordersQ.data;
 
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const startOfYesterday = startOfToday - 86400000;
+    const startOfDBY = startOfToday - 2 * 86400000;
     const startOf7d = startOfToday - 6 * 86400000;
     const startOf30d = startOfToday - 29 * 86400000;
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
 
     const todayO: DashboardOrder[] = [];
+    const yesterdayO: DashboardOrder[] = [];
+    const dbyO: DashboardOrder[] = [];
     const w7: DashboardOrder[] = [];
     const w30: DashboardOrder[] = [];
     const month: DashboardOrder[] = [];
     const statusCounts: Record<string, number> = {};
     for (const k of STATUS_KEYS) statusCounts[k] = 0;
 
-    // 7-day buckets
     const buckets = new Map<string, number>();
     for (let i = 6; i >= 0; i--) {
       const d = new Date(startOfToday - i * 86400000);
@@ -86,6 +101,8 @@ export function useDashboard() {
     for (const o of orders) {
       const t = new Date(o.created_at).getTime();
       if (t >= startOfToday) todayO.push(o);
+      else if (t >= startOfYesterday) yesterdayO.push(o);
+      else if (t >= startOfDBY) dbyO.push(o);
       if (t >= startOf7d) w7.push(o);
       if (t >= startOf30d) w30.push(o);
       if (t >= startOfMonth) month.push(o);
@@ -105,18 +122,22 @@ export function useDashboard() {
 
     return {
       product: productQ.data,
+      lifetime: lifetimeQ.data,
       today: totalsFor(todayO),
+      yesterday: totalsFor(yesterdayO),
+      dayBeforeYesterday: totalsFor(dbyO),
+      weekly: totalsFor(w7),
       last7Days: totalsFor(w7),
       last30Days: totalsFor(w30),
       thisMonth: totalsFor(month),
       statusCounts,
       revenueLast7Days,
     };
-  }, [productQ.data, ordersQ.data]);
+  }, [productQ.data, ordersQ.data, lifetimeQ.data]);
 
   return {
     analytics,
-    isLoading: productQ.isLoading || ordersQ.isLoading,
-    error: productQ.error || ordersQ.error,
+    isLoading: productQ.isLoading || ordersQ.isLoading || lifetimeQ.isLoading,
+    error: productQ.error || ordersQ.error || lifetimeQ.error,
   };
 }

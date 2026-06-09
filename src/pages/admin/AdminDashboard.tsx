@@ -32,7 +32,19 @@ const AdminDashboard = () => {
 
   if (isLoading || !analytics) return <DashboardSkeleton />;
 
-  const { product, today, last7Days, last30Days, thisMonth, statusCounts, revenueLast7Days } = analytics;
+  const {
+    product, lifetime, today, yesterday, dayBeforeYesterday, weekly,
+    last7Days, last30Days, thisMonth, statusCounts, revenueLast7Days,
+  } = analytics;
+
+  const orderCard = (label: string, p: { orders: number; qty: number; revenue: number }) => (
+    <KPICard
+      key={label}
+      label={label}
+      value={`${p.orders} orders`}
+      sub={`${p.qty} qty • ${formatCurrency(p.revenue)}`}
+    />
+  );
 
   return (
     <div className="space-y-6 pb-12">
@@ -40,6 +52,24 @@ const AdminDashboard = () => {
         <h1 className="text-2xl font-medium tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground text-sm mt-1">Quick overview of your store</p>
       </div>
+
+      {/* Order Snapshot */}
+      <section className="space-y-3">
+        <SectionTitle icon="🧾">Order Snapshot</SectionTitle>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+          <KPICard
+            label="Lifetime Orders"
+            value={`${lifetime.orders} orders`}
+            sub={`${lifetime.qty} qty • ${formatCurrency(lifetime.revenue)}`}
+          />
+          {orderCard("Last 30 Days", last30Days)}
+          {orderCard("Running Month", thisMonth)}
+          {orderCard("This Week (7d)", weekly)}
+          {orderCard("Today", today)}
+          {orderCard("Yesterday", yesterday)}
+          {orderCard("Day Before Yesterday", dayBeforeYesterday)}
+        </div>
+      </section>
 
       {/* Today */}
       <section className="space-y-3">

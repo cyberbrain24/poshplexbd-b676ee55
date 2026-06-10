@@ -72,7 +72,7 @@ export async function fetchFinancialReport(range: DateRange): Promise<FinancialR
     .from("transactions")
     .select(`
       date, type, amount, notes,
-      account:accounts!transactions_account_id_fkey(name),
+      account:accounts(name),
       category:transaction_categories(name)
     `)
     .gte("date", iso(range.from))

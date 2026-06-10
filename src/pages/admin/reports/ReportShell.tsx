@@ -189,6 +189,45 @@ export function ReportShell<T>({ config, extraFilters, pdfFilters }: ReportShell
           </>
         )}
 
+        {(config.filters || []).map((f) => {
+          const options =
+            f.options || (f.deriveOptions ? Array.from(new Set(f.deriveOptions(rows))).filter(Boolean).sort() : []);
+          const val = filterValues[f.key] || "all";
+          return (
+            <div key={f.key} className="flex flex-col gap-1">
+              <label className="text-[10px] uppercase tracking-wider text-muted-foreground">{f.label}</label>
+              {f.type === "search" ? (
+                <Input
+                  className={`h-9 ${f.widthClass || "w-48"}`}
+                  placeholder={f.placeholder || "Search…"}
+                  value={filterValues[f.key] || ""}
+                  onChange={(e) => setFilter(f.key, e.target.value)}
+                />
+              ) : (
+                <Select value={val} onValueChange={(v) => setFilter(f.key, v)}>
+                  <SelectTrigger className={`h-9 ${f.widthClass || "w-40"}`}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    {options.map((o) => (
+                      <SelectItem key={o} value={o}>
+                        {o}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          );
+        })}
+
+        {activeFilterCount > 0 && (
+          <Button variant="ghost" size="sm" className="h-9" onClick={clearFilters}>
+            Clear filters
+          </Button>
+        )}
+
         {extraFilters}
 
         <div className="ml-auto text-[11px] text-muted-foreground">{formatRange(range)}</div>

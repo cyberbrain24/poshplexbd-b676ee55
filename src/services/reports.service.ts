@@ -71,22 +71,22 @@ export async function fetchFinancialReport(range: DateRange): Promise<FinancialR
   const { data, error } = await supabase
     .from("transactions")
     .select(`
-      transaction_date, type, amount, reference, description,
-      account:accounts(name),
+      date, type, amount, notes,
+      account:accounts!transactions_account_id_fkey(name),
       category:transaction_categories(name)
     `)
-    .gte("transaction_date", iso(range.from))
-    .lte("transaction_date", iso(range.to))
-    .order("transaction_date", { ascending: false })
+    .gte("date", iso(range.from))
+    .lte("date", iso(range.to))
+    .order("date", { ascending: false })
     .limit(5000);
   if (error) throw error;
   return (data || []).map((t: any) => ({
-    date: new Date(t.transaction_date).toLocaleDateString("en-BD"),
+    date: new Date(t.date).toLocaleDateString("en-BD"),
     type: t.type,
     account: t.account?.name || "—",
     category: t.category?.name || "—",
     amount: Number(t.amount) || 0,
-    reference: t.reference || t.description || "—",
+    reference: t.notes || "—",
   }));
 }
 

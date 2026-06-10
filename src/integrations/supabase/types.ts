@@ -600,6 +600,197 @@ export type Database = {
         }
         Relationships: []
       }
+      email_campaigns: {
+        Row: {
+          audience_filter: Json | null
+          created_at: string
+          failed_count: number
+          id: string
+          name: string
+          recipient_count: number
+          sent_count: number
+          status: string
+          subject: string
+        }
+        Insert: {
+          audience_filter?: Json | null
+          created_at?: string
+          failed_count?: number
+          id?: string
+          name?: string
+          recipient_count?: number
+          sent_count?: number
+          status?: string
+          subject?: string
+        }
+        Update: {
+          audience_filter?: Json | null
+          created_at?: string
+          failed_count?: number
+          id?: string
+          name?: string
+          recipient_count?: number
+          sent_count?: number
+          status?: string
+          subject?: string
+        }
+        Relationships: []
+      }
+      email_messages: {
+        Row: {
+          campaign_id: string | null
+          created_at: string
+          error: string | null
+          id: string
+          status: string
+          subject: string | null
+          to_email: string
+          trigger_event: string | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          status?: string
+          subject?: string | null
+          to_email: string
+          trigger_event?: string | null
+        }
+        Update: {
+          campaign_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          status?: string
+          subject?: string | null
+          to_email?: string
+          trigger_event?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_messages_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_provider_settings: {
+        Row: {
+          api_key: string | null
+          created_at: string
+          enabled: boolean | null
+          endpoint_url: string | null
+          from_email: string | null
+          from_name: string | null
+          headers: Json | null
+          http_method: string | null
+          id: string
+          notes: string | null
+          provider_name: string | null
+          reply_to: string | null
+          request_template: Json | null
+          success_keyword: string | null
+          updated_at: string
+        }
+        Insert: {
+          api_key?: string | null
+          created_at?: string
+          enabled?: boolean | null
+          endpoint_url?: string | null
+          from_email?: string | null
+          from_name?: string | null
+          headers?: Json | null
+          http_method?: string | null
+          id?: string
+          notes?: string | null
+          provider_name?: string | null
+          reply_to?: string | null
+          request_template?: Json | null
+          success_keyword?: string | null
+          updated_at?: string
+        }
+        Update: {
+          api_key?: string | null
+          created_at?: string
+          enabled?: boolean | null
+          endpoint_url?: string | null
+          from_email?: string | null
+          from_name?: string | null
+          headers?: Json | null
+          http_method?: string | null
+          id?: string
+          notes?: string | null
+          provider_name?: string | null
+          reply_to?: string | null
+          request_template?: Json | null
+          success_keyword?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      email_suppression: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
+      email_templates: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          event_key: string
+          html: string
+          id: string
+          is_system: boolean
+          name: string
+          placeholders: string | null
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          event_key: string
+          html?: string
+          id?: string
+          is_system?: boolean
+          name: string
+          placeholders?: string | null
+          subject?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          event_key?: string
+          html?: string
+          id?: string
+          is_system?: boolean
+          name?: string
+          placeholders?: string | null
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       inventory_categories: {
         Row: {
           created_at: string

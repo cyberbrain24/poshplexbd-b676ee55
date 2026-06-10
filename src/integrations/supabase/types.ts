@@ -791,6 +791,256 @@ export type Database = {
         }
         Relationships: []
       }
+      ig_campaigns: {
+        Row: {
+          audience_filter: Json
+          body_snapshot: string
+          created_at: string
+          failed_count: number
+          id: string
+          media_url: string
+          name: string
+          recipient_count: number
+          scheduled_at: string | null
+          sent_count: number
+          status: string
+          template_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          audience_filter?: Json
+          body_snapshot?: string
+          created_at?: string
+          failed_count?: number
+          id?: string
+          media_url?: string
+          name: string
+          recipient_count?: number
+          scheduled_at?: string | null
+          sent_count?: number
+          status?: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          audience_filter?: Json
+          body_snapshot?: string
+          created_at?: string
+          failed_count?: number
+          id?: string
+          media_url?: string
+          name?: string
+          recipient_count?: number
+          scheduled_at?: string | null
+          sent_count?: number
+          status?: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ig_campaigns_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "ig_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ig_messages: {
+        Row: {
+          body: string
+          campaign_id: string | null
+          created_at: string
+          error: string | null
+          id: string
+          provider_message_id: string | null
+          status: string
+          template_key: string | null
+          to_id: string
+        }
+        Insert: {
+          body?: string
+          campaign_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          provider_message_id?: string | null
+          status?: string
+          template_key?: string | null
+          to_id: string
+        }
+        Update: {
+          body?: string
+          campaign_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          provider_message_id?: string | null
+          status?: string
+          template_key?: string | null
+          to_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ig_messages_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "ig_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ig_provider_settings: {
+        Row: {
+          access_token: string
+          created_at: string
+          enabled: boolean
+          endpoint_url: string
+          headers: Json
+          http_method: string
+          id: string
+          ig_user_id: string
+          notes: string
+          provider_name: string
+          request_template: Json
+          sender_display_name: string
+          success_keyword: string
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string
+          created_at?: string
+          enabled?: boolean
+          endpoint_url?: string
+          headers?: Json
+          http_method?: string
+          id?: string
+          ig_user_id?: string
+          notes?: string
+          provider_name?: string
+          request_template?: Json
+          sender_display_name?: string
+          success_keyword?: string
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          enabled?: boolean
+          endpoint_url?: string
+          headers?: Json
+          http_method?: string
+          id?: string
+          ig_user_id?: string
+          notes?: string
+          provider_name?: string
+          request_template?: Json
+          sender_display_name?: string
+          success_keyword?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ig_subscribers: {
+        Row: {
+          created_at: string
+          id: string
+          ig_id: string
+          name: string | null
+          opted_in: boolean
+          source: string
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ig_id: string
+          name?: string | null
+          opted_in?: boolean
+          source?: string
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ig_id?: string
+          name?: string | null
+          opted_in?: boolean
+          source?: string
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      ig_suppression: {
+        Row: {
+          created_at: string
+          id: string
+          ig_id: string
+          reason: string
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ig_id: string
+          reason?: string
+          source?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ig_id?: string
+          reason?: string
+          source?: string
+        }
+        Relationships: []
+      }
+      ig_templates: {
+        Row: {
+          body: string
+          category: string
+          created_at: string
+          enabled: boolean
+          event_key: string
+          id: string
+          is_system: boolean
+          media_url: string
+          name: string
+          updated_at: string
+          variables: Json
+        }
+        Insert: {
+          body?: string
+          category?: string
+          created_at?: string
+          enabled?: boolean
+          event_key: string
+          id?: string
+          is_system?: boolean
+          media_url?: string
+          name: string
+          updated_at?: string
+          variables?: Json
+        }
+        Update: {
+          body?: string
+          category?: string
+          created_at?: string
+          enabled?: boolean
+          event_key?: string
+          id?: string
+          is_system?: boolean
+          media_url?: string
+          name?: string
+          updated_at?: string
+          variables?: Json
+        }
+        Relationships: []
+      }
       inventory_categories: {
         Row: {
           created_at: string
@@ -1167,6 +1417,262 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      msgr_campaigns: {
+        Row: {
+          audience_filter: Json
+          body_snapshot: string
+          created_at: string
+          failed_count: number
+          id: string
+          media_url: string
+          name: string
+          recipient_count: number
+          scheduled_at: string | null
+          sent_count: number
+          status: string
+          template_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          audience_filter?: Json
+          body_snapshot?: string
+          created_at?: string
+          failed_count?: number
+          id?: string
+          media_url?: string
+          name: string
+          recipient_count?: number
+          scheduled_at?: string | null
+          sent_count?: number
+          status?: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          audience_filter?: Json
+          body_snapshot?: string
+          created_at?: string
+          failed_count?: number
+          id?: string
+          media_url?: string
+          name?: string
+          recipient_count?: number
+          scheduled_at?: string | null
+          sent_count?: number
+          status?: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "msgr_campaigns_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "msgr_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      msgr_messages: {
+        Row: {
+          body: string
+          campaign_id: string | null
+          created_at: string
+          error: string | null
+          id: string
+          provider_message_id: string | null
+          status: string
+          template_key: string | null
+          to_psid: string
+        }
+        Insert: {
+          body?: string
+          campaign_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          provider_message_id?: string | null
+          status?: string
+          template_key?: string | null
+          to_psid: string
+        }
+        Update: {
+          body?: string
+          campaign_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          provider_message_id?: string | null
+          status?: string
+          template_key?: string | null
+          to_psid?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "msgr_messages_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "msgr_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      msgr_provider_settings: {
+        Row: {
+          access_token: string
+          created_at: string
+          enabled: boolean
+          endpoint_url: string
+          headers: Json
+          http_method: string
+          id: string
+          message_tag: string
+          messaging_type: string
+          notes: string
+          page_id: string
+          provider_name: string
+          request_template: Json
+          sender_display_name: string
+          success_keyword: string
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string
+          created_at?: string
+          enabled?: boolean
+          endpoint_url?: string
+          headers?: Json
+          http_method?: string
+          id?: string
+          message_tag?: string
+          messaging_type?: string
+          notes?: string
+          page_id?: string
+          provider_name?: string
+          request_template?: Json
+          sender_display_name?: string
+          success_keyword?: string
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          enabled?: boolean
+          endpoint_url?: string
+          headers?: Json
+          http_method?: string
+          id?: string
+          message_tag?: string
+          messaging_type?: string
+          notes?: string
+          page_id?: string
+          provider_name?: string
+          request_template?: Json
+          sender_display_name?: string
+          success_keyword?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      msgr_subscribers: {
+        Row: {
+          created_at: string
+          id: string
+          name: string | null
+          opted_in: boolean
+          page_id: string | null
+          psid: string
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name?: string | null
+          opted_in?: boolean
+          page_id?: string | null
+          psid: string
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string | null
+          opted_in?: boolean
+          page_id?: string | null
+          psid?: string
+          source?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      msgr_suppression: {
+        Row: {
+          created_at: string
+          id: string
+          psid: string
+          reason: string
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          psid: string
+          reason?: string
+          source?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          psid?: string
+          reason?: string
+          source?: string
+        }
+        Relationships: []
+      }
+      msgr_templates: {
+        Row: {
+          body: string
+          category: string
+          created_at: string
+          enabled: boolean
+          event_key: string
+          id: string
+          is_system: boolean
+          media_url: string
+          name: string
+          updated_at: string
+          variables: Json
+        }
+        Insert: {
+          body?: string
+          category?: string
+          created_at?: string
+          enabled?: boolean
+          event_key: string
+          id?: string
+          is_system?: boolean
+          media_url?: string
+          name: string
+          updated_at?: string
+          variables?: Json
+        }
+        Update: {
+          body?: string
+          category?: string
+          created_at?: string
+          enabled?: boolean
+          event_key?: string
+          id?: string
+          is_system?: boolean
+          media_url?: string
+          name?: string
+          updated_at?: string
+          variables?: Json
+        }
+        Relationships: []
       }
       music_tracks: {
         Row: {

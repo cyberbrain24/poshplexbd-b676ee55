@@ -76,6 +76,10 @@ const AdminEmail = lazy(() => import("./pages/admin/AdminEmail"));
 const EmailUnsubscribe = lazy(() => import("./pages/EmailUnsubscribe"));
 const AdminWhatsAppMarketing = lazy(() => import("./pages/admin/AdminWhatsAppMarketing"));
 const WhatsAppUnsubscribe = lazy(() => import("./pages/WhatsAppUnsubscribe"));
+const AdminInstagramMarketing = lazy(() => import("./pages/admin/AdminInstagramMarketing"));
+const InstagramUnsubscribe = lazy(() => import("./pages/InstagramUnsubscribe"));
+const AdminMessengerMarketing = lazy(() => import("./pages/admin/AdminMessengerMarketing"));
+const MessengerUnsubscribe = lazy(() => import("./pages/MessengerUnsubscribe"));
 const AdminNotes = lazy(() => import("./pages/admin/AdminNotes"));
 const MarketingLayout = lazy(() => import("./pages/admin/marketing/MarketingLayout"));
 const MarketingOverview = lazy(() => import("./pages/admin/marketing/MarketingOverview"));
@@ -159,6 +163,8 @@ const App = () => (
                  <Route path="/login" element={<Suspense fallback={<LoadingFallback />}><CustomerAuth /></Suspense>} />
                  <Route path="/email/unsubscribe" element={<Suspense fallback={<LoadingFallback />}><EmailUnsubscribe /></Suspense>} />
                  <Route path="/whatsapp/unsubscribe" element={<Suspense fallback={<LoadingFallback />}><WhatsAppUnsubscribe /></Suspense>} />
+                 <Route path="/instagram/unsubscribe" element={<Suspense fallback={<LoadingFallback />}><InstagramUnsubscribe /></Suspense>} />
+                 <Route path="/messenger/unsubscribe" element={<Suspense fallback={<LoadingFallback />}><MessengerUnsubscribe /></Suspense>} />
                   
                   
                   {/* Admin Routes - Lazy loaded */}
@@ -199,6 +205,8 @@ const App = () => (
                     <Route path="sms" element={<AdminSMS />} />
                     <Route path="email" element={<AdminEmail />} />
                     <Route path="whatsapp-marketing" element={<AdminWhatsAppMarketing />} />
+                    <Route path="instagram-marketing" element={<AdminInstagramMarketing />} />
+                    <Route path="messenger-marketing" element={<AdminMessengerMarketing />} />
                     <Route path="notes" element={<AdminNotes />} />
                     <Route path="site-settings" element={<AdminSiteSettings />} />
                     <Route path="marketing" element={<MarketingLayout />}>

@@ -1,87 +1,82 @@
-# WhatsApp Marketing Module (Superlight)
 
-Mirrors the Email Marketing module shape, fully isolated from existing code. Zero edits to checkout, orders, cart, customers, or existing edge functions. All new tables prefixed `wa_*`. Lazy-loaded route. No pg_cron, no inbound webhooks in v1.
+# Instagram DM & Messenger Marketing (Superlight)
+
+Two new sibling modules mirroring the WhatsApp Marketing shape. Fully isolated, prefixed tables, lazy routes, admin-only RLS. Zero edits to storefront, checkout, orders, SMS, Email, or WhatsApp modules.
 
 ## Guiding rules
 
-- Isolated: no changes to storefront, checkout, orders, SMS, or Email modules.
-- Admin-only, RLS via `has_role(auth.uid(),'admin')` + explicit GRANTs.
-- Provider-agnostic HTTP config (works with Meta Cloud API, 360dialog, Gupshup, Twilio, Interakt, WATI, etc.).
-- v1 = templates + bulk send + logs + opt-out. Auto-firing is template-only; runtime hooks deferred to v2.
+- Provider-agnostic HTTP config (Meta Graph API by default; works with ManyChat, Chatfox, etc.).
+- Both modules built from the same template — separate tables, separate routes, separate edge functions, separate sidebar entries.
+- v1 = templates + bulk send + history + opt-out. No inbound webhook, no auto-firing, no 24h-window enforcement logic beyond a warning banner.
+- Meta policy reminder shown in UI: Instagram/Messenger only allow marketing messages inside the 24-hour user-initiated window or via approved tags/recurring notifications.
 
 ## What ships in v1
 
-### Sidebar
-Add "WhatsApp Marketing" under Marketing group → `/admin/whatsapp-marketing` (icon: `MessageCircle`). Existing `WhatsApp API` settings page stays untouched.
+### Sidebar (under Marketing group)
+- "Instagram DM" → `/admin/instagram-marketing` (icon: `Instagram`)
+- "Messenger" → `/admin/messenger-marketing` (icon: `MessagesSquare`)
 
-### Admin page `AdminWhatsAppMarketing.tsx` (mirrors AdminEmail)
-Tabs:
-1. **Bulk Send**
-   - Audience: All customers / Membership type / District / Manual phone list
-   - Message type: Text (session) OR Approved Template (with variable inputs)
-   - Optional media URL (image/video/document) — fashion brand use cases: new drop, lookbook, size chart, order-status nudge
-   - Live preview bubble (WhatsApp-style chat UI)
-   - Schedule (stored only; sender runs on click in v1)
-2. **Auto Triggers (templates)** — manageable templates for fashion-commerce events:
-   - `order_placed`, `order_shipped`, `order_delivered`, `cod_confirmation`
-   - `cart_abandoned`, `back_in_stock`, `price_drop`
-   - `new_drop_announcement`, `flash_sale`, `lookbook_share`
-   - `review_request`, `winback_30d`, `birthday_offer`, `membership_welcome`
-   - Edit name, language, body, variables, header media. v1 stores only — runtime auto-firing deferred to v2.
-3. **Campaigns** — history of bulk sends with stats (sent/failed/opted-out).
-4. **Provider Settings** — single row:
-   - Provider name, API base URL, auth header, business phone number ID
-   - JSON body template with `{to}`, `{template_name}`, `{language}`, `{variables}`, `{media_url}`
-   - Default sender display name
-5. **Opt-outs** — list of `wa_suppression` numbers + manual add/remove.
+### Admin pages (mirror `AdminWhatsAppMarketing.tsx`)
+Tabs each: Bulk Send · Auto Triggers · Provider Settings · Campaigns · History · Opt-outs
+
+**Audience targeting** (both):
+- Manual recipient list (IG usernames / PSIDs)
+- Imported list (CSV paste)
+- Saved subscriber list managed in module (simple table)
+- Note: cannot reuse `customers` directly — Instagram/Messenger use IG-scoped IDs / PSIDs, not phone numbers.
+
+**Fashion-commerce templates (seeded):**
+- `new_drop_announcement`, `flash_sale`, `lookbook_share`, `back_in_stock`, `price_drop`
+- `order_shipped`, `order_delivered` (post-purchase, within window)
+- `review_request`, `winback_30d`, `birthday_offer`, `membership_welcome`
+- `story_reply_followup`, `comment_reply_dm` (IG-specific)
 
 ### Compliance
-- Every bulk send filters against `wa_suppression` before dispatch.
-- Footer line auto-appended to free-form text messages: "Reply STOP to opt out."
-- Public route `/whatsapp/unsubscribe?phone=...` inserts into `wa_suppression`.
-- No marketing sends to numbers without prior consent flag on customer (uses existing `customers.phone`; admin must confirm audience).
+- Suppression lists per channel (`ig_suppression`, `msgr_suppression`).
+- Footer auto-appended: "Reply STOP to opt out."
+- Public unsubscribe pages: `/instagram/unsubscribe?id=...`, `/messenger/unsubscribe?id=...`.
+- Visible warning banner about Meta 24-hour messaging window.
 
-### Database (new tables, all `wa_*`)
-- `wa_provider_settings` — single-row provider config
-- `wa_templates` — name, language, category, header_type, body, variables[], media_url
-- `wa_campaigns` — audience filter, template_id, status, counters, scheduled_at
-- `wa_messages` — per-recipient log: phone, template/text, status, provider_message_id, error
-- `wa_suppression` — phone (unique), reason, source
+### Database — two parallel sets of 5 tables
 
-All tables: GRANT to `authenticated` + `service_role`, RLS admin-only. `wa_suppression` gets anon `INSERT` only for the public unsubscribe page.
+Instagram: `ig_provider_settings`, `ig_templates`, `ig_campaigns`, `ig_messages`, `ig_suppression`, plus `ig_subscribers` (id, ig_id, username, name, opted_in, source).
 
-### Edge function `whatsapp-marketing-send`
-Mirrors `email-send` pattern:
-- Actions: `bulk` | `single` | `test`
-- Resolves audience from `customers` (by membership/district/manual)
-- Filters suppression list
-- Substitutes variables in provider JSON body template
-- Posts to configured provider URL, logs each result to `wa_messages`
-- Uses existing `_shared/cors` and `_shared/rate-limiter`
-- No changes to existing `whatsapp-send` function (kept for transactional/API testing)
+Messenger: `msgr_provider_settings`, `msgr_templates`, `msgr_campaigns`, `msgr_messages`, `msgr_suppression`, plus `msgr_subscribers` (id, psid, page_id, name, opted_in, source).
+
+All tables: GRANT to `authenticated` + `service_role`, RLS admin-only. Suppression tables get anon `INSERT` only for public unsubscribe.
+
+### Edge functions
+- `instagram-marketing-send` — mirrors `whatsapp-marketing-send`. Actions: `bulk` | `single` | `test`. Substitutes `{to}`, `{body}`, `{media_url}`, `{access_token}`, `{ig_user_id}` into provider JSON. Logs each result.
+- `messenger-marketing-send` — same shape. Placeholders: `{to_psid}`, `{body}`, `{media_url}`, `{access_token}`, `{page_id}`, plus `messaging_type` and `tag` fields in settings.
+
+Uses existing `_shared/cors` and `_shared/rate-limiter`. No changes to any existing function.
 
 ### Files
 
 Created:
-- `src/pages/admin/AdminWhatsAppMarketing.tsx`
-- `src/pages/WhatsAppUnsubscribe.tsx`
-- `supabase/functions/whatsapp-marketing-send/index.ts`
-- `src/content/docs/09-whatsapp-marketing.md`
+- `src/pages/admin/AdminInstagramMarketing.tsx`
+- `src/pages/admin/AdminMessengerMarketing.tsx`
+- `src/pages/InstagramUnsubscribe.tsx`
+- `src/pages/MessengerUnsubscribe.tsx`
+- `supabase/functions/instagram-marketing-send/index.ts`
+- `supabase/functions/messenger-marketing-send/index.ts`
+- `src/content/docs/10-instagram-marketing.md`
+- `src/content/docs/11-messenger-marketing.md`
+- 1 SQL migration creating all 12 tables + GRANTs + RLS + seed templates
 
 Modified (minimal):
-- `src/App.tsx` — 2 new lazy routes
-- `src/components/admin/AdminSidebar.tsx` — 1 nav entry under Marketing
-- `src/lib/adminRoutePrefetch.ts` — 1 prefetch entry
+- `src/App.tsx` — 4 new lazy routes
+- `src/components/admin/AdminSidebar.tsx` — 2 nav entries under Marketing
+- `src/lib/adminRoutePrefetch.ts` — 2 prefetch entries
 
 ## Explicitly deferred to v2
 
-- Inbound webhook + 2-way chat (Meta WhatsApp Conversations already exists separately)
-- Auto-firing on cart/order events (templates ship; wiring later)
-- Click/read receipts ingestion
-- A/B template testing
-- Catalog/product message blocks
-- Saved segment builder, revenue attribution
+- Inbound webhook + 2-way DM (the existing Meta Conversations module already covers reading)
+- Auto-firing on story replies / comments / cart events
+- Subscriber sync from Meta Graph API
+- A/B testing, catalog/product cards, ice-breakers, persistent menu
+- Revenue attribution
 
 ## Risk
 
-Storefront bundle untouched. Existing WhatsApp API page, SMS, and Email modules untouched. Failure isolated to the new tab. New tables namespaced under `wa_*`.
+Storefront bundle untouched. All existing marketing channels untouched. New tables namespaced under `ig_*` / `msgr_*`. Failure isolated to each new tab.

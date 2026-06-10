@@ -246,10 +246,10 @@ export function ReportShell<T>({ config, extraFilters, pdfFilters }: ReportShell
       )}
 
       {/* Row cap notice */}
-      {config.rowCap && rows.length > config.rowCap && (
+      {config.rowCap && filtered.length > config.rowCap && (
         <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2">
           <AlertCircle className="h-4 w-4" />
-          Showing first {config.rowCap.toLocaleString()} of {rows.length.toLocaleString()} rows. Narrow your date range for a complete report.
+          Showing first {config.rowCap.toLocaleString()} of {filtered.length.toLocaleString()} rows. Narrow your date range or filters for a complete report.
         </div>
       )}
 

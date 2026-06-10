@@ -74,6 +74,8 @@ const AdminMusic = lazy(() => import("./pages/admin/AdminMusic"));
 const AdminSMS = lazy(() => import("./pages/admin/AdminSMS"));
 const AdminEmail = lazy(() => import("./pages/admin/AdminEmail"));
 const EmailUnsubscribe = lazy(() => import("./pages/EmailUnsubscribe"));
+const AdminWhatsAppMarketing = lazy(() => import("./pages/admin/AdminWhatsAppMarketing"));
+const WhatsAppUnsubscribe = lazy(() => import("./pages/WhatsAppUnsubscribe"));
 const AdminNotes = lazy(() => import("./pages/admin/AdminNotes"));
 const MarketingLayout = lazy(() => import("./pages/admin/marketing/MarketingLayout"));
 const MarketingOverview = lazy(() => import("./pages/admin/marketing/MarketingOverview"));
@@ -156,6 +158,7 @@ const App = () => (
                   <Route path="/auth" element={<Suspense fallback={<LoadingFallback />}><Auth /></Suspense>} />
                  <Route path="/login" element={<Suspense fallback={<LoadingFallback />}><CustomerAuth /></Suspense>} />
                  <Route path="/email/unsubscribe" element={<Suspense fallback={<LoadingFallback />}><EmailUnsubscribe /></Suspense>} />
+                 <Route path="/whatsapp/unsubscribe" element={<Suspense fallback={<LoadingFallback />}><WhatsAppUnsubscribe /></Suspense>} />
                   
                   
                   {/* Admin Routes - Lazy loaded */}
@@ -195,6 +198,7 @@ const App = () => (
                     <Route path="music" element={<AdminMusic />} />
                     <Route path="sms" element={<AdminSMS />} />
                     <Route path="email" element={<AdminEmail />} />
+                    <Route path="whatsapp-marketing" element={<AdminWhatsAppMarketing />} />
                     <Route path="notes" element={<AdminNotes />} />
                     <Route path="site-settings" element={<AdminSiteSettings />} />
                     <Route path="marketing" element={<MarketingLayout />}>

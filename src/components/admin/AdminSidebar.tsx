@@ -7,6 +7,7 @@ import {
   TrendingDown, Users, MapPin, Map, Crown, ShoppingCart, ExternalLink,
   LucideIcon, RefreshCw, MessageSquare, Image, Tag, Settings, Send,
   Upload, Menu, X, Music, StickyNote, Megaphone, Facebook, Server, BarChart3, LayoutGrid, Activity,
+  FileText, BarChart2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -67,6 +68,17 @@ const marketingItems: NavItem[] = [
   { icon: BarChart3, label: "Google Analytics 4", path: "/admin/marketing/ga4" },
 ];
 
+const reportItems: NavItem[] = [
+  { icon: LayoutGrid, label: "Overview", path: "/admin/reports" },
+  { icon: ShoppingCart, label: "Orders", path: "/admin/reports/orders" },
+  { icon: Wallet, label: "Financial", path: "/admin/reports/financial" },
+  { icon: Users, label: "Customers", path: "/admin/reports/customers" },
+  { icon: Package, label: "Products", path: "/admin/reports/products" },
+  { icon: Building2, label: "Inventory", path: "/admin/reports/inventory" },
+  { icon: Tag, label: "Promo Codes", path: "/admin/reports/promos" },
+  { icon: MessageSquare, label: "Reviews", path: "/admin/reports/reviews" },
+];
+
 const AdminSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -108,12 +120,14 @@ const AdminSidebar = () => {
   const isAccountMgmtActive = accountManagementItems.some(item => location.pathname === item.path);
   const isCustomerMgmtActive = customerManagementItems.some(item => location.pathname === item.path);
   const isMarketingActive = location.pathname.startsWith("/admin/marketing");
+  const isReportsActive = location.pathname.startsWith("/admin/reports");
 
-  type GroupKey = 'product' | 'orders' | 'account' | 'customer' | 'marketing';
+  type GroupKey = 'product' | 'orders' | 'account' | 'customer' | 'marketing' | 'reports';
   const getInitialOpen = (): GroupKey | null => {
     if (isProductMgmtActive) return 'product';
     if (isOrdersActive) return 'orders';
     if (isMarketingActive) return 'marketing';
+    if (isReportsActive) return 'reports';
     if (isCustomerMgmtActive) return 'customer';
     if (isAccountMgmtActive) return 'account';
     return null;
@@ -212,6 +226,8 @@ const AdminSidebar = () => {
         
         {renderCollapsible(Users, "Customer Management", customerManagementItems, openGroup === 'customer', () => toggleGroup('customer'), isCustomerMgmtActive)}
         {renderCollapsible(Wallet, "Account Management", accountManagementItems, openGroup === 'account', () => toggleGroup('account'), isAccountMgmtActive)}
+        {renderCollapsible(BarChart2, "Reports", reportItems, openGroup === 'reports', () => toggleGroup('reports'), isReportsActive)}
+        {renderNavLink("/admin/docs", FileText, "Documentation")}
         {renderNavLink("/admin/notes", StickyNote, "Notes")}
         {renderNavLink("/admin/media", Image, "Media")}
         {renderNavLink("/admin/music", Music, "Music Player")}

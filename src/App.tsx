@@ -79,6 +79,16 @@ const MetaPixelSettings = lazy(() => import("./pages/admin/marketing/MetaPixelSe
 const MetaCapiSettings = lazy(() => import("./pages/admin/marketing/MetaCapiSettings"));
 const GA4Settings = lazy(() => import("./pages/admin/marketing/GA4Settings"));
 const VisitorAnalytics = lazy(() => import("./pages/admin/marketing/VisitorAnalytics"));
+const DocsIndex = lazy(() => import("./pages/admin/docs/DocsIndex"));
+const DocPage = lazy(() => import("./pages/admin/docs/DocPage"));
+const ReportsOverview = lazy(() => import("./pages/admin/reports/ReportsOverview"));
+const OrdersReport = lazy(() => import("./pages/admin/reports/OrdersReport"));
+const FinancialReport = lazy(() => import("./pages/admin/reports/FinancialReport"));
+const CustomersReport = lazy(() => import("./pages/admin/reports/CustomersReport"));
+const ProductsReport = lazy(() => import("./pages/admin/reports/ProductsReport"));
+const InventoryReport = lazy(() => import("./pages/admin/reports/InventoryReport"));
+const PromosReport = lazy(() => import("./pages/admin/reports/PromosReport"));
+const ReviewsReport = lazy(() => import("./pages/admin/reports/ReviewsReport"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -190,6 +200,16 @@ const App = () => (
                       <Route path="ga4" element={<GA4Settings />} />
                       <Route path="visitors" element={<VisitorAnalytics />} />
                     </Route>
+                    <Route path="docs" element={<DocsIndex />} />
+                    <Route path="docs/:slug" element={<DocPage />} />
+                    <Route path="reports" element={<ReportsOverview />} />
+                    <Route path="reports/orders" element={<OrdersReport />} />
+                    <Route path="reports/financial" element={<FinancialReport />} />
+                    <Route path="reports/customers" element={<CustomersReport />} />
+                    <Route path="reports/products" element={<ProductsReport />} />
+                    <Route path="reports/inventory" element={<InventoryReport />} />
+                    <Route path="reports/promos" element={<PromosReport />} />
+                    <Route path="reports/reviews" element={<ReviewsReport />} />
                   </Route>
                   
                   <Route path="*" element={<NotFound />} />

@@ -33,6 +33,15 @@ export const adminRouteLoaders: Record<string, Loader> = {
   "/admin/marketing/meta-pixel": () => import("@/pages/admin/marketing/MetaPixelSettings"),
   "/admin/marketing/meta-capi": () => import("@/pages/admin/marketing/MetaCapiSettings"),
   "/admin/marketing/ga4": () => import("@/pages/admin/marketing/GA4Settings"),
+  "/admin/docs": () => import("@/pages/admin/docs/DocsIndex"),
+  "/admin/reports": () => import("@/pages/admin/reports/ReportsOverview"),
+  "/admin/reports/orders": () => import("@/pages/admin/reports/OrdersReport"),
+  "/admin/reports/financial": () => import("@/pages/admin/reports/FinancialReport"),
+  "/admin/reports/customers": () => import("@/pages/admin/reports/CustomersReport"),
+  "/admin/reports/products": () => import("@/pages/admin/reports/ProductsReport"),
+  "/admin/reports/inventory": () => import("@/pages/admin/reports/InventoryReport"),
+  "/admin/reports/promos": () => import("@/pages/admin/reports/PromosReport"),
+  "/admin/reports/reviews": () => import("@/pages/admin/reports/ReviewsReport"),
 };
 
 const prefetched = new Set<string>();

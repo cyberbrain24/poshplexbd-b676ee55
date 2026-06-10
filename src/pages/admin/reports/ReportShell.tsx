@@ -61,8 +61,28 @@ export function ReportShell<T>({ config, extraFilters, pdfFilters }: ReportShell
   });
 
   const rows = q.data || [];
-  const capped = config.rowCap && rows.length > config.rowCap ? rows.slice(0, config.rowCap) : rows;
+
+  // Filter state (one value per filter key)
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  const setFilter = (k: string, v: string) =>
+    setFilterValues((s) => ({ ...s, [k]: v }));
+  const clearFilters = () => setFilterValues({});
+
+  const filtered = useMemo(() => {
+    if (!config.filters?.length) return rows;
+    return rows.filter((r) =>
+      config.filters!.every((f) => {
+        const v = filterValues[f.key];
+        if (!v || v === "all") return true;
+        return f.predicate(r, v);
+      })
+    );
+  }, [rows, config.filters, filterValues]);
+
+  const capped =
+    config.rowCap && filtered.length > config.rowCap ? filtered.slice(0, config.rowCap) : filtered;
   const kpis = config.kpis(capped);
+  const activeFilterCount = Object.values(filterValues).filter((v) => v && v !== "all").length;
 
   const handleCSV = () => {
     if (!capped.length) {

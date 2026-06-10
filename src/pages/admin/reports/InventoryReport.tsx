@@ -12,6 +12,22 @@ const config: ReportConfig<InventoryReportRow> = {
   filename: "inventory_report",
   fetcher: fetchInventoryReport,
   rowCap: 5000,
+  filters: [
+    {
+      key: "type",
+      label: "Entry Type",
+      type: "select",
+      deriveOptions: (rows) => rows.map((r) => r.type),
+      predicate: (r, v) => r.type === v,
+    },
+    {
+      key: "q",
+      label: "Search Note",
+      type: "search",
+      placeholder: "Note contains…",
+      predicate: (r, v) => r.note.toLowerCase().includes(v.toLowerCase()),
+    },
+  ],
   columns: [
     { header: "Date", accessor: (r) => r.date },
     { header: "Type", accessor: (r) => r.type },

@@ -89,6 +89,22 @@ export interface ReportKPI {
   value: string;
 }
 
+export interface ReportFilter<T> {
+  key: string;
+  label: string;
+  /** "select" = dropdown of values, "search" = free-text contains match. */
+  type: "select" | "search";
+  /** For select: provide static options, OR derive from rows. */
+  options?: string[];
+  deriveOptions?: (rows: T[]) => string[];
+  /** Predicate returning true to keep the row. Value "" / "all" means no filter. */
+  predicate: (row: T, value: string) => boolean;
+  /** Optional placeholder for search inputs. */
+  placeholder?: string;
+  /** Width class override (default w-40). */
+  widthClass?: string;
+}
+
 export interface ReportConfig<T> {
   title: string;
   description: string;
@@ -99,4 +115,6 @@ export interface ReportConfig<T> {
   defaultPreset?: PresetRange;
   /** Hard cap; rows beyond this are clipped with a warning. */
   rowCap?: number;
+  /** Business filters applied client-side after fetch. */
+  filters?: ReportFilter<T>[];
 }

@@ -72,6 +72,8 @@ const AdminSiteSettings = lazy(() => import("./pages/admin/AdminSiteSettings"));
 const AdminBulkUpload = lazy(() => import("./pages/admin/AdminBulkUpload"));
 const AdminMusic = lazy(() => import("./pages/admin/AdminMusic"));
 const AdminSMS = lazy(() => import("./pages/admin/AdminSMS"));
+const AdminEmail = lazy(() => import("./pages/admin/AdminEmail"));
+const EmailUnsubscribe = lazy(() => import("./pages/EmailUnsubscribe"));
 const AdminNotes = lazy(() => import("./pages/admin/AdminNotes"));
 const MarketingLayout = lazy(() => import("./pages/admin/marketing/MarketingLayout"));
 const MarketingOverview = lazy(() => import("./pages/admin/marketing/MarketingOverview"));
@@ -152,7 +154,8 @@ const App = () => (
                   <Route path="/terms-of-service" element={<Suspense fallback={<LoadingFallback />}><TermsConditions /></Suspense>} />
                   <Route path="/shipping-delivery" element={<Suspense fallback={<LoadingFallback />}><ShippingDelivery /></Suspense>} />
                   <Route path="/auth" element={<Suspense fallback={<LoadingFallback />}><Auth /></Suspense>} />
-                  <Route path="/login" element={<Suspense fallback={<LoadingFallback />}><CustomerAuth /></Suspense>} />
+                 <Route path="/login" element={<Suspense fallback={<LoadingFallback />}><CustomerAuth /></Suspense>} />
+                 <Route path="/email/unsubscribe" element={<Suspense fallback={<LoadingFallback />}><EmailUnsubscribe /></Suspense>} />
                   
                   
                   {/* Admin Routes - Lazy loaded */}
@@ -191,6 +194,7 @@ const App = () => (
                     <Route path="bulk-upload" element={<AdminBulkUpload />} />
                     <Route path="music" element={<AdminMusic />} />
                     <Route path="sms" element={<AdminSMS />} />
+                    <Route path="email" element={<AdminEmail />} />
                     <Route path="notes" element={<AdminNotes />} />
                     <Route path="site-settings" element={<AdminSiteSettings />} />
                     <Route path="marketing" element={<MarketingLayout />}>

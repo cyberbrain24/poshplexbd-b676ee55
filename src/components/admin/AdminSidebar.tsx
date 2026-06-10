@@ -230,11 +230,7 @@ const AdminSidebar = () => {
       <nav className="flex-1 p-3 md:p-4 space-y-0.5 overflow-y-auto">
         {renderNavLink("/admin", LayoutDashboard, "Business Intelligence")}
         {renderNavLink("/admin/ai-assistant", Sparkles, "AI Agent")}
-        {renderNavLink("/admin/sms", Send, "SMS Marketing")}
-        {renderNavLink("/admin/email", Mail, "Email Marketing")}
-        {renderNavLink("/admin/whatsapp-marketing", MessageCircle, "WhatsApp Marketing")}
-        {renderNavLink("/admin/instagram-marketing", Instagram, "Instagram DM")}
-        {renderNavLink("/admin/messenger-marketing", MessagesSquare, "Messenger")}
+        {renderCollapsible(Megaphone, "Marketing Channels", marketingChannelItems, openGroup === 'channels', () => toggleGroup('channels'), isChannelsActive)}
         {renderCollapsible(Package, "Product Management", productManagementItems, openGroup === 'product', () => toggleGroup('product'), isProductMgmtActive)}
         {renderCollapsible(ShoppingCart, "Order Management", orderItems, openGroup === 'orders', () => toggleGroup('orders'), isOrdersActive)}
         {renderCollapsible(Plug, "Integration & Tracking", marketingItems, openGroup === 'marketing', () => toggleGroup('marketing'), isMarketingActive)}

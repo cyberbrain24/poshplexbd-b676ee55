@@ -43,6 +43,7 @@ export const adminRouteLoaders: Record<string, Loader> = {
   "/admin/reports/promos": () => import("@/pages/admin/reports/PromosReport"),
   "/admin/reports/reviews": () => import("@/pages/admin/reports/ReviewsReport"),
   "/admin/email": () => import("@/pages/admin/AdminEmail"),
+  "/admin/whatsapp-marketing": () => import("@/pages/admin/AdminWhatsAppMarketing"),
 };
 
 const prefetched = new Set<string>();

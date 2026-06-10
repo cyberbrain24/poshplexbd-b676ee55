@@ -3128,6 +3128,232 @@ export type Database = {
         }
         Relationships: []
       }
+      wa_campaigns: {
+        Row: {
+          audience_filter: Json
+          body_snapshot: string
+          created_at: string
+          failed_count: number
+          id: string
+          media_url: string
+          name: string
+          recipient_count: number
+          scheduled_at: string | null
+          sent_count: number
+          status: string
+          template_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          audience_filter?: Json
+          body_snapshot?: string
+          created_at?: string
+          failed_count?: number
+          id?: string
+          media_url?: string
+          name: string
+          recipient_count?: number
+          scheduled_at?: string | null
+          sent_count?: number
+          status?: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          audience_filter?: Json
+          body_snapshot?: string
+          created_at?: string
+          failed_count?: number
+          id?: string
+          media_url?: string
+          name?: string
+          recipient_count?: number
+          scheduled_at?: string | null
+          sent_count?: number
+          status?: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_campaigns_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "wa_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wa_messages: {
+        Row: {
+          body: string
+          campaign_id: string | null
+          created_at: string
+          error: string | null
+          id: string
+          provider_message_id: string | null
+          status: string
+          template_key: string | null
+          to_phone: string
+        }
+        Insert: {
+          body?: string
+          campaign_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          provider_message_id?: string | null
+          status?: string
+          template_key?: string | null
+          to_phone: string
+        }
+        Update: {
+          body?: string
+          campaign_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          provider_message_id?: string | null
+          status?: string
+          template_key?: string | null
+          to_phone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_messages_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "wa_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wa_provider_settings: {
+        Row: {
+          api_key: string
+          business_phone_id: string
+          created_at: string
+          default_language: string
+          enabled: boolean
+          endpoint_url: string
+          headers: Json
+          http_method: string
+          id: string
+          notes: string
+          provider_name: string
+          request_template: Json
+          sender_display_name: string
+          success_keyword: string
+          updated_at: string
+        }
+        Insert: {
+          api_key?: string
+          business_phone_id?: string
+          created_at?: string
+          default_language?: string
+          enabled?: boolean
+          endpoint_url?: string
+          headers?: Json
+          http_method?: string
+          id?: string
+          notes?: string
+          provider_name?: string
+          request_template?: Json
+          sender_display_name?: string
+          success_keyword?: string
+          updated_at?: string
+        }
+        Update: {
+          api_key?: string
+          business_phone_id?: string
+          created_at?: string
+          default_language?: string
+          enabled?: boolean
+          endpoint_url?: string
+          headers?: Json
+          http_method?: string
+          id?: string
+          notes?: string
+          provider_name?: string
+          request_template?: Json
+          sender_display_name?: string
+          success_keyword?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      wa_suppression: {
+        Row: {
+          created_at: string
+          id: string
+          phone: string
+          reason: string
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          phone: string
+          reason?: string
+          source?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          phone?: string
+          reason?: string
+          source?: string
+        }
+        Relationships: []
+      }
+      wa_templates: {
+        Row: {
+          body: string
+          category: string
+          created_at: string
+          enabled: boolean
+          event_key: string
+          header_type: string
+          id: string
+          is_system: boolean
+          language: string
+          media_url: string
+          name: string
+          updated_at: string
+          variables: Json
+        }
+        Insert: {
+          body?: string
+          category?: string
+          created_at?: string
+          enabled?: boolean
+          event_key: string
+          header_type?: string
+          id?: string
+          is_system?: boolean
+          language?: string
+          media_url?: string
+          name: string
+          updated_at?: string
+          variables?: Json
+        }
+        Update: {
+          body?: string
+          category?: string
+          created_at?: string
+          enabled?: boolean
+          event_key?: string
+          header_type?: string
+          id?: string
+          is_system?: boolean
+          language?: string
+          media_url?: string
+          name?: string
+          updated_at?: string
+          variables?: Json
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -179,7 +179,6 @@ export async function fetchProductsReport(range: DateRange): Promise<ProductRepo
 /* =========================== Inventory =========================== */
 
 export interface InventoryReportRow {
-  entry_number: string;
   date: string;
   type: string;
   items: number;
@@ -192,24 +191,26 @@ export async function fetchInventoryReport(range: DateRange): Promise<InventoryR
   const { data, error } = await supabase
     .from("inventory_entries")
     .select(`
-      entry_number, entry_date, entry_type, note,
-      items:inventory_entry_items(quantity, total_cost)
+      date, type, notes,
+      items:inventory_entry_items(quantity, purchase_price)
     `)
-    .gte("entry_date", iso(range.from))
-    .lte("entry_date", iso(range.to))
-    .order("entry_date", { ascending: false })
+    .gte("date", iso(range.from))
+    .lte("date", iso(range.to))
+    .order("date", { ascending: false })
     .limit(5000);
   if (error) throw error;
   return (data || []).map((e: any) => {
     const items = e.items || [];
     return {
-      entry_number: e.entry_number || "—",
-      date: new Date(e.entry_date).toLocaleDateString("en-BD"),
-      type: e.entry_type || "—",
+      date: new Date(e.date).toLocaleDateString("en-BD"),
+      type: e.type || "—",
       items: items.length,
       qty: items.reduce((s: number, it: any) => s + (Number(it.quantity) || 0), 0),
-      total_cost: items.reduce((s: number, it: any) => s + (Number(it.total_cost) || 0), 0),
-      note: e.note || "—",
+      total_cost: items.reduce(
+        (s: number, it: any) => s + (Number(it.quantity) || 0) * (Number(it.purchase_price) || 0),
+        0
+      ),
+      note: e.notes || "—",
     };
   });
 }

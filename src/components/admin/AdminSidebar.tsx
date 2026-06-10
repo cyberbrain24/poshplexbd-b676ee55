@@ -60,6 +60,14 @@ const customerManagementItems: NavItem[] = [
   { icon: Crown, label: "Membership Types", path: "/admin/customer-types" },
 ];
 
+const marketingChannelItems: NavItem[] = [
+  { icon: Send, label: "SMS Marketing", path: "/admin/sms" },
+  { icon: Mail, label: "Email Marketing", path: "/admin/email" },
+  { icon: MessageCircle, label: "WhatsApp Marketing", path: "/admin/whatsapp-marketing" },
+  { icon: Instagram, label: "Instagram DM", path: "/admin/instagram-marketing" },
+  { icon: MessagesSquare, label: "Messenger", path: "/admin/messenger-marketing" },
+];
+
 const marketingItems: NavItem[] = [
   { icon: LayoutGrid, label: "Overview", path: "/admin/marketing" },
   { icon: Activity, label: "Visitors", path: "/admin/marketing/visitors" },
@@ -123,11 +131,13 @@ const AdminSidebar = () => {
   const isCustomerMgmtActive = customerManagementItems.some(item => location.pathname === item.path);
   const isMarketingActive = location.pathname.startsWith("/admin/marketing");
   const isReportsActive = location.pathname.startsWith("/admin/reports");
+  const isChannelsActive = marketingChannelItems.some(item => location.pathname === item.path);
 
-  type GroupKey = 'product' | 'orders' | 'account' | 'customer' | 'marketing' | 'reports';
+  type GroupKey = 'product' | 'orders' | 'account' | 'customer' | 'marketing' | 'reports' | 'channels';
   const getInitialOpen = (): GroupKey | null => {
     if (isProductMgmtActive) return 'product';
     if (isOrdersActive) return 'orders';
+    if (isChannelsActive) return 'channels';
     if (isMarketingActive) return 'marketing';
     if (isReportsActive) return 'reports';
     if (isCustomerMgmtActive) return 'customer';
@@ -220,11 +230,7 @@ const AdminSidebar = () => {
       <nav className="flex-1 p-3 md:p-4 space-y-0.5 overflow-y-auto">
         {renderNavLink("/admin", LayoutDashboard, "Business Intelligence")}
         {renderNavLink("/admin/ai-assistant", Sparkles, "AI Agent")}
-        {renderNavLink("/admin/sms", Send, "SMS Marketing")}
-        {renderNavLink("/admin/email", Mail, "Email Marketing")}
-        {renderNavLink("/admin/whatsapp-marketing", MessageCircle, "WhatsApp Marketing")}
-        {renderNavLink("/admin/instagram-marketing", Instagram, "Instagram DM")}
-        {renderNavLink("/admin/messenger-marketing", MessagesSquare, "Messenger")}
+        {renderCollapsible(Megaphone, "Marketing Channels", marketingChannelItems, openGroup === 'channels', () => toggleGroup('channels'), isChannelsActive)}
         {renderCollapsible(Package, "Product Management", productManagementItems, openGroup === 'product', () => toggleGroup('product'), isProductMgmtActive)}
         {renderCollapsible(ShoppingCart, "Order Management", orderItems, openGroup === 'orders', () => toggleGroup('orders'), isOrdersActive)}
         {renderCollapsible(Plug, "Integration & Tracking", marketingItems, openGroup === 'marketing', () => toggleGroup('marketing'), isMarketingActive)}

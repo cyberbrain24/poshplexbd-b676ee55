@@ -266,7 +266,7 @@ export async function fetchReviewsReport(range: DateRange): Promise<ReviewReport
   const { data, error } = await supabase
     .from("reviews")
     .select(`
-      rating, status, comment, created_at,
+      rating, is_approved, content, created_at,
       product:products(name),
       customer:customers(name)
     `)
@@ -279,9 +279,9 @@ export async function fetchReviewsReport(range: DateRange): Promise<ReviewReport
     product: r.product?.name || "—",
     customer: r.customer?.name || "—",
     rating: Number(r.rating) || 0,
-    status: r.status || "—",
+    status: r.is_approved ? "approved" : "pending",
     date: new Date(r.created_at).toLocaleDateString("en-BD"),
-    comment: (r.comment || "").slice(0, 140),
+    comment: (r.content || "").slice(0, 140),
   }));
 }
 

@@ -12,6 +12,26 @@ const config: ReportConfig<ProductReportRow> = {
   filename: "products_report",
   fetcher: fetchProductsReport,
   rowCap: 5000,
+  filters: [
+    {
+      key: "q",
+      label: "Search",
+      type: "search",
+      placeholder: "Product name or SKU",
+      widthClass: "w-64",
+      predicate: (r, v) => {
+        const q = v.toLowerCase();
+        return r.product.toLowerCase().includes(q) || r.sku.toLowerCase().includes(q);
+      },
+    },
+    {
+      key: "minQty",
+      label: "Min Qty Sold",
+      type: "select",
+      options: ["1", "5", "10", "25", "50", "100"],
+      predicate: (r, v) => r.qty_sold >= Number(v),
+    },
+  ],
   columns: [
     { header: "Product", accessor: (r) => r.product },
     { header: "SKU", accessor: (r) => r.sku },

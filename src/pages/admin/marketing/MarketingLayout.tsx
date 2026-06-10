@@ -1,6 +1,6 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Facebook, Server, BarChart3, Activity } from "lucide-react";
+import { LayoutDashboard, Facebook, Server, BarChart3, Activity, Sparkles, Truck } from "lucide-react";
 
 const tabs = [
   { to: "/admin/marketing", label: "Overview", icon: LayoutDashboard, end: true },
@@ -8,15 +8,17 @@ const tabs = [
   { to: "/admin/marketing/meta-pixel", label: "Meta Pixel", icon: Facebook },
   { to: "/admin/marketing/meta-capi", label: "Meta CAPI", icon: Server },
   { to: "/admin/marketing/ga4", label: "Google Analytics 4", icon: BarChart3 },
+  { to: "/admin/marketing/ai-providers", label: "AI Providers", icon: Sparkles },
+  { to: "/admin/marketing/steadfast", label: "Steadfast API", icon: Truck },
 ];
 
 const MarketingLayout = () => {
   return (
     <div className="max-w-6xl">
       <div className="mb-6">
-        <h1 className="text-xl md:text-2xl font-semibold tracking-tight uppercase">Marketing & Tracking</h1>
+        <h1 className="text-xl md:text-2xl font-semibold tracking-tight uppercase">Integration & Tracking</h1>
         <p className="text-xs md:text-sm text-muted-foreground mt-1">
-          Configure pixels, server-side conversions API, and analytics from a single hub.
+          Configure pixels, analytics, AI provider credentials, and third-party APIs from a single hub.
         </p>
       </div>
 

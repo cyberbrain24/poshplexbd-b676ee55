@@ -5,9 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { Upload, X, Image as ImageIcon, Monitor, Smartphone, Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
+import { Upload, X, Image as ImageIcon, Monitor, Smartphone } from "lucide-react";
 import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import TypographySettings from "@/components/admin/TypographySettings";
 

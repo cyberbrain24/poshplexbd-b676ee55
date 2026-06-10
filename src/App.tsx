@@ -87,6 +87,8 @@ const MetaPixelSettings = lazy(() => import("./pages/admin/marketing/MetaPixelSe
 const MetaCapiSettings = lazy(() => import("./pages/admin/marketing/MetaCapiSettings"));
 const GA4Settings = lazy(() => import("./pages/admin/marketing/GA4Settings"));
 const VisitorAnalytics = lazy(() => import("./pages/admin/marketing/VisitorAnalytics"));
+const AIProviderCredentials = lazy(() => import("./pages/admin/marketing/AIProviderCredentials"));
+const SteadfastSettings = lazy(() => import("./pages/admin/marketing/SteadfastSettings"));
 const DocsIndex = lazy(() => import("./pages/admin/docs/DocsIndex"));
 const DocPage = lazy(() => import("./pages/admin/docs/DocPage"));
 const ReportsOverview = lazy(() => import("./pages/admin/reports/ReportsOverview"));
@@ -215,6 +217,8 @@ const App = () => (
                       <Route path="meta-capi" element={<MetaCapiSettings />} />
                       <Route path="ga4" element={<GA4Settings />} />
                       <Route path="visitors" element={<VisitorAnalytics />} />
+                      <Route path="ai-providers" element={<AIProviderCredentials />} />
+                      <Route path="steadfast" element={<SteadfastSettings />} />
                     </Route>
                     <Route path="docs" element={<DocsIndex />} />
                     <Route path="docs/:slug" element={<DocPage />} />

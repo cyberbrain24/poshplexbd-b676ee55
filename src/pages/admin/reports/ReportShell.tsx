@@ -112,6 +112,9 @@ export function ReportShell<T>({ config, extraFilters, pdfFilters }: ReportShell
         filters: [
           { label: "Range", value: formatRange(range) },
           { label: "Rows", value: String(capped.length) },
+          ...(config.filters || [])
+            .filter((f) => filterValues[f.key] && filterValues[f.key] !== "all")
+            .map((f) => ({ label: f.label, value: filterValues[f.key] })),
           ...(pdfFilters || []),
         ],
         kpis,

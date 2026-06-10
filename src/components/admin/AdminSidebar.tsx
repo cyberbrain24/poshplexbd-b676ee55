@@ -7,7 +7,7 @@ import {
   TrendingDown, Users, MapPin, Map, Crown, ShoppingCart, ExternalLink,
   LucideIcon, RefreshCw, MessageSquare, Image, Tag, Settings, Send,
   Upload, Menu, X, Music, StickyNote, Megaphone, Facebook, Server, BarChart3, LayoutGrid, Activity,
-  FileText, BarChart2, Mail, MessageCircle, Instagram, MessagesSquare,
+  FileText, BarChart2, Mail, MessageCircle, Instagram, MessagesSquare, Truck, Plug,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -66,6 +66,8 @@ const marketingItems: NavItem[] = [
   { icon: Facebook, label: "Meta Pixel", path: "/admin/marketing/meta-pixel" },
   { icon: Server, label: "Meta CAPI", path: "/admin/marketing/meta-capi" },
   { icon: BarChart3, label: "Google Analytics 4", path: "/admin/marketing/ga4" },
+  { icon: Sparkles, label: "AI Providers", path: "/admin/marketing/ai-providers" },
+  { icon: Truck, label: "Steadfast API", path: "/admin/marketing/steadfast" },
 ];
 
 const reportItems: NavItem[] = [
@@ -225,7 +227,7 @@ const AdminSidebar = () => {
         {renderNavLink("/admin/messenger-marketing", MessagesSquare, "Messenger")}
         {renderCollapsible(Package, "Product Management", productManagementItems, openGroup === 'product', () => toggleGroup('product'), isProductMgmtActive)}
         {renderCollapsible(ShoppingCart, "Order Management", orderItems, openGroup === 'orders', () => toggleGroup('orders'), isOrdersActive)}
-        {renderCollapsible(Megaphone, "Marketing & Tracking", marketingItems, openGroup === 'marketing', () => toggleGroup('marketing'), isMarketingActive)}
+        {renderCollapsible(Plug, "Integration & Tracking", marketingItems, openGroup === 'marketing', () => toggleGroup('marketing'), isMarketingActive)}
         
         
         {renderCollapsible(Users, "Customer Management", customerManagementItems, openGroup === 'customer', () => toggleGroup('customer'), isCustomerMgmtActive)}

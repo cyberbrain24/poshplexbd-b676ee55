@@ -1,123 +1,82 @@
-## Goal
+## Email Marketing — Superlight Module
 
-Add two new admin-only modules to POSHPLEX without disturbing existing routes, dashboards, or data flows:
+A minimal, fully isolated `/admin/email` module. Mirrors the SMS module's shape exactly so it integrates with zero behavior changes to existing code. All new tables, all new edge functions, **no edits to existing pages, contexts, hooks, or triggers**.
 
-1. **Documentation** — static, repo-based reference for APIs, edge functions, integrations, and complex logic.
-2. **Reports** — exportable reports (CSV + PDF) for Orders, Accounts/Financials, Customers, Products, Inventory, Promo Codes, and Reviews.
+### Guiding rules (to stay out of the existing system's way)
 
-Both live under `/admin/*`, are lazy-loaded, gated by existing admin RBAC, and add no new tables, no new edge functions, no extra runtime cost when not visited.
+- Only **additive** code. Zero edits to checkout, orders, cart, favorites, customer pages, or any existing edge function.
+- All new tables prefixed `email_*`, RLS admin-only, GRANTs included.
+- Lazy-loaded route — no impact on storefront bundle or initial admin load.
+- No `pg_cron`, no background jobs, no webhooks, no tracking pixel infrastructure in v1. The complex automations (cart-abandonment timers, A/B winner picking, attribution) are **deferred** — they need cross-system hooks.
+- One sidebar entry inside the existing Marketing group.
+- No new npm dependencies.
 
----
+### What ships in v1
 
-## 1. Documentation module
+**Sidebar:** add **Email Marketing** under Marketing group → `/admin/email`.
 
-**Route group:** `/admin/docs`
-- `/admin/docs` — index with categorised list + search
-- `/admin/docs/:slug` — single doc page
+**Admin page** (`src/pages/admin/AdminEmail.tsx`) — same 5-tab shape as `AdminSMS.tsx`:
 
-**Storage:** plain `.md` files in `src/content/docs/` (no DB, no CMS). Each file has front-matter:
+1. **Bulk Send** — subject, optional preheader, HTML body textarea + live `<iframe srcdoc>` preview, audience (All active customers / Membership / District / Manual list — identical to SMS), Send Now button. Calls `email-send` edge function.
+2. **Auto Triggers** (templates only — admin-editable, **not auto-fired in v1**) — seeded rows for `order_placed`, `order_shipped`, `order_delivered`, `account_welcome`, `review_request`, `cart_abandoned`, `back_in_stock`, `winback`, `birthday`. Each has subject + HTML + enabled toggle. A clear note: "Trigger wiring is a future step — these templates are stored and ready."
+3. **Provider Settings** — identical pattern to SMS: provider name, endpoint URL, HTTP method, headers JSON, request body template JSON with `{api_key} {from_email} {from_name} {to} {subject} {html}` placeholders, API key, From email, From name, Reply-To, success keyword, enabled. Works with SendGrid / Mailgun / Resend / Brevo / Postmark HTTP APIs.
+4. **Campaigns** — list of bulk sends (name, recipients, sent, failed, status, when).
+5. **History** — last 50 messages (to, subject, status, when).
+
+**Compliance (lightweight):**
+- Every bulk send auto-appends a plain-text footer line: `Unsubscribe: https://<site>/email/unsubscribe?e=<base64(email)>`
+- Public storefront page `/email/unsubscribe` reads the param, inserts into `email_suppression`, shows a branded confirmation. No tokens, no edge function — direct insert via anon-allowed `INSERT` policy (no read).
+- `email-send` filters recipients against `email_suppression` before sending.
+
+### Database (one migration)
+
+```text
+email_provider_settings   single row seeded; provider config + from address + enabled
+email_templates           event_key, name, subject, html, enabled, is_system, placeholders
+email_campaigns           name, subject, recipient_count, sent_count, failed_count, status, created_at
+email_messages            campaign_id, trigger_event, to_email, subject, status, error, created_at
+email_suppression         email (unique), reason, created_at
 ```
----
-title: Steadfast Courier Integration
-category: Integrations
-order: 10
-updated: 2026-06-10
----
-# ...markdown body...
-```
 
-**How it loads:** Vite's `import.meta.glob('../../content/docs/*.md', { as: 'raw', eager: false })` — each doc is its own chunk, fetched on demand. Front-matter parsed with a tiny inline parser (no new dep). Markdown rendered with `react-markdown` + `remark-gfm` (already light, well-supported).
+All tables: `GRANT` to `authenticated` + `service_role`; RLS admin-only via `has_role(auth.uid(),'admin')`. `email_suppression` has one extra policy: anon can `INSERT` (so the public unsubscribe page works without auth) — no anon SELECT/UPDATE/DELETE.
 
-**Initial seed docs** (we write these from existing project knowledge — already documented in `.lovable/` memory files):
-- Architecture overview
-- Order, Inventory & Payment module
-- Customer module & location hierarchy
-- Product module (SKU, attributes, variants, multi-category)
-- Steadfast Courier integration
-- Meta Pixel / CAPI / GA4 integration
-- Lovable AI Gateway & edge functions (`admin-product-ai`, `ai-seo-generate`, `meta-capi`, `steadfast-courier`, `sms-send`, etc.)
-- RBAC & access control (`user_roles`, `has_role`)
-- Promo codes engine
-- Shipping rates (district/thana)
+### Edge function — exactly one new function
 
-**UI**
-- Left rail: collapsible category list with search input (client-side fuzzy filter on title + category)
-- Main: rendered markdown with prose typography, copy-link-to-section, "last updated" stamp
-- "Edit on repo" hint only — no in-app editor
+`supabase/functions/email-send/index.ts` — mirrors `sms-send` pattern:
+- Action `bulk`: resolve audience from `audience_filter`, dedupe vs `email_suppression`, loop with small concurrency, fire HTTP using provider template, write `email_messages`, update `email_campaigns` counters.
+- Action `single`: send one email (used by Auto-Trigger preview "Send test").
+- Uses existing `_shared/rate-limiter` and `_shared/cors`.
 
----
+### Files added (none modified beyond 3 wiring lines)
 
-## 2. Reports module
+**New:**
+- `src/pages/admin/AdminEmail.tsx`
+- `src/pages/EmailUnsubscribe.tsx` (public, no auth)
+- `supabase/functions/email-send/index.ts`
+- `src/content/docs/08-email-marketing.md` (auto-picked up by Documentation module via `import.meta.glob`)
 
-**Route group:** `/admin/reports`
-- `/admin/reports` — overview cards (one per report) with last-run summary
-- `/admin/reports/orders`
-- `/admin/reports/financial`
-- `/admin/reports/customers`
-- `/admin/reports/products`
-- `/admin/reports/inventory`
-- `/admin/reports/promos`
-- `/admin/reports/reviews`
+**Modified (tiny, additive only):**
+- `src/App.tsx` — 2 lazy imports + 2 `<Route>` entries
+- `src/lib/adminRoutePrefetch.ts` — 1 entry
+- `src/components/admin/AdminSidebar.tsx` — 1 nav item inside existing Marketing group
 
-**Common report shell** (`ReportLayout`):
-- Date range picker (today / yesterday / 7d / 30d / this month / last month / custom)
-- Report-specific filters (status, account, category, district, etc.)
-- "Run report" button (queries on demand, never on mount auto-run for heavy ones)
-- Result table (virtualised when >200 rows, reusing existing `VirtualizedTable`)
-- Summary KPI strip above the table
-- Export buttons: **CSV** and **PDF**
+That's it. No changes to checkout, orders, cart, favorites, customers, or any existing edge function.
 
-**Data sources:** existing tables only — `orders`, `order_items`, `order_payments`, `transactions`, `accounts`, `customers`, `products`, `product_variants`, `inventory_entries`, `inventory_entry_items`, `promo_codes`, `promo_code_usages`, `reviews`. Each report is its own service module under `src/services/reports/` that uses the existing `supabase` client with selective fetches and date filters — no new RLS/policies needed.
+### Explicitly deferred (v2)
 
-**Exports**
-- **CSV:** in-browser generator (`src/lib/csvExport.ts`) — no dep, builds blob and triggers download.
-- **PDF:** reuse `jspdf` + `jspdf-autotable` (already present for order packing PDF — confirmed in `src/lib/orderPackingPdf.ts`). One shared `src/lib/reportPdf.ts` helper renders a branded POSHPLEX header (off-black `#2f2f2f`), filter summary, KPI row, then table.
+To keep v1 truly lightweight and zero-risk:
+- Cart-abandoned / back-in-stock / winback / birthday auto-firing (needs cron + cross-system hooks)
+- Open/click tracking pixel + redirect
+- A/B subject testing + scheduling
+- Saved segment builder
+- Revenue attribution (utm + 7-day join to orders)
+- Visual block composer (product picker, coupon block)
 
-**Per-report contents (v1)**
+When you're ready for any of these, they layer on without touching v1's contract.
 
-| Report | Columns | KPIs |
-|---|---|---|
-| Orders | order #, date, customer, status, payment status, items qty, subtotal, shipping, total, paid | total orders, revenue ৳, qty, avg order ৳ |
-| Financial | date, type (in/out), account, category, amount, reference | total income ৳, total expense ৳, net ৳, opening/closing per account |
-| Customers | name, phone, district, thana, orders, lifetime ৳, last order | new customers, returning, total customers, top 10 by lifetime |
-| Products | name, SKU, category, brand, qty sold, revenue ৳ | top sellers, slow movers, total SKUs sold |
-| Inventory | entry #, date, type (in/out), product, qty, unit cost, total cost | total in qty/৳, total out qty/৳, net movement |
-| Promo Codes | code, type, usages, discount given ৳, orders | top codes, total discount given |
-| Reviews | product, customer, rating, status, date | avg rating, count by status |
+### Risk summary
 
----
-
-## 3. Wiring & performance
-
-- **Routes:** add lazy imports in `src/App.tsx` (matching the Marketing pattern), nested under `AdminLayout` with `ProtectedRoute requireAdmin`.
-- **Prefetch:** register the new routes in `src/lib/adminRoutePrefetch.ts` so idle prefetch picks them up.
-- **Sidebar:** in `src/components/admin/AdminSidebar.tsx`, add two new entries — `Documentation` (single link, `BookOpen` icon) and a collapsible `Reports` group (`FileBarChart` icon) listing the 7 sub-reports. Placed before `Notes` so the Core group of 5 collapsibles is preserved.
-- **Code-splitting:** every report page is its own lazy chunk; markdown renderer + jspdf import dynamically only when used (`await import(...)`).
-- **Caching:** report queries use React Query with `staleTime: 60_000` so repeated runs in same session are instant; PDF/CSV use the in-memory result, no re-fetch.
-- **No DB migrations.** No new edge functions. No new env vars.
-
----
-
-## 4. Technical notes (for engineers)
-
-- New folders:
-  - `src/content/docs/*.md` (markdown sources)
-  - `src/pages/admin/docs/` (`DocsIndex.tsx`, `DocPage.tsx`)
-  - `src/pages/admin/reports/` (`ReportsOverview.tsx`, `OrdersReport.tsx`, `FinancialReport.tsx`, `CustomersReport.tsx`, `ProductsReport.tsx`, `InventoryReport.tsx`, `PromosReport.tsx`, `ReviewsReport.tsx`, `ReportLayout.tsx`)
-  - `src/services/reports/` (one file per report — `orders.report.ts`, etc.)
-  - `src/lib/csvExport.ts`, `src/lib/reportPdf.ts`
-  - `src/hooks/useDocs.ts`, `src/hooks/useReport.ts`
-- Deps to add (minimal): `react-markdown`, `remark-gfm`. jspdf + autotable already in project.
-- All tables paginate and cap raw rows at 5,000 per run with a "narrow your date range" hint, to keep memory/PDF size safe.
-- Markdown rendered with Tailwind `prose` (already in config) for consistency.
-
----
-
-## 5. Out of scope (v1)
-
-- In-app doc editor / DB-backed docs (user picked static MDX).
-- Excel (XLSX) export — CSV + PDF only.
-- Scheduled / emailed reports.
-- Public-facing help center.
-
-These can be added later without rework — the route shells and service layer are designed to extend.
+- Storefront bundle: no change (admin-only lazy chunk).
+- Existing edge functions: no change.
+- Existing tables: no change. New tables are isolated under `email_*`.
+- Failure mode: if `email-send` or the provider fails, only the new tab shows the error — nothing else in the app is affected.

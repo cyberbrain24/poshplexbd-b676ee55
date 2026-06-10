@@ -60,6 +60,14 @@ const customerManagementItems: NavItem[] = [
   { icon: Crown, label: "Membership Types", path: "/admin/customer-types" },
 ];
 
+const marketingChannelItems: NavItem[] = [
+  { icon: Send, label: "SMS Marketing", path: "/admin/sms" },
+  { icon: Mail, label: "Email Marketing", path: "/admin/email" },
+  { icon: MessageCircle, label: "WhatsApp Marketing", path: "/admin/whatsapp-marketing" },
+  { icon: Instagram, label: "Instagram DM", path: "/admin/instagram-marketing" },
+  { icon: MessagesSquare, label: "Messenger", path: "/admin/messenger-marketing" },
+];
+
 const marketingItems: NavItem[] = [
   { icon: LayoutGrid, label: "Overview", path: "/admin/marketing" },
   { icon: Activity, label: "Visitors", path: "/admin/marketing/visitors" },

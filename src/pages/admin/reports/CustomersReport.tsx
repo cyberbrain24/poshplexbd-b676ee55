@@ -11,6 +11,37 @@ const config: ReportConfig<CustomerReportRow> = {
   filename: "customers_report",
   fetcher: fetchCustomersReport,
   rowCap: 5000,
+  filters: [
+    {
+      key: "district",
+      label: "District",
+      type: "select",
+      deriveOptions: (rows) => rows.map((r) => r.district),
+      predicate: (r, v) => r.district === v,
+    },
+    {
+      key: "thana",
+      label: "Thana",
+      type: "select",
+      deriveOptions: (rows) => rows.map((r) => r.thana),
+      predicate: (r, v) => r.thana === v,
+    },
+    {
+      key: "q",
+      label: "Search",
+      type: "search",
+      placeholder: "Name, phone, email",
+      widthClass: "w-56",
+      predicate: (r, v) => {
+        const q = v.toLowerCase();
+        return (
+          r.name.toLowerCase().includes(q) ||
+          r.phone.toLowerCase().includes(q) ||
+          r.email.toLowerCase().includes(q)
+        );
+      },
+    },
+  ],
   columns: [
     { header: "Name", accessor: (r) => r.name },
     { header: "Phone", accessor: (r) => r.phone },

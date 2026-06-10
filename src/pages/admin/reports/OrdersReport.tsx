@@ -8,6 +8,37 @@ const config: ReportConfig<OrderReportRow> = {
   filename: "orders_report",
   fetcher: fetchOrdersReport,
   rowCap: 5000,
+  filters: [
+    {
+      key: "status",
+      label: "Order Status",
+      type: "select",
+      deriveOptions: (rows) => rows.map((r) => r.status),
+      predicate: (r, v) => r.status === v,
+    },
+    {
+      key: "payment",
+      label: "Payment Status",
+      type: "select",
+      deriveOptions: (rows) => rows.map((r) => r.payment_status),
+      predicate: (r, v) => r.payment_status === v,
+    },
+    {
+      key: "q",
+      label: "Search",
+      type: "search",
+      placeholder: "Order #, name, or phone",
+      widthClass: "w-56",
+      predicate: (r, v) => {
+        const q = v.toLowerCase();
+        return (
+          r.order_number.toLowerCase().includes(q) ||
+          r.customer.toLowerCase().includes(q) ||
+          r.phone.toLowerCase().includes(q)
+        );
+      },
+    },
+  ],
   columns: [
     { header: "Order #", accessor: (r) => r.order_number },
     { header: "Date", accessor: (r) => r.date },

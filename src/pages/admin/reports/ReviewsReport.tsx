@@ -11,6 +11,33 @@ const config: ReportConfig<ReviewReportRow> = {
   filename: "reviews_report",
   fetcher: fetchReviewsReport,
   rowCap: 5000,
+  filters: [
+    {
+      key: "status",
+      label: "Status",
+      type: "select",
+      options: ["approved", "pending"],
+      predicate: (r, v) => r.status === v,
+    },
+    {
+      key: "rating",
+      label: "Min Rating",
+      type: "select",
+      options: ["1", "2", "3", "4", "5"],
+      predicate: (r, v) => r.rating >= Number(v),
+    },
+    {
+      key: "q",
+      label: "Search",
+      type: "search",
+      placeholder: "Product or customer",
+      widthClass: "w-56",
+      predicate: (r, v) => {
+        const q = v.toLowerCase();
+        return r.product.toLowerCase().includes(q) || r.customer.toLowerCase().includes(q);
+      },
+    },
+  ],
   columns: [
     { header: "Date", accessor: (r) => r.date },
     { header: "Product", accessor: (r) => r.product },

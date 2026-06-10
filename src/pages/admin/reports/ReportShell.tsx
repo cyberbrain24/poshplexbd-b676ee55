@@ -61,8 +61,28 @@ export function ReportShell<T>({ config, extraFilters, pdfFilters }: ReportShell
   });
 
   const rows = q.data || [];
-  const capped = config.rowCap && rows.length > config.rowCap ? rows.slice(0, config.rowCap) : rows;
+
+  // Filter state (one value per filter key)
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  const setFilter = (k: string, v: string) =>
+    setFilterValues((s) => ({ ...s, [k]: v }));
+  const clearFilters = () => setFilterValues({});
+
+  const filtered = useMemo(() => {
+    if (!config.filters?.length) return rows;
+    return rows.filter((r) =>
+      config.filters!.every((f) => {
+        const v = filterValues[f.key];
+        if (!v || v === "all") return true;
+        return f.predicate(r, v);
+      })
+    );
+  }, [rows, config.filters, filterValues]);
+
+  const capped =
+    config.rowCap && filtered.length > config.rowCap ? filtered.slice(0, config.rowCap) : filtered;
   const kpis = config.kpis(capped);
+  const activeFilterCount = Object.values(filterValues).filter((v) => v && v !== "all").length;
 
   const handleCSV = () => {
     if (!capped.length) {
@@ -92,6 +112,9 @@ export function ReportShell<T>({ config, extraFilters, pdfFilters }: ReportShell
         filters: [
           { label: "Range", value: formatRange(range) },
           { label: "Rows", value: String(capped.length) },
+          ...(config.filters || [])
+            .filter((f) => filterValues[f.key] && filterValues[f.key] !== "all")
+            .map((f) => ({ label: f.label, value: filterValues[f.key] })),
           ...(pdfFilters || []),
         ],
         kpis,
@@ -166,6 +189,45 @@ export function ReportShell<T>({ config, extraFilters, pdfFilters }: ReportShell
           </>
         )}
 
+        {(config.filters || []).map((f) => {
+          const options =
+            f.options || (f.deriveOptions ? Array.from(new Set(f.deriveOptions(rows))).filter(Boolean).sort() : []);
+          const val = filterValues[f.key] || "all";
+          return (
+            <div key={f.key} className="flex flex-col gap-1">
+              <label className="text-[10px] uppercase tracking-wider text-muted-foreground">{f.label}</label>
+              {f.type === "search" ? (
+                <Input
+                  className={`h-9 ${f.widthClass || "w-48"}`}
+                  placeholder={f.placeholder || "Search…"}
+                  value={filterValues[f.key] || ""}
+                  onChange={(e) => setFilter(f.key, e.target.value)}
+                />
+              ) : (
+                <Select value={val} onValueChange={(v) => setFilter(f.key, v)}>
+                  <SelectTrigger className={`h-9 ${f.widthClass || "w-40"}`}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    {options.map((o) => (
+                      <SelectItem key={o} value={o}>
+                        {o}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          );
+        })}
+
+        {activeFilterCount > 0 && (
+          <Button variant="ghost" size="sm" className="h-9" onClick={clearFilters}>
+            Clear filters
+          </Button>
+        )}
+
         {extraFilters}
 
         <div className="ml-auto text-[11px] text-muted-foreground">{formatRange(range)}</div>
@@ -184,10 +246,10 @@ export function ReportShell<T>({ config, extraFilters, pdfFilters }: ReportShell
       )}
 
       {/* Row cap notice */}
-      {config.rowCap && rows.length > config.rowCap && (
+      {config.rowCap && filtered.length > config.rowCap && (
         <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2">
           <AlertCircle className="h-4 w-4" />
-          Showing first {config.rowCap.toLocaleString()} of {rows.length.toLocaleString()} rows. Narrow your date range for a complete report.
+          Showing first {config.rowCap.toLocaleString()} of {filtered.length.toLocaleString()} rows. Narrow your date range or filters for a complete report.
         </div>
       )}
 

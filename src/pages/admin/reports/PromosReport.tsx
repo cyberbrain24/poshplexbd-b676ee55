@@ -12,6 +12,22 @@ const config: ReportConfig<PromoReportRow> = {
   filename: "promos_report",
   fetcher: fetchPromosReport,
   rowCap: 5000,
+  filters: [
+    {
+      key: "type",
+      label: "Discount Type",
+      type: "select",
+      deriveOptions: (rows) => rows.map((r) => r.type),
+      predicate: (r, v) => r.type === v,
+    },
+    {
+      key: "code",
+      label: "Code",
+      type: "search",
+      placeholder: "Code contains…",
+      predicate: (r, v) => r.code.toLowerCase().includes(v.toLowerCase()),
+    },
+  ],
   columns: [
     { header: "Code", accessor: (r) => r.code },
     { header: "Type", accessor: (r) => r.type },

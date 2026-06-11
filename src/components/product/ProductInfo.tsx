@@ -201,7 +201,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
       {/* Combo Configurator */}
       {isComboProduct && product?.id && (
         <div className="py-2 lg:py-4 lg:border-b lg:border-border">
-          <ComboConfigurator comboProductId={product.id} onChange={handleComboChange} />
+          <ComboConfigurator comboProductId={product.id} comboPrice={basePrice} onChange={handleComboChange} />
         </div>
       )}
 

@@ -131,6 +131,10 @@ export const useOrders = (filters?: {
   search?: string;
   dateFrom?: string;
   dateTo?: string;
+  includeDivisionIds?: string[];
+  excludeDivisionIds?: string[];
+  includeThanaIds?: string[];
+  excludeThanaIds?: string[];
 }) => {
   return useQuery({
     queryKey: ["orders", filters],
@@ -162,6 +166,18 @@ export const useOrders = (filters?: {
       }
       if (filters?.dateTo) {
         query = query.lte("created_at", filters.dateTo);
+      }
+      if (filters?.includeDivisionIds?.length) {
+        query = query.in("shipping_division_id", filters.includeDivisionIds);
+      }
+      if (filters?.excludeDivisionIds?.length) {
+        query = query.not("shipping_division_id", "in", `(${filters.excludeDivisionIds.join(",")})`);
+      }
+      if (filters?.includeThanaIds?.length) {
+        query = query.in("shipping_thana_id", filters.includeThanaIds);
+      }
+      if (filters?.excludeThanaIds?.length) {
+        query = query.not("shipping_thana_id", "in", `(${filters.excludeThanaIds.join(",")})`);
       }
 
       const { data, error } = await query;

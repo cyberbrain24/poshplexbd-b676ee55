@@ -697,13 +697,11 @@ const AdminOrders = () => {
                     );
                   })()}
 
-                  {/* Parcel ID */}
+                  {/* Ship / Parcel */}
                   <div className="pt-0.5 border-t border-border">
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="text-[10px] text-muted-foreground">Parcel:</span>
-                      <ParcelIdCell order={order as any} />
-                    </div>
+                    <ParcelIdCell order={order as any} />
                   </div>
+
 
                   {/* Call center notes */}
                   <div className="pt-0.5 border-t border-border">

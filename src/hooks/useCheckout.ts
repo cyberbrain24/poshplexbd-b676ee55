@@ -177,6 +177,9 @@ export const useCreateOrder = () => {
           color: item.color || null,
           size: item.size || null,
           image: item.image || null,
+          ...(item.comboChildren && item.comboChildren.length > 0
+            ? { is_combo: true, combo_children: item.comboChildren }
+            : {}),
         },
         unit_price: item.price,
         quantity: item.quantity,

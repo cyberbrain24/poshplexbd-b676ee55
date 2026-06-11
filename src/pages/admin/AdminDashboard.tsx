@@ -3,19 +3,19 @@ import { formatCurrency } from "@/lib/currency";
 import { Skeleton } from "@/components/ui/skeleton";
 import { KPICard, SectionTitle } from "@/components/admin/dashboard/DashboardWidgets";
 import { RevenueLast7DaysChart } from "@/components/admin/dashboard/DashboardCharts";
+import { ORDER_STATUS_LABELS } from "@/constants";
 
-const STATUS_LABELS: Record<string, string> = {
-  pending: "Pending",
-  confirmed: "Confirmed",
-  processing: "Processing",
-  shipped: "Shipped",
-  delivered: "Delivered",
-  partially_delivered: "Partially Delivered",
-  returned: "Returned",
-  cancelled: "Cancelled",
-  failed: "Failed",
-  rto: "RTO",
-};
+// Display only the canonical 7 statuses on the dashboard.
+// (returned/failed/rto are collapsed into Cancel via ORDER_STATUS_LABELS.)
+const DASHBOARD_STATUS_KEYS = [
+  'pending',
+  'confirmed',
+  'processing',
+  'shipped',
+  'delivered',
+  'partially_delivered',
+  'cancelled',
+] as const;
 
 function DashboardSkeleton() {
   return (
@@ -86,12 +86,12 @@ const AdminDashboard = () => {
       <section className="space-y-3">
         <SectionTitle icon="🔄">Order Status (Lifetime)</SectionTitle>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
-          {Object.entries(STATUS_LABELS).map(([key, label]) => {
+          {DASHBOARD_STATUS_KEYS.map((key) => {
             const s = statusTotals[key] || { count: 0, amount: 0 };
             return (
               <KPICard
                 key={key}
-                label={label}
+                label={ORDER_STATUS_LABELS[key]}
                 value={`${s.count} orders`}
                 sub={formatCurrency(s.amount)}
               />

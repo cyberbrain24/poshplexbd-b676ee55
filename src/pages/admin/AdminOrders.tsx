@@ -573,7 +573,7 @@ const AdminOrders = () => {
                 </button>
 
                 {/* Details */}
-                <div className="p-2 flex flex-col gap-1.5 text-xs flex-1">
+                <div className="p-1.5 flex flex-col gap-1 text-xs flex-1">
                   <div className="flex items-center justify-between gap-1">
                     <span className="font-semibold truncate" title={order.order_number}>{order.order_number}</span>
                     <span className="text-muted-foreground text-[10px] shrink-0">
@@ -581,11 +581,11 @@ const AdminOrders = () => {
                     </span>
                   </div>
 
-                  <div className="truncate font-medium" title={order.customer?.name || order.shipping_name || ''}>
+                  <div className="truncate font-medium text-[11px]" title={order.customer?.name || order.shipping_name || ''}>
                     {order.customer?.name || order.shipping_name}
                   </div>
-                  <div className="flex items-center justify-between gap-1 text-muted-foreground text-[11px]">
-                    <span className="truncate" title={order.customer?.phone || order.shipping_phone || ''}>
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="truncate font-bold text-[13px] text-foreground" title={order.customer?.phone || order.shipping_phone || ''}>
                       {order.customer?.phone || order.shipping_phone}
                     </span>
                     <CallCustomerButton order={order as any} />
@@ -596,12 +596,12 @@ const AdminOrders = () => {
                     <span className="font-semibold">{formatCurrency(order.total_amount)}</span>
                   </div>
 
-                  <div className="flex flex-col">
+                  <div className="flex items-center justify-between gap-1">
                     <span className={`text-[11px] ${paidAmount > 0 ? 'text-green-600 font-medium' : 'text-muted-foreground'}`}>
                       Paid: {formatCurrency(paidAmount)}
                     </span>
                     {remaining > 0 && (
-                      <span className="text-[11px] text-destructive">Due: {formatCurrency(remaining)}</span>
+                      <span className="text-[11px] text-destructive font-medium">Due: {formatCurrency(remaining)}</span>
                     )}
                   </div>
 
@@ -620,28 +620,25 @@ const AdminOrders = () => {
 
                   {(() => {
                     const div = order.shipping_division?.name?.trim().toLowerCase();
-                    const label = (div === "dhaka city" || div === "dhaka sub-urban") ? "Inside Dhaka" : "Outside Dhaka";
+                    const isInside = div === "dhaka city" || div === "dhaka sub-urban";
+                    const label = isInside ? "Inside Dhaka" : "Outside Dhaka";
                     return (
-                      <div className="text-[11px] font-medium text-purple-600 truncate">
+                      <div className={`text-[11px] font-medium truncate ${isInside ? 'text-emerald-600' : 'text-amber-600'}`}>
                         Location: {label}
                       </div>
                     );
                   })()}
 
-                  {/* Parcel + Courier */}
-                  <div className="space-y-1 pt-1 border-t border-border">
+                  {/* Parcel ID */}
+                  <div className="pt-0.5 border-t border-border">
                     <div className="flex items-center justify-between gap-1">
                       <span className="text-[10px] text-muted-foreground">Parcel:</span>
                       <ParcelIdCell order={order as any} />
                     </div>
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="text-[10px] text-muted-foreground">Courier:</span>
-                      <CourierStatusCell order={order} />
-                    </div>
                   </div>
 
                   {/* Call center notes */}
-                  <div className="pt-1 border-t border-border">
+                  <div className="pt-0.5 border-t border-border">
                     <CallNotesEditor order={order as any} />
                   </div>
 

@@ -44,6 +44,9 @@ const VariantSelector = ({ variants, onVariantChange }: VariantSelectorProps) =>
     if (uniqueColors.length === 1 && !selectedColor) setSelectedColor(uniqueColors[0].id);
   }, [uniqueColors, selectedColor]);
   useEffect(() => {
+    if (uniqueSizes.length === 1 && !selectedSize) setSelectedSize(uniqueSizes[0].id);
+  }, [uniqueSizes, selectedSize]);
+  useEffect(() => {
     if (uniqueCustoms.length === 1 && !selectedCustom) setSelectedCustom(uniqueCustoms[0].id);
   }, [uniqueCustoms, selectedCustom]);
 

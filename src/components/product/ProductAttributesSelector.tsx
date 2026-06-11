@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useProductAppliedAttributesFull } from "@/hooks/useProductAttributes";
 import { cn } from "@/lib/utils";
 
@@ -9,6 +10,16 @@ interface Props {
 
 const ProductAttributesSelector = ({ productId, selectedValueIds, onChange }: Props) => {
   const { data: attributes = [] } = useProductAppliedAttributesFull(productId);
+
+  // Auto-select when an attribute has exactly one value
+  useEffect(() => {
+    attributes.forEach((attr) => {
+      const values = attr.values || [];
+      if (values.length === 1 && !selectedValueIds[attr.id]) {
+        onChange(attr.id, values[0].id);
+      }
+    });
+  }, [attributes, selectedValueIds, onChange]);
 
   if (attributes.length === 0) return null;
 

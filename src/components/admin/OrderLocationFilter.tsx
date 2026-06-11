@@ -109,13 +109,21 @@ export const OrderLocationFilter = ({
             </Button>
           )}
         </div>
-        <div className="p-2 border-b">
+        <div className="p-2 border-b space-y-2">
           <Input
-            placeholder="Search districts or thanas…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search districts…"
+            value={divisionSearch}
+            onChange={(e) => setDivisionSearch(e.target.value)}
             className="h-8 text-sm"
           />
+          {divisionIds.length > 0 && (
+            <Input
+              placeholder="Search thanas in selected districts…"
+              value={thanaSearch}
+              onChange={(e) => setThanaSearch(e.target.value)}
+              className="h-8 text-sm"
+            />
+          )}
         </div>
         <div className="max-h-72 overflow-y-auto">
           <div className="px-3 py-2 text-[10px] uppercase tracking-wider text-muted-foreground bg-muted/40">

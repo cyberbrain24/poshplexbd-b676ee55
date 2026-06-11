@@ -23,6 +23,13 @@ export const FONT_CATALOG: FontEntry[] = [
   { name: "Teko",          label: "Teko",          category: "display", googleParam: "Teko:wght@300;400;500;600;700" },
   { name: "Abril Fatface", label: "Abril Fatface", category: "display", googleParam: "Abril+Fatface" },
 
+  // Serif (editorial / fashion)
+  { name: "Playfair Display",    label: "Playfair Display",    category: "serif", googleParam: "Playfair+Display:wght@400;500;600;700;800" },
+  { name: "Cormorant Garamond",  label: "Cormorant Garamond",  category: "serif", googleParam: "Cormorant+Garamond:wght@300;400;500;600;700" },
+  { name: "EB Garamond",         label: "EB Garamond",         category: "serif", googleParam: "EB+Garamond:wght@400;500;600;700;800" },
+  { name: "Libre Bodoni",        label: "Libre Bodoni",        category: "serif", googleParam: "Libre+Bodoni:wght@400;500;600;700" },
+
+
   // Sans
   { name: "Poppins",         label: "Poppins",         category: "sans", googleParam: "Poppins:wght@300;400;500;600;700;800" },
   { name: "Inter",           label: "Inter",           category: "sans", googleParam: "Inter:wght@300;400;500;600;700;800" },

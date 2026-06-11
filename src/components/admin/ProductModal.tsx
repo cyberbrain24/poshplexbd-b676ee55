@@ -19,6 +19,8 @@ import ProductImagePickerModal from "@/components/admin/ProductImagePickerModal"
 import { useProductCategoryIds, useSyncProductCategories } from "@/hooks/useProductCategories";
 import { useProductAppliedAttributeIds, useSyncProductAttributes, useProductAttributes, useProductVariantAttributeValues, syncVariantAttributeValues } from "@/hooks/useProductAttributes";
 import { compressProductImage } from "@/lib/imageCompress";
+import ComboBuilder, { ComboChildState, toComboItemInputs } from "@/components/admin/ComboBuilder";
+import { useSyncComboItems } from "@/hooks/useComboItems";
 
 interface ProductModalProps {
   isOpen: boolean;

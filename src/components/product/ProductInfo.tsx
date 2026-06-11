@@ -45,9 +45,10 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
     }
   }, [onColorChange, onVariantImageChange]);
 
-  const handleComboChange = useCallback((selections: ComboChildSelection[], allReady: boolean) => {
+  const handleComboChange = useCallback((selections: ComboChildSelection[], allReady: boolean, itemsTotal: number) => {
     setComboSelections(selections);
     setComboReady(allReady);
+    setComboItemsTotal(itemsTotal);
   }, []);
 
   // Fallback data for static display

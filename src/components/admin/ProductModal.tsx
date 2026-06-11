@@ -302,6 +302,14 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
           }
         }
 
+        // Sync combo children for new combo product
+        if (formData.product_type === "combo" && comboChildren.length > 0) {
+          await syncCombo.mutateAsync({
+            comboProductId: newProduct.id,
+            items: toComboItemInputs(comboChildren),
+          });
+        }
+
         toast.success("Product created successfully");
       }
       // Invalidate attribute caches so re-opening the modal shows fresh picks

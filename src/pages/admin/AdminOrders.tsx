@@ -70,18 +70,44 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { generatePackingListPdf } from "@/lib/orderPackingPdf";
 
-// Parcel ID cell component - simplified, no auto-fetch
+// Parcel ship cell - shows Ship button or Shipped: {consignment_id} in green
 const ParcelIdCell = ({ order }: { order: { id: string; consignment_id: string | null; tracking_number: string | null } }) => {
+  const createShipment = useCreateShipment();
   const resetShipping = useResetShipping();
 
-  // If no consignment_id, show dash
   if (!order.consignment_id) {
-    return <span className="text-muted-foreground">—</span>;
+    return (
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={(e) => {
+          e.stopPropagation();
+          createShipment.mutate(order.id);
+        }}
+        disabled={createShipment.isPending}
+        className="h-6 px-2 text-[10px] w-full"
+      >
+        {createShipment.isPending ? (
+          <Loader2 className="h-3 w-3 animate-spin mr-1" />
+        ) : (
+          <Truck className="h-3 w-3 mr-1" />
+        )}
+        Ship
+      </Button>
+    );
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-xs font-mono text-muted-foreground">{order.consignment_id}</span>
+    <div className="flex items-center gap-1 w-full">
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={(e) => e.stopPropagation()}
+        className="h-6 px-2 text-[10px] flex-1 bg-green-50 hover:bg-green-100 text-green-700 border-green-300 font-mono justify-center"
+        title={`Shipped — Consignment ${order.consignment_id}`}
+      >
+        Shipped: {order.consignment_id}
+      </Button>
       <Button
         size="sm"
         variant="ghost"
@@ -90,7 +116,7 @@ const ParcelIdCell = ({ order }: { order: { id: string; consignment_id: string |
           resetShipping.mutate(order.id);
         }}
         disabled={resetShipping.isPending}
-        className="h-5 w-5 p-0 text-muted-foreground hover:text-destructive"
+        className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive shrink-0"
         title="Reset shipping (if deleted from Steadfast)"
       >
         {resetShipping.isPending ? (

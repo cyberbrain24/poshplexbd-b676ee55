@@ -24,20 +24,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { formatCurrency } from "@/lib/currency";
 import { toast } from "sonner";
+import { ORDER_STATUS_LABELS, type OrderStatusType } from "@/constants";
 
 const getOrderStatusBadge = (status: string) => {
-  const map: Record<string, { className: string; label: string }> = {
-    pending: { className: "bg-amber-100 text-amber-800 hover:bg-amber-100", label: "Pending" },
-    confirmed: { className: "bg-blue-100 text-blue-800 hover:bg-blue-100", label: "Confirmed" },
-    processing: { className: "bg-indigo-100 text-indigo-800 hover:bg-indigo-100", label: "Processing" },
-    shipped: { className: "bg-purple-100 text-purple-800 hover:bg-purple-100", label: "Shipped" },
-    delivered: { className: "bg-green-100 text-green-800 hover:bg-green-100", label: "Delivered" },
-    cancelled: { className: "bg-red-100 text-red-800 hover:bg-red-100", label: "Cancelled" },
-    failed: { className: "bg-red-100 text-red-800 hover:bg-red-100", label: "Failed" },
-    rto: { className: "bg-orange-100 text-orange-800 hover:bg-orange-100", label: "RTO" },
+  const colorMap: Record<string, string> = {
+    pending: "bg-amber-100 text-amber-800 hover:bg-amber-100",
+    confirmed: "bg-blue-100 text-blue-800 hover:bg-blue-100",
+    processing: "bg-indigo-100 text-indigo-800 hover:bg-indigo-100",
+    shipped: "bg-purple-100 text-purple-800 hover:bg-purple-100",
+    delivered: "bg-green-100 text-green-800 hover:bg-green-100",
+    partially_delivered: "bg-teal-100 text-teal-800 hover:bg-teal-100",
+    cancelled: "bg-red-100 text-red-800 hover:bg-red-100",
+    returned: "bg-red-100 text-red-800 hover:bg-red-100",
+    failed: "bg-red-100 text-red-800 hover:bg-red-100",
+    rto: "bg-red-100 text-red-800 hover:bg-red-100",
   };
-  const s = map[status] || { className: "", label: status };
-  return <Badge className={s.className}>{s.label}</Badge>;
+  const label = ORDER_STATUS_LABELS[status as OrderStatusType] || status;
+  return <Badge className={colorMap[status] || ""}>{label}</Badge>;
 };
 
 const getPaymentStatusBadge = (status: string) => {

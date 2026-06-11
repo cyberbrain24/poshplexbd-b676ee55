@@ -60,6 +60,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import OrderDetailModal from "@/components/admin/OrderDetailModal";
+import OrderLocationFilter from "@/components/admin/OrderLocationFilter";
 import { useCreateShipment, useResetShipping, useSyncSteadfastStatus } from "@/hooks/useSteadfast";
 import { formatCurrency } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";

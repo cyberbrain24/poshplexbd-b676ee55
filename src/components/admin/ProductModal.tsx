@@ -1057,9 +1057,15 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                     </div>
                   )}
                 </>
+              ) : formData.product_type === "combo" ? (
+                <ComboBuilder
+                  parentProductId={product?.id}
+                  value={comboChildren}
+                  onChange={setComboChildren}
+                />
               ) : (
                 <div className="border border-border p-8 text-center text-muted-foreground">
-                  <p>Switch to "Variable" product type to manage variants</p>
+                  <p>Switch to "Variable" to manage variants, or "Combo / Bundle" to bundle products.</p>
                 </div>
               )}
             </TabsContent>

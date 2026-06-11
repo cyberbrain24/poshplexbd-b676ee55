@@ -418,7 +418,15 @@ const AdminOrders = () => {
           </Button>
           <Button onClick={handleDownloadPdf} disabled={downloadingPdf || ordersLoading} variant="outline">
             {downloadingPdf ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-            Download Packing PDF
+            Packing PDF
+          </Button>
+          <Button onClick={handleDownloadCsv} disabled={ordersLoading} variant="outline">
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            CSV Report
+          </Button>
+          <Button onClick={handleDownloadReportPdf} disabled={downloadingReport || ordersLoading} variant="outline">
+            {downloadingReport ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileText className="h-4 w-4 mr-2" />}
+            PDF Report
           </Button>
         </div>
       </div>

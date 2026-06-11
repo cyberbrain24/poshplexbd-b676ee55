@@ -15,37 +15,34 @@ import { trackCompleteRegistration, setAdvancedMatchingUser } from "@/services/f
 const isEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 const isPhone = (value: string) => /^(\+?880|0)?1[3-9]\d{8}$/.test(value.replace(/\D/g, ""));
 
-// Ensure a customer + customer_accounts row exists for any auth user (used after OAuth)
-const ensureCustomerForUser = async (user: any) => {
-  const { data: existing } = await supabase
+// Decide where to send the user after auth: if their customer profile is incomplete, send to /complete-profile.
+const resolveAuthDestination = async (user: any, fallback: string): Promise<string> => {
+  const { data: account } = await supabase
     .from("customer_accounts")
-    .select("id")
+    .select("customer_id")
     .eq("auth_user_id", user.id)
     .maybeSingle();
-  if (existing) return;
 
-  const meta = user.user_metadata || {};
-  const email: string | null = user.email && !user.email.endsWith("@phone.local") ? user.email : null;
-  const fullName: string = meta.full_name || meta.name || (email ? email.split("@")[0] : "Customer");
+  if (!account || !account.customer_id) return "/complete-profile";
 
-  const { data: newCustomer } = await supabase
+  const { data: customer } = await supabase
     .from("customers")
-    .insert({
-      name: fullName,
-      phone: `user_${user.id.slice(0, 8)}`,
-      email,
-      gender: "other",
-      is_active: true,
-    })
-    .select("id")
-    .single();
+    .select("name, phone, gender, address, division_id, thana_id")
+    .eq("id", account.customer_id)
+    .maybeSingle();
 
-  await supabase.from("customer_accounts").insert({
-    auth_user_id: user.id,
-    customer_id: newCustomer?.id ?? null,
-    phone: null,
-    email,
-  });
+  if (!customer) return "/complete-profile";
+
+  const phoneOk = customer.phone && !customer.phone.startsWith("user_");
+  const complete =
+    !!customer.name?.trim() &&
+    !!phoneOk &&
+    !!customer.gender && customer.gender !== "other" &&
+    !!customer.address?.trim() &&
+    !!customer.division_id &&
+    !!customer.thana_id;
+
+  return complete ? fallback : "/complete-profile";
 };
 
 
@@ -64,15 +61,16 @@ const CustomerAuth = () => {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
-        // Fire-and-forget: ensure CRM customer record exists (OAuth users)
-        ensureCustomerForUser(session.user).catch((e) => console.error(e));
-        navigate(redirectPath, { replace: true });
+        resolveAuthDestination(session.user, redirectPath).then((dest) => {
+          navigate(dest, { replace: true });
+        });
       }
     });
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        ensureCustomerForUser(session.user).catch((e) => console.error(e));
-        navigate(redirectPath, { replace: true });
+        resolveAuthDestination(session.user, redirectPath).then((dest) => {
+          navigate(dest, { replace: true });
+        });
       }
     });
     return () => subscription.unsubscribe();

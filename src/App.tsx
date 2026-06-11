@@ -159,9 +159,6 @@ const App = () => (
                   <Route path="/auth" element={<Suspense fallback={<LoadingFallback />}><Auth /></Suspense>} />
                  <Route path="/login" element={<Suspense fallback={<LoadingFallback />}><CustomerAuth /></Suspense>} />
                  <Route path="/email/unsubscribe" element={<Suspense fallback={<LoadingFallback />}><EmailUnsubscribe /></Suspense>} />
-                 <Route path="/whatsapp/unsubscribe" element={<Suspense fallback={<LoadingFallback />}><WhatsAppUnsubscribe /></Suspense>} />
-                 <Route path="/instagram/unsubscribe" element={<Suspense fallback={<LoadingFallback />}><InstagramUnsubscribe /></Suspense>} />
-                 <Route path="/messenger/unsubscribe" element={<Suspense fallback={<LoadingFallback />}><MessengerUnsubscribe /></Suspense>} />
                   
                   
                   {/* Admin Routes - Lazy loaded */}

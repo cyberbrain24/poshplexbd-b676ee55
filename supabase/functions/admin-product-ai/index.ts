@@ -128,7 +128,7 @@ const tools = [
   }, required: ["selling_price"] } } },
   { type: "function", function: { name: "add_product_category", description: "Link an additional category to a product (multi-category support).", parameters: { type: "object", properties: { product_id: { type: "string" }, category_id: { type: "string" } }, required: ["product_id", "category_id"] } } },
   { type: "function", function: { name: "remove_product_category", description: "Remove a category link from a product.", parameters: { type: "object", properties: { product_id: { type: "string" }, category_id: { type: "string" } }, required: ["product_id", "category_id"] } } },
-  { type: "function", function: { name: "list_orders", description: "List recent orders with optional filters.", parameters: { type: "object", properties: { status: { type: "string", description: "pending|confirmed|shipped|delivered|cancelled|partially_delivered" }, payment_status: { type: "string", description: "unpaid|partial|paid|refunded" }, search: { type: "string", description: "Order number or customer phone" }, limit: { type: "number" }, days: { type: "number", description: "Only orders from last N days" } } } } },
+  { type: "function", function: { name: "list_orders", description: "List recent orders with optional filters. Status enum: pending|confirmed|processing|shipped|delivered|partially_delivered|returned|cancelled|failed|rto. Payment status enum: unpaid|pending_verification|paid|partially_paid|partially_refunded|refunded|failed. NOTE: 'pending_verification' is the same as what admins call 'In Review' / 'In Review Status' / 'review' — always map those phrases to payment_status='pending_verification'.", parameters: { type: "object", properties: { status: { type: "string" }, payment_status: { type: "string" }, search: { type: "string", description: "Order number, customer name, or phone" }, limit: { type: "number" }, days: { type: "number", description: "Only orders from last N days" } } } } },
   { type: "function", function: { name: "get_order", description: "Get full order details by order_number or id.", parameters: { type: "object", properties: { identifier: { type: "string" } }, required: ["identifier"] } } },
   { type: "function", function: { name: "get_order_items", description: "List items for an order id.", parameters: { type: "object", properties: { order_id: { type: "string" } }, required: ["order_id"] } } },
   { type: "function", function: { name: "list_customers", description: "List customers, optional search by name/phone/email.", parameters: { type: "object", properties: { search: { type: "string" }, limit: { type: "number" } } } } },
@@ -180,14 +180,14 @@ const tools = [
     customer_notes: { type: "string" }, internal_notes: { type: "string" },
     discount_amount: { type: "number" }, shipping_cost: { type: "number" }, total_amount: { type: "number" },
   }, required: ["order_id"] } } },
-  { type: "function", function: { name: "set_order_status", description: "Change order_status. Logs status history.", parameters: { type: "object", properties: {
+  { type: "function", function: { name: "set_order_status", description: "Change order_status. Logs status history. Enum: pending|confirmed|processing|shipped|delivered|partially_delivered|returned|cancelled|failed|rto.", parameters: { type: "object", properties: {
     order_id: { type: "string" },
-    status: { type: "string", description: "pending|confirmed|processing|shipped|delivered|partially_delivered|cancelled|returned" },
+    status: { type: "string" },
     notes: { type: "string" },
   }, required: ["order_id", "status"] } } },
-  { type: "function", function: { name: "set_payment_status", description: "Change payment_status of an order.", parameters: { type: "object", properties: {
+  { type: "function", function: { name: "set_payment_status", description: "Change payment_status of an order. Enum: unpaid|pending_verification|paid|partially_paid|partially_refunded|refunded|failed. 'In Review' / 'review' / 'in_review' all mean pending_verification.", parameters: { type: "object", properties: {
     order_id: { type: "string" },
-    payment_status: { type: "string", description: "unpaid|partial|paid|refunded" },
+    payment_status: { type: "string" },
     notes: { type: "string" },
   }, required: ["order_id", "payment_status"] } } },
   { type: "function", function: { name: "update_order_item", description: "Update an order item: quantity, unit_price, or fulfillment_status. Deleting items is NOT permitted.", parameters: { type: "object", properties: {
@@ -265,7 +265,7 @@ Rules:
 
 Modules summary:
 - Products: catalog with variants, images, multi-category junction, brands, colors, sizes, materials, size guides, care instructions.
-- Orders: PO-XXXXX numbers, status, payment_status, Steadfast courier integration.
+- Orders: PO-XXXXX numbers, order_status (pending|confirmed|processing|shipped|delivered|partially_delivered|returned|cancelled|failed|rto), payment_status (unpaid|pending_verification|paid|partially_paid|partially_refunded|refunded|failed). "In Review" / "review" / "in_review" ALWAYS refers to payment_status='pending_verification'. Steadfast courier integration.
 - Customers: linked to auth via customer_accounts; phone, email, division/thana, customer_type.
 - Inventory: product_variants stock_quantity; standalone Independent Inventory in inventory_entries.
 - Finance: accounts, transactions, order_payments.
@@ -500,9 +500,15 @@ async function executeTool(name: string, args: any, sb: any) {
       }
       // ====== EXTENDED READ TOOLS (all modules) ======
       case "list_orders": {
+        const normalizePayment = (s: string) => {
+          const k = String(s || "").toLowerCase().replace(/[\s-]+/g, "_");
+          if (["in_review", "review", "reviewing", "pending_verification", "pending_review", "verification"].includes(k)) return "pending_verification";
+          if (k === "partial") return "partially_paid";
+          return k;
+        };
         let q = sb.from("orders").select("id, order_number, customer_id, shipping_name, shipping_phone, order_status, payment_status, total_amount, paid_amount, created_at").order("created_at", { ascending: false }).limit(args.limit || 25);
-        if (args.status) q = q.eq("order_status", args.status);
-        if (args.payment_status) q = q.eq("payment_status", args.payment_status);
+        if (args.status) q = q.eq("order_status", String(args.status).toLowerCase().replace(/[\s-]+/g, "_"));
+        if (args.payment_status) q = q.eq("payment_status", normalizePayment(args.payment_status));
         if (args.search) q = q.or(`order_number.ilike.%${args.search}%,shipping_phone.ilike.%${args.search}%,shipping_name.ilike.%${args.search}%`);
         if (args.days) q = q.gte("created_at", new Date(Date.now() - args.days * 86400000).toISOString());
         const { data, error } = await q;
@@ -750,23 +756,28 @@ async function executeTool(name: string, args: any, sb: any) {
         return { success: true, order: data };
       }
       case "set_order_status": {
+        const status = String(args.status || "").toLowerCase().replace(/[\s-]+/g, "_");
         const { data: prev } = await sb.from("orders").select("order_status").eq("id", args.order_id).maybeSingle();
-        const { data, error } = await sb.from("orders").update({ order_status: args.status }).eq("id", args.order_id).select().single();
+        const { data, error } = await sb.from("orders").update({ order_status: status }).eq("id", args.order_id).select().single();
         if (error) throw error;
         await sb.from("order_status_history").insert({
           order_id: args.order_id, status_type: "order",
-          previous_status: prev?.order_status || null, new_status: args.status,
+          previous_status: prev?.order_status || null, new_status: status,
           notes: args.notes || "Updated by AI assistant",
         });
         return { success: true, order: data };
       }
       case "set_payment_status": {
+        const raw = String(args.payment_status || "").toLowerCase().replace(/[\s-]+/g, "_");
+        const status = ["in_review", "review", "reviewing", "pending_review", "verification", "pending_verification"].includes(raw)
+          ? "pending_verification"
+          : raw === "partial" ? "partially_paid" : raw;
         const { data: prev } = await sb.from("orders").select("payment_status").eq("id", args.order_id).maybeSingle();
-        const { data, error } = await sb.from("orders").update({ payment_status: args.payment_status }).eq("id", args.order_id).select().single();
+        const { data, error } = await sb.from("orders").update({ payment_status: status }).eq("id", args.order_id).select().single();
         if (error) throw error;
         await sb.from("order_status_history").insert({
           order_id: args.order_id, status_type: "payment",
-          previous_status: prev?.payment_status || null, new_status: args.payment_status,
+          previous_status: prev?.payment_status || null, new_status: status,
           notes: args.notes || "Updated by AI assistant",
         });
         return { success: true, order: data };

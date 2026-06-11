@@ -44,6 +44,8 @@ export const FONT_CATALOG: FontEntry[] = [
   { name: "Sora",            label: "Sora",            category: "sans", googleParam: "Sora:wght@300;400;500;600;700;800" },
   { name: "Urbanist",        label: "Urbanist",        category: "sans", googleParam: "Urbanist:wght@300;400;500;600;700;800" },
   { name: "Barlow Condensed", label: "Barlow Condensed", category: "sans", googleParam: "Barlow+Condensed:wght@300;400;500;600;700" },
+  { name: "Jost",            label: "Jost",            category: "sans", googleParam: "Jost:wght@300;400;500;600;700;800" },
+  { name: "Work Sans",       label: "Work Sans",       category: "sans", googleParam: "Work+Sans:wght@300;400;500;600;700;800" },
 
   // Mono
   { name: "JetBrains Mono",  label: "JetBrains Mono",  category: "mono", googleParam: "JetBrains+Mono:wght@300;400;500;600;700" },

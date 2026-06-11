@@ -168,7 +168,7 @@ export const useCreateOrder = () => {
       }
 
       // Prepare order items data
-      const orderItemsData = cartItems.map(item => ({
+      const orderItemsData: any[] = cartItems.map(item => ({
         product_id: item.productId || null,
         variant_id: (item.variantId && validVariantIds.has(item.variantId)) ? item.variantId : null,
         product_name: item.name,
@@ -177,7 +177,10 @@ export const useCreateOrder = () => {
           color: item.color || null,
           size: item.size || null,
           image: item.image || null,
-        },
+          ...(item.comboChildren && item.comboChildren.length > 0
+            ? { is_combo: true, combo_children: item.comboChildren as any }
+            : {}),
+        } as any,
         unit_price: item.price,
         quantity: item.quantity,
         line_total: item.price * item.quantity,

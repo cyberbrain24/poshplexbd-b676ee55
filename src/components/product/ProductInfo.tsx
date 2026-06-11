@@ -25,25 +25,29 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
   const [quantity, setQuantity] = useState(1);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [selectedAttributeValues, setSelectedAttributeValues] = useState<Record<string, string>>({});
+  const [comboSelections, setComboSelections] = useState<ComboChildSelection[]>([]);
+  const [comboReady, setComboReady] = useState(false);
   const { addToCart } = useCart();
   const incrementQuantity = () => setQuantity(prev => prev + 1);
   const decrementQuantity = () => setQuantity(prev => Math.max(1, prev - 1));
   
   const handleVariantChange = useCallback((variant: ProductVariant | null) => {
     setSelectedVariant(variant);
-    // Notify parent of color change for image filtering
     if (variant?.color_id) {
       onColorChange?.(variant.color_id);
     } else if (!variant) {
       onColorChange?.(null);
     }
-    // Notify parent of variant-specific image
     onVariantImageChange?.(variant?.image_url || null);
-    // Scroll to top on desktop so user sees the image change
     if (variant && window.innerWidth >= 1024) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [onColorChange, onVariantImageChange]);
+
+  const handleComboChange = useCallback((selections: ComboChildSelection[], allReady: boolean) => {
+    setComboSelections(selections);
+    setComboReady(allReady);
+  }, []);
 
   // Fallback data for static display
   const productName = product?.name || "Product";
@@ -54,12 +58,39 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
   const shortDescription = product?.short_description || "Quality streetwear designed for comfort and style.";
   const hasVariants = product?.variants && product.variants.length > 0;
   const isVariableProduct = product?.product_type === 'variable';
-  const canAddToCart = !isVariableProduct || selectedVariant !== null;
+  const isComboProduct = product?.product_type === 'combo';
+  const canAddToCart = isComboProduct ? comboReady : (!isVariableProduct || selectedVariant !== null);
 
   const getCartItem = () => {
     const mainImage = product?.images?.find(img => img.is_main)?.image_url 
       || product?.images?.[0]?.image_url 
       || '/placeholder.svg';
+
+    if (isComboProduct) {
+      const childSig = comboSelections
+        .map(s => `${s.productId}:${s.variantId || 'base'}`)
+        .join('|');
+      return {
+        id: `${product?.id || 'combo'}-combo-${childSig || 'na'}`,
+        productId: product?.id,
+        variantId: undefined,
+        name: productName,
+        price: basePrice,
+        image: mainImage,
+        category: categoryName,
+        sku: product?.sku,
+        comboChildren: comboSelections.map(s => ({
+          productId: s.productId,
+          variantId: s.variantId || null,
+          name: s.name,
+          image: s.image,
+          sku: s.sku || null,
+          color: s.color || null,
+          size: s.size || null,
+          quantity: s.quantity,
+        })),
+      };
+    }
 
     return {
       id: `${product?.id || 'fallback'}-${selectedVariant?.id || 'base'}`,
@@ -157,8 +188,15 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
         <p className="text-sm font-light text-muted-foreground">{shortDescription}</p>
       </div>
 
+      {/* Combo Configurator */}
+      {isComboProduct && product?.id && (
+        <div className="py-2 lg:py-4 lg:border-b lg:border-border">
+          <ComboConfigurator comboProductId={product.id} onChange={handleComboChange} />
+        </div>
+      )}
+
       {/* Variant Selection */}
-      {hasVariants && (
+      {!isComboProduct && hasVariants && (
         <div className="py-2 lg:py-4 lg:border-b lg:border-border">
           <VariantSelector 
             variants={product!.variants!} 
@@ -218,7 +256,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
             disabled={!canAddToCart}
             onClick={handleAddToCart}
           >
-            {isVariableProduct && !selectedVariant ? "Select Options" : "Add to Cart"}
+            {((isVariableProduct && !selectedVariant) || (isComboProduct && !comboReady)) ? "Select Options" : "Add to Cart"}
           </Button>
           <Button 
             variant="outline"
@@ -234,6 +272,11 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
             Please select color and size to add to cart
           </p>
         )}
+        {isComboProduct && !comboReady && (
+          <p className="text-xs text-muted-foreground text-center">
+            Configure each bundle item to continue
+          </p>
+        )}
       </div>
 
       {/* Mobile sticky bottom bar - above footer nav */}
@@ -244,7 +287,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
             disabled={!canAddToCart}
             onClick={handleAddToCart}
           >
-            {isVariableProduct && !selectedVariant ? "Select Options" : "Add to Cart"}
+            {((isVariableProduct && !selectedVariant) || (isComboProduct && !comboReady)) ? "Select Options" : "Add to Cart"}
           </Button>
           <Button 
             variant="outline"

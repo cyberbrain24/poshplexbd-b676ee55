@@ -145,7 +145,7 @@ export interface ProductVariant {
 export interface ProductFormData {
   name: string;
   sku: string;
-  product_type: 'simple' | 'variable';
+  product_type: 'simple' | 'variable' | 'combo';
   category_id: string | null;
   brand_id: string | null;
   short_description: string;

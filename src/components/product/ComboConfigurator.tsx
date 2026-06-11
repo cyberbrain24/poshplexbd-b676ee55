@@ -218,6 +218,9 @@ const ComboConfigurator = ({ comboProductId, comboPrice = 0, onChange }: ComboCo
               (!needsCustom || v.custom_variant?.id === s.customId)
           );
           const configured = !needsColor && !needsSize && !needsCustom ? true : !!matched;
+          const unitPrice = matched?.selling_price ?? child?.base_price ?? 0;
+          const lineTotal = unitPrice * ci.quantity;
+          const displayImage = resolveChildImage(child, matched, s.colorId);
 
           return (
             <AccordionItem
@@ -231,30 +234,43 @@ const ComboConfigurator = ({ comboProductId, comboPrice = 0, onChange }: ComboCo
                     {idx + 1}
                   </div>
                   <img
-                    src={mainImage(child?.images as any)}
+                    src={displayImage}
                     alt={child?.name || "Item"}
-                    className="w-11 h-11 object-cover rounded border border-border bg-muted shrink-0"
+                    className="w-11 h-11 object-cover rounded border border-border bg-muted shrink-0 transition-opacity"
                   />
                   <div className="flex-1 min-w-0 text-left">
                     <p className="text-sm font-medium truncate">{child?.name}</p>
                     <p className="text-[11px] text-muted-foreground truncate">
-                      Qty {ci.quantity}
+                      ৳{unitPrice.toLocaleString()} × {ci.quantity}
                       {matched?.color?.name ? ` · ${matched.color.name}` : ""}
                       {matched?.size?.label ? ` · ${matched.size.label}` : ""}
                     </p>
                   </div>
-                  {configured ? (
-                    <Badge variant="secondary" className="gap-1 shrink-0">
-                      <Check className="h-3 w-3" /> Ready
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="shrink-0 text-[10px]">
-                      Select options
-                    </Badge>
-                  )}
+                  <div className="text-right shrink-0 mr-1 hidden sm:block">
+                    <p className="text-xs font-medium">৳{lineTotal.toLocaleString()}</p>
+                    {configured ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                        <Check className="h-3 w-3" /> Ready
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground">Select options</span>
+                    )}
+                  </div>
+                  <div className="sm:hidden shrink-0">
+                    {configured ? (
+                      <Badge variant="secondary" className="gap-1">
+                        <Check className="h-3 w-3" /> Ready
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-[10px]">
+                        Select
+                      </Badge>
+                    )}
+                  </div>
                   <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform ml-1 shrink-0" />
                 </div>
               </AccordionTrigger>
+
               <AccordionContent className="px-3 pb-4 pt-1">
                 {variants.length === 0 ? (
                   <p className="text-xs text-muted-foreground py-2">

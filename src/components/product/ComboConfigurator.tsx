@@ -368,49 +368,6 @@ const ComboConfigurator = ({ comboProductId, comboPrice = 0, onChange }: ComboCo
           );
         })}
       </Accordion>
-
-      {(() => {
-        const itemsTotal = items.reduce((sum, ci) => {
-          const child = ci.child as any;
-          const s = state[ci.id] || { colorId: null, sizeId: null, customId: null };
-          const variants = ((child?.variants as any[]) || []).filter((v) => v.is_active);
-          const matched = variants.find(
-            (v) =>
-              (!variants.some((x) => x.color) || v.color?.id === s.colorId) &&
-              (!variants.some((x) => x.size) || v.size?.id === s.sizeId) &&
-              (!variants.some((x) => x.custom_variant) || v.custom_variant?.id === s.customId)
-          );
-          const unit = matched?.selling_price ?? child?.base_price ?? 0;
-          return sum + unit * ci.quantity;
-        }, 0);
-        const savings = Math.max(0, itemsTotal - (comboPrice || 0));
-        const pct = itemsTotal > 0 ? Math.round((savings / itemsTotal) * 100) : 0;
-        if (itemsTotal <= 0) return null;
-        return (
-          <div className="mt-3 rounded-md border border-border bg-muted/40 p-3 space-y-1.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Items total</span>
-              <span className={cn("font-light", savings > 0 && "line-through text-muted-foreground")}>
-                ৳{itemsTotal.toLocaleString()}
-              </span>
-            </div>
-            {comboPrice > 0 && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-medium uppercase tracking-wide">Combo price</span>
-                <span className="font-semibold">৳{comboPrice.toLocaleString()}</span>
-              </div>
-            )}
-            {savings > 0 && (
-              <div className="flex items-center justify-between text-xs pt-1 border-t border-border/60">
-                <span className="text-foreground font-medium">You save</span>
-                <span className="font-semibold text-foreground">
-                  ৳{savings.toLocaleString()} ({pct}%)
-                </span>
-              </div>
-            )}
-          </div>
-        );
-      })()}
     </div>
   );
 };

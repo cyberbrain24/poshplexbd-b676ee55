@@ -500,9 +500,15 @@ async function executeTool(name: string, args: any, sb: any) {
       }
       // ====== EXTENDED READ TOOLS (all modules) ======
       case "list_orders": {
+        const normalizePayment = (s: string) => {
+          const k = String(s || "").toLowerCase().replace(/[\s-]+/g, "_");
+          if (["in_review", "review", "reviewing", "pending_verification", "pending_review", "verification"].includes(k)) return "pending_verification";
+          if (k === "partial") return "partially_paid";
+          return k;
+        };
         let q = sb.from("orders").select("id, order_number, customer_id, shipping_name, shipping_phone, order_status, payment_status, total_amount, paid_amount, created_at").order("created_at", { ascending: false }).limit(args.limit || 25);
-        if (args.status) q = q.eq("order_status", args.status);
-        if (args.payment_status) q = q.eq("payment_status", args.payment_status);
+        if (args.status) q = q.eq("order_status", String(args.status).toLowerCase().replace(/[\s-]+/g, "_"));
+        if (args.payment_status) q = q.eq("payment_status", normalizePayment(args.payment_status));
         if (args.search) q = q.or(`order_number.ilike.%${args.search}%,shipping_phone.ilike.%${args.search}%,shipping_name.ilike.%${args.search}%`);
         if (args.days) q = q.gte("created_at", new Date(Date.now() - args.days * 86400000).toISOString());
         const { data, error } = await q;

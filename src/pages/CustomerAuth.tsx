@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +10,43 @@ import { Eye, EyeOff } from "lucide-react";
 import PoshplexHeader from "@/components/header/PoshplexHeader";
 import PoshplexFooter from "@/components/footer/PoshplexFooter";
 import { trackCompleteRegistration, setAdvancedMatchingUser } from "@/services/facebook-pixel.service";
+
+
+const isEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+const isPhone = (value: string) => /^(\+?880|0)?1[3-9]\d{8}$/.test(value.replace(/\D/g, ""));
+
+// Ensure a customer + customer_accounts row exists for any auth user (used after OAuth)
+const ensureCustomerForUser = async (user: any) => {
+  const { data: existing } = await supabase
+    .from("customer_accounts")
+    .select("id")
+    .eq("auth_user_id", user.id)
+    .maybeSingle();
+  if (existing) return;
+
+  const meta = user.user_metadata || {};
+  const email: string | null = user.email && !user.email.endsWith("@phone.local") ? user.email : null;
+  const fullName: string = meta.full_name || meta.name || (email ? email.split("@")[0] : "Customer");
+
+  const { data: newCustomer } = await supabase
+    .from("customers")
+    .insert({
+      name: fullName,
+      phone: `user_${user.id.slice(0, 8)}`,
+      email,
+      gender: "other",
+      is_active: true,
+    })
+    .select("id")
+    .single();
+
+  await supabase.from("customer_accounts").insert({
+    auth_user_id: user.id,
+    customer_id: newCustomer?.id ?? null,
+    phone: null,
+    email,
+  });
+};
 
 
 const isEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());

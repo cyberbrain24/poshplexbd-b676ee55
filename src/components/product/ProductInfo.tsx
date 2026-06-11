@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Product, ProductVariant } from "@/types/product";
 import VariantSelector from "./VariantSelector";
 import ProductAttributesSelector from "./ProductAttributesSelector";
+import ComboConfigurator, { ComboChildSelection } from "./ComboConfigurator";
 import { useCart } from "@/contexts/CartContext";
 import { generateProductSlug } from "@/lib/slug";
 import { toast } from "sonner";

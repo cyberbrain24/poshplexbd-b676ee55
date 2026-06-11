@@ -170,6 +170,14 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
                   ৳{basePrice.toLocaleString()}
                 </p>
               )}
+              {isComboProduct && comboItemsTotal > basePrice && (
+                <p className="text-[11px] font-light text-muted-foreground">
+                  <span className="line-through">৳{comboItemsTotal.toLocaleString()}</span>
+                  <span className="ml-1.5 text-foreground font-medium">
+                    Save ৳{(comboItemsTotal - basePrice).toLocaleString()}
+                  </span>
+                </p>
+              )}
             </div>
             {product && (
               <FavoriteButton

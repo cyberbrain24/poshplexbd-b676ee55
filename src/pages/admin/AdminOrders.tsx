@@ -248,6 +248,9 @@ const AdminOrders = () => {
   const [paymentFilter, setPaymentFilter] = useState<PaymentStatus | "all">("all");
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
+  const [locationMode, setLocationMode] = useState<"include" | "exclude">("include");
+  const [locDivisionIds, setLocDivisionIds] = useState<string[]>([]);
+  const [locThanaIds, setLocThanaIds] = useState<string[]>([]);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null);
@@ -274,6 +277,10 @@ const AdminOrders = () => {
     search: search || undefined,
     dateFrom: dateFrom ? new Date(dateFrom).toISOString() : undefined,
     dateTo: dateTo ? new Date(new Date(dateTo).setHours(23, 59, 59, 999)).toISOString() : undefined,
+    includeDivisionIds: locationMode === "include" ? locDivisionIds : undefined,
+    excludeDivisionIds: locationMode === "exclude" ? locDivisionIds : undefined,
+    includeThanaIds: locationMode === "include" ? locThanaIds : undefined,
+    excludeThanaIds: locationMode === "exclude" ? locThanaIds : undefined,
   });
   const deleteOrder = useDeleteOrder();
   const syncAllSteadfast = useSyncSteadfastStatus();

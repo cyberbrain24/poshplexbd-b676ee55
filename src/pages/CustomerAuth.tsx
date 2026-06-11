@@ -49,9 +49,6 @@ const ensureCustomerForUser = async (user: any) => {
 };
 
 
-const isEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
-const isPhone = (value: string) => /^(\+?880|0)?1[3-9]\d{8}$/.test(value.replace(/\D/g, ""));
-
 const CustomerAuth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [identifier, setIdentifier] = useState("");

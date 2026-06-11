@@ -24,7 +24,8 @@ export interface ComboChildSelection {
 
 interface ComboConfiguratorProps {
   comboProductId: string;
-  onChange: (selections: ComboChildSelection[], allConfigured: boolean) => void;
+  comboPrice?: number;
+  onChange: (selections: ComboChildSelection[], allConfigured: boolean, itemsTotal: number) => void;
 }
 
 interface ChildState {
@@ -38,7 +39,18 @@ const mainImage = (imgs?: Array<{ image_url: string; is_main?: boolean }>) => {
   return imgs.find((i) => i.is_main)?.image_url || imgs[0].image_url;
 };
 
-const ComboConfigurator = ({ comboProductId, onChange }: ComboConfiguratorProps) => {
+/** Resolve image for a child given current variant selection. */
+const resolveChildImage = (child: any, matchedVariant: any, colorId: string | null): string => {
+  if (matchedVariant?.image_url) return matchedVariant.image_url;
+  const imgs = (child?.images || []) as Array<{ image_url: string; is_main?: boolean; color_id?: string | null }>;
+  if (colorId) {
+    const byColor = imgs.find((i) => i.color_id === colorId);
+    if (byColor) return byColor.image_url;
+  }
+  return mainImage(imgs);
+};
+
+const ComboConfigurator = ({ comboProductId, comboPrice = 0, onChange }: ComboConfiguratorProps) => {
   const { data: items = [], isLoading } = useComboItems(comboProductId);
   const [state, setState] = useState<Record<string, ChildState>>({});
   const [openItem, setOpenItem] = useState<string | undefined>(undefined);
@@ -48,13 +60,39 @@ const ComboConfigurator = ({ comboProductId, onChange }: ComboConfiguratorProps)
     if (!openItem && items.length > 0) setOpenItem(items[0].id);
   }, [items, openItem]);
 
+  // Auto-select single-value attributes for each child
+  useEffect(() => {
+    if (items.length === 0) return;
+    setState((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      for (const ci of items) {
+        const variants = ((ci.child?.variants as any[]) || []).filter((v) => v.is_active);
+        const colors = Array.from(new Map(variants.filter((v) => v.color).map((v) => [v.color.id, v.color])).values()) as any[];
+        const sizes = Array.from(new Map(variants.filter((v) => v.size).map((v) => [v.size.id, v.size])).values()) as any[];
+        const customs = Array.from(new Map(variants.filter((v) => v.custom_variant).map((v) => [v.custom_variant.id, v.custom_variant])).values()) as any[];
+        const cur = next[ci.id] || { colorId: null, sizeId: null, customId: null };
+        const upd = { ...cur };
+        if (!upd.colorId && colors.length === 1) upd.colorId = colors[0].id;
+        if (!upd.sizeId && sizes.length === 1) upd.sizeId = sizes[0].id;
+        if (!upd.customId && customs.length === 1) upd.customId = customs[0].id;
+        if (upd.colorId !== cur.colorId || upd.sizeId !== cur.sizeId || upd.customId !== cur.customId) {
+          next[ci.id] = upd;
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [items]);
+
   // Compute selections + readiness, fire upward
   useEffect(() => {
     if (items.length === 0) {
-      onChange([], false);
+      onChange([], false, 0);
       return;
     }
     let allReady = true;
+    let itemsTotal = 0;
     const selections: ComboChildSelection[] = items.map((ci) => {
       const child = ci.child;
       const s = state[ci.id] || { colorId: null, sizeId: null, customId: null };
@@ -87,19 +125,22 @@ const ComboConfigurator = ({ comboProductId, onChange }: ComboConfiguratorProps)
       const ready = !needsColor && !needsSize && !needsCustom ? true : !!matched;
       if (!ready) allReady = false;
 
+      const unitPrice = matched?.selling_price ?? child?.base_price ?? 0;
+      itemsTotal += unitPrice * ci.quantity;
+
       return {
         productId: child?.id || ci.child_product_id,
         variantId: matched?.id || null,
         name: child?.name || "Item",
-        image: mainImage(child?.images as any),
+        image: resolveChildImage(child, matched, s.colorId),
         sku: matched?.sku || child?.sku || null,
         color: matched?.color?.name || null,
         size: matched?.size?.label || null,
         quantity: ci.quantity,
-        unitPrice: matched?.selling_price ?? child?.base_price ?? 0,
+        unitPrice,
       };
     });
-    onChange(selections, allReady);
+    onChange(selections, allReady, itemsTotal);
   }, [items, state, onChange]);
 
   const updateChild = (itemId: string, patch: Partial<ChildState>) => {

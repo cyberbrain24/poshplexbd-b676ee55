@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -9,7 +11,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { MapPin, X } from "lucide-react";
-import { useDivisions, useThanas } from "@/hooks/useLocationData";
+import { useDivisions } from "@/hooks/useLocationData";
 
 type Mode = "include" | "exclude";
 

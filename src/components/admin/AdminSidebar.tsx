@@ -63,9 +63,6 @@ const customerManagementItems: NavItem[] = [
 const marketingChannelItems: NavItem[] = [
   { icon: Send, label: "SMS Marketing", path: "/admin/sms" },
   { icon: Mail, label: "Email Marketing", path: "/admin/email" },
-  { icon: MessageCircle, label: "WhatsApp Marketing", path: "/admin/whatsapp-marketing" },
-  { icon: Instagram, label: "Instagram DM", path: "/admin/instagram-marketing" },
-  { icon: MessagesSquare, label: "Messenger", path: "/admin/messenger-marketing" },
 ];
 
 const marketingItems: NavItem[] = [

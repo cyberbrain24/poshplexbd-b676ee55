@@ -9,6 +9,7 @@ import RelatedProducts from "../components/product/RelatedProducts";
 import { useProduct } from "@/hooks/useProducts";
 import { ProductSEO } from "@/components/seo";
 import { trackViewContent } from "@/services/facebook-pixel.service";
+import PromotionSlot from "@/components/promotions/PromotionSlot";
 
 const ProductDetail = () => {
   const { productSlug } = useParams();
@@ -45,6 +46,7 @@ const ProductDetail = () => {
       <PoshplexHeader />
       
       <main className="pt-1">
+        <div className="px-6 mb-3"><PromotionSlot placement="product_top" productId={product?.id} /></div>
         <section className="w-full px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
             <ProductImageGallery 
@@ -75,6 +77,7 @@ const ProductDetail = () => {
             title="You might also like"
           />
         </section>
+        <div className="px-6 my-6"><PromotionSlot placement="product_bottom" productId={product?.id} /></div>
       </main>
       
       <PoshplexFooter />

@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import PromotionSlot from "@/components/promotions/PromotionSlot";
 import PoshplexHeader from "../components/header/PoshplexHeader";
 import PoshplexFooter from "../components/footer/PoshplexFooter";
 import HeroSection from "../components/home/HeroSection";
@@ -35,12 +36,14 @@ const Index = () => {
       
       <main className="-mt-[1px]">
         <HeroSection />
+        <div className="px-4 md:px-8 mt-4"><PromotionSlot placement="home_top" /></div>
         <Suspense fallback={<GalleryFallback />}>
           <CategorySection />
         </Suspense>
         <Suspense fallback={<GridFallback />}>
           <FeaturedProducts />
         </Suspense>
+        <div className="px-4 md:px-8 my-8"><PromotionSlot placement="home_middle" /></div>
         <Suspense fallback={<GridFallback />}>
           <ProductGrid />
         </Suspense>
@@ -50,6 +53,7 @@ const Index = () => {
         <Suspense fallback={<StoryFallback />}>
           <OurStorySection />
         </Suspense>
+        <div className="px-4 md:px-8 my-8"><PromotionSlot placement="home_bottom" /></div>
       </main>
       
       <PoshplexFooter />

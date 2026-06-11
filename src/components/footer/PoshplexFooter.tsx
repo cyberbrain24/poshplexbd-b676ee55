@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import { useSiteBranding } from "@/hooks/useSiteBranding";
+import PromotionSlot from "@/components/promotions/PromotionSlot";
 
 const FOOTER_COLUMNS = [
   {
@@ -40,6 +41,7 @@ const PoshplexFooter = () => {
 
   return (
     <footer className="w-full mt-20" style={{ background: "linear-gradient(180deg, #3a3a3a 0%, #2f2f2f 100%)" }}>
+      <div className="px-6 lg:px-12 pt-8"><PromotionSlot placement="footer" /></div>
       {/* Main Content */}
       <div className="px-6 lg:px-12 py-12 lg:py-16">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8">

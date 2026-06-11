@@ -7,6 +7,7 @@ import FilterSortBar, { type SortOption, type ProductFilters } from "../componen
 import ProductGrid from "../components/category/ProductGrid";
 import { useOptimizedCategoryProducts } from "@/hooks/useOptimizedProducts";
 import { CategorySEO } from "@/components/seo";
+import PromotionSlot from "@/components/promotions/PromotionSlot";
 
 const DEFAULT_FILTERS: ProductFilters = {
   colorIds: [],
@@ -47,6 +48,7 @@ const Category = () => {
           category={formatCategoryName(category)}
           categorySlug={slug}
         />
+        <div className="px-4 md:px-8 my-4"><PromotionSlot placement="category_top" categoryId={parentCategoryId} /></div>
         
         <FilterSortBar 
           filtersOpen={filtersOpen}

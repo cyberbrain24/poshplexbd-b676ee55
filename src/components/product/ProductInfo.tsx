@@ -256,7 +256,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
             disabled={!canAddToCart}
             onClick={handleAddToCart}
           >
-            {isVariableProduct && !selectedVariant ? "Select Options" : "Add to Cart"}
+            {((isVariableProduct && !selectedVariant) || (isComboProduct && !comboReady)) ? "Select Options" : "Add to Cart"}
           </Button>
           <Button 
             variant="outline"
@@ -282,7 +282,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
             disabled={!canAddToCart}
             onClick={handleAddToCart}
           >
-            {isVariableProduct && !selectedVariant ? "Select Options" : "Add to Cart"}
+            {((isVariableProduct && !selectedVariant) || (isComboProduct && !comboReady)) ? "Select Options" : "Add to Cart"}
           </Button>
           <Button 
             variant="outline"

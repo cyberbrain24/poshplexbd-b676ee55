@@ -180,14 +180,14 @@ const tools = [
     customer_notes: { type: "string" }, internal_notes: { type: "string" },
     discount_amount: { type: "number" }, shipping_cost: { type: "number" }, total_amount: { type: "number" },
   }, required: ["order_id"] } } },
-  { type: "function", function: { name: "set_order_status", description: "Change order_status. Logs status history.", parameters: { type: "object", properties: {
+  { type: "function", function: { name: "set_order_status", description: "Change order_status. Logs status history. Enum: pending|confirmed|processing|shipped|delivered|partially_delivered|returned|cancelled|failed|rto.", parameters: { type: "object", properties: {
     order_id: { type: "string" },
-    status: { type: "string", description: "pending|confirmed|processing|shipped|delivered|partially_delivered|cancelled|returned" },
+    status: { type: "string" },
     notes: { type: "string" },
   }, required: ["order_id", "status"] } } },
-  { type: "function", function: { name: "set_payment_status", description: "Change payment_status of an order.", parameters: { type: "object", properties: {
+  { type: "function", function: { name: "set_payment_status", description: "Change payment_status of an order. Enum: unpaid|pending_verification|paid|partially_paid|partially_refunded|refunded|failed. 'In Review' / 'review' / 'in_review' all mean pending_verification.", parameters: { type: "object", properties: {
     order_id: { type: "string" },
-    payment_status: { type: "string", description: "unpaid|partial|paid|refunded" },
+    payment_status: { type: "string" },
     notes: { type: "string" },
   }, required: ["order_id", "payment_status"] } } },
   { type: "function", function: { name: "update_order_item", description: "Update an order item: quantity, unit_price, or fulfillment_status. Deleting items is NOT permitted.", parameters: { type: "object", properties: {

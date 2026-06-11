@@ -34,6 +34,7 @@ const TermsConditions = lazy(() => import("./pages/about/TermsConditions"));
 const ShippingDelivery = lazy(() => import("./pages/about/ShippingDelivery"));
 const Auth = lazy(() => import("./pages/Auth"));
 const CustomerAuth = lazy(() => import("./pages/CustomerAuth"));
+const CompleteProfile = lazy(() => import("./pages/CompleteProfile"));
 const CustomerAccount = lazy(() => import("./pages/CustomerAccount"));
 const OrderTracking = lazy(() => import("./pages/OrderTracking"));
 const MyOrders = lazy(() => import("./pages/MyOrders"));

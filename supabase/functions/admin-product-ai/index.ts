@@ -265,7 +265,7 @@ Rules:
 
 Modules summary:
 - Products: catalog with variants, images, multi-category junction, brands, colors, sizes, materials, size guides, care instructions.
-- Orders: PO-XXXXX numbers, status, payment_status, Steadfast courier integration.
+- Orders: PO-XXXXX numbers, order_status (pending|confirmed|processing|shipped|delivered|partially_delivered|returned|cancelled|failed|rto), payment_status (unpaid|pending_verification|paid|partially_paid|partially_refunded|refunded|failed). "In Review" / "review" / "in_review" ALWAYS refers to payment_status='pending_verification'. Steadfast courier integration.
 - Customers: linked to auth via customer_accounts; phone, email, division/thana, customer_type.
 - Inventory: product_variants stock_quantity; standalone Independent Inventory in inventory_entries.
 - Finance: accounts, transactions, order_payments.

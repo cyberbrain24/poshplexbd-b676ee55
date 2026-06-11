@@ -483,6 +483,14 @@ const AdminOrders = () => {
             </Button>
           )}
         </div>
+        <OrderLocationFilter
+          divisionIds={locDivisionIds}
+          thanaIds={locThanaIds}
+          mode={locationMode}
+          onDivisionChange={setLocDivisionIds}
+          onThanaChange={setLocThanaIds}
+          onModeChange={setLocationMode}
+        />
       </div>
 
       {/* Orders Grid */}

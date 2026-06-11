@@ -188,8 +188,15 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
         <p className="text-sm font-light text-muted-foreground">{shortDescription}</p>
       </div>
 
+      {/* Combo Configurator */}
+      {isComboProduct && product?.id && (
+        <div className="py-2 lg:py-4 lg:border-b lg:border-border">
+          <ComboConfigurator comboProductId={product.id} onChange={handleComboChange} />
+        </div>
+      )}
+
       {/* Variant Selection */}
-      {hasVariants && (
+      {!isComboProduct && hasVariants && (
         <div className="py-2 lg:py-4 lg:border-b lg:border-border">
           <VariantSelector 
             variants={product!.variants!} 

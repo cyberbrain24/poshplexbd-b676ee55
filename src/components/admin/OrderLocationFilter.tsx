@@ -28,19 +28,16 @@ export const OrderLocationFilter = ({
 }: Props) => {
   const [search, setSearch] = useState("");
   const { data: divisions = [] } = useDivisions();
-  // load thanas for all selected divisions (or all if none)
+  // load thanas only when one or more divisions are picked
   const { data: thanas = [] } = useThanas(divisionIds[0]);
-  // Fallback: also fetch all thanas when no division selected
-  const { data: allThanas = [] } = useThanas(undefined as any);
 
   const visibleThanas = useMemo(() => {
-    const pool = divisionIds.length > 0
-      ? (thanas || []).filter((t: any) => divisionIds.includes(t.division_id))
-      : (allThanas || []);
+    if (divisionIds.length === 0) return [];
+    const pool = (thanas || []).filter((t: any) => divisionIds.includes(t.division_id));
     if (!search.trim()) return pool;
     const q = search.toLowerCase();
     return pool.filter((t: any) => t.name.toLowerCase().includes(q));
-  }, [thanas, allThanas, divisionIds, search]);
+  }, [thanas, divisionIds, search]);
 
   const visibleDivisions = useMemo(() => {
     if (!search.trim()) return divisions;

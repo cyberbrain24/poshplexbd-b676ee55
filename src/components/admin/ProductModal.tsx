@@ -245,6 +245,8 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
           if (!img.id.startsWith("temp-")) {
             await updateImage.mutateAsync({ id: img.id, sortOrder: img.sort_order, isMain: img.is_main });
           }
+        }
+
         // Sync combo children if this is a combo
         if (formData.product_type === "combo") {
           await syncCombo.mutateAsync({

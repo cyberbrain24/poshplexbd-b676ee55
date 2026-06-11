@@ -1,82 +1,75 @@
+## Goal
 
-# Instagram DM & Messenger Marketing (Superlight)
+Adopt the typography spec from `typography-system.md` as a dynamic, admin-controlled system. The admin can change every token (family, size desktop/mobile, weight, line-height, letter-spacing, transform) from Site Settings, and the storefront updates instantly. Admin panel stays unaffected (current `.admin-shell` exclusion preserved).
 
-Two new sibling modules mirroring the WhatsApp Marketing shape. Fully isolated, prefixed tables, lazy routes, admin-only RLS. Zero edits to storefront, checkout, orders, SMS, Email, or WhatsApp modules.
+## Token model (17 tokens, 2 family slots)
 
-## Guiding rules
+Family slots (admin picks any font from existing `FONT_CATALOG`):
+- `serif` — display/editorial role (default: Playfair Display)
+- `sans` — UI/functional role (default: Inter)
 
-- Provider-agnostic HTTP config (Meta Graph API by default; works with ManyChat, Chatfox, etc.).
-- Both modules built from the same template — separate tables, separate routes, separate edge functions, separate sidebar entries.
-- v1 = templates + bulk send + history + opt-out. No inbound webhook, no auto-firing, no 24h-window enforcement logic beyond a warning banner.
-- Meta policy reminder shown in UI: Instagram/Messenger only allow marketing messages inside the 24-hour user-initiated window or via approved tags/recurring notifications.
+Tokens (each: family slot, size desktop, size mobile, weight, line-height, letter-spacing, transform):
+`display, h1, h2, h3, product-title-card, product-title-pdp, price, price-sale, price-original, body, body-small, label, button, nav-link, badge, logo, caption`
 
-## What ships in v1
+Defaults exactly match the spec table (sizes, weights, leading, tracking, casing).
 
-### Sidebar (under Marketing group)
-- "Instagram DM" → `/admin/instagram-marketing` (icon: `Instagram`)
-- "Messenger" → `/admin/messenger-marketing` (icon: `MessagesSquare`)
+## Changes
 
-### Admin pages (mirror `AdminWhatsAppMarketing.tsx`)
-Tabs each: Bulk Send · Auto Triggers · Provider Settings · Campaigns · History · Opt-outs
+### 1. Spec source — `src/lib/typographyTokens.ts` (new)
+- Export `TYPO_TOKENS` list, `TypographyToken` type, `TokenConfig` type, `TYPO_DEFAULTS` (the full spec table), and `FAMILY_SLOTS = ['serif','sans']` with defaults `Playfair Display` / `Inter`.
+- Add `Playfair Display`, `Cormorant Garamond`, `Jost`, `Work Sans` to `src/lib/fontCatalog.ts` (Google fonts).
 
-**Audience targeting** (both):
-- Manual recipient list (IG usernames / PSIDs)
-- Imported list (CSV paste)
-- Saved subscriber list managed in module (simple table)
-- Note: cannot reuse `customers` directly — Instagram/Messenger use IG-scoped IDs / PSIDs, not phone numbers.
+### 2. Runtime — `src/components/TypographyProvider.tsx` (rewrite)
+- Read `site_settings.typography` (shape: `{ families: { serif, sans }, tokens: { [token]: TokenConfig } }`).
+- Lazy-inject Google font links for the two family slots only (weights 400/500/600).
+- Inject one `<style id="dynamic-typography">` block containing:
+  - `:root { --font-serif, --font-sans, --fs-<token>, --lh-<token>, --ls-<token>, --fw-<token>, --tt-<token> }` (desktop values).
+  - `@media (max-width: 767px) { :root { --fs-<token>: mobile values } }`.
+  - Utility classes scoped with `:not(.admin-shell):not(.admin-shell *)`:  
+    `.t-display`, `.t-h1`, `.t-h2`, `.t-h3`, `.t-product-card`, `.t-product-pdp`, `.t-price`, `.t-price-sale`, `.t-price-original`, `.t-body`, `.t-body-small`, `.t-label`, `.t-button`, `.t-nav-link`, `.t-badge`, `.t-logo`, `.t-caption`.
+  - Element-level mapping (so existing components without `.t-*` classes still pick up the spec):  
+    `h1{...token h1}`, `h2{...h2}`, `h3{...h3}`, `nav a, nav button{...nav-link}`, `body{...body}` — all scoped with the existing `.admin-shell` exclusion.
+- Backwards-compat: if `site_settings.typography` is in the old shape (`{h1,h2,...,body,nav}`), map it once into the new shape on read; never overwrite the DB silently — only admin save persists the new shape.
 
-**Fashion-commerce templates (seeded):**
-- `new_drop_announcement`, `flash_sale`, `lookbook_share`, `back_in_stock`, `price_drop`
-- `order_shipped`, `order_delivered` (post-purchase, within window)
-- `review_request`, `winback_30d`, `birthday_offer`, `membership_welcome`
-- `story_reply_followup`, `comment_reply_dm` (IG-specific)
+### 3. Admin UI — `src/components/admin/TypographySettings.tsx` (rewrite)
+Sections:
+1. **Font families** — two `Select`s (Serif slot, Sans slot) sourced from `FONT_CATALOG`. Live preview line for each.
+2. **Tokens** — collapsible groups matching the spec's Location Mapping:
+   - Global / chrome: `logo, nav-link, caption`
+   - Headings: `display, h1, h2, h3`
+   - Product grid: `product-title-card, price, badge`
+   - Product detail: `product-title-pdp, price-sale, price-original, body, label, button`
+   - Generic: `body-small`
+   Each token row has: family slot (Serif/Sans toggle), weight (300–800), size desktop (px input 10–80), size mobile (px input 10–80), line-height (0.9–2 step 0.05), letter-spacing (px input -2 to 8), transform (none/uppercase/lowercase/capitalize), and a live preview using the in-form values.
+3. **Footer actions** — `Reset to spec defaults`, `Save & Apply`.
+- Saves to `site_settings.typography` and invalidates `site-typography` query for instant apply.
+- A "Where this appears" hint under each token lists locations from the spec.
 
-### Compliance
-- Suppression lists per channel (`ig_suppression`, `msgr_suppression`).
-- Footer auto-appended: "Reply STOP to opt out."
-- Public unsubscribe pages: `/instagram/unsubscribe?id=...`, `/messenger/unsubscribe?id=...`.
-- Visible warning banner about Meta 24-hour messaging window.
+### 4. Component adoption (light pass — non-breaking)
+Most storefront text already uses `h1/h2/h3/nav/body`, which the element-level CSS in the provider covers. Add explicit `.t-*` classes only where headings don't carry the semantic tag:
+- `src/components/header/PoshplexHeader.tsx` — logo wordmark → `t-logo`; nav links already in `<nav>`.
+- `src/components/footer/PoshplexFooter.tsx` — column titles → `t-h3`, links → `t-body-small`, copyright → `t-caption`.
+- `src/components/home/ProductGrid.tsx` + `FeaturedProducts.tsx` product card name → `t-product-card`, price → `t-price`, badges → `t-badge`.
+- `src/pages/ProductDetail.tsx` / `ProductInfo.tsx` — title → `t-product-pdp`, current price → `t-price`, sale → `t-price-sale`, original → `t-price-original`, description → `t-body`, size/color labels → `t-label`, Add-to-cart → `t-button`.
+- `src/components/header/AnnouncementBar.tsx` — `t-caption`.
+- `src/components/category/CategoryHeader.tsx` breadcrumbs → `t-caption`.
 
-### Database — two parallel sets of 5 tables
+No business logic, no DB schema migration (the `typography` jsonb column already exists). Admin panel keeps its existing reset (`.admin-shell` rules in `index.css`).
 
-Instagram: `ig_provider_settings`, `ig_templates`, `ig_campaigns`, `ig_messages`, `ig_suppression`, plus `ig_subscribers` (id, ig_id, username, name, opted_in, source).
+### 5. Cleanup
+- Keep `fontCatalog.ts` (extended with new fonts). Old `TYPOGRAPHY_DEFAULTS` / `TypographyConfig` types stay exported temporarily for the legacy-shape mapper, then deleted once not referenced.
+- `index.css` heading size rules left as the bare minimum fallback for first paint before the provider mounts.
 
-Messenger: `msgr_provider_settings`, `msgr_templates`, `msgr_campaigns`, `msgr_messages`, `msgr_suppression`, plus `msgr_subscribers` (id, psid, page_id, name, opted_in, source).
+## Technical notes
 
-All tables: GRANT to `authenticated` + `service_role`, RLS admin-only. Suppression tables get anon `INSERT` only for public unsubscribe.
+- Storage shape (jsonb):  
+  `{ families: { serif: "Playfair Display", sans: "Inter" }, tokens: { h1: { slot: "serif", weightDesktop: 400, weightMobile: 400, sizeDesktop: 32, sizeMobile: 26, lineHeight: 1.1, letterSpacing: 0, transform: "none" }, ... } }`.
+- Mobile breakpoint: `max-width: 767px` (matches existing Tailwind `md`).
+- All injected CSS uses `!important` on the scoped selectors (matches current provider behavior) so Tailwind utilities can still override when intentionally used on inline elements.
+- No new packages; uses existing `@tanstack/react-query`, `sonner`, shadcn `Select/Slider/Switch/Input/Label/Button`.
 
-### Edge functions
-- `instagram-marketing-send` — mirrors `whatsapp-marketing-send`. Actions: `bulk` | `single` | `test`. Substitutes `{to}`, `{body}`, `{media_url}`, `{access_token}`, `{ig_user_id}` into provider JSON. Logs each result.
-- `messenger-marketing-send` — same shape. Placeholders: `{to_psid}`, `{body}`, `{media_url}`, `{access_token}`, `{page_id}`, plus `messaging_type` and `tag` fields in settings.
+## Out of scope
 
-Uses existing `_shared/cors` and `_shared/rate-limiter`. No changes to any existing function.
-
-### Files
-
-Created:
-- `src/pages/admin/AdminInstagramMarketing.tsx`
-- `src/pages/admin/AdminMessengerMarketing.tsx`
-- `src/pages/InstagramUnsubscribe.tsx`
-- `src/pages/MessengerUnsubscribe.tsx`
-- `supabase/functions/instagram-marketing-send/index.ts`
-- `supabase/functions/messenger-marketing-send/index.ts`
-- `src/content/docs/10-instagram-marketing.md`
-- `src/content/docs/11-messenger-marketing.md`
-- 1 SQL migration creating all 12 tables + GRANTs + RLS + seed templates
-
-Modified (minimal):
-- `src/App.tsx` — 4 new lazy routes
-- `src/components/admin/AdminSidebar.tsx` — 2 nav entries under Marketing
-- `src/lib/adminRoutePrefetch.ts` — 2 prefetch entries
-
-## Explicitly deferred to v2
-
-- Inbound webhook + 2-way DM (the existing Meta Conversations module already covers reading)
-- Auto-firing on story replies / comments / cart events
-- Subscriber sync from Meta Graph API
-- A/B testing, catalog/product cards, ice-breakers, persistent menu
-- Revenue attribution
-
-## Risk
-
-Storefront bundle untouched. All existing marketing channels untouched. New tables namespaced under `ig_*` / `msgr_*`. Failure isolated to each new tab.
+- No changes to `.admin-shell` rules or admin fonts.
+- No new DB migration (reusing `site_settings.typography` jsonb).
+- No automatic refactor of every component — only the targeted adoption list above.

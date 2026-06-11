@@ -55,11 +55,11 @@ const getPaymentStatusBadge = (status: string) => {
 };
 
 const statusSteps = [
-  { key: 'pending', label: 'Placed', icon: Package },
-  { key: 'confirmed', label: 'Confirmed', icon: CheckCircle2 },
-  { key: 'processing', label: 'Processing', icon: Clock },
-  { key: 'shipped', label: 'Shipped', icon: Truck },
-  { key: 'delivered', label: 'Delivered', icon: CheckCircle2 },
+  { key: 'pending', label: ORDER_STATUS_LABELS.pending, icon: Package },
+  { key: 'confirmed', label: ORDER_STATUS_LABELS.confirmed, icon: CheckCircle2 },
+  { key: 'processing', label: ORDER_STATUS_LABELS.processing, icon: Clock },
+  { key: 'shipped', label: ORDER_STATUS_LABELS.shipped, icon: Truck },
+  { key: 'delivered', label: ORDER_STATUS_LABELS.delivered, icon: CheckCircle2 },
 ];
 
 const getStatusIndex = (status: string) => {

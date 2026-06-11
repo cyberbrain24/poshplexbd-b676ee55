@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useProductAppliedAttributesFull } from "@/hooks/useProductAttributes";
 import { cn } from "@/lib/utils";
 

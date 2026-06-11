@@ -28,7 +28,8 @@ export const OrderLocationFilter = ({
   divisionIds, thanaIds, mode,
   onDivisionChange, onThanaChange, onModeChange,
 }: Props) => {
-  const [search, setSearch] = useState("");
+  const [divisionSearch, setDivisionSearch] = useState("");
+  const [thanaSearch, setThanaSearch] = useState("");
   const { data: divisions = [] } = useDivisions();
   // Fetch all active thanas once, then filter client-side by selected divisions
   const { data: allThanas = [] } = useQuery({
@@ -48,16 +49,16 @@ export const OrderLocationFilter = ({
   const visibleThanas = useMemo(() => {
     if (divisionIds.length === 0) return [];
     const pool = allThanas.filter((t: any) => divisionIds.includes(t.division_id));
-    if (!search.trim()) return pool;
-    const q = search.toLowerCase();
+    if (!thanaSearch.trim()) return pool;
+    const q = thanaSearch.toLowerCase();
     return pool.filter((t: any) => t.name.toLowerCase().includes(q));
-  }, [allThanas, divisionIds, search]);
+  }, [allThanas, divisionIds, thanaSearch]);
 
   const visibleDivisions = useMemo(() => {
-    if (!search.trim()) return divisions;
-    const q = search.toLowerCase();
+    if (!divisionSearch.trim()) return divisions;
+    const q = divisionSearch.toLowerCase();
     return divisions.filter((d: any) => d.name.toLowerCase().includes(q));
-  }, [divisions, search]);
+  }, [divisions, divisionSearch]);
 
   const total = divisionIds.length + thanaIds.length;
   const toggle = (arr: string[], id: string) =>

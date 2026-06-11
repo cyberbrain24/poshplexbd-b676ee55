@@ -317,6 +317,38 @@ const AdminOrders = () => {
     }
   };
 
+  const handleDownloadCsv = () => {
+    if (!orders || orders.length === 0) {
+      toast.error("No orders to export");
+      return;
+    }
+    try {
+      downloadOrdersCsv(orders);
+      toast.success("CSV exported");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to export CSV");
+    }
+  };
+
+  const handleDownloadReportPdf = () => {
+    if (!orders || orders.length === 0) {
+      toast.error("No orders to export");
+      return;
+    }
+    setDownloadingReport(true);
+    try {
+      generateOrdersReportPdf(orders);
+      toast.success("Report PDF downloaded");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to generate report");
+    } finally {
+      setDownloadingReport(false);
+    }
+  };
+
+
   const handleDeleteClick = async (orderId: string, orderNumber: string, paidAmount: number, paymentStatus: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setCheckingPayments(true);

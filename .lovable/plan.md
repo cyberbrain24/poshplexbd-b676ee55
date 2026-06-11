@@ -1,60 +1,78 @@
-# Promotional Ads & Banners Module
+## Combo / Bundle Product System
 
-A reusable "Promotions" system that lets admins place visual ads/banners anywhere on the storefront. Clicking an ad opens a popup with details (promo code, product link, announcement, image, etc.).
+Add a third product type `combo` alongside existing `simple` and `variable`, without changing how those work today.
 
-## What you'll be able to do
+### 1. Database (migration)
 
-- Create unlimited ads from a single admin page (`/admin/promotions`, also linked from the Promo Codes page).
-- Each ad has: title, short label, image (optional), content type, target action, schedule (start/end), priority, active toggle, and placement slots.
-- Click behavior options:
-  - **Show popup** with rich content (description + optional promo code with copy button + CTA button)
-  - **Link to product** (pick from product picker)
-  - **Link to category / URL**
-  - **No action** (informational only)
-- Placement slots (multi-select per ad):
-  - `home_top` — under hero
-  - `home_middle` — between sections
-  - `home_bottom` — above footer
-  - `category_top` — top of category pages (optional category filter)
-  - `product_top` / `product_bottom` — on product detail pages
-  - `footer` — inside footer
-  - `floating` — sticky floating bubble bottom-right (sitewide)
-  - `announcement` — appended into the announcement bar rotation
-- Display styles: `banner` (full-width image strip), `card` (compact card), `floating-bubble`, `inline-text`.
-- Scheduling: only render between `starts_at` and `ends_at`; respect `is_active`.
-- Dismissible: optional "X" close, remembered in localStorage per ad ID.
+- Extend enum: `ALTER TYPE public.product_type ADD VALUE 'combo'`.
+- New table `public.combo_items`:
+  - `combo_product_id` → products.id (parent combo)
+  - `child_product_id` → products.id (the existing product included)
+  - `quantity` int default 1
+  - `sort_order` int
+  - unique (combo_product_id, child_product_id)
+- GRANT SELECT to anon/authenticated; full CRUD to authenticated (admin-only via existing has_role policy pattern); ALL to service_role. Enable RLS with policies mirroring `product_images`.
+- No stock column on combos: stock is fully derived from child products (existing Independent Inventory stays the source of truth for child SKUs). When an order is placed for a combo, the order pipeline expands it into its child SKUs × quantity for inventory deduction.
 
-## Technical details
+### 2. Types & constants
 
-**Database** — single new table `public.promotions`:
-- `id`, `title`, `subtitle`, `description`, `image_url`, `display_style`, `action_type` (`popup` | `product` | `category` | `url` | `none`), `action_value` (uuid/url), `promo_code_id` (fk → promo_codes, nullable), `placements` (text[]), `category_filter` (uuid[] nullable, for category_top), `priority` (int), `is_active` (bool), `dismissible` (bool), `starts_at`, `ends_at`, `clicks` (int), `views` (int), `created_at`, `updated_at`.
-- GRANT SELECT to `anon` + `authenticated` (public reads filtered by active/schedule), full CRUD to `service_role`, admin-only writes via RLS using `is_admin()`.
-- Increment-counter RPCs: `increment_promotion_view(uuid)`, `increment_promotion_click(uuid)` (SECURITY DEFINER).
+- `PRODUCT_TYPES` in `src/constants/index.ts` → add `COMBO: 'combo'`.
+- `Product.product_type` union → `'simple' | 'variable' | 'combo'`.
+- New `ComboItem` type; `Product.combo_items?: ComboItem[]` (joined).
 
-**Frontend**
-- New hook `usePromotions(placement, opts?)` → cached query (5min) filtering active + within schedule, sorted by priority.
-- New components in `src/components/promotions/`:
-  - `PromotionSlot.tsx` — generic renderer taking a placement key; fetches and renders all matching ads in chosen display style.
-  - `PromotionCard.tsx` — visual card/banner.
-  - `PromotionPopup.tsx` — dialog with details, promo code copy-to-clipboard, CTA.
-  - `FloatingPromotion.tsx` — sticky bubble.
-  - `PromotionDismiss.ts` — localStorage helper.
-- Insert `<PromotionSlot placement="..." />` into:
-  - `pages/Index.tsx` (home_top, home_middle, home_bottom)
-  - `pages/Category.tsx` (category_top)
-  - `pages/ProductDetail.tsx` (product_top, product_bottom)
-  - `components/footer/PoshplexFooter.tsx` (footer)
-  - `App.tsx` (floating — sitewide, excluded on /admin)
-  - `components/header/AnnouncementBar.tsx` (announcement — rotate text-only promos)
+### 3. Admin — ProductModal upgrade
 
-**Admin UI**
-- New page `src/pages/admin/AdminPromotions.tsx` registered at `/admin/promotions`.
-- Sidebar entry under Marketing group.
-- List view: thumbnail, title, placements (chips), schedule, status toggle, clicks/views, edit/delete.
-- Modal `PromotionModal.tsx`: title, subtitle, description (textarea), image upload (reuses media bucket), display style select, action type + dynamic field (product picker / category picker / URL / promo code select), placements multi-select, optional category filter, schedule dates, priority, dismissible, active.
-- Quick link button on `AdminPromoCodes.tsx`: "Create Ad for this code" → opens promotion modal pre-filled.
+- Replace "Product Type" select with three options: Simple / Variable / Combo. Keep existing UX for Simple & Variable untouched.
+- When `product_type === 'combo'`:
+  - Hide Variations tab content, Inventory section, and Variant builder.
+  - Render new `ComboBuilder` component in place:
+    - Searchable autocomplete (reuses existing `useProductSearch` debounced hook — already searches name + SKU) with dropdown of matching products (excludes self, excludes other combos to prevent nesting).
+    - Selected items rendered as a vertical list of compact cards: thumbnail, name, SKU, base price, quantity stepper (default 1, first item = 1 as specified), drag handle for sort, trash icon to remove.
+    - Live computed "Items total" vs the Combo's Base Price for reference (no auto-overwrite).
+  - Category section stays — admin picks combo's own category (per spec: "category will be shown as selected category of combined product").
+- Save flow: after upserting the product row, diff `combo_items` and insert/update/delete rows in a single batch (mirrors existing variant save pattern in `useProducts`).
 
-**Out of scope**
-- A/B testing, targeting by user segment, paid impressions, analytics dashboards (basic click/view counters only).
-- Admin UI/typography unaffected (`.admin-shell` already isolates).
-- No changes to existing promo_codes logic — promotions only *reference* a promo code for display.
+### 4. Storefront — ProductDetail
+
+- `ProductInfo.tsx`: detect `product_type === 'combo'`.
+  - Hide existing `VariantSelector` / `ProductAttributesSelector` for the parent.
+  - Render new `ComboConfigurator` component below short description:
+    - Vertical accordion (shadcn Accordion) — one panel per child item.
+    - Each row: thumbnail, name, "Configure" chevron, status badge ("Select options" / "✓ Configured").
+    - Expanded view renders the child product's existing variant swatches: round color circles + bordered size rectangles (reuse `VariantSelector` styling, no dropdowns).
+    - Independent per-child state: `Record<childProductId, { variantId, attributeValues }>`.
+  - Add-to-Cart enabled only when every child with variants has a selected variant.
+  - On add: push a single cart line representing the combo (combo product id + price), with a `comboChildren: [{ productId, variantId, quantity }]` payload on the cart item. Existing cart UI shows the combo name; checkout/order creation expands `comboChildren` into individual `order_items` so inventory + reports stay accurate with zero changes to downstream modules.
+
+### 5. Hooks / services
+
+- `useProducts` fetch: add `combo_items:combo_items(quantity, sort_order, child:products(id,name,sku,base_price,product_type,images:product_images(image_url,is_main),variants:product_variants(...)))` only when needed (lazy: ProductDetail fetch path).
+- New `useComboChildren(productId)` for the storefront configurator (kept separate to avoid bloating list queries).
+- Order creation path (`useCheckout` / order.service): if a cart item has `comboChildren`, expand into `order_items` rows with `parent_combo_order_item_id` reference (new nullable column on `order_items` — added in same migration) so the admin order view can still group them. Combo line price recorded once; child lines get price = 0 to avoid double counting.
+
+### 6. Admin product list
+
+- `AdminProducts.tsx`: add "Combo" badge variant; filter chip for `combo`.
+- Storefront category pages: combos render via the same `ProductCard`; no changes needed (price = base_price, image = combo's own image).
+
+### 7. Out of scope
+
+- No nested combos (combo of combos).
+- No per-child price overrides in v1 (combo total = parent base_price).
+- No CSV import support for combos in this pass (BulkProductUpload mention stays as a future task).
+- Existing simple/variable flows, variant builder, inventory, promotions, reviews — untouched.
+
+### Files to create
+- `supabase/migrations/<ts>_combo_products.sql`
+- `src/components/admin/ComboBuilder.tsx`
+- `src/components/product/ComboConfigurator.tsx`
+- `src/hooks/useComboChildren.ts`
+
+### Files to edit
+- `src/constants/index.ts`, `src/types/product.ts`, `src/utils/validation-schemas.ts`
+- `src/components/admin/ProductModal.tsx` (type select + conditional render)
+- `src/hooks/useProducts.ts`, `src/hooks/useOptimizedProducts.ts` (combo_items join on detail fetch)
+- `src/components/product/ProductInfo.tsx` (combo branch)
+- `src/contexts/CartContext.tsx` (comboChildren payload passthrough)
+- `src/hooks/useCheckout.ts` + `src/services/order.service.ts` (expand combo lines on order create)
+- `src/pages/admin/AdminProducts.tsx` (badge + filter)

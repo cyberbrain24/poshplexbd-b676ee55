@@ -328,6 +328,51 @@ export type Database = {
         }
         Relationships: []
       }
+      combo_items: {
+        Row: {
+          child_product_id: string
+          combo_product_id: string
+          created_at: string
+          id: string
+          quantity: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          child_product_id: string
+          combo_product_id: string
+          created_at?: string
+          id?: string
+          quantity?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          child_product_id?: string
+          combo_product_id?: string
+          created_at?: string
+          id?: string
+          quantity?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "combo_items_child_product_id_fkey"
+            columns: ["child_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "combo_items_combo_product_id_fkey"
+            columns: ["combo_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custom_variants: {
         Row: {
           created_at: string
@@ -1209,6 +1254,7 @@ export type Database = {
           id: string
           line_total: number
           order_id: string
+          parent_combo_order_item_id: string | null
           product_id: string | null
           product_name: string
           quantity: number
@@ -1226,6 +1272,7 @@ export type Database = {
           id?: string
           line_total: number
           order_id: string
+          parent_combo_order_item_id?: string | null
           product_id?: string | null
           product_name: string
           quantity?: number
@@ -1243,6 +1290,7 @@ export type Database = {
           id?: string
           line_total?: number
           order_id?: string
+          parent_combo_order_item_id?: string | null
           product_id?: string | null
           product_name?: string
           quantity?: number
@@ -1259,6 +1307,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_parent_combo_order_item_id_fkey"
+            columns: ["parent_combo_order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
             referencedColumns: ["id"]
           },
           {
@@ -3348,7 +3403,7 @@ export type Database = {
         | "partially_refunded"
         | "refunded"
         | "failed"
-      product_type: "simple" | "variable"
+      product_type: "simple" | "variable" | "combo"
       risk_level: "low" | "medium" | "high"
     }
     CompositeTypes: {
@@ -3518,7 +3573,7 @@ export const Constants = {
         "refunded",
         "failed",
       ],
-      product_type: ["simple", "variable"],
+      product_type: ["simple", "variable", "combo"],
       risk_level: ["low", "medium", "high"],
     },
   },

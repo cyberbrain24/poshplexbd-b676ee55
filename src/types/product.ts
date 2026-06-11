@@ -73,7 +73,7 @@ export interface Product {
   id: string;
   name: string;
   sku: string;
-  product_type: 'simple' | 'variable';
+  product_type: 'simple' | 'variable' | 'combo';
   category_id: string | null;
   brand_id: string | null;
   short_description: string | null;
@@ -95,6 +95,16 @@ export interface Product {
   care_instruction?: CareInstruction | null;
   images?: ProductImage[];
   variants?: ProductVariant[];
+  combo_items?: ComboItem[];
+}
+
+export interface ComboItem {
+  id: string;
+  combo_product_id: string;
+  child_product_id: string;
+  quantity: number;
+  sort_order: number;
+  child?: Product | null;
 }
 
 export interface ProductImage {
@@ -135,7 +145,7 @@ export interface ProductVariant {
 export interface ProductFormData {
   name: string;
   sku: string;
-  product_type: 'simple' | 'variable';
+  product_type: 'simple' | 'variable' | 'combo';
   category_id: string | null;
   brand_id: string | null;
   short_description: string;

@@ -19,6 +19,8 @@ import ProductImagePickerModal from "@/components/admin/ProductImagePickerModal"
 import { useProductCategoryIds, useSyncProductCategories } from "@/hooks/useProductCategories";
 import { useProductAppliedAttributeIds, useSyncProductAttributes, useProductAttributes, useProductVariantAttributeValues, syncVariantAttributeValues } from "@/hooks/useProductAttributes";
 import { compressProductImage } from "@/lib/imageCompress";
+import ComboBuilder, { ComboChildState, toComboItemInputs } from "@/components/admin/ComboBuilder";
+import { useSyncComboItems } from "@/hooks/useComboItems";
 
 interface ProductModalProps {
   isOpen: boolean;
@@ -55,6 +57,8 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
   const [mediaPickerIndex, setMediaPickerIndex] = useState<number | null>(null);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [selectedAttributeIds, setSelectedAttributeIds] = useState<string[]>([]);
+  const [comboChildren, setComboChildren] = useState<ComboChildState[]>([]);
+  const syncCombo = useSyncComboItems();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
@@ -127,12 +131,14 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
       });
       setImages(product.images || []);
       setVariants([]);
+      setComboChildren([]); // ComboBuilder hydrates from DB when parentProductId present
     } else {
       setFormData(defaultFormData);
       setImages([]);
       setVariants([]);
       setSelectedCategoryIds([]);
       setSelectedAttributeIds([]);
+      setComboChildren([]);
     }
   }, [product]);
 
@@ -241,6 +247,14 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
           }
         }
 
+        // Sync combo children if this is a combo
+        if (formData.product_type === "combo") {
+          await syncCombo.mutateAsync({
+            comboProductId: product.id,
+            items: toComboItemInputs(comboChildren),
+          });
+        }
+
         toast.success("Product updated successfully");
       } else {
         const createFormData = { ...formData, category_id: selectedCategoryIds[0] || null };
@@ -286,6 +300,14 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
           if (inserted?.id) {
             await syncVariantAttributeValues(inserted.id, variant.attribute_values, selectedAttributeIds);
           }
+        }
+
+        // Sync combo children for new combo product
+        if (formData.product_type === "combo" && comboChildren.length > 0) {
+          await syncCombo.mutateAsync({
+            comboProductId: newProduct.id,
+            items: toComboItemInputs(comboChildren),
+          });
         }
 
         toast.success("Product created successfully");
@@ -569,7 +591,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                   <Label>Product Type</Label>
                   <Select
                     value={formData.product_type}
-                    onValueChange={(value: 'simple' | 'variable') => setFormData({ ...formData, product_type: value })}
+                    onValueChange={(value: 'simple' | 'variable' | 'combo') => setFormData({ ...formData, product_type: value })}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -577,6 +599,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                     <SelectContent>
                       <SelectItem value="simple">Simple</SelectItem>
                       <SelectItem value="variable">Variable</SelectItem>
+                      <SelectItem value="combo">Combo / Bundle</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1034,9 +1057,15 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                     </div>
                   )}
                 </>
+              ) : formData.product_type === "combo" ? (
+                <ComboBuilder
+                  parentProductId={product?.id}
+                  value={comboChildren}
+                  onChange={setComboChildren}
+                />
               ) : (
                 <div className="border border-border p-8 text-center text-muted-foreground">
-                  <p>Switch to "Variable" product type to manage variants</p>
+                  <p>Switch to "Variable" to manage variants, or "Combo / Bundle" to bundle products.</p>
                 </div>
               )}
             </TabsContent>

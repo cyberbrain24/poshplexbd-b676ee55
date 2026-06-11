@@ -2,6 +2,17 @@ import { createContext, useContext, useState, useCallback, useEffect, ReactNode 
 
 const CART_STORAGE_KEY = "poshplex-cart";
 
+export interface CartComboChild {
+  productId: string;
+  variantId?: string | null;
+  name: string;
+  image: string;
+  sku?: string | null;
+  color?: string | null;
+  size?: string | null;
+  quantity: number;
+}
+
 export interface CartItem {
   id: string;
   productId?: string;
@@ -14,6 +25,8 @@ export interface CartItem {
   color?: string;
   size?: string;
   sku?: string;
+  /** When set, this cart line is a combo/bundle and contains expanded child items. */
+  comboChildren?: CartComboChild[];
 }
 
 interface CartContextType {

@@ -131,12 +131,14 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
       });
       setImages(product.images || []);
       setVariants([]);
+      setComboChildren([]); // ComboBuilder hydrates from DB when parentProductId present
     } else {
       setFormData(defaultFormData);
       setImages([]);
       setVariants([]);
       setSelectedCategoryIds([]);
       setSelectedAttributeIds([]);
+      setComboChildren([]);
     }
   }, [product]);
 

@@ -591,7 +591,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                   <Label>Product Type</Label>
                   <Select
                     value={formData.product_type}
-                    onValueChange={(value: 'simple' | 'variable') => setFormData({ ...formData, product_type: value })}
+                    onValueChange={(value: 'simple' | 'variable' | 'combo') => setFormData({ ...formData, product_type: value })}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -599,6 +599,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                     <SelectContent>
                       <SelectItem value="simple">Simple</SelectItem>
                       <SelectItem value="variable">Variable</SelectItem>
+                      <SelectItem value="combo">Combo / Bundle</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

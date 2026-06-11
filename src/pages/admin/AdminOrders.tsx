@@ -441,30 +441,28 @@ const AdminOrders = () => {
             className="pl-10"
           />
         </div>
-        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as OrderStatus | "all")}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Order Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            {ALLOWED_ORDER_STATUSES.map(s => (
-              <SelectItem key={s} value={s}>{ORDER_STATUS_LABELS[s]}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={paymentFilter} onValueChange={(v) => setPaymentFilter(v as PaymentStatus | "all")}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Payment Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Payments</SelectItem>
-            <SelectItem value="unpaid">Unpaid</SelectItem>
-            <SelectItem value="pending_verification">Pending Verification</SelectItem>
-            <SelectItem value="paid">Paid</SelectItem>
-            <SelectItem value="failed">Failed</SelectItem>
-            <SelectItem value="refunded">Refunded</SelectItem>
-          </SelectContent>
-        </Select>
+        <MultiSelectFilter
+          label="Order Status"
+          options={ALLOWED_ORDER_STATUSES.map(s => ({ value: s, label: ORDER_STATUS_LABELS[s] }))}
+          values={statusFilter}
+          onChange={(vals) => setStatusFilter(vals as OrderStatus[])}
+          width="w-[180px]"
+        />
+        <MultiSelectFilter
+          label="Payment Status"
+          options={[
+            { value: "unpaid", label: PAYMENT_STATUS_LABELS.unpaid },
+            { value: "pending_verification", label: PAYMENT_STATUS_LABELS.pending_verification },
+            { value: "paid", label: PAYMENT_STATUS_LABELS.paid },
+            { value: "partially_paid", label: PAYMENT_STATUS_LABELS.partially_paid },
+            { value: "failed", label: PAYMENT_STATUS_LABELS.failed },
+            { value: "refunded", label: PAYMENT_STATUS_LABELS.refunded },
+            { value: "partially_refunded", label: PAYMENT_STATUS_LABELS.partially_refunded },
+          ]}
+          values={paymentFilter}
+          onChange={(vals) => setPaymentFilter(vals as PaymentStatus[])}
+          width="w-[180px]"
+        />
         <div className="flex items-center gap-2">
           <Input
             type="date"

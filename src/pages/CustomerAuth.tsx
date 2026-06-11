@@ -63,13 +63,34 @@ const CustomerAuth = () => {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) navigate(redirectPath, { replace: true });
+      if (session?.user) {
+        // Fire-and-forget: ensure CRM customer record exists (OAuth users)
+        ensureCustomerForUser(session.user).catch((e) => console.error(e));
+        navigate(redirectPath, { replace: true });
+      }
     });
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) navigate(redirectPath, { replace: true });
+      if (session?.user) {
+        ensureCustomerForUser(session.user).catch((e) => console.error(e));
+        navigate(redirectPath, { replace: true });
+      }
     });
     return () => subscription.unsubscribe();
   }, [navigate, redirectPath]);
+
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin + "/login",
+      });
+      if (result.error) throw result.error;
+      // If redirected:true, browser will navigate away; otherwise session is set and listener will redirect.
+    } catch (error: any) {
+      toast.error(error?.message || "Google sign-in failed");
+      setIsLoading(false);
+    }
+  };
 
   const phoneToEmail = (phone: string) => {
     const cleaned = phone.replace(/\D/g, "");

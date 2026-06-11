@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useOrders, useOrderStats, useDeleteOrder, useMarkOrderCalled, useUpdateCallCenterNotes, OrderStatus, PaymentStatus } from "@/hooks/useOrders";
-import { ORDER_STATUS_LABELS, ALLOWED_ORDER_STATUSES } from "@/constants";
+import { ORDER_STATUS_LABELS, ALLOWED_ORDER_STATUSES, PAYMENT_STATUS_LABELS } from "@/constants";
+import MultiSelectFilter from "@/components/admin/MultiSelectFilter";
+import { downloadOrdersCsv, generateOrdersReportPdf } from "@/lib/ordersReport";
+import { FileSpreadsheet, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -244,14 +247,15 @@ const riskColors = {
 
 const AdminOrders = () => {
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
-  const [paymentFilter, setPaymentFilter] = useState<PaymentStatus | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<OrderStatus[]>([]);
+  const [paymentFilter, setPaymentFilter] = useState<PaymentStatus[]>([]);
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
   const [locationMode, setLocationMode] = useState<"include" | "exclude">("include");
   const [locDivisionIds, setLocDivisionIds] = useState<string[]>([]);
   const [locThanaIds, setLocThanaIds] = useState<string[]>([]);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [downloadingReport, setDownloadingReport] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null);
   const [deleteOrderNumber, setDeleteOrderNumber] = useState<string>("");
@@ -272,8 +276,8 @@ const AdminOrders = () => {
 
   const { data: stats, isLoading: statsLoading } = useOrderStats();
   const { data: orders, isLoading: ordersLoading } = useOrders({
-    status: statusFilter !== "all" ? statusFilter : undefined,
-    paymentStatus: paymentFilter !== "all" ? paymentFilter : undefined,
+    status: statusFilter.length > 0 ? statusFilter : undefined,
+    paymentStatus: paymentFilter.length > 0 ? paymentFilter : undefined,
     search: search || undefined,
     dateFrom: dateFrom ? new Date(dateFrom).toISOString() : undefined,
     dateTo: dateTo ? new Date(new Date(dateTo).setHours(23, 59, 59, 999)).toISOString() : undefined,
@@ -312,6 +316,38 @@ const AdminOrders = () => {
       setDownloadingPdf(false);
     }
   };
+
+  const handleDownloadCsv = () => {
+    if (!orders || orders.length === 0) {
+      toast.error("No orders to export");
+      return;
+    }
+    try {
+      downloadOrdersCsv(orders);
+      toast.success("CSV exported");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to export CSV");
+    }
+  };
+
+  const handleDownloadReportPdf = () => {
+    if (!orders || orders.length === 0) {
+      toast.error("No orders to export");
+      return;
+    }
+    setDownloadingReport(true);
+    try {
+      generateOrdersReportPdf(orders);
+      toast.success("Report PDF downloaded");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to generate report");
+    } finally {
+      setDownloadingReport(false);
+    }
+  };
+
 
   const handleDeleteClick = async (orderId: string, orderNumber: string, paidAmount: number, paymentStatus: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -382,7 +418,15 @@ const AdminOrders = () => {
           </Button>
           <Button onClick={handleDownloadPdf} disabled={downloadingPdf || ordersLoading} variant="outline">
             {downloadingPdf ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-            Download Packing PDF
+            Packing PDF
+          </Button>
+          <Button onClick={handleDownloadCsv} disabled={ordersLoading} variant="outline">
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            CSV Report
+          </Button>
+          <Button onClick={handleDownloadReportPdf} disabled={downloadingReport || ordersLoading} variant="outline">
+            {downloadingReport ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileText className="h-4 w-4 mr-2" />}
+            PDF Report
           </Button>
         </div>
       </div>
@@ -437,30 +481,28 @@ const AdminOrders = () => {
             className="pl-10"
           />
         </div>
-        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as OrderStatus | "all")}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Order Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            {ALLOWED_ORDER_STATUSES.map(s => (
-              <SelectItem key={s} value={s}>{ORDER_STATUS_LABELS[s]}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={paymentFilter} onValueChange={(v) => setPaymentFilter(v as PaymentStatus | "all")}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Payment Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Payments</SelectItem>
-            <SelectItem value="unpaid">Unpaid</SelectItem>
-            <SelectItem value="pending_verification">Pending Verification</SelectItem>
-            <SelectItem value="paid">Paid</SelectItem>
-            <SelectItem value="failed">Failed</SelectItem>
-            <SelectItem value="refunded">Refunded</SelectItem>
-          </SelectContent>
-        </Select>
+        <MultiSelectFilter
+          label="Order Status"
+          options={ALLOWED_ORDER_STATUSES.map(s => ({ value: s, label: ORDER_STATUS_LABELS[s] }))}
+          values={statusFilter}
+          onChange={(vals) => setStatusFilter(vals as OrderStatus[])}
+          width="w-[180px]"
+        />
+        <MultiSelectFilter
+          label="Payment Status"
+          options={[
+            { value: "unpaid", label: PAYMENT_STATUS_LABELS.unpaid },
+            { value: "pending_verification", label: PAYMENT_STATUS_LABELS.pending_verification },
+            { value: "paid", label: PAYMENT_STATUS_LABELS.paid },
+            { value: "partially_paid", label: PAYMENT_STATUS_LABELS.partially_paid },
+            { value: "failed", label: PAYMENT_STATUS_LABELS.failed },
+            { value: "refunded", label: PAYMENT_STATUS_LABELS.refunded },
+            { value: "partially_refunded", label: PAYMENT_STATUS_LABELS.partially_refunded },
+          ]}
+          values={paymentFilter}
+          onChange={(vals) => setPaymentFilter(vals as PaymentStatus[])}
+          width="w-[180px]"
+        />
         <div className="flex items-center gap-2">
           <Input
             type="date"

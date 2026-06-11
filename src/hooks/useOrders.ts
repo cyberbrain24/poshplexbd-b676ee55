@@ -126,8 +126,8 @@ export interface PaymentMethod {
 
 // Fetch all orders for admin
 export const useOrders = (filters?: {
-  status?: OrderStatus;
-  paymentStatus?: PaymentStatus;
+  status?: OrderStatus | OrderStatus[];
+  paymentStatus?: PaymentStatus | PaymentStatus[];
   search?: string;
   dateFrom?: string;
   dateTo?: string;
@@ -153,10 +153,14 @@ export const useOrders = (filters?: {
         .limit(100);
 
       if (filters?.status) {
-        query = query.eq("order_status", filters.status);
+        const arr = Array.isArray(filters.status) ? filters.status : [filters.status];
+        if (arr.length === 1) query = query.eq("order_status", arr[0]);
+        else if (arr.length > 1) query = query.in("order_status", arr);
       }
       if (filters?.paymentStatus) {
-        query = query.eq("payment_status", filters.paymentStatus);
+        const arr = Array.isArray(filters.paymentStatus) ? filters.paymentStatus : [filters.paymentStatus];
+        if (arr.length === 1) query = query.eq("payment_status", arr[0]);
+        else if (arr.length > 1) query = query.in("payment_status", arr);
       }
       if (filters?.search) {
         query = query.or(`order_number.ilike.%${filters.search}%,shipping_name.ilike.%${filters.search}%,shipping_phone.ilike.%${filters.search}%`);

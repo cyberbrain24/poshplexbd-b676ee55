@@ -24,7 +24,8 @@ export interface ComboChildSelection {
 
 interface ComboConfiguratorProps {
   comboProductId: string;
-  onChange: (selections: ComboChildSelection[], allConfigured: boolean) => void;
+  comboPrice?: number;
+  onChange: (selections: ComboChildSelection[], allConfigured: boolean, itemsTotal: number) => void;
 }
 
 interface ChildState {
@@ -38,7 +39,18 @@ const mainImage = (imgs?: Array<{ image_url: string; is_main?: boolean }>) => {
   return imgs.find((i) => i.is_main)?.image_url || imgs[0].image_url;
 };
 
-const ComboConfigurator = ({ comboProductId, onChange }: ComboConfiguratorProps) => {
+/** Resolve image for a child given current variant selection. */
+const resolveChildImage = (child: any, matchedVariant: any, colorId: string | null): string => {
+  if (matchedVariant?.image_url) return matchedVariant.image_url;
+  const imgs = (child?.images || []) as Array<{ image_url: string; is_main?: boolean; color_id?: string | null }>;
+  if (colorId) {
+    const byColor = imgs.find((i) => i.color_id === colorId);
+    if (byColor) return byColor.image_url;
+  }
+  return mainImage(imgs);
+};
+
+const ComboConfigurator = ({ comboProductId, comboPrice = 0, onChange }: ComboConfiguratorProps) => {
   const { data: items = [], isLoading } = useComboItems(comboProductId);
   const [state, setState] = useState<Record<string, ChildState>>({});
   const [openItem, setOpenItem] = useState<string | undefined>(undefined);
@@ -48,13 +60,39 @@ const ComboConfigurator = ({ comboProductId, onChange }: ComboConfiguratorProps)
     if (!openItem && items.length > 0) setOpenItem(items[0].id);
   }, [items, openItem]);
 
+  // Auto-select single-value attributes for each child
+  useEffect(() => {
+    if (items.length === 0) return;
+    setState((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      for (const ci of items) {
+        const variants = ((ci.child?.variants as any[]) || []).filter((v) => v.is_active);
+        const colors = Array.from(new Map(variants.filter((v) => v.color).map((v) => [v.color.id, v.color])).values()) as any[];
+        const sizes = Array.from(new Map(variants.filter((v) => v.size).map((v) => [v.size.id, v.size])).values()) as any[];
+        const customs = Array.from(new Map(variants.filter((v) => v.custom_variant).map((v) => [v.custom_variant.id, v.custom_variant])).values()) as any[];
+        const cur = next[ci.id] || { colorId: null, sizeId: null, customId: null };
+        const upd = { ...cur };
+        if (!upd.colorId && colors.length === 1) upd.colorId = colors[0].id;
+        if (!upd.sizeId && sizes.length === 1) upd.sizeId = sizes[0].id;
+        if (!upd.customId && customs.length === 1) upd.customId = customs[0].id;
+        if (upd.colorId !== cur.colorId || upd.sizeId !== cur.sizeId || upd.customId !== cur.customId) {
+          next[ci.id] = upd;
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [items]);
+
   // Compute selections + readiness, fire upward
   useEffect(() => {
     if (items.length === 0) {
-      onChange([], false);
+      onChange([], false, 0);
       return;
     }
     let allReady = true;
+    let itemsTotal = 0;
     const selections: ComboChildSelection[] = items.map((ci) => {
       const child = ci.child;
       const s = state[ci.id] || { colorId: null, sizeId: null, customId: null };
@@ -87,19 +125,22 @@ const ComboConfigurator = ({ comboProductId, onChange }: ComboConfiguratorProps)
       const ready = !needsColor && !needsSize && !needsCustom ? true : !!matched;
       if (!ready) allReady = false;
 
+      const unitPrice = matched?.selling_price ?? child?.base_price ?? 0;
+      itemsTotal += unitPrice * ci.quantity;
+
       return {
         productId: child?.id || ci.child_product_id,
         variantId: matched?.id || null,
         name: child?.name || "Item",
-        image: mainImage(child?.images as any),
+        image: resolveChildImage(child, matched, s.colorId),
         sku: matched?.sku || child?.sku || null,
         color: matched?.color?.name || null,
         size: matched?.size?.label || null,
         quantity: ci.quantity,
-        unitPrice: matched?.selling_price ?? child?.base_price ?? 0,
+        unitPrice,
       };
     });
-    onChange(selections, allReady);
+    onChange(selections, allReady, itemsTotal);
   }, [items, state, onChange]);
 
   const updateChild = (itemId: string, patch: Partial<ChildState>) => {
@@ -177,6 +218,9 @@ const ComboConfigurator = ({ comboProductId, onChange }: ComboConfiguratorProps)
               (!needsCustom || v.custom_variant?.id === s.customId)
           );
           const configured = !needsColor && !needsSize && !needsCustom ? true : !!matched;
+          const unitPrice = matched?.selling_price ?? child?.base_price ?? 0;
+          const lineTotal = unitPrice * ci.quantity;
+          const displayImage = resolveChildImage(child, matched, s.colorId);
 
           return (
             <AccordionItem
@@ -190,30 +234,43 @@ const ComboConfigurator = ({ comboProductId, onChange }: ComboConfiguratorProps)
                     {idx + 1}
                   </div>
                   <img
-                    src={mainImage(child?.images as any)}
+                    src={displayImage}
                     alt={child?.name || "Item"}
-                    className="w-11 h-11 object-cover rounded border border-border bg-muted shrink-0"
+                    className="w-11 h-11 object-cover rounded border border-border bg-muted shrink-0 transition-opacity"
                   />
                   <div className="flex-1 min-w-0 text-left">
                     <p className="text-sm font-medium truncate">{child?.name}</p>
                     <p className="text-[11px] text-muted-foreground truncate">
-                      Qty {ci.quantity}
+                      ৳{unitPrice.toLocaleString()} × {ci.quantity}
                       {matched?.color?.name ? ` · ${matched.color.name}` : ""}
                       {matched?.size?.label ? ` · ${matched.size.label}` : ""}
                     </p>
                   </div>
-                  {configured ? (
-                    <Badge variant="secondary" className="gap-1 shrink-0">
-                      <Check className="h-3 w-3" /> Ready
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="shrink-0 text-[10px]">
-                      Select options
-                    </Badge>
-                  )}
+                  <div className="text-right shrink-0 mr-1 hidden sm:block">
+                    <p className="text-xs font-medium">৳{lineTotal.toLocaleString()}</p>
+                    {configured ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                        <Check className="h-3 w-3" /> Ready
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground">Select options</span>
+                    )}
+                  </div>
+                  <div className="sm:hidden shrink-0">
+                    {configured ? (
+                      <Badge variant="secondary" className="gap-1">
+                        <Check className="h-3 w-3" /> Ready
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-[10px]">
+                        Select
+                      </Badge>
+                    )}
+                  </div>
                   <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform ml-1 shrink-0" />
                 </div>
               </AccordionTrigger>
+
               <AccordionContent className="px-3 pb-4 pt-1">
                 {variants.length === 0 ? (
                   <p className="text-xs text-muted-foreground py-2">
@@ -311,6 +368,49 @@ const ComboConfigurator = ({ comboProductId, onChange }: ComboConfiguratorProps)
           );
         })}
       </Accordion>
+
+      {(() => {
+        const itemsTotal = items.reduce((sum, ci) => {
+          const child = ci.child as any;
+          const s = state[ci.id] || { colorId: null, sizeId: null, customId: null };
+          const variants = ((child?.variants as any[]) || []).filter((v) => v.is_active);
+          const matched = variants.find(
+            (v) =>
+              (!variants.some((x) => x.color) || v.color?.id === s.colorId) &&
+              (!variants.some((x) => x.size) || v.size?.id === s.sizeId) &&
+              (!variants.some((x) => x.custom_variant) || v.custom_variant?.id === s.customId)
+          );
+          const unit = matched?.selling_price ?? child?.base_price ?? 0;
+          return sum + unit * ci.quantity;
+        }, 0);
+        const savings = Math.max(0, itemsTotal - (comboPrice || 0));
+        const pct = itemsTotal > 0 ? Math.round((savings / itemsTotal) * 100) : 0;
+        if (itemsTotal <= 0) return null;
+        return (
+          <div className="mt-3 rounded-md border border-border bg-muted/40 p-3 space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Items total</span>
+              <span className={cn("font-light", savings > 0 && "line-through text-muted-foreground")}>
+                ৳{itemsTotal.toLocaleString()}
+              </span>
+            </div>
+            {comboPrice > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium uppercase tracking-wide">Combo price</span>
+                <span className="font-semibold">৳{comboPrice.toLocaleString()}</span>
+              </div>
+            )}
+            {savings > 0 && (
+              <div className="flex items-center justify-between text-xs pt-1 border-t border-border/60">
+                <span className="text-foreground font-medium">You save</span>
+                <span className="font-semibold text-foreground">
+                  ৳{savings.toLocaleString()} ({pct}%)
+                </span>
+              </div>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 };

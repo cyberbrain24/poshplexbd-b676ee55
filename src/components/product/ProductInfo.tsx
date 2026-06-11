@@ -27,6 +27,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
   const [selectedAttributeValues, setSelectedAttributeValues] = useState<Record<string, string>>({});
   const [comboSelections, setComboSelections] = useState<ComboChildSelection[]>([]);
   const [comboReady, setComboReady] = useState(false);
+  const [comboItemsTotal, setComboItemsTotal] = useState(0);
   const { addToCart } = useCart();
   const incrementQuantity = () => setQuantity(prev => prev + 1);
   const decrementQuantity = () => setQuantity(prev => Math.max(1, prev - 1));
@@ -44,9 +45,10 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
     }
   }, [onColorChange, onVariantImageChange]);
 
-  const handleComboChange = useCallback((selections: ComboChildSelection[], allReady: boolean) => {
+  const handleComboChange = useCallback((selections: ComboChildSelection[], allReady: boolean, itemsTotal: number) => {
     setComboSelections(selections);
     setComboReady(allReady);
+    setComboItemsTotal(itemsTotal);
   }, []);
 
   // Fallback data for static display
@@ -168,6 +170,14 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
                   ৳{basePrice.toLocaleString()}
                 </p>
               )}
+              {isComboProduct && comboItemsTotal > basePrice && (
+                <p className="text-[11px] font-light text-muted-foreground">
+                  <span className="line-through">৳{comboItemsTotal.toLocaleString()}</span>
+                  <span className="ml-1.5 text-foreground font-medium">
+                    Save ৳{(comboItemsTotal - basePrice).toLocaleString()}
+                  </span>
+                </p>
+              )}
             </div>
             {product && (
               <FavoriteButton
@@ -191,7 +201,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
       {/* Combo Configurator */}
       {isComboProduct && product?.id && (
         <div className="py-2 lg:py-4 lg:border-b lg:border-border">
-          <ComboConfigurator comboProductId={product.id} onChange={handleComboChange} />
+          <ComboConfigurator comboProductId={product.id} comboPrice={basePrice} onChange={handleComboChange} />
         </div>
       )}
 

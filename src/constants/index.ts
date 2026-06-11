@@ -24,10 +24,10 @@ export type OrderStatusType = typeof ORDER_STATUSES[keyof typeof ORDER_STATUSES]
 export const ORDER_STATUS_LABELS: Record<OrderStatusType, string> = {
   pending: 'Order Placed',
   confirmed: 'In Review',
-  shipped: 'Pending',
-  processing: 'Approval Pending',
+  processing: 'Pending',
+  shipped: 'Approval Pending',
   delivered: 'Delivered',
-  partially_delivered: 'Partly Delivered',
+  partially_delivered: 'Partially Delivered',
   cancelled: 'Cancel',
   returned: 'Cancel',
   failed: 'Cancel',

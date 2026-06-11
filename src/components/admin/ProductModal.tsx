@@ -57,6 +57,8 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
   const [mediaPickerIndex, setMediaPickerIndex] = useState<number | null>(null);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [selectedAttributeIds, setSelectedAttributeIds] = useState<string[]>([]);
+  const [comboChildren, setComboChildren] = useState<ComboChildState[]>([]);
+  const syncCombo = useSyncComboItems();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 

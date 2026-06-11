@@ -1,29 +1,28 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { findFont } from "@/lib/fontCatalog";
 import {
-  findFont,
-  TYPOGRAPHY_DEFAULTS,
-  TRACKING_MAP,
-  type TypographyConfig,
-  type TypographyTarget,
-} from "@/lib/fontCatalog";
+  normalizeTypographySettings,
+  TYPO_TOKENS,
+  type TypographySettings,
+  type TypographyToken,
+  type TokenConfig,
+} from "@/lib/typographyTokens";
 
 const STYLE_ID = "dynamic-typography";
 const LINK_ID_PREFIX = "dynamic-font-";
 
-function familyStack(name: string, fallback: string) {
-  return `'${name}', ${fallback}`;
-}
+const NOT = ":not(.admin-shell):not(.admin-shell *)";
 
-function fallbackFor(category?: string) {
-  if (category === "mono") return "ui-monospace, monospace";
-  if (category === "display" || category === "local") return "Impact, sans-serif";
-  return "system-ui, -apple-system, sans-serif";
+function familyStack(name: string, fallbackKind: "serif" | "sans" | "mono") {
+  if (fallbackKind === "mono") return `'${name}', ui-monospace, monospace`;
+  if (fallbackKind === "serif") return `'${name}', 'Cormorant Garamond', Georgia, serif`;
+  return `'${name}', 'Helvetica Neue', Arial, sans-serif`;
 }
 
 function ensureGoogleFontLoaded(googleParam: string) {
-  const id = LINK_ID_PREFIX + googleParam;
+  const id = LINK_ID_PREFIX + googleParam.replace(/[^a-zA-Z0-9+_:;,@-]/g, "_");
   if (document.getElementById(id)) return;
   const link = document.createElement("link");
   link.id = id;
@@ -32,71 +31,109 @@ function ensureGoogleFontLoaded(googleParam: string) {
   document.head.appendChild(link);
 }
 
-// Industry-practice heading scale (rem) — body always 1rem (~15px from index.css)
-const HEADING_BASE_REM: Record<"h1" | "h2" | "h3" | "h4" | "h5", number> = {
-  h1: 2.5,
-  h2: 2.0,
-  h3: 1.5,
-  h4: 1.25,
-  h5: 1.0,
-};
+function cssVarName(token: TypographyToken) {
+  return token.replace(/[^a-zA-Z0-9]/g, "-");
+}
 
-function buildCSS(cfg: TypographyConfig) {
-  const merged: Record<TypographyTarget, typeof TYPOGRAPHY_DEFAULTS.h1> = {
-    h1: { ...TYPOGRAPHY_DEFAULTS.h1, ...(cfg.h1 || {}) },
-    h2: { ...TYPOGRAPHY_DEFAULTS.h2, ...(cfg.h2 || {}) },
-    h3: { ...TYPOGRAPHY_DEFAULTS.h3, ...(cfg.h3 || {}) },
-    h4: { ...TYPOGRAPHY_DEFAULTS.h4, ...(cfg.h4 || {}) },
-    h5: { ...TYPOGRAPHY_DEFAULTS.h5, ...(cfg.h5 || {}) },
-    body: { ...TYPOGRAPHY_DEFAULTS.body, ...(cfg.body || {}) },
-    nav: { ...TYPOGRAPHY_DEFAULTS.nav, ...(cfg.nav || {}) },
-  };
+function tokenDeclarations(t: TypographyToken, c: TokenConfig, serifStack: string, sansStack: string) {
+  const stack = c.slot === "serif" ? serifStack : sansStack;
+  return [
+    `font-family:${stack} !important`,
+    `font-weight:${c.weightDesktop} !important`,
+    `font-size:${c.sizeDesktop}px !important`,
+    `line-height:${c.lineHeight} !important`,
+    `letter-spacing:${c.letterSpacing}px !important`,
+    `text-transform:${c.transform} !important`,
+  ].join(";");
+}
 
-  Object.values(merged).forEach((c) => {
-    const font = findFont(c.family);
-    if (font?.googleParam) ensureGoogleFontLoaded(font.googleParam);
+function tokenMobileDeclarations(c: TokenConfig) {
+  return [
+    `font-size:${c.sizeMobile}px !important`,
+    c.weightMobile !== c.weightDesktop ? `font-weight:${c.weightMobile} !important` : null,
+  ]
+    .filter(Boolean)
+    .join(";");
+}
+
+function buildCSS(settings: TypographySettings): string {
+  const serifFont = findFont(settings.families.serif);
+  const sansFont = findFont(settings.families.sans);
+  if (serifFont?.googleParam) ensureGoogleFontLoaded(serifFont.googleParam);
+  if (sansFont?.googleParam) ensureGoogleFontLoaded(sansFont.googleParam);
+
+  const serifStack = familyStack(settings.families.serif, serifFont?.category === "sans" ? "sans" : "serif");
+  const sansStack = familyStack(settings.families.sans, sansFont?.category === "serif" ? "serif" : "sans");
+
+  const rootVars: string[] = [
+    `--font-serif:${serifStack}`,
+    `--font-sans:${sansStack}`,
+  ];
+  for (const t of TYPO_TOKENS) {
+    const c = settings.tokens[t];
+    const v = cssVarName(t);
+    rootVars.push(`--fs-${v}:${c.sizeDesktop}px`);
+    rootVars.push(`--fw-${v}:${c.weightDesktop}`);
+    rootVars.push(`--lh-${v}:${c.lineHeight}`);
+    rootVars.push(`--ls-${v}:${c.letterSpacing}px`);
+    rootVars.push(`--tt-${v}:${c.transform}`);
+  }
+
+  const utilityRules: string[] = TYPO_TOKENS.map((t) => {
+    const c = settings.tokens[t];
+    return `.t-${t}${NOT}{${tokenDeclarations(t, c, serifStack, sansStack)}}`;
   });
 
-  const not = ":not(.admin-shell):not(.admin-shell *)";
+  // Element-level mapping so existing markup picks up new tokens automatically
+  const map: Array<[string, TypographyToken]> = [
+    [`h1${NOT}`, "h1"],
+    [`h2${NOT}`, "h2"],
+    [`h3${NOT}`, "h3"],
+    [`h4${NOT}`, "h3"],
+    [`h5${NOT}, h6${NOT}`, "h3"],
+    [`body${NOT}`, "body"],
+    [`p${NOT}, li${NOT}, label${NOT}, blockquote${NOT}`, "body"],
+    [`nav${NOT} a, nav${NOT} button, .nav-font${NOT}`, "nav-link"],
+  ];
+  const elementRules = map.map(([sel, token]) => {
+    const c = settings.tokens[token];
+    return `${sel}{${tokenDeclarations(token, c, serifStack, sansStack)}}`;
+  });
 
-  const headingRule = (sel: string, c: typeof merged.h1, baseRem: number) => {
-    const font = findFont(c.family);
-    const stack = familyStack(c.family, fallbackFor(font?.category));
-    return `${sel}{font-family:${stack} !important;font-weight:${c.weight} !important;letter-spacing:${TRACKING_MAP[c.tracking]} !important;text-transform:${c.uppercase ? "uppercase" : "none"} !important;font-size:${(baseRem * c.scale).toFixed(3)}rem !important;line-height:1.15;}`;
-    };
-
-  const bodyFont = findFont(merged.body.family);
-  const bodyStack = familyStack(merged.body.family, fallbackFor(bodyFont?.category));
-  const bodyRule =
-    // Body sets the base — inline elements inherit naturally, so Tailwind
-    // utilities like text-[10px], text-2xl, text-xs still win on spans/links.
-    `body${not}{font-family:${bodyStack} !important;font-weight:${merged.body.weight};letter-spacing:${TRACKING_MAP[merged.body.tracking]};text-transform:${merged.body.uppercase ? "uppercase" : "none"};font-size:${merged.body.scale.toFixed(3)}rem !important;}` +
-    // Paragraphs/lists/labels follow body family + casing only.
-    `p${not}, li${not}, label${not}, blockquote${not}{font-family:${bodyStack} !important;}`;
-
-  const navFont = findFont(merged.nav.family);
-  const navStack = familyStack(merged.nav.family, fallbackFor(navFont?.category));
-  const navRule = `nav${not}, nav${not} a, nav${not} button, .nav-font${not}{font-family:${navStack} !important;font-weight:${merged.nav.weight} !important;letter-spacing:${TRACKING_MAP[merged.nav.tracking]} !important;text-transform:${merged.nav.uppercase ? "uppercase" : "none"} !important;}`;
+  // Mobile overrides
+  const mobileTokenRules: string[] = TYPO_TOKENS.map((t) => {
+    const c = settings.tokens[t];
+    const decl = tokenMobileDeclarations(c);
+    return decl ? `.t-${t}${NOT}{${decl}}` : "";
+  }).filter(Boolean);
+  const mobileElementRules = map
+    .map(([sel, token]) => {
+      const c = settings.tokens[token];
+      const decl = tokenMobileDeclarations(c);
+      return decl ? `${sel}{${decl}}` : "";
+    })
+    .filter(Boolean);
+  const mobileVars = TYPO_TOKENS.map((t) => {
+    const c = settings.tokens[t];
+    return `--fs-${cssVarName(t)}:${c.sizeMobile}px`;
+  }).join(";");
 
   return [
-    headingRule(`h1${not}`, merged.h1, HEADING_BASE_REM.h1),
-    headingRule(`h2${not}`, merged.h2, HEADING_BASE_REM.h2),
-    headingRule(`h3${not}`, merged.h3, HEADING_BASE_REM.h3),
-    headingRule(`h4${not}`, merged.h4, HEADING_BASE_REM.h4),
-    headingRule(`h5${not}, h6${not}`, merged.h5, HEADING_BASE_REM.h5),
-    bodyRule,
-    navRule,
+    `:root{${rootVars.join(";")}}`,
+    ...elementRules,
+    ...utilityRules,
+    `@media (max-width: 767px){:root{${mobileVars}}${mobileElementRules.join("")}${mobileTokenRules.join("")}}`,
   ].join("\n");
 }
 
-function applyTypography(cfg: TypographyConfig) {
+function applyTypography(settings: TypographySettings) {
   let style = document.getElementById(STYLE_ID) as HTMLStyleElement | null;
   if (!style) {
     style = document.createElement("style");
     style.id = STYLE_ID;
     document.head.appendChild(style);
   }
-  style.textContent = buildCSS(cfg);
+  style.textContent = buildCSS(settings);
 }
 
 export const TypographyProvider = () => {
@@ -109,13 +146,13 @@ export const TypographyProvider = () => {
         .limit(1)
         .maybeSingle();
       if (error) throw error;
-      return (data?.typography as TypographyConfig) || {};
+      return normalizeTypographySettings(data?.typography);
     },
     staleTime: 5 * 60 * 1000,
   });
 
   useEffect(() => {
-    applyTypography(data || {});
+    applyTypography(data || normalizeTypographySettings(null));
   }, [data]);
 
   return null;

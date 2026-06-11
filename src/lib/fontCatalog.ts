@@ -4,7 +4,7 @@
 export type FontEntry = {
   name: string;            // CSS family name used in font-family
   label: string;           // display label in admin
-  category: "display" | "sans" | "mono" | "local";
+  category: "display" | "sans" | "serif" | "mono" | "local";
   googleParam?: string;    // e.g. "Space+Grotesk:wght@300;400;500;600;700"
 };
 
@@ -23,6 +23,13 @@ export const FONT_CATALOG: FontEntry[] = [
   { name: "Teko",          label: "Teko",          category: "display", googleParam: "Teko:wght@300;400;500;600;700" },
   { name: "Abril Fatface", label: "Abril Fatface", category: "display", googleParam: "Abril+Fatface" },
 
+  // Serif (editorial / fashion)
+  { name: "Playfair Display",    label: "Playfair Display",    category: "serif", googleParam: "Playfair+Display:wght@400;500;600;700;800" },
+  { name: "Cormorant Garamond",  label: "Cormorant Garamond",  category: "serif", googleParam: "Cormorant+Garamond:wght@300;400;500;600;700" },
+  { name: "EB Garamond",         label: "EB Garamond",         category: "serif", googleParam: "EB+Garamond:wght@400;500;600;700;800" },
+  { name: "Libre Bodoni",        label: "Libre Bodoni",        category: "serif", googleParam: "Libre+Bodoni:wght@400;500;600;700" },
+
+
   // Sans
   { name: "Poppins",         label: "Poppins",         category: "sans", googleParam: "Poppins:wght@300;400;500;600;700;800" },
   { name: "Inter",           label: "Inter",           category: "sans", googleParam: "Inter:wght@300;400;500;600;700;800" },
@@ -37,6 +44,8 @@ export const FONT_CATALOG: FontEntry[] = [
   { name: "Sora",            label: "Sora",            category: "sans", googleParam: "Sora:wght@300;400;500;600;700;800" },
   { name: "Urbanist",        label: "Urbanist",        category: "sans", googleParam: "Urbanist:wght@300;400;500;600;700;800" },
   { name: "Barlow Condensed", label: "Barlow Condensed", category: "sans", googleParam: "Barlow+Condensed:wght@300;400;500;600;700" },
+  { name: "Jost",            label: "Jost",            category: "sans", googleParam: "Jost:wght@300;400;500;600;700;800" },
+  { name: "Work Sans",       label: "Work Sans",       category: "sans", googleParam: "Work+Sans:wght@300;400;500;600;700;800" },
 
   // Mono
   { name: "JetBrains Mono",  label: "JetBrains Mono",  category: "mono", googleParam: "JetBrains+Mono:wght@300;400;500;600;700" },

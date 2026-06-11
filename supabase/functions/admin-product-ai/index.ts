@@ -756,23 +756,28 @@ async function executeTool(name: string, args: any, sb: any) {
         return { success: true, order: data };
       }
       case "set_order_status": {
+        const status = String(args.status || "").toLowerCase().replace(/[\s-]+/g, "_");
         const { data: prev } = await sb.from("orders").select("order_status").eq("id", args.order_id).maybeSingle();
-        const { data, error } = await sb.from("orders").update({ order_status: args.status }).eq("id", args.order_id).select().single();
+        const { data, error } = await sb.from("orders").update({ order_status: status }).eq("id", args.order_id).select().single();
         if (error) throw error;
         await sb.from("order_status_history").insert({
           order_id: args.order_id, status_type: "order",
-          previous_status: prev?.order_status || null, new_status: args.status,
+          previous_status: prev?.order_status || null, new_status: status,
           notes: args.notes || "Updated by AI assistant",
         });
         return { success: true, order: data };
       }
       case "set_payment_status": {
+        const raw = String(args.payment_status || "").toLowerCase().replace(/[\s-]+/g, "_");
+        const status = ["in_review", "review", "reviewing", "pending_review", "verification", "pending_verification"].includes(raw)
+          ? "pending_verification"
+          : raw === "partial" ? "partially_paid" : raw;
         const { data: prev } = await sb.from("orders").select("payment_status").eq("id", args.order_id).maybeSingle();
-        const { data, error } = await sb.from("orders").update({ payment_status: args.payment_status }).eq("id", args.order_id).select().single();
+        const { data, error } = await sb.from("orders").update({ payment_status: status }).eq("id", args.order_id).select().single();
         if (error) throw error;
         await sb.from("order_status_history").insert({
           order_id: args.order_id, status_type: "payment",
-          previous_status: prev?.payment_status || null, new_status: args.payment_status,
+          previous_status: prev?.payment_status || null, new_status: status,
           notes: args.notes || "Updated by AI assistant",
         });
         return { success: true, order: data };

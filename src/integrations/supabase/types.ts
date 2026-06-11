@@ -2282,6 +2282,92 @@ export type Database = {
           },
         ]
       }
+      promotions: {
+        Row: {
+          action_type: string
+          action_value: string | null
+          bg_color: string | null
+          category_filter: string[] | null
+          clicks: number
+          created_at: string
+          cta_label: string | null
+          description: string | null
+          dismissible: boolean
+          display_style: string
+          ends_at: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          placements: string[]
+          priority: number
+          promo_code_id: string | null
+          starts_at: string | null
+          subtitle: string | null
+          text_color: string | null
+          title: string
+          updated_at: string
+          views: number
+        }
+        Insert: {
+          action_type?: string
+          action_value?: string | null
+          bg_color?: string | null
+          category_filter?: string[] | null
+          clicks?: number
+          created_at?: string
+          cta_label?: string | null
+          description?: string | null
+          dismissible?: boolean
+          display_style?: string
+          ends_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          placements?: string[]
+          priority?: number
+          promo_code_id?: string | null
+          starts_at?: string | null
+          subtitle?: string | null
+          text_color?: string | null
+          title: string
+          updated_at?: string
+          views?: number
+        }
+        Update: {
+          action_type?: string
+          action_value?: string | null
+          bg_color?: string | null
+          category_filter?: string[] | null
+          clicks?: number
+          created_at?: string
+          cta_label?: string | null
+          description?: string | null
+          dismissible?: boolean
+          display_style?: string
+          ends_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          placements?: string[]
+          priority?: number
+          promo_code_id?: string | null
+          starts_at?: string | null
+          subtitle?: string | null
+          text_color?: string | null
+          title?: string
+          updated_at?: string
+          views?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotions_promo_code_id_fkey"
+            columns: ["promo_code_id"]
+            isOneToOne: false
+            referencedRelation: "promo_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       return_requests: {
         Row: {
           admin_notes: string | null
@@ -3188,6 +3274,8 @@ export type Database = {
         Args: { p_promo_code_id: string }
         Returns: undefined
       }
+      increment_promotion_click: { Args: { p_id: string }; Returns: undefined }
+      increment_promotion_view: { Args: { p_id: string }; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
       record_order_payment_atomic: {
         Args: {

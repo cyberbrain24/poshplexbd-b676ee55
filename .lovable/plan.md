@@ -1,75 +1,60 @@
-## Goal
+# Promotional Ads & Banners Module
 
-Adopt the typography spec from `typography-system.md` as a dynamic, admin-controlled system. The admin can change every token (family, size desktop/mobile, weight, line-height, letter-spacing, transform) from Site Settings, and the storefront updates instantly. Admin panel stays unaffected (current `.admin-shell` exclusion preserved).
+A reusable "Promotions" system that lets admins place visual ads/banners anywhere on the storefront. Clicking an ad opens a popup with details (promo code, product link, announcement, image, etc.).
 
-## Token model (17 tokens, 2 family slots)
+## What you'll be able to do
 
-Family slots (admin picks any font from existing `FONT_CATALOG`):
-- `serif` — display/editorial role (default: Playfair Display)
-- `sans` — UI/functional role (default: Inter)
+- Create unlimited ads from a single admin page (`/admin/promotions`, also linked from the Promo Codes page).
+- Each ad has: title, short label, image (optional), content type, target action, schedule (start/end), priority, active toggle, and placement slots.
+- Click behavior options:
+  - **Show popup** with rich content (description + optional promo code with copy button + CTA button)
+  - **Link to product** (pick from product picker)
+  - **Link to category / URL**
+  - **No action** (informational only)
+- Placement slots (multi-select per ad):
+  - `home_top` — under hero
+  - `home_middle` — between sections
+  - `home_bottom` — above footer
+  - `category_top` — top of category pages (optional category filter)
+  - `product_top` / `product_bottom` — on product detail pages
+  - `footer` — inside footer
+  - `floating` — sticky floating bubble bottom-right (sitewide)
+  - `announcement` — appended into the announcement bar rotation
+- Display styles: `banner` (full-width image strip), `card` (compact card), `floating-bubble`, `inline-text`.
+- Scheduling: only render between `starts_at` and `ends_at`; respect `is_active`.
+- Dismissible: optional "X" close, remembered in localStorage per ad ID.
 
-Tokens (each: family slot, size desktop, size mobile, weight, line-height, letter-spacing, transform):
-`display, h1, h2, h3, product-title-card, product-title-pdp, price, price-sale, price-original, body, body-small, label, button, nav-link, badge, logo, caption`
+## Technical details
 
-Defaults exactly match the spec table (sizes, weights, leading, tracking, casing).
+**Database** — single new table `public.promotions`:
+- `id`, `title`, `subtitle`, `description`, `image_url`, `display_style`, `action_type` (`popup` | `product` | `category` | `url` | `none`), `action_value` (uuid/url), `promo_code_id` (fk → promo_codes, nullable), `placements` (text[]), `category_filter` (uuid[] nullable, for category_top), `priority` (int), `is_active` (bool), `dismissible` (bool), `starts_at`, `ends_at`, `clicks` (int), `views` (int), `created_at`, `updated_at`.
+- GRANT SELECT to `anon` + `authenticated` (public reads filtered by active/schedule), full CRUD to `service_role`, admin-only writes via RLS using `is_admin()`.
+- Increment-counter RPCs: `increment_promotion_view(uuid)`, `increment_promotion_click(uuid)` (SECURITY DEFINER).
 
-## Changes
+**Frontend**
+- New hook `usePromotions(placement, opts?)` → cached query (5min) filtering active + within schedule, sorted by priority.
+- New components in `src/components/promotions/`:
+  - `PromotionSlot.tsx` — generic renderer taking a placement key; fetches and renders all matching ads in chosen display style.
+  - `PromotionCard.tsx` — visual card/banner.
+  - `PromotionPopup.tsx` — dialog with details, promo code copy-to-clipboard, CTA.
+  - `FloatingPromotion.tsx` — sticky bubble.
+  - `PromotionDismiss.ts` — localStorage helper.
+- Insert `<PromotionSlot placement="..." />` into:
+  - `pages/Index.tsx` (home_top, home_middle, home_bottom)
+  - `pages/Category.tsx` (category_top)
+  - `pages/ProductDetail.tsx` (product_top, product_bottom)
+  - `components/footer/PoshplexFooter.tsx` (footer)
+  - `App.tsx` (floating — sitewide, excluded on /admin)
+  - `components/header/AnnouncementBar.tsx` (announcement — rotate text-only promos)
 
-### 1. Spec source — `src/lib/typographyTokens.ts` (new)
-- Export `TYPO_TOKENS` list, `TypographyToken` type, `TokenConfig` type, `TYPO_DEFAULTS` (the full spec table), and `FAMILY_SLOTS = ['serif','sans']` with defaults `Playfair Display` / `Inter`.
-- Add `Playfair Display`, `Cormorant Garamond`, `Jost`, `Work Sans` to `src/lib/fontCatalog.ts` (Google fonts).
+**Admin UI**
+- New page `src/pages/admin/AdminPromotions.tsx` registered at `/admin/promotions`.
+- Sidebar entry under Marketing group.
+- List view: thumbnail, title, placements (chips), schedule, status toggle, clicks/views, edit/delete.
+- Modal `PromotionModal.tsx`: title, subtitle, description (textarea), image upload (reuses media bucket), display style select, action type + dynamic field (product picker / category picker / URL / promo code select), placements multi-select, optional category filter, schedule dates, priority, dismissible, active.
+- Quick link button on `AdminPromoCodes.tsx`: "Create Ad for this code" → opens promotion modal pre-filled.
 
-### 2. Runtime — `src/components/TypographyProvider.tsx` (rewrite)
-- Read `site_settings.typography` (shape: `{ families: { serif, sans }, tokens: { [token]: TokenConfig } }`).
-- Lazy-inject Google font links for the two family slots only (weights 400/500/600).
-- Inject one `<style id="dynamic-typography">` block containing:
-  - `:root { --font-serif, --font-sans, --fs-<token>, --lh-<token>, --ls-<token>, --fw-<token>, --tt-<token> }` (desktop values).
-  - `@media (max-width: 767px) { :root { --fs-<token>: mobile values } }`.
-  - Utility classes scoped with `:not(.admin-shell):not(.admin-shell *)`:  
-    `.t-display`, `.t-h1`, `.t-h2`, `.t-h3`, `.t-product-card`, `.t-product-pdp`, `.t-price`, `.t-price-sale`, `.t-price-original`, `.t-body`, `.t-body-small`, `.t-label`, `.t-button`, `.t-nav-link`, `.t-badge`, `.t-logo`, `.t-caption`.
-  - Element-level mapping (so existing components without `.t-*` classes still pick up the spec):  
-    `h1{...token h1}`, `h2{...h2}`, `h3{...h3}`, `nav a, nav button{...nav-link}`, `body{...body}` — all scoped with the existing `.admin-shell` exclusion.
-- Backwards-compat: if `site_settings.typography` is in the old shape (`{h1,h2,...,body,nav}`), map it once into the new shape on read; never overwrite the DB silently — only admin save persists the new shape.
-
-### 3. Admin UI — `src/components/admin/TypographySettings.tsx` (rewrite)
-Sections:
-1. **Font families** — two `Select`s (Serif slot, Sans slot) sourced from `FONT_CATALOG`. Live preview line for each.
-2. **Tokens** — collapsible groups matching the spec's Location Mapping:
-   - Global / chrome: `logo, nav-link, caption`
-   - Headings: `display, h1, h2, h3`
-   - Product grid: `product-title-card, price, badge`
-   - Product detail: `product-title-pdp, price-sale, price-original, body, label, button`
-   - Generic: `body-small`
-   Each token row has: family slot (Serif/Sans toggle), weight (300–800), size desktop (px input 10–80), size mobile (px input 10–80), line-height (0.9–2 step 0.05), letter-spacing (px input -2 to 8), transform (none/uppercase/lowercase/capitalize), and a live preview using the in-form values.
-3. **Footer actions** — `Reset to spec defaults`, `Save & Apply`.
-- Saves to `site_settings.typography` and invalidates `site-typography` query for instant apply.
-- A "Where this appears" hint under each token lists locations from the spec.
-
-### 4. Component adoption (light pass — non-breaking)
-Most storefront text already uses `h1/h2/h3/nav/body`, which the element-level CSS in the provider covers. Add explicit `.t-*` classes only where headings don't carry the semantic tag:
-- `src/components/header/PoshplexHeader.tsx` — logo wordmark → `t-logo`; nav links already in `<nav>`.
-- `src/components/footer/PoshplexFooter.tsx` — column titles → `t-h3`, links → `t-body-small`, copyright → `t-caption`.
-- `src/components/home/ProductGrid.tsx` + `FeaturedProducts.tsx` product card name → `t-product-card`, price → `t-price`, badges → `t-badge`.
-- `src/pages/ProductDetail.tsx` / `ProductInfo.tsx` — title → `t-product-pdp`, current price → `t-price`, sale → `t-price-sale`, original → `t-price-original`, description → `t-body`, size/color labels → `t-label`, Add-to-cart → `t-button`.
-- `src/components/header/AnnouncementBar.tsx` — `t-caption`.
-- `src/components/category/CategoryHeader.tsx` breadcrumbs → `t-caption`.
-
-No business logic, no DB schema migration (the `typography` jsonb column already exists). Admin panel keeps its existing reset (`.admin-shell` rules in `index.css`).
-
-### 5. Cleanup
-- Keep `fontCatalog.ts` (extended with new fonts). Old `TYPOGRAPHY_DEFAULTS` / `TypographyConfig` types stay exported temporarily for the legacy-shape mapper, then deleted once not referenced.
-- `index.css` heading size rules left as the bare minimum fallback for first paint before the provider mounts.
-
-## Technical notes
-
-- Storage shape (jsonb):  
-  `{ families: { serif: "Playfair Display", sans: "Inter" }, tokens: { h1: { slot: "serif", weightDesktop: 400, weightMobile: 400, sizeDesktop: 32, sizeMobile: 26, lineHeight: 1.1, letterSpacing: 0, transform: "none" }, ... } }`.
-- Mobile breakpoint: `max-width: 767px` (matches existing Tailwind `md`).
-- All injected CSS uses `!important` on the scoped selectors (matches current provider behavior) so Tailwind utilities can still override when intentionally used on inline elements.
-- No new packages; uses existing `@tanstack/react-query`, `sonner`, shadcn `Select/Slider/Switch/Input/Label/Button`.
-
-## Out of scope
-
-- No changes to `.admin-shell` rules or admin fonts.
-- No new DB migration (reusing `site_settings.typography` jsonb).
-- No automatic refactor of every component — only the targeted adoption list above.
+**Out of scope**
+- A/B testing, targeting by user segment, paid impressions, analytics dashboards (basic click/view counters only).
+- Admin UI/typography unaffected (`.admin-shell` already isolates).
+- No changes to existing promo_codes logic — promotions only *reference* a promo code for display.

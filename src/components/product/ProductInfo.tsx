@@ -66,6 +66,32 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
       || product?.images?.[0]?.image_url 
       || '/placeholder.svg';
 
+    if (isComboProduct) {
+      const childSig = comboSelections
+        .map(s => `${s.productId}:${s.variantId || 'base'}`)
+        .join('|');
+      return {
+        id: `${product?.id || 'combo'}-combo-${childSig || 'na'}`,
+        productId: product?.id,
+        variantId: undefined,
+        name: productName,
+        price: basePrice,
+        image: mainImage,
+        category: categoryName,
+        sku: product?.sku,
+        comboChildren: comboSelections.map(s => ({
+          productId: s.productId,
+          variantId: s.variantId || null,
+          name: s.name,
+          image: s.image,
+          sku: s.sku || null,
+          color: s.color || null,
+          size: s.size || null,
+          quantity: s.quantity,
+        })),
+      };
+    }
+
     return {
       id: `${product?.id || 'fallback'}-${selectedVariant?.id || 'base'}`,
       productId: product?.id,

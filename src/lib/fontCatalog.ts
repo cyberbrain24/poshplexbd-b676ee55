@@ -4,7 +4,7 @@
 export type FontEntry = {
   name: string;            // CSS family name used in font-family
   label: string;           // display label in admin
-  category: "display" | "sans" | "mono" | "local";
+  category: "display" | "sans" | "serif" | "mono" | "local";
   googleParam?: string;    // e.g. "Space+Grotesk:wght@300;400;500;600;700"
 };
 

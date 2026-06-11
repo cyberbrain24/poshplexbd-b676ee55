@@ -247,14 +247,15 @@ const riskColors = {
 
 const AdminOrders = () => {
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
-  const [paymentFilter, setPaymentFilter] = useState<PaymentStatus | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<OrderStatus[]>([]);
+  const [paymentFilter, setPaymentFilter] = useState<PaymentStatus[]>([]);
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
   const [locationMode, setLocationMode] = useState<"include" | "exclude">("include");
   const [locDivisionIds, setLocDivisionIds] = useState<string[]>([]);
   const [locThanaIds, setLocThanaIds] = useState<string[]>([]);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [downloadingReport, setDownloadingReport] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null);
   const [deleteOrderNumber, setDeleteOrderNumber] = useState<string>("");
@@ -275,8 +276,8 @@ const AdminOrders = () => {
 
   const { data: stats, isLoading: statsLoading } = useOrderStats();
   const { data: orders, isLoading: ordersLoading } = useOrders({
-    status: statusFilter !== "all" ? statusFilter : undefined,
-    paymentStatus: paymentFilter !== "all" ? paymentFilter : undefined,
+    status: statusFilter.length > 0 ? statusFilter : undefined,
+    paymentStatus: paymentFilter.length > 0 ? paymentFilter : undefined,
     search: search || undefined,
     dateFrom: dateFrom ? new Date(dateFrom).toISOString() : undefined,
     dateTo: dateTo ? new Date(new Date(dateTo).setHours(23, 59, 59, 999)).toISOString() : undefined,

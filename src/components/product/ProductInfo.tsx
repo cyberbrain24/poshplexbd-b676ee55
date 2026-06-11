@@ -27,6 +27,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
   const [selectedAttributeValues, setSelectedAttributeValues] = useState<Record<string, string>>({});
   const [comboSelections, setComboSelections] = useState<ComboChildSelection[]>([]);
   const [comboReady, setComboReady] = useState(false);
+  const [comboItemsTotal, setComboItemsTotal] = useState(0);
   const { addToCart } = useCart();
   const incrementQuantity = () => setQuantity(prev => prev + 1);
   const decrementQuantity = () => setQuantity(prev => Math.max(1, prev - 1));

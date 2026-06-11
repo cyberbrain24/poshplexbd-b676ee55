@@ -198,9 +198,6 @@ const App = () => (
                     <Route path="music" element={<AdminMusic />} />
                     <Route path="sms" element={<AdminSMS />} />
                     <Route path="email" element={<AdminEmail />} />
-                    <Route path="whatsapp-marketing" element={<AdminWhatsAppMarketing />} />
-                    <Route path="instagram-marketing" element={<AdminInstagramMarketing />} />
-                    <Route path="messenger-marketing" element={<AdminMessengerMarketing />} />
                     <Route path="notes" element={<AdminNotes />} />
                     <Route path="site-settings" element={<AdminSiteSettings />} />
                     <Route path="marketing" element={<MarketingLayout />}>

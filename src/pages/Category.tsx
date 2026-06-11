@@ -47,6 +47,7 @@ const Category = () => {
           category={formatCategoryName(category)}
           categorySlug={slug}
         />
+        <div className="px-4 md:px-8 my-4"><PromotionSlot placement="category_top" categoryId={parentCategoryId} /></div>
         
         <FilterSortBar 
           filtersOpen={filtersOpen}

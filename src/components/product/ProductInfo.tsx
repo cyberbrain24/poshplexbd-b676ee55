@@ -272,6 +272,11 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
             Please select color and size to add to cart
           </p>
         )}
+        {isComboProduct && !comboReady && (
+          <p className="text-xs text-muted-foreground text-center">
+            Configure each bundle item to continue
+          </p>
+        )}
       </div>
 
       {/* Mobile sticky bottom bar - above footer nav */}

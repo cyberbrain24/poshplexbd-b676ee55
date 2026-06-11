@@ -16,6 +16,7 @@ import FacebookPixelTracker from "./components/tracking/FacebookPixelTracker";
 import VisitorTracker from "./components/tracking/VisitorTracker";
 import FloatingMusicPlayer from "./components/music/FloatingMusicPlayer";
 import TypographyProvider from "./components/TypographyProvider";
+import FloatingPromotion from "./components/promotions/FloatingPromotion";
 
 
 // Storefront pages - eagerly loaded (critical path)
@@ -69,6 +70,7 @@ const AdminPaymentMethods = lazy(() => import("./pages/admin/AdminPaymentMethods
 const AdminReviews = lazy(() => import("./pages/admin/AdminReviews"));
 const AdminMedia = lazy(() => import("./pages/admin/AdminMedia"));
 const AdminPromoCodes = lazy(() => import("./pages/admin/AdminPromoCodes"));
+const AdminPromotions = lazy(() => import("./pages/admin/AdminPromotions"));
 const AdminSiteSettings = lazy(() => import("./pages/admin/AdminSiteSettings"));
 const AdminBulkUpload = lazy(() => import("./pages/admin/AdminBulkUpload"));
 const AdminMusic = lazy(() => import("./pages/admin/AdminMusic"));
@@ -196,6 +198,7 @@ const App = () => (
                     <Route path="orders" element={<AdminOrders />} />
                     <Route path="payment-methods" element={<AdminPaymentMethods />} />
                     <Route path="promo-codes" element={<AdminPromoCodes />} />
+                    <Route path="promotions" element={<AdminPromotions />} />
                     <Route path="bulk-upload" element={<AdminBulkUpload />} />
                     <Route path="music" element={<AdminMusic />} />
                     <Route path="sms" element={<AdminSMS />} />
@@ -227,6 +230,7 @@ const App = () => (
                 </Routes>
                 <MobileFooterNav />
                 <FloatingMusicPlayer />
+                <FloatingPromotion />
               </BrowserRouter>
             </TooltipProvider>
             </MusicPlayerProvider>

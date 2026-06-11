@@ -30,16 +30,28 @@ export const OrderLocationFilter = ({
 }: Props) => {
   const [search, setSearch] = useState("");
   const { data: divisions = [] } = useDivisions();
-  // load thanas only when one or more divisions are picked
-  const { data: thanas = [] } = useThanas(divisionIds[0]);
+  // Fetch all active thanas once, then filter client-side by selected divisions
+  const { data: allThanas = [] } = useQuery({
+    queryKey: ["thanas-all-active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("thanas")
+        .select("id, name, division_id, is_active")
+        .eq("is_active", true)
+        .order("name");
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 1000 * 60 * 10,
+  });
 
   const visibleThanas = useMemo(() => {
     if (divisionIds.length === 0) return [];
-    const pool = (thanas || []).filter((t: any) => divisionIds.includes(t.division_id));
+    const pool = allThanas.filter((t: any) => divisionIds.includes(t.division_id));
     if (!search.trim()) return pool;
     const q = search.toLowerCase();
     return pool.filter((t: any) => t.name.toLowerCase().includes(q));
-  }, [thanas, divisionIds, search]);
+  }, [allThanas, divisionIds, search]);
 
   const visibleDivisions = useMemo(() => {
     if (!search.trim()) return divisions;

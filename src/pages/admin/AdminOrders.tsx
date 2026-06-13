@@ -770,6 +770,22 @@ const AdminOrders = () => {
         </div>
       )}
 
+      {/* Load more (only when no filters are active) */}
+      {!hasActiveFilters && orders && orders.length >= visibleLimit && (
+        <div className="flex justify-center pt-2">
+          <Button
+            variant="outline"
+            onClick={() => setVisibleLimit((n) => n + 100)}
+            disabled={ordersLoading}
+          >
+            {ordersLoading ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : null}
+            Load more orders
+          </Button>
+        </div>
+      )}
+
       {/* Order Detail Modal */}
       {selectedOrderId && (
         <OrderDetailModal

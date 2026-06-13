@@ -773,14 +773,16 @@ const AdminOrders = () => {
                   )}
                 </button>
 
-                {/* Selection checkbox overlay */}
-                <div
-                  className="absolute top-1 right-1 z-10 bg-background/90 border border-border rounded-sm p-1 cursor-pointer hover:bg-background"
-                  onClick={(e) => { e.stopPropagation(); toggleSelectOrder(order.id); }}
-                  title={isSelected ? 'Deselect order' : 'Select order'}
-                >
-                  <Checkbox checked={isSelected} className="pointer-events-none" />
-                </div>
+                {/* Selection checkbox overlay (only in selection mode) */}
+                {selectionMode && (
+                  <div
+                    className="absolute top-1 right-1 z-10 bg-background/90 border border-border rounded-sm p-1 cursor-pointer hover:bg-background"
+                    onClick={(e) => { e.stopPropagation(); toggleSelectOrder(order); }}
+                    title={isSelected ? 'Deselect order' : 'Select order'}
+                  >
+                    <Checkbox checked={isSelected} className="pointer-events-none" />
+                  </div>
+                )}
 
 
                 {/* Details */}

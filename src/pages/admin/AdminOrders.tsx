@@ -377,15 +377,22 @@ const AdminOrders = () => {
   };
 
 
+  // Helper: which orders does an action target — selected ones if any, otherwise all visible
+  const getTargetOrders = (): any[] => {
+    if (selectedOrdersMap.size > 0) return Array.from(selectedOrdersMap.values());
+    return (orders as any[]) || [];
+  };
+
   const handleDownloadPdf = async () => {
-    if (!orders || orders.length === 0) {
+    const targets = getTargetOrders();
+    if (targets.length === 0) {
       toast.error("No orders to download");
       return;
     }
     setDownloadingPdf(true);
     try {
-      await generatePackingListPdf(orders);
-      toast.success("Packing list downloaded");
+      await generatePackingListPdf(targets);
+      toast.success(`Packing list for ${targets.length} order(s) downloaded`);
     } catch (err) {
       console.error(err);
       toast.error("Failed to generate PDF");
@@ -394,52 +401,49 @@ const AdminOrders = () => {
     }
   };
 
-  const handleDownloadSelectedPackingPdf = async () => {
-    if (!orders || selectedOrderIds.size === 0) {
-      toast.error("No orders selected");
-      return;
-    }
-    const picked = orders.filter((o: any) => selectedOrderIds.has(o.id));
-    if (picked.length === 0) {
-      toast.error("Selected orders not in current view");
-      return;
-    }
-    setDownloadingSelectedPdf(true);
-    try {
-      await generatePackingListPdf(picked);
-      toast.success(`Packing list for ${picked.length} order(s) downloaded`);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to generate PDF");
-    } finally {
-      setDownloadingSelectedPdf(false);
-    }
-  };
-
-  const toggleSelectOrder = (id: string) => {
-    setSelectedOrderIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+  const toggleSelectOrder = (order: any) => {
+    setSelectedOrdersMap((prev) => {
+      const next = new Map(prev);
+      if (next.has(order.id)) next.delete(order.id);
+      else next.set(order.id, order);
       return next;
     });
   };
 
+  const removeFromSelection = (id: string) => {
+    setSelectedOrdersMap((prev) => {
+      const next = new Map(prev);
+      next.delete(id);
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedOrdersMap(new Map());
+
   const toggleSelectAllVisible = () => {
     if (!orders) return;
-    const allVisibleIds = orders.map((o: any) => o.id);
-    const allSelected = allVisibleIds.every((id: string) => selectedOrderIds.has(id));
-    setSelectedOrderIds(allSelected ? new Set() : new Set(allVisibleIds));
+    const visible = orders as any[];
+    const allSelected = visible.length > 0 && visible.every((o) => selectedOrdersMap.has(o.id));
+    setSelectedOrdersMap((prev) => {
+      const next = new Map(prev);
+      if (allSelected) {
+        visible.forEach((o) => next.delete(o.id));
+      } else {
+        visible.forEach((o) => next.set(o.id, o));
+      }
+      return next;
+    });
   };
 
   const handleDownloadCsv = () => {
-    if (!orders || orders.length === 0) {
+    const targets = getTargetOrders();
+    if (targets.length === 0) {
       toast.error("No orders to export");
       return;
     }
     try {
-      downloadOrdersCsv(orders);
-      toast.success("CSV exported");
+      downloadOrdersCsv(targets);
+      toast.success(`CSV exported (${targets.length})`);
     } catch (err) {
       console.error(err);
       toast.error("Failed to export CSV");
@@ -447,14 +451,15 @@ const AdminOrders = () => {
   };
 
   const handleDownloadReportPdf = () => {
-    if (!orders || orders.length === 0) {
+    const targets = getTargetOrders();
+    if (targets.length === 0) {
       toast.error("No orders to export");
       return;
     }
     setDownloadingReport(true);
     try {
-      generateOrdersReportPdf(orders);
-      toast.success("Report PDF downloaded");
+      generateOrdersReportPdf(targets);
+      toast.success(`Report PDF downloaded (${targets.length})`);
     } catch (err) {
       console.error(err);
       toast.error("Failed to generate report");

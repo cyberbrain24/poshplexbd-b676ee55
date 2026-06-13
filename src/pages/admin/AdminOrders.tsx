@@ -523,7 +523,38 @@ const AdminOrders = () => {
           <h1 className="text-2xl font-medium tracking-tight">Orders</h1>
           <p className="text-muted-foreground mt-1">Manage customer orders and fulfillment</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 items-center justify-end">
+          <Button
+            variant={selectionMode ? "default" : "outline"}
+            onClick={() => setSelectionMode((m) => !m)}
+            title="Toggle order selection mode"
+          >
+            <CheckSquare className="h-4 w-4 mr-2" />
+            Select{selectedOrdersMap.size > 0 ? ` (${selectedOrdersMap.size})` : ''}
+          </Button>
+          {selectionMode && orders && orders.length > 0 && (
+            <Button
+              variant="ghost"
+              onClick={toggleSelectAllVisible}
+              title="Select / deselect all visible orders"
+            >
+              {orders.every((o: any) => selectedOrdersMap.has(o.id)) ? 'Deselect page' : 'Select page'}
+            </Button>
+          )}
+          {selectedOrdersMap.size > 0 && (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => setShowSelectedDialog(true)}
+              >
+                <ListChecks className="h-4 w-4 mr-2" />
+                Show selected ({selectedOrdersMap.size})
+              </Button>
+              <Button variant="ghost" onClick={clearSelection}>
+                Clear
+              </Button>
+            </>
+          )}
           <Button
             onClick={handleSyncAllSteadfast}
             disabled={syncAllSteadfast.isPending || ordersLoading}
@@ -657,38 +688,8 @@ const AdminOrders = () => {
           values={productFilter}
           onChange={setProductFilter}
         />
-        <Button
-          variant={selectionMode ? "default" : "outline"}
-          onClick={() => setSelectionMode((m) => !m)}
-          title="Toggle order selection mode"
-        >
-          <CheckSquare className="h-4 w-4 mr-2" />
-          Select{selectedOrdersMap.size > 0 ? ` (${selectedOrdersMap.size})` : ''}
-        </Button>
-        {selectionMode && orders && orders.length > 0 && (
-          <Button
-            variant="ghost"
-            onClick={toggleSelectAllVisible}
-            title="Select / deselect all visible orders"
-          >
-            {orders.every((o: any) => selectedOrdersMap.has(o.id)) ? 'Deselect page' : 'Select page'}
-          </Button>
-        )}
-        {selectedOrdersMap.size > 0 && (
-          <>
-            <Button
-              variant="outline"
-              onClick={() => setShowSelectedDialog(true)}
-            >
-              <ListChecks className="h-4 w-4 mr-2" />
-              Show selected ({selectedOrdersMap.size})
-            </Button>
-            <Button variant="ghost" onClick={clearSelection}>
-              Clear
-            </Button>
-          </>
-        )}
       </div>
+
 
 
 

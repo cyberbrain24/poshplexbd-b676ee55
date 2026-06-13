@@ -282,6 +282,9 @@ const AdminOrders = () => {
   const [locationMode, setLocationMode] = useState<"include" | "exclude">("include");
   const [locDivisionIds, setLocDivisionIds] = useState<string[]>([]);
   const [locThanaIds, setLocThanaIds] = useState<string[]>([]);
+  const [productFilter, setProductFilter] = useState<PickedProduct[]>([]);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
+  const [downloadingSelectedPdf, setDownloadingSelectedPdf] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [downloadingReport, setDownloadingReport] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);

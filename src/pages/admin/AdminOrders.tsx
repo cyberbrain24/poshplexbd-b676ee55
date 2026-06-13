@@ -768,6 +768,16 @@ const AdminOrders = () => {
                   )}
                 </button>
 
+                {/* Selection checkbox overlay */}
+                <div
+                  className="absolute top-1 right-1 z-10 bg-background/90 border border-border rounded-sm p-1 cursor-pointer hover:bg-background"
+                  onClick={(e) => { e.stopPropagation(); toggleSelectOrder(order.id); }}
+                  title={isSelected ? 'Deselect order' : 'Select order'}
+                >
+                  <Checkbox checked={isSelected} className="pointer-events-none" />
+                </div>
+
+
                 {/* Details */}
                 <div className="p-1.5 flex flex-col gap-1 text-xs flex-1">
                   <div className="flex items-center justify-between gap-1">

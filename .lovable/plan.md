@@ -1,30 +1,61 @@
 ## Goal
-Add a product filter (multi-select with search) to the Admin Orders page and let the admin tick orders, then generate a Packing PDF for the selected orders only — without changing existing logic.
+Let the Admin AI Agent generate the **Packing List PDF** in the exact same format used on the All Orders page, on request (e.g. "make a packing list for today's pending orders" / "packing list for orders PO-101, PO-102, PO-103" / "packing list for all unshipped Dhaka City orders with t-shirts").
 
-## Changes (frontend only, additive)
+The PDF generator (`src/lib/orderPackingPdf.ts`) is reused unchanged, so the output is byte-for-byte the same layout the Orders page produces.
 
-### 1. New product filter on Admin Orders toolbar
-- Add a searchable multi-select "Products" filter next to the existing filters in `src/pages/admin/AdminOrders.tsx`.
-- Component: new `src/components/admin/ProductMultiSelectFilter.tsx` — a `Popover` with a debounced search input (300ms) that queries `products` by `name` / `sku` (limit 20, matching existing `useProductSearch` pattern) and lets the admin pick multiple products. Picked items show as chips above the list (sticky), so admin can search again and add more.
-- State in AdminOrders: `productFilter: { id: string; name: string }[]`.
-- Filtering: applied **client-side** on the already-fetched `orders` array — keep an order if any of its `items[].product_id` is in the picked set. This avoids touching `useOrders` SQL and the order/limit logic.
-- Add `productFilter.length > 0` to `hasActiveFilters` so the "all results" behavior already in place kicks in (no Load More cap when filtering).
+## How it works
 
-### 2. Row selection + selected count
-- Add a checkbox column (leftmost) in the orders table; header checkbox toggles select-all of currently visible (post-filter) rows.
-- State: `selectedOrderIds: Set<string>`. Reset when filters change.
-- Show a small toolbar strip above the table when `selectedOrderIds.size > 0`: "N selected · Clear · Packing PDF (Selected)".
+### 1. New AI tool: `generate_packing_pdf` (server, read-only, auto-runs)
+Added to `supabase/functions/admin-product-ai/index.ts`. Accepts ONE or more of these optional filters:
+- `order_numbers: string[]` — explicit list (e.g. `["PO-101","PO-102"]`)
+- `order_ids: string[]`
+- `status` (single OR `statuses[]`) — order_status enum
+- `payment_status` (single OR `payment_statuses[]`)
+- `search` — order #, customer name, or phone
+- `days` — last N days
+- `date_from` / `date_to` — ISO dates
+- `product_id` / `product_name` / `product_sku` — only orders containing the matching product
+- `division_id` / `thana_id` / `division_name` / `thana_name`
+- `only_unshipped: boolean` — `tracking_number IS NULL`
+- `only_shipped: boolean`
+- `limit` (default 500, hard cap 1000)
 
-### 3. Packing PDF for selected orders
-- Reuse existing `generatePackingListPdf(orders)` from `src/lib/orderPackingPdf.ts` unchanged.
-- New handler `handleDownloadSelectedPackingPdf` filters the current `orders` array by `selectedOrderIds` and calls the same generator.
-- Existing "Packing PDF" button stays as-is (acts on current view).
+Server resolves matching order IDs (uses existing tables; no schema change). Returns:
+```json
+{
+  "ok": true,
+  "client_action": "download_packing_pdf",
+  "order_ids": [...],
+  "count": N,
+  "summary": "12 orders matched (status=pending, last 1 day)"
+}
+```
 
-## Safety / no-regression notes
-- No changes to `useOrders`, `useSteadfast`, DB, or PDF generator.
-- Product filter runs purely on already-loaded rows; if no filter, behavior is identical.
-- Checkboxes use `e.stopPropagation()` so they don't trigger the existing row-click → Order Detail modal.
+Added to `READ_TOOLS` so it auto-executes without an approval prompt (it only generates a download; no DB writes).
+
+### 2. Client intercept in `AdminProductAI.tsx`
+After every backend round-trip, the client inspects the latest tool message(s) for a `client_action: "download_packing_pdf"` payload (parsed from JSON). When found:
+1. Fetches those orders with the same nested SELECT shape used by `useOrders` (customer, items → product → product_images, payment_method, shipping_division, shipping_thana, plus `consignment_id` / `tracking_number` / `call_center_notes`).
+2. Calls `generatePackingListPdf(orders)` from `src/lib/orderPackingPdf.ts` — **same generator the All Orders page uses, so the format is identical** (summary page with totals + category/size/colour aggregates, then per-parcel image grids with sizes, parcel IDs, call notes).
+3. Shows a toast: "Packing list ready — N orders".
+4. De-dupes via a `processedActionsRef` Set keyed by `tool_call_id` so re-renders don't trigger duplicate downloads.
+
+### 3. Onboarding hints in the assistant
+Append example prompts under "Try asking:" in the AI Agent UI:
+- "Make a packing list PDF for today's pending orders"
+- "Packing list for PO-101, PO-102, PO-103"
+- "Packing list for all unshipped orders in Dhaka City"
+
+### 4. System prompt nudge
+Add one sentence to the agent's system prompt telling it to call `generate_packing_pdf` whenever the admin asks for a packing list / packing PDF / picking list, and to summarise the matched count in its reply.
 
 ## Files touched
-- `src/pages/admin/AdminOrders.tsx` — add state, filter UI, checkbox column, selected-action bar, new handler.
-- `src/components/admin/ProductMultiSelectFilter.tsx` — new component.
+- `supabase/functions/admin-product-ai/index.ts` — add `generate_packing_pdf` tool definition, server resolver, system-prompt line, add to `READ_TOOLS`.
+- `src/components/admin/AdminProductAI.tsx` — add side-effect interceptor + `downloadPackingPdfForOrderIds` helper, prompt hints.
+
+## Safety / no-regression
+- No DB schema changes.
+- No edits to `useOrders.ts`, the Orders page, the PDF generator, or the existing AI tools.
+- Tool is read-only; no approval flow needed.
+- Hard cap of 1000 orders per PDF to keep generation responsive.
+- If the matched count is 0, the tool returns `count: 0` with no `client_action`, so the agent can ask the admin to refine filters instead of producing an empty PDF.

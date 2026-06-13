@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send, Loader2, Check, X, Sparkles, Image as ImageIcon, ListChecks } from "lucide-react";
 import { toast } from "sonner";
+import { generatePackingListPdf } from "@/lib/orderPackingPdf";
+
 
 type Msg = {
   role: "user" | "assistant" | "tool" | "system";
@@ -42,6 +44,56 @@ export default function AdminProductAI({ embedded = false }: Props) {
   // Latest messages, accessible inside async queue runner without stale closure
   const messagesRef = useRef<Msg[]>([]);
   useEffect(() => { messagesRef.current = messages; }, [messages]);
+  // De-dupe client-side side effects (e.g. packing PDF) per tool_call_id.
+  const processedActionsRef = useRef<Set<string>>(new Set());
+
+  // Fetch orders with the same nested shape AdminOrders uses, then run the
+  // shared packing-PDF generator so the output matches the All Orders page.
+  const downloadPackingPdfForOrderIds = async (orderIds: string[]) => {
+    if (!orderIds.length) return;
+    try {
+      toast.message(`Building packing list for ${orderIds.length} order(s)…`);
+      const { data, error } = await supabase
+        .from("orders")
+        .select(`
+          *,
+          customer:customers(id, name, phone, email),
+          payment_method:payment_methods(id, name, type),
+          shipping_division:divisions(id, name),
+          shipping_thana:thanas(id, name),
+          items:order_items(*, product:products(id, product_images(image_url, is_main, sort_order), product_categories(category:categories(id, name, parent_id, parent:categories!parent_id(id, name)))))
+        `)
+        .in("id", orderIds)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        toast.error("No matching orders found to print.");
+        return;
+      }
+      await generatePackingListPdf(data as any);
+      toast.success(`Packing list ready — ${data.length} order(s).`);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to build packing PDF");
+    }
+  };
+
+  // Watch newest tool messages for `client_action: "download_packing_pdf"` and run it once.
+  useEffect(() => {
+    for (const m of messages) {
+      if (m.role !== "tool" || !m.tool_call_id || !m.content) continue;
+      if (processedActionsRef.current.has(m.tool_call_id)) continue;
+      try {
+        const parsed = JSON.parse(m.content);
+        if (parsed && parsed.client_action === "download_packing_pdf" && Array.isArray(parsed.order_ids) && parsed.order_ids.length) {
+          processedActionsRef.current.add(m.tool_call_id);
+          void downloadPackingPdfForOrderIds(parsed.order_ids);
+        }
+      } catch {
+        // not JSON — ignore
+      }
+    }
+  }, [messages]);
+
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -210,6 +262,10 @@ export default function AdminProductAI({ embedded = false }: Props) {
               <li>"Mark Crop Crore as featured"</li>
               <li>"Create a new t-shirt called Night Wolf at 549 Taka"</li>
               <li>"Deactivate Mummy"</li>
+              <li>"Make a packing list PDF for today's pending orders"</li>
+              <li>"Packing list for PO-101, PO-102, PO-103"</li>
+              <li>"Packing list for all unshipped orders in Dhaka City"</li>
+
             </ul>
             <p className="text-xs pt-2">
               <strong className="text-foreground">Tip:</strong> press Enter to send. While the AI is working, any new prompt you Enter goes into the queue and runs in order. Use <em>Approve All Queue</em> to auto-run every step.

@@ -300,6 +300,22 @@ const AdminOrders = () => {
   } | null>(null);
   const [checkingPayments, setCheckingPayments] = useState(false);
 
+  const hasActiveFilters = Boolean(
+    search ||
+    statusFilter.length > 0 ||
+    paymentFilter.length > 0 ||
+    dateFrom ||
+    dateTo ||
+    locDivisionIds.length > 0 ||
+    locThanaIds.length > 0
+  );
+  const [visibleLimit, setVisibleLimit] = useState<number>(100);
+
+  // Reset limit when filters change
+  useEffect(() => {
+    setVisibleLimit(100);
+  }, [search, statusFilter, paymentFilter, dateFrom, dateTo, locDivisionIds, locThanaIds, locationMode]);
+
   const { data: stats, isLoading: statsLoading } = useOrderStats();
   const { data: orders, isLoading: ordersLoading } = useOrders({
     status: statusFilter.length > 0 ? statusFilter : undefined,
@@ -311,20 +327,33 @@ const AdminOrders = () => {
     excludeDivisionIds: locationMode === "exclude" ? locDivisionIds : undefined,
     includeThanaIds: locationMode === "include" ? locThanaIds : undefined,
     excludeThanaIds: locationMode === "exclude" ? locThanaIds : undefined,
+    limit: hasActiveFilters ? null : visibleLimit,
   });
   const deleteOrder = useDeleteOrder();
   const syncAllSteadfast = useSyncSteadfastStatus();
 
-  const handleSyncAllSteadfast = () => {
-    const ids = (orders || [])
-      .filter((o: any) => o.tracking_number || o.consignment_id)
-      .map((o: any) => o.id);
-    if (ids.length === 0) {
-      toast.message("No shipped orders in current view to sync");
-      return;
+  const handleSyncAllSteadfast = async () => {
+    try {
+      // Sync across the entire orders DB, not just the current view
+      const { data, error } = await supabase
+        .from("orders")
+        .select("id, tracking_number, consignment_id")
+        .or("tracking_number.not.is.null,consignment_id.not.is.null");
+      if (error) throw error;
+      const ids = (data || [])
+        .filter((o: any) => o.tracking_number || o.consignment_id)
+        .map((o: any) => o.id);
+      if (ids.length === 0) {
+        toast.message("No shipped orders in database to sync");
+        return;
+      }
+      syncAllSteadfast.mutate(ids);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load orders for sync");
     }
-    syncAllSteadfast.mutate(ids);
   };
+
 
   const handleDownloadPdf = async () => {
     if (!orders || orders.length === 0) {

@@ -657,45 +657,40 @@ const AdminOrders = () => {
           values={productFilter}
           onChange={setProductFilter}
         />
+        <Button
+          variant={selectionMode ? "default" : "outline"}
+          onClick={() => setSelectionMode((m) => !m)}
+          title="Toggle order selection mode"
+        >
+          <CheckSquare className="h-4 w-4 mr-2" />
+          Select{selectedOrdersMap.size > 0 ? ` (${selectedOrdersMap.size})` : ''}
+        </Button>
+        {selectionMode && orders && orders.length > 0 && (
+          <Button
+            variant="ghost"
+            onClick={toggleSelectAllVisible}
+            title="Select / deselect all visible orders"
+          >
+            {orders.every((o: any) => selectedOrdersMap.has(o.id)) ? 'Deselect page' : 'Select page'}
+          </Button>
+        )}
+        {selectedOrdersMap.size > 0 && (
+          <>
+            <Button
+              variant="outline"
+              onClick={() => setShowSelectedDialog(true)}
+            >
+              <ListChecks className="h-4 w-4 mr-2" />
+              Show selected ({selectedOrdersMap.size})
+            </Button>
+            <Button variant="ghost" onClick={clearSelection}>
+              Clear
+            </Button>
+          </>
+        )}
       </div>
 
-      {/* Selection action bar */}
-      {orders && orders.length > 0 && (
-        <div className="flex items-center justify-between gap-3 px-3 py-2 border border-border bg-muted/30 rounded-sm">
-          <div className="flex items-center gap-3 text-sm">
-            <Checkbox
-              checked={orders.length > 0 && orders.every((o: any) => selectedOrderIds.has(o.id))}
-              onCheckedChange={toggleSelectAllVisible}
-            />
-            <span className="text-muted-foreground">
-              {selectedOrderIds.size > 0
-                ? `${selectedOrderIds.size} selected`
-                : `Select orders to generate a packing PDF for them`}
-            </span>
-            {selectedOrderIds.size > 0 && (
-              <button
-                type="button"
-                onClick={() => setSelectedOrderIds(new Set())}
-                className="text-xs text-primary hover:underline"
-              >
-                Clear
-              </button>
-            )}
-          </div>
-          <Button
-            size="sm"
-            onClick={handleDownloadSelectedPackingPdf}
-            disabled={selectedOrderIds.size === 0 || downloadingSelectedPdf}
-          >
-            {downloadingSelectedPdf ? (
-              <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />
-            ) : (
-              <Download className="h-3.5 w-3.5 mr-2" />
-            )}
-            Packing PDF (Selected)
-          </Button>
-        </div>
-      )}
+
 
 
       {/* Orders Grid */}

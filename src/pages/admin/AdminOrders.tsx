@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useOrders, useOrderStats, useDeleteOrder, useMarkOrderCalled, useUpdateCallCenterNotes, OrderStatus, PaymentStatus } from "@/hooks/useOrders";
 import { ORDER_STATUS_LABELS, ALLOWED_ORDER_STATUSES, PAYMENT_STATUS_LABELS } from "@/constants";
 import MultiSelectFilter from "@/components/admin/MultiSelectFilter";
+import ProductMultiSelectFilter, { type PickedProduct } from "@/components/admin/ProductMultiSelectFilter";
+import { Checkbox } from "@/components/ui/checkbox";
 import { downloadOrdersCsv, generateOrdersReportPdf } from "@/lib/ordersReport";
 import { FileSpreadsheet, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";

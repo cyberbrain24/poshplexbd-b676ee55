@@ -60,7 +60,10 @@ import {
   Phone,
   PhoneCall,
   ExternalLink,
-  Save
+  Save,
+  CheckSquare,
+  X,
+  ListChecks,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";

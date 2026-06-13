@@ -389,6 +389,44 @@ const AdminOrders = () => {
     }
   };
 
+  const handleDownloadSelectedPackingPdf = async () => {
+    if (!orders || selectedOrderIds.size === 0) {
+      toast.error("No orders selected");
+      return;
+    }
+    const picked = orders.filter((o: any) => selectedOrderIds.has(o.id));
+    if (picked.length === 0) {
+      toast.error("Selected orders not in current view");
+      return;
+    }
+    setDownloadingSelectedPdf(true);
+    try {
+      await generatePackingListPdf(picked);
+      toast.success(`Packing list for ${picked.length} order(s) downloaded`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to generate PDF");
+    } finally {
+      setDownloadingSelectedPdf(false);
+    }
+  };
+
+  const toggleSelectOrder = (id: string) => {
+    setSelectedOrderIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAllVisible = () => {
+    if (!orders) return;
+    const allVisibleIds = orders.map((o: any) => o.id);
+    const allSelected = allVisibleIds.every((id: string) => selectedOrderIds.has(id));
+    setSelectedOrderIds(allSelected ? new Set() : new Set(allVisibleIds));
+  };
+
   const handleDownloadCsv = () => {
     if (!orders || orders.length === 0) {
       toast.error("No orders to export");

@@ -714,10 +714,11 @@ const AdminOrders = () => {
             // Choose grid cols for the inner image collage
             const innerCols = itemCount <= 1 ? 1 : itemCount === 2 ? 2 : itemCount <= 4 ? 2 : 3;
 
+            const isSelected = selectedOrderIds.has(order.id);
             return (
               <div
                 key={order.id}
-                className="border border-border bg-card flex flex-col overflow-hidden hover:shadow-md transition-shadow"
+                className={`relative border bg-card flex flex-col overflow-hidden hover:shadow-md transition-shadow ${isSelected ? 'border-primary ring-2 ring-primary' : 'border-border'}`}
               >
                 {/* Images collage */}
                 <button

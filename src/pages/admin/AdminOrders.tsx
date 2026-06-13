@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useOrders, useOrderStats, useDeleteOrder, useMarkOrderCalled, useUpdateCallCenterNotes, OrderStatus, PaymentStatus } from "@/hooks/useOrders";
 import { ORDER_STATUS_LABELS, ALLOWED_ORDER_STATUSES, PAYMENT_STATUS_LABELS } from "@/constants";
 import MultiSelectFilter from "@/components/admin/MultiSelectFilter";
+import ProductMultiSelectFilter, { type PickedProduct } from "@/components/admin/ProductMultiSelectFilter";
+import { Checkbox } from "@/components/ui/checkbox";
 import { downloadOrdersCsv, generateOrdersReportPdf } from "@/lib/ordersReport";
 import { FileSpreadsheet, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -280,6 +282,9 @@ const AdminOrders = () => {
   const [locationMode, setLocationMode] = useState<"include" | "exclude">("include");
   const [locDivisionIds, setLocDivisionIds] = useState<string[]>([]);
   const [locThanaIds, setLocThanaIds] = useState<string[]>([]);
+  const [productFilter, setProductFilter] = useState<PickedProduct[]>([]);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
+  const [downloadingSelectedPdf, setDownloadingSelectedPdf] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [downloadingReport, setDownloadingReport] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
@@ -307,17 +312,19 @@ const AdminOrders = () => {
     dateFrom ||
     dateTo ||
     locDivisionIds.length > 0 ||
-    locThanaIds.length > 0
+    locThanaIds.length > 0 ||
+    productFilter.length > 0
   );
   const [visibleLimit, setVisibleLimit] = useState<number>(100);
 
-  // Reset limit when filters change
+  // Reset limit + selection when filters change
   useEffect(() => {
     setVisibleLimit(100);
-  }, [search, statusFilter, paymentFilter, dateFrom, dateTo, locDivisionIds, locThanaIds, locationMode]);
+    setSelectedOrderIds(new Set());
+  }, [search, statusFilter, paymentFilter, dateFrom, dateTo, locDivisionIds, locThanaIds, locationMode, productFilter]);
 
   const { data: stats, isLoading: statsLoading } = useOrderStats();
-  const { data: orders, isLoading: ordersLoading } = useOrders({
+  const { data: ordersRaw, isLoading: ordersLoading } = useOrders({
     status: statusFilter.length > 0 ? statusFilter : undefined,
     paymentStatus: paymentFilter.length > 0 ? paymentFilter : undefined,
     search: search || undefined,
@@ -329,6 +336,16 @@ const AdminOrders = () => {
     excludeThanaIds: locationMode === "exclude" ? locThanaIds : undefined,
     limit: hasActiveFilters ? null : visibleLimit,
   });
+
+  // Client-side product filter (preserves all existing query logic)
+  const orders = useMemo(() => {
+    if (!ordersRaw) return ordersRaw;
+    if (productFilter.length === 0) return ordersRaw;
+    const ids = new Set(productFilter.map(p => p.id));
+    return ordersRaw.filter((o: any) =>
+      (o.items || []).some((it: any) => it.product_id && ids.has(it.product_id))
+    );
+  }, [ordersRaw, productFilter]);
   const deleteOrder = useDeleteOrder();
   const syncAllSteadfast = useSyncSteadfastStatus();
 
@@ -370,6 +387,44 @@ const AdminOrders = () => {
     } finally {
       setDownloadingPdf(false);
     }
+  };
+
+  const handleDownloadSelectedPackingPdf = async () => {
+    if (!orders || selectedOrderIds.size === 0) {
+      toast.error("No orders selected");
+      return;
+    }
+    const picked = orders.filter((o: any) => selectedOrderIds.has(o.id));
+    if (picked.length === 0) {
+      toast.error("Selected orders not in current view");
+      return;
+    }
+    setDownloadingSelectedPdf(true);
+    try {
+      await generatePackingListPdf(picked);
+      toast.success(`Packing list for ${picked.length} order(s) downloaded`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to generate PDF");
+    } finally {
+      setDownloadingSelectedPdf(false);
+    }
+  };
+
+  const toggleSelectOrder = (id: string) => {
+    setSelectedOrderIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAllVisible = () => {
+    if (!orders) return;
+    const allVisibleIds = orders.map((o: any) => o.id);
+    const allSelected = allVisibleIds.every((id: string) => selectedOrderIds.has(id));
+    setSelectedOrderIds(allSelected ? new Set() : new Set(allVisibleIds));
   };
 
   const handleDownloadCsv = () => {
@@ -588,7 +643,50 @@ const AdminOrders = () => {
           onThanaChange={setLocThanaIds}
           onModeChange={setLocationMode}
         />
+        <ProductMultiSelectFilter
+          values={productFilter}
+          onChange={setProductFilter}
+        />
       </div>
+
+      {/* Selection action bar */}
+      {orders && orders.length > 0 && (
+        <div className="flex items-center justify-between gap-3 px-3 py-2 border border-border bg-muted/30 rounded-sm">
+          <div className="flex items-center gap-3 text-sm">
+            <Checkbox
+              checked={orders.length > 0 && orders.every((o: any) => selectedOrderIds.has(o.id))}
+              onCheckedChange={toggleSelectAllVisible}
+            />
+            <span className="text-muted-foreground">
+              {selectedOrderIds.size > 0
+                ? `${selectedOrderIds.size} selected`
+                : `Select orders to generate a packing PDF for them`}
+            </span>
+            {selectedOrderIds.size > 0 && (
+              <button
+                type="button"
+                onClick={() => setSelectedOrderIds(new Set())}
+                className="text-xs text-primary hover:underline"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+          <Button
+            size="sm"
+            onClick={handleDownloadSelectedPackingPdf}
+            disabled={selectedOrderIds.size === 0 || downloadingSelectedPdf}
+          >
+            {downloadingSelectedPdf ? (
+              <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />
+            ) : (
+              <Download className="h-3.5 w-3.5 mr-2" />
+            )}
+            Packing PDF (Selected)
+          </Button>
+        </div>
+      )}
+
 
       {/* Orders Grid */}
       {ordersLoading ? (
@@ -616,10 +714,11 @@ const AdminOrders = () => {
             // Choose grid cols for the inner image collage
             const innerCols = itemCount <= 1 ? 1 : itemCount === 2 ? 2 : itemCount <= 4 ? 2 : 3;
 
+            const isSelected = selectedOrderIds.has(order.id);
             return (
               <div
                 key={order.id}
-                className="border border-border bg-card flex flex-col overflow-hidden hover:shadow-md transition-shadow"
+                className={`relative border bg-card flex flex-col overflow-hidden hover:shadow-md transition-shadow ${isSelected ? 'border-primary ring-2 ring-primary' : 'border-border'}`}
               >
                 {/* Images collage */}
                 <button
@@ -668,6 +767,16 @@ const AdminOrders = () => {
                     </span>
                   )}
                 </button>
+
+                {/* Selection checkbox overlay */}
+                <div
+                  className="absolute top-1 right-1 z-10 bg-background/90 border border-border rounded-sm p-1 cursor-pointer hover:bg-background"
+                  onClick={(e) => { e.stopPropagation(); toggleSelectOrder(order.id); }}
+                  title={isSelected ? 'Deselect order' : 'Select order'}
+                >
+                  <Checkbox checked={isSelected} className="pointer-events-none" />
+                </div>
+
 
                 {/* Details */}
                 <div className="p-1.5 flex flex-col gap-1 text-xs flex-1">

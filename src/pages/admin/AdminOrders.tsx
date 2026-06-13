@@ -60,7 +60,10 @@ import {
   Phone,
   PhoneCall,
   ExternalLink,
-  Save
+  Save,
+  CheckSquare,
+  X,
+  ListChecks,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
@@ -283,8 +286,11 @@ const AdminOrders = () => {
   const [locDivisionIds, setLocDivisionIds] = useState<string[]>([]);
   const [locThanaIds, setLocThanaIds] = useState<string[]>([]);
   const [productFilter, setProductFilter] = useState<PickedProduct[]>([]);
-  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
-  const [downloadingSelectedPdf, setDownloadingSelectedPdf] = useState(false);
+  // Map<orderId, order> — stores full order data so selection survives filter changes
+  const [selectedOrdersMap, setSelectedOrdersMap] = useState<Map<string, any>>(new Map());
+  const selectedOrderIds = useMemo(() => new Set(selectedOrdersMap.keys()), [selectedOrdersMap]);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [showSelectedDialog, setShowSelectedDialog] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [downloadingReport, setDownloadingReport] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
@@ -317,10 +323,9 @@ const AdminOrders = () => {
   );
   const [visibleLimit, setVisibleLimit] = useState<number>(100);
 
-  // Reset limit + selection when filters change
+  // Reset only the visible limit when filters change — selection persists across searches/filters
   useEffect(() => {
     setVisibleLimit(100);
-    setSelectedOrderIds(new Set());
   }, [search, statusFilter, paymentFilter, dateFrom, dateTo, locDivisionIds, locThanaIds, locationMode, productFilter]);
 
   const { data: stats, isLoading: statsLoading } = useOrderStats();
@@ -372,15 +377,22 @@ const AdminOrders = () => {
   };
 
 
+  // Helper: which orders does an action target — selected ones if any, otherwise all visible
+  const getTargetOrders = (): any[] => {
+    if (selectedOrdersMap.size > 0) return Array.from(selectedOrdersMap.values());
+    return (orders as any[]) || [];
+  };
+
   const handleDownloadPdf = async () => {
-    if (!orders || orders.length === 0) {
+    const targets = getTargetOrders();
+    if (targets.length === 0) {
       toast.error("No orders to download");
       return;
     }
     setDownloadingPdf(true);
     try {
-      await generatePackingListPdf(orders);
-      toast.success("Packing list downloaded");
+      await generatePackingListPdf(targets);
+      toast.success(`Packing list for ${targets.length} order(s) downloaded`);
     } catch (err) {
       console.error(err);
       toast.error("Failed to generate PDF");
@@ -389,52 +401,49 @@ const AdminOrders = () => {
     }
   };
 
-  const handleDownloadSelectedPackingPdf = async () => {
-    if (!orders || selectedOrderIds.size === 0) {
-      toast.error("No orders selected");
-      return;
-    }
-    const picked = orders.filter((o: any) => selectedOrderIds.has(o.id));
-    if (picked.length === 0) {
-      toast.error("Selected orders not in current view");
-      return;
-    }
-    setDownloadingSelectedPdf(true);
-    try {
-      await generatePackingListPdf(picked);
-      toast.success(`Packing list for ${picked.length} order(s) downloaded`);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to generate PDF");
-    } finally {
-      setDownloadingSelectedPdf(false);
-    }
-  };
-
-  const toggleSelectOrder = (id: string) => {
-    setSelectedOrderIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+  const toggleSelectOrder = (order: any) => {
+    setSelectedOrdersMap((prev) => {
+      const next = new Map(prev);
+      if (next.has(order.id)) next.delete(order.id);
+      else next.set(order.id, order);
       return next;
     });
   };
 
+  const removeFromSelection = (id: string) => {
+    setSelectedOrdersMap((prev) => {
+      const next = new Map(prev);
+      next.delete(id);
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedOrdersMap(new Map());
+
   const toggleSelectAllVisible = () => {
     if (!orders) return;
-    const allVisibleIds = orders.map((o: any) => o.id);
-    const allSelected = allVisibleIds.every((id: string) => selectedOrderIds.has(id));
-    setSelectedOrderIds(allSelected ? new Set() : new Set(allVisibleIds));
+    const visible = orders as any[];
+    const allSelected = visible.length > 0 && visible.every((o) => selectedOrdersMap.has(o.id));
+    setSelectedOrdersMap((prev) => {
+      const next = new Map(prev);
+      if (allSelected) {
+        visible.forEach((o) => next.delete(o.id));
+      } else {
+        visible.forEach((o) => next.set(o.id, o));
+      }
+      return next;
+    });
   };
 
   const handleDownloadCsv = () => {
-    if (!orders || orders.length === 0) {
+    const targets = getTargetOrders();
+    if (targets.length === 0) {
       toast.error("No orders to export");
       return;
     }
     try {
-      downloadOrdersCsv(orders);
-      toast.success("CSV exported");
+      downloadOrdersCsv(targets);
+      toast.success(`CSV exported (${targets.length})`);
     } catch (err) {
       console.error(err);
       toast.error("Failed to export CSV");
@@ -442,14 +451,15 @@ const AdminOrders = () => {
   };
 
   const handleDownloadReportPdf = () => {
-    if (!orders || orders.length === 0) {
+    const targets = getTargetOrders();
+    if (targets.length === 0) {
       toast.error("No orders to export");
       return;
     }
     setDownloadingReport(true);
     try {
-      generateOrdersReportPdf(orders);
-      toast.success("Report PDF downloaded");
+      generateOrdersReportPdf(targets);
+      toast.success(`Report PDF downloaded (${targets.length})`);
     } catch (err) {
       console.error(err);
       toast.error("Failed to generate report");
@@ -528,15 +538,15 @@ const AdminOrders = () => {
           </Button>
           <Button onClick={handleDownloadPdf} disabled={downloadingPdf || ordersLoading} variant="outline">
             {downloadingPdf ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-            Packing PDF
+            Packing PDF{selectedOrdersMap.size > 0 ? ` (${selectedOrdersMap.size})` : ''}
           </Button>
           <Button onClick={handleDownloadCsv} disabled={ordersLoading} variant="outline">
             <FileSpreadsheet className="h-4 w-4 mr-2" />
-            CSV Report
+            CSV Report{selectedOrdersMap.size > 0 ? ` (${selectedOrdersMap.size})` : ''}
           </Button>
           <Button onClick={handleDownloadReportPdf} disabled={downloadingReport || ordersLoading} variant="outline">
             {downloadingReport ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileText className="h-4 w-4 mr-2" />}
-            PDF Report
+            PDF Report{selectedOrdersMap.size > 0 ? ` (${selectedOrdersMap.size})` : ''}
           </Button>
         </div>
       </div>
@@ -647,45 +657,40 @@ const AdminOrders = () => {
           values={productFilter}
           onChange={setProductFilter}
         />
+        <Button
+          variant={selectionMode ? "default" : "outline"}
+          onClick={() => setSelectionMode((m) => !m)}
+          title="Toggle order selection mode"
+        >
+          <CheckSquare className="h-4 w-4 mr-2" />
+          Select{selectedOrdersMap.size > 0 ? ` (${selectedOrdersMap.size})` : ''}
+        </Button>
+        {selectionMode && orders && orders.length > 0 && (
+          <Button
+            variant="ghost"
+            onClick={toggleSelectAllVisible}
+            title="Select / deselect all visible orders"
+          >
+            {orders.every((o: any) => selectedOrdersMap.has(o.id)) ? 'Deselect page' : 'Select page'}
+          </Button>
+        )}
+        {selectedOrdersMap.size > 0 && (
+          <>
+            <Button
+              variant="outline"
+              onClick={() => setShowSelectedDialog(true)}
+            >
+              <ListChecks className="h-4 w-4 mr-2" />
+              Show selected ({selectedOrdersMap.size})
+            </Button>
+            <Button variant="ghost" onClick={clearSelection}>
+              Clear
+            </Button>
+          </>
+        )}
       </div>
 
-      {/* Selection action bar */}
-      {orders && orders.length > 0 && (
-        <div className="flex items-center justify-between gap-3 px-3 py-2 border border-border bg-muted/30 rounded-sm">
-          <div className="flex items-center gap-3 text-sm">
-            <Checkbox
-              checked={orders.length > 0 && orders.every((o: any) => selectedOrderIds.has(o.id))}
-              onCheckedChange={toggleSelectAllVisible}
-            />
-            <span className="text-muted-foreground">
-              {selectedOrderIds.size > 0
-                ? `${selectedOrderIds.size} selected`
-                : `Select orders to generate a packing PDF for them`}
-            </span>
-            {selectedOrderIds.size > 0 && (
-              <button
-                type="button"
-                onClick={() => setSelectedOrderIds(new Set())}
-                className="text-xs text-primary hover:underline"
-              >
-                Clear
-              </button>
-            )}
-          </div>
-          <Button
-            size="sm"
-            onClick={handleDownloadSelectedPackingPdf}
-            disabled={selectedOrderIds.size === 0 || downloadingSelectedPdf}
-          >
-            {downloadingSelectedPdf ? (
-              <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />
-            ) : (
-              <Download className="h-3.5 w-3.5 mr-2" />
-            )}
-            Packing PDF (Selected)
-          </Button>
-        </div>
-      )}
+
 
 
       {/* Orders Grid */}
@@ -768,14 +773,16 @@ const AdminOrders = () => {
                   )}
                 </button>
 
-                {/* Selection checkbox overlay */}
-                <div
-                  className="absolute top-1 right-1 z-10 bg-background/90 border border-border rounded-sm p-1 cursor-pointer hover:bg-background"
-                  onClick={(e) => { e.stopPropagation(); toggleSelectOrder(order.id); }}
-                  title={isSelected ? 'Deselect order' : 'Select order'}
-                >
-                  <Checkbox checked={isSelected} className="pointer-events-none" />
-                </div>
+                {/* Selection checkbox overlay (only in selection mode) */}
+                {selectionMode && (
+                  <div
+                    className="absolute top-1 right-1 z-10 bg-background/90 border border-border rounded-sm p-1 cursor-pointer hover:bg-background"
+                    onClick={(e) => { e.stopPropagation(); toggleSelectOrder(order); }}
+                    title={isSelected ? 'Deselect order' : 'Select order'}
+                  >
+                    <Checkbox checked={isSelected} className="pointer-events-none" />
+                  </div>
+                )}
 
 
                 {/* Details */}
@@ -1000,6 +1007,92 @@ const AdminOrders = () => {
             <Button variant="outline" onClick={() => setBlockedTransactions(null)}>
               Understood
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Selected Orders Review Dialog */}
+      <Dialog open={showSelectedDialog} onOpenChange={setShowSelectedDialog}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ListChecks className="h-5 w-5" />
+              Selected Orders ({selectedOrdersMap.size})
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-wrap gap-2 pb-2 border-b">
+            <Button size="sm" onClick={handleDownloadPdf} disabled={downloadingPdf || selectedOrdersMap.size === 0}>
+              {downloadingPdf ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> : <Download className="h-3.5 w-3.5 mr-2" />}
+              Packing PDF
+            </Button>
+            <Button size="sm" variant="outline" onClick={handleDownloadCsv} disabled={selectedOrdersMap.size === 0}>
+              <FileSpreadsheet className="h-3.5 w-3.5 mr-2" />
+              CSV Report
+            </Button>
+            <Button size="sm" variant="outline" onClick={handleDownloadReportPdf} disabled={downloadingReport || selectedOrdersMap.size === 0}>
+              {downloadingReport ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> : <FileText className="h-3.5 w-3.5 mr-2" />}
+              PDF Report
+            </Button>
+            <Button size="sm" variant="ghost" onClick={clearSelection} className="ml-auto">
+              Clear all
+            </Button>
+          </div>
+          <div className="overflow-y-auto flex-1 -mx-6 px-6">
+            {selectedOrdersMap.size === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">No orders selected.</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-8"></TableHead>
+                    <TableHead>Order #</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Payment</TableHead>
+                    <TableHead className="w-8"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Array.from(selectedOrdersMap.values()).map((o: any) => (
+                    <TableRow key={o.id} className="cursor-pointer" onClick={() => { setSelectedOrderId(o.id); setShowSelectedDialog(false); }}>
+                      <TableCell><Checkbox checked className="pointer-events-none" /></TableCell>
+                      <TableCell className="font-medium">{o.order_number}</TableCell>
+                      <TableCell className="text-xs">{format(new Date(o.created_at), 'MMM d, yyyy')}</TableCell>
+                      <TableCell className="truncate max-w-[160px]">{o.customer?.name || o.shipping_name}</TableCell>
+                      <TableCell className="text-xs">{o.customer?.phone || o.shipping_phone}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(o.total_amount)}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-[10px]">
+                          {ORDER_STATUS_LABELS[o.order_status as OrderStatus] || o.order_status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-[10px]">
+                          {PAYMENT_STATUS_LABELS[o.payment_status as PaymentStatus] || o.payment_status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={(e) => { e.stopPropagation(); removeFromSelection(o.id); }}
+                          title="Remove from selection"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSelectedDialog(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

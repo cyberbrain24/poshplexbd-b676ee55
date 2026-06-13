@@ -1,61 +1,74 @@
 ## Goal
-Let the Admin AI Agent generate the **Packing List PDF** in the exact same format used on the All Orders page, on request (e.g. "make a packing list for today's pending orders" / "packing list for orders PO-101, PO-102, PO-103" / "packing list for all unshipped Dhaka City orders with t-shirts").
 
-The PDF generator (`src/lib/orderPackingPdf.ts`) is reused unchanged, so the output is byte-for-byte the same layout the Orders page produces.
+Replace the current "Select orders to generate a packing PDF" bar on /admin/orders with a compact selection toggle in the filter row. Selection persists across multiple searches/filters, and the top-right Packing PDF / CSV Report / PDF Report buttons download just the selected orders when any are selected.
 
-## How it works
+## Changes — `src/pages/admin/AdminOrders.tsx`
 
-### 1. New AI tool: `generate_packing_pdf` (server, read-only, auto-runs)
-Added to `supabase/functions/admin-product-ai/index.ts`. Accepts ONE or more of these optional filters:
-- `order_numbers: string[]` — explicit list (e.g. `["PO-101","PO-102"]`)
-- `order_ids: string[]`
-- `status` (single OR `statuses[]`) — order_status enum
-- `payment_status` (single OR `payment_statuses[]`)
-- `search` — order #, customer name, or phone
-- `days` — last N days
-- `date_from` / `date_to` — ISO dates
-- `product_id` / `product_name` / `product_sku` — only orders containing the matching product
-- `division_id` / `thana_id` / `division_name` / `thana_name`
-- `only_unshipped: boolean` — `tracking_number IS NULL`
-- `only_shipped: boolean`
-- `limit` (default 500, hard cap 1000)
+### 1. Remove the existing selection action bar
+Delete the entire block at lines 652–688 ("Selection action bar" with `Packing PDF (Selected)` button).
 
-Server resolves matching order IDs (uses existing tables; no schema change). Returns:
-```json
-{
-  "ok": true,
-  "client_action": "download_packing_pdf",
-  "order_ids": [...],
-  "count": N,
-  "summary": "12 orders matched (status=pending, last 1 day)"
-}
+### 2. Stop resetting selection on filter change
+In the effect at ~line 320 that resets `visibleLimit` when filters change, do NOT clear `selectedOrderIds`. Selection must survive across:
+- typing in Search
+- changing Status / Payment / Date / Location / Product filters
+- Load More
+
+Only an explicit "Clear" action empties it.
+
+### 3. Add a compact "Select" control in the filter row (line 584–650)
+Next to `ProductMultiSelectFilter`, add:
+
+- A toggle button `Select` (outline, with `CheckSquare` icon). When ON:
+  - shows checkbox overlays on each order card (already implemented at ~line 771)
+  - shows count badge: `Select (N)` when N > 0
+- A `Select all on page` mini-checkbox (only visible while toggle is ON)
+- A `Show selected (N)` button (only visible when N > 0) — opens a modal listing just the selected orders
+- A `Clear` link (only visible when N > 0)
+
+A new state `selectionMode: boolean` gates the per-card checkbox rendering. When `selectionMode` is OFF, hide the overlay checkbox (line ~771) and disable the click-to-toggle behavior.
+
+### 4. Top-right buttons become selection-aware (lines 516–541)
+When `selectedOrderIds.size > 0`:
+
+- `Packing PDF` → calls existing `handleDownloadSelectedPackingPdf` (renamed internally to operate on selection if present, else current full-list behavior). Label becomes `Packing PDF (N)`.
+- `CSV Report` → exports CSV of selected orders only. Label becomes `CSV Report (N)`.
+- `PDF Report` → generates report PDF for selected orders only. Label becomes `PDF Report (N)`.
+
+When nothing is selected, all three keep their current behavior (full filtered list).
+
+Implementation: introduce a `targetOrders` helper:
+```ts
+const targetOrders = selectedOrderIds.size > 0
+  ? orders.filter(o => selectedOrderIds.has(o.id))
+  : orders;
+```
+Pass `targetOrders` into existing `handleDownloadPdf`, `handleDownloadCsv`, `handleDownloadReportPdf` (small refactor — each currently reads `orders` directly).
+
+Remove the now-redundant `handleDownloadSelectedPackingPdf` and `downloadingSelectedPdf` state; reuse the existing handlers and loading flags.
+
+### 5. "Show Selected" modal (new lightweight component, inline)
+A `Dialog` listing the selected orders in a compact table (Order #, Customer, Date, Total, Status, Payment). Each row has:
+- click → opens `OrderDetailsDialog` (reuse existing)
+- a small `X` to remove from selection
+
+Header of the modal also includes the same 3 download buttons (Packing / CSV / PDF) for convenience, so the user can download directly from the review view.
+
+No new file needed — keep this inline in `AdminOrders.tsx` to avoid touching unrelated modules.
+
+## Out of scope / untouched
+
+- `useOrders` hook
+- `orderPackingPdf.ts`, `ordersReport.ts`, CSV exporter
+- `ProductMultiSelectFilter`, `MultiSelectFilter`, `OrderLocationFilter`
+- AI Agent packing-pdf tool (already shipped)
+- Order card visuals (only adds/removes the checkbox overlay based on `selectionMode`)
+
+## UX summary
+
+```text
+[Search] [Status▾] [Payment▾] [Date] [Location▾] [Products▾] [☑ Select (3)] [Show selected (3)] [Clear]
+
+Top right: [Sync Steadfast] [Packing PDF (3)] [CSV Report (3)] [PDF Report (3)]
 ```
 
-Added to `READ_TOOLS` so it auto-executes without an approval prompt (it only generates a download; no DB writes).
-
-### 2. Client intercept in `AdminProductAI.tsx`
-After every backend round-trip, the client inspects the latest tool message(s) for a `client_action: "download_packing_pdf"` payload (parsed from JSON). When found:
-1. Fetches those orders with the same nested SELECT shape used by `useOrders` (customer, items → product → product_images, payment_method, shipping_division, shipping_thana, plus `consignment_id` / `tracking_number` / `call_center_notes`).
-2. Calls `generatePackingListPdf(orders)` from `src/lib/orderPackingPdf.ts` — **same generator the All Orders page uses, so the format is identical** (summary page with totals + category/size/colour aggregates, then per-parcel image grids with sizes, parcel IDs, call notes).
-3. Shows a toast: "Packing list ready — N orders".
-4. De-dupes via a `processedActionsRef` Set keyed by `tool_call_id` so re-renders don't trigger duplicate downloads.
-
-### 3. Onboarding hints in the assistant
-Append example prompts under "Try asking:" in the AI Agent UI:
-- "Make a packing list PDF for today's pending orders"
-- "Packing list for PO-101, PO-102, PO-103"
-- "Packing list for all unshipped orders in Dhaka City"
-
-### 4. System prompt nudge
-Add one sentence to the agent's system prompt telling it to call `generate_packing_pdf` whenever the admin asks for a packing list / packing PDF / picking list, and to summarise the matched count in its reply.
-
-## Files touched
-- `supabase/functions/admin-product-ai/index.ts` — add `generate_packing_pdf` tool definition, server resolver, system-prompt line, add to `READ_TOOLS`.
-- `src/components/admin/AdminProductAI.tsx` — add side-effect interceptor + `downloadPackingPdfForOrderIds` helper, prompt hints.
-
-## Safety / no-regression
-- No DB schema changes.
-- No edits to `useOrders.ts`, the Orders page, the PDF generator, or the existing AI tools.
-- Tool is read-only; no approval flow needed.
-- Hard cap of 1000 orders per PDF to keep generation responsive.
-- If the matched count is 0, the tool returns `count: 0` with no `client_action`, so the agent can ask the admin to refine filters instead of producing an empty PDF.
+Workflow: enable Select → search "shirt" → tick a few orders → change filter to "Dhaka" → tick more → click `Show selected (5)` to review → hit `Packing PDF (5)` (or CSV/PDF Report) from the top bar.

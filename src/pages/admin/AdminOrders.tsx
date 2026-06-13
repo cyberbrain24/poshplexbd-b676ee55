@@ -775,7 +775,7 @@ const AdminOrders = () => {
         <div className="flex justify-center pt-2">
           <Button
             variant="outline"
-            onClick={() => setVisibleLimit((n) => n + 100)}
+            onClick={() => setVisibleLimit((n) => (n >= 500 ? 100000 : n + 200))}
             disabled={ordersLoading}
           >
             {ordersLoading ? (

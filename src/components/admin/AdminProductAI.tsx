@@ -262,6 +262,10 @@ export default function AdminProductAI({ embedded = false }: Props) {
               <li>"Mark Crop Crore as featured"</li>
               <li>"Create a new t-shirt called Night Wolf at 549 Taka"</li>
               <li>"Deactivate Mummy"</li>
+              <li>"Make a packing list PDF for today's pending orders"</li>
+              <li>"Packing list for PO-101, PO-102, PO-103"</li>
+              <li>"Packing list for all unshipped orders in Dhaka City"</li>
+
             </ul>
             <p className="text-xs pt-2">
               <strong className="text-foreground">Tip:</strong> press Enter to send. While the AI is working, any new prompt you Enter goes into the queue and runs in order. Use <em>Approve All Queue</em> to auto-run every step.

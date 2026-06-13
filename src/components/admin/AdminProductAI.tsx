@@ -44,6 +44,56 @@ export default function AdminProductAI({ embedded = false }: Props) {
   // Latest messages, accessible inside async queue runner without stale closure
   const messagesRef = useRef<Msg[]>([]);
   useEffect(() => { messagesRef.current = messages; }, [messages]);
+  // De-dupe client-side side effects (e.g. packing PDF) per tool_call_id.
+  const processedActionsRef = useRef<Set<string>>(new Set());
+
+  // Fetch orders with the same nested shape AdminOrders uses, then run the
+  // shared packing-PDF generator so the output matches the All Orders page.
+  const downloadPackingPdfForOrderIds = async (orderIds: string[]) => {
+    if (!orderIds.length) return;
+    try {
+      toast.message(`Building packing list for ${orderIds.length} order(s)…`);
+      const { data, error } = await supabase
+        .from("orders")
+        .select(`
+          *,
+          customer:customers(id, name, phone, email),
+          payment_method:payment_methods(id, name, type),
+          shipping_division:divisions(id, name),
+          shipping_thana:thanas(id, name),
+          items:order_items(*, product:products(id, product_images(image_url, is_main, sort_order), product_categories(category:categories(id, name, parent_id, parent:categories!parent_id(id, name)))))
+        `)
+        .in("id", orderIds)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        toast.error("No matching orders found to print.");
+        return;
+      }
+      await generatePackingListPdf(data as any);
+      toast.success(`Packing list ready — ${data.length} order(s).`);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to build packing PDF");
+    }
+  };
+
+  // Watch newest tool messages for `client_action: "download_packing_pdf"` and run it once.
+  useEffect(() => {
+    for (const m of messages) {
+      if (m.role !== "tool" || !m.tool_call_id || !m.content) continue;
+      if (processedActionsRef.current.has(m.tool_call_id)) continue;
+      try {
+        const parsed = JSON.parse(m.content);
+        if (parsed && parsed.client_action === "download_packing_pdf" && Array.isArray(parsed.order_ids) && parsed.order_ids.length) {
+          processedActionsRef.current.add(m.tool_call_id);
+          void downloadPackingPdfForOrderIds(parsed.order_ids);
+        }
+      } catch {
+        // not JSON — ignore
+      }
+    }
+  }, [messages]);
+
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });

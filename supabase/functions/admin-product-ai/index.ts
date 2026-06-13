@@ -559,6 +559,103 @@ async function executeTool(name: string, args: any, sb: any) {
         if (error) throw error;
         return { items: data };
       }
+      case "generate_packing_pdf": {
+        const normalizePayment = (s: string) => {
+          const k = String(s || "").toLowerCase().replace(/[\s-]+/g, "_");
+          if (["in_review", "review", "reviewing", "pending_verification", "pending_review", "verification"].includes(k)) return "pending_verification";
+          if (k === "partial") return "partially_paid";
+          return k;
+        };
+        const normalizeStatus = (s: string) => String(s || "").toLowerCase().replace(/[\s-]+/g, "_");
+        const limit = Math.min(Math.max(args.limit || 500, 1), 1000);
+        const filterParts: string[] = [];
+
+        let q = sb.from("orders").select("id, order_number").order("created_at", { ascending: false });
+
+        // Explicit selection wins over filters.
+        if (Array.isArray(args.order_ids) && args.order_ids.length) {
+          q = q.in("id", args.order_ids);
+          filterParts.push(`${args.order_ids.length} ids`);
+        } else if (Array.isArray(args.order_numbers) && args.order_numbers.length) {
+          q = q.in("order_number", args.order_numbers);
+          filterParts.push(`${args.order_numbers.length} order numbers`);
+        } else {
+          const statuses = Array.isArray(args.statuses) ? args.statuses : (args.status ? [args.status] : []);
+          if (statuses.length === 1) { q = q.eq("order_status", normalizeStatus(statuses[0])); filterParts.push(`status=${normalizeStatus(statuses[0])}`); }
+          else if (statuses.length > 1) { const ns = statuses.map(normalizeStatus); q = q.in("order_status", ns); filterParts.push(`status in [${ns.join(",")}]`); }
+
+          const pays = Array.isArray(args.payment_statuses) ? args.payment_statuses : (args.payment_status ? [args.payment_status] : []);
+          if (pays.length === 1) { q = q.eq("payment_status", normalizePayment(pays[0])); filterParts.push(`payment=${normalizePayment(pays[0])}`); }
+          else if (pays.length > 1) { const np = pays.map(normalizePayment); q = q.in("payment_status", np); filterParts.push(`payment in [${np.join(",")}]`); }
+
+          if (args.search) { q = q.or(`order_number.ilike.%${args.search}%,shipping_name.ilike.%${args.search}%,shipping_phone.ilike.%${args.search}%`); filterParts.push(`search="${args.search}"`); }
+          if (args.days) { q = q.gte("created_at", new Date(Date.now() - args.days * 86400000).toISOString()); filterParts.push(`last ${args.days}d`); }
+          if (args.date_from) { q = q.gte("created_at", args.date_from); filterParts.push(`from ${args.date_from}`); }
+          if (args.date_to) { q = q.lte("created_at", args.date_to); filterParts.push(`to ${args.date_to}`); }
+
+          // Division
+          let divisionId: string | null = args.division_id || null;
+          if (!divisionId && args.division_name) {
+            const { data: d } = await sb.from("divisions").select("id").ilike("name", `%${args.division_name}%`).maybeSingle();
+            if (d?.id) divisionId = d.id;
+          }
+          if (divisionId) { q = q.eq("shipping_division_id", divisionId); filterParts.push(`division=${args.division_name || divisionId}`); }
+
+          // Thana
+          let thanaId: string | null = args.thana_id || null;
+          if (!thanaId && args.thana_name) {
+            const { data: t } = await sb.from("thanas").select("id").ilike("name", `%${args.thana_name}%`).maybeSingle();
+            if (t?.id) thanaId = t.id;
+          }
+          if (thanaId) { q = q.eq("shipping_thana_id", thanaId); filterParts.push(`thana=${args.thana_name || thanaId}`); }
+
+          if (args.only_unshipped) { q = q.is("tracking_number", null); filterParts.push("unshipped"); }
+          if (args.only_shipped) { q = q.not("tracking_number", "is", null); filterParts.push("shipped"); }
+
+          // Product filter — resolve product_id from name/sku, then restrict to orders containing that product.
+          let productIds: string[] = [];
+          if (args.product_id) productIds.push(args.product_id);
+          if (args.product_sku) {
+            const { data: p } = await sb.from("products").select("id").ilike("sku", args.product_sku).limit(5);
+            productIds.push(...(p || []).map((r: any) => r.id));
+          }
+          if (args.product_name) {
+            const { data: p } = await sb.from("products").select("id").ilike("name", `%${args.product_name}%`).limit(20);
+            productIds.push(...(p || []).map((r: any) => r.id));
+          }
+          productIds = Array.from(new Set(productIds));
+          if (args.product_id || args.product_sku || args.product_name) {
+            if (productIds.length === 0) {
+              return { ok: true, count: 0, summary: `No products matched ${args.product_name || args.product_sku || args.product_id}` };
+            }
+            const { data: matchItems } = await sb.from("order_items").select("order_id").in("product_id", productIds);
+            const orderIdSet = Array.from(new Set((matchItems || []).map((r: any) => r.order_id))).filter(Boolean);
+            if (orderIdSet.length === 0) {
+              return { ok: true, count: 0, summary: `No orders contained the requested product.` };
+            }
+            q = q.in("id", orderIdSet);
+            filterParts.push(`product=${args.product_name || args.product_sku || args.product_id}`);
+          }
+        }
+
+        q = q.limit(limit);
+        const { data, error } = await q;
+        if (error) throw error;
+        const ids = (data || []).map((r: any) => r.id);
+        const numbers = (data || []).map((r: any) => r.order_number);
+        if (ids.length === 0) {
+          return { ok: true, count: 0, summary: `No orders matched (${filterParts.join(", ") || "no filters"}). Ask the admin to refine.` };
+        }
+        return {
+          ok: true,
+          client_action: "download_packing_pdf",
+          order_ids: ids,
+          order_numbers: numbers,
+          count: ids.length,
+          summary: `${ids.length} order(s) queued for packing list PDF${filterParts.length ? ` — filters: ${filterParts.join(", ")}` : ""}.`,
+        };
+      }
+
       case "list_customers": {
         let q = sb.from("customers").select("id, name, phone, email, gender, division_id, thana_id, customer_type_id, is_active, created_at").order("created_at", { ascending: false }).limit(args.limit || 25);
         if (args.search) q = q.or(`name.ilike.%${args.search}%,phone.ilike.%${args.search}%,email.ilike.%${args.search}%`);

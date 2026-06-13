@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send, Loader2, Check, X, Sparkles, Image as ImageIcon, ListChecks } from "lucide-react";
 import { toast } from "sonner";
+import { generatePackingListPdf } from "@/lib/orderPackingPdf";
+
 
 type Msg = {
   role: "user" | "assistant" | "tool" | "system";

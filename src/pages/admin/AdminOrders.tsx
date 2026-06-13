@@ -312,17 +312,19 @@ const AdminOrders = () => {
     dateFrom ||
     dateTo ||
     locDivisionIds.length > 0 ||
-    locThanaIds.length > 0
+    locThanaIds.length > 0 ||
+    productFilter.length > 0
   );
   const [visibleLimit, setVisibleLimit] = useState<number>(100);
 
-  // Reset limit when filters change
+  // Reset limit + selection when filters change
   useEffect(() => {
     setVisibleLimit(100);
-  }, [search, statusFilter, paymentFilter, dateFrom, dateTo, locDivisionIds, locThanaIds, locationMode]);
+    setSelectedOrderIds(new Set());
+  }, [search, statusFilter, paymentFilter, dateFrom, dateTo, locDivisionIds, locThanaIds, locationMode, productFilter]);
 
   const { data: stats, isLoading: statsLoading } = useOrderStats();
-  const { data: orders, isLoading: ordersLoading } = useOrders({
+  const { data: ordersRaw, isLoading: ordersLoading } = useOrders({
     status: statusFilter.length > 0 ? statusFilter : undefined,
     paymentStatus: paymentFilter.length > 0 ? paymentFilter : undefined,
     search: search || undefined,
@@ -334,6 +336,16 @@ const AdminOrders = () => {
     excludeThanaIds: locationMode === "exclude" ? locThanaIds : undefined,
     limit: hasActiveFilters ? null : visibleLimit,
   });
+
+  // Client-side product filter (preserves all existing query logic)
+  const orders = useMemo(() => {
+    if (!ordersRaw) return ordersRaw;
+    if (productFilter.length === 0) return ordersRaw;
+    const ids = new Set(productFilter.map(p => p.id));
+    return ordersRaw.filter((o: any) =>
+      (o.items || []).some((it: any) => it.product_id && ids.has(it.product_id))
+    );
+  }, [ordersRaw, productFilter]);
   const deleteOrder = useDeleteOrder();
   const syncAllSteadfast = useSyncSteadfastStatus();
 

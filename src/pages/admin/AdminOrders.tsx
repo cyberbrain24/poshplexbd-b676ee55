@@ -287,7 +287,8 @@ const AdminOrders = () => {
   const [locThanaIds, setLocThanaIds] = useState<string[]>([]);
   const [productFilter, setProductFilter] = useState<PickedProduct[]>([]);
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
-  const [downloadingSelectedPdf, setDownloadingSelectedPdf] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [showSelectedDialog, setShowSelectedDialog] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [downloadingReport, setDownloadingReport] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);

@@ -286,7 +286,9 @@ const AdminOrders = () => {
   const [locDivisionIds, setLocDivisionIds] = useState<string[]>([]);
   const [locThanaIds, setLocThanaIds] = useState<string[]>([]);
   const [productFilter, setProductFilter] = useState<PickedProduct[]>([]);
-  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
+  // Map<orderId, order> — stores full order data so selection survives filter changes
+  const [selectedOrdersMap, setSelectedOrdersMap] = useState<Map<string, any>>(new Map());
+  const selectedOrderIds = useMemo(() => new Set(selectedOrdersMap.keys()), [selectedOrdersMap]);
   const [selectionMode, setSelectionMode] = useState(false);
   const [showSelectedDialog, setShowSelectedDialog] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);

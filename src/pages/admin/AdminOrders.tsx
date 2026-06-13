@@ -323,10 +323,9 @@ const AdminOrders = () => {
   );
   const [visibleLimit, setVisibleLimit] = useState<number>(100);
 
-  // Reset limit + selection when filters change
+  // Reset only the visible limit when filters change — selection persists across searches/filters
   useEffect(() => {
     setVisibleLimit(100);
-    setSelectedOrderIds(new Set());
   }, [search, statusFilter, paymentFilter, dateFrom, dateTo, locDivisionIds, locThanaIds, locationMode, productFilter]);
 
   const { data: stats, isLoading: statsLoading } = useOrderStats();

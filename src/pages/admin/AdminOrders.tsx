@@ -1010,6 +1010,92 @@ const AdminOrders = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Selected Orders Review Dialog */}
+      <Dialog open={showSelectedDialog} onOpenChange={setShowSelectedDialog}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ListChecks className="h-5 w-5" />
+              Selected Orders ({selectedOrdersMap.size})
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-wrap gap-2 pb-2 border-b">
+            <Button size="sm" onClick={handleDownloadPdf} disabled={downloadingPdf || selectedOrdersMap.size === 0}>
+              {downloadingPdf ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> : <Download className="h-3.5 w-3.5 mr-2" />}
+              Packing PDF
+            </Button>
+            <Button size="sm" variant="outline" onClick={handleDownloadCsv} disabled={selectedOrdersMap.size === 0}>
+              <FileSpreadsheet className="h-3.5 w-3.5 mr-2" />
+              CSV Report
+            </Button>
+            <Button size="sm" variant="outline" onClick={handleDownloadReportPdf} disabled={downloadingReport || selectedOrdersMap.size === 0}>
+              {downloadingReport ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> : <FileText className="h-3.5 w-3.5 mr-2" />}
+              PDF Report
+            </Button>
+            <Button size="sm" variant="ghost" onClick={clearSelection} className="ml-auto">
+              Clear all
+            </Button>
+          </div>
+          <div className="overflow-y-auto flex-1 -mx-6 px-6">
+            {selectedOrdersMap.size === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">No orders selected.</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-8"></TableHead>
+                    <TableHead>Order #</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Payment</TableHead>
+                    <TableHead className="w-8"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Array.from(selectedOrdersMap.values()).map((o: any) => (
+                    <TableRow key={o.id} className="cursor-pointer" onClick={() => { setSelectedOrderId(o.id); setShowSelectedDialog(false); }}>
+                      <TableCell><Checkbox checked className="pointer-events-none" /></TableCell>
+                      <TableCell className="font-medium">{o.order_number}</TableCell>
+                      <TableCell className="text-xs">{format(new Date(o.created_at), 'MMM d, yyyy')}</TableCell>
+                      <TableCell className="truncate max-w-[160px]">{o.customer?.name || o.shipping_name}</TableCell>
+                      <TableCell className="text-xs">{o.customer?.phone || o.shipping_phone}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(o.total_amount)}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-[10px]">
+                          {ORDER_STATUS_LABELS[o.order_status as OrderStatus] || o.order_status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-[10px]">
+                          {PAYMENT_STATUS_LABELS[o.payment_status as PaymentStatus] || o.payment_status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={(e) => { e.stopPropagation(); removeFromSelection(o.id); }}
+                          title="Remove from selection"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSelectedDialog(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

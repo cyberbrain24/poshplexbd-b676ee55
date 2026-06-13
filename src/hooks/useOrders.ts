@@ -135,6 +135,7 @@ export const useOrders = (filters?: {
   excludeDivisionIds?: string[];
   includeThanaIds?: string[];
   excludeThanaIds?: string[];
+  limit?: number | null;
 }) => {
   return useQuery({
     queryKey: ["orders", filters],
@@ -149,8 +150,11 @@ export const useOrders = (filters?: {
           shipping_thana:thanas(id, name),
           items:order_items(*, product:products(id, product_images(image_url, is_main, sort_order), product_categories(category:categories(id, name, parent_id, parent:categories!parent_id(id, name)))))
         `)
-        .order("created_at", { ascending: false })
-        .limit(100);
+        .order("created_at", { ascending: false });
+
+      if (filters?.limit && filters.limit > 0) {
+        query = query.limit(filters.limit);
+      }
 
       if (filters?.status) {
         const arr = Array.isArray(filters.status) ? filters.status : [filters.status];

@@ -23,7 +23,9 @@ const READ_TOOLS = new Set([
   "list_product_categories",
   // Orders
   "list_orders", "get_order", "get_order_items",
+  "generate_packing_pdf",
   // Customers
+
   "list_customers", "get_customer", "list_customer_types",
   // Reviews
   "list_reviews",

@@ -25,7 +25,10 @@ export const useSiteBranding = () => {
       if (error) throw error;
       return data;
     },
-    staleTime: 1000 * 60 * 10,
+    staleTime: 1000 * 60 * 10, // 10 min
+    gcTime: 1000 * 60 * 60, // 1 h
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 };
 

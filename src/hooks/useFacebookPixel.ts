@@ -16,6 +16,27 @@ import {
  * 2. Sets up lazy script injection
  * 3. Tracks PageView on every SPA route change
  */
+const PIXEL_CACHE_KEY = "pp_pixel_cfg_v1";
+const PIXEL_CACHE_TTL = 60 * 60 * 1000; // 60 min
+
+function readPixelCache(): any | null {
+  try {
+    const raw = localStorage.getItem(PIXEL_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed?.ts || Date.now() - parsed.ts > PIXEL_CACHE_TTL) return null;
+    return parsed.data;
+  } catch {
+    return null;
+  }
+}
+
+function writePixelCache(data: any) {
+  try {
+    localStorage.setItem(PIXEL_CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
+  } catch { /* ignore */ }
+}
+
 export const useFacebookPixel = () => {
   const location = useLocation();
   const configLoaded = useRef(false);
@@ -26,23 +47,36 @@ export const useFacebookPixel = () => {
     if (configLoaded.current) return;
     configLoaded.current = true;
 
+    const applyConfig = (data: any) => {
+      if (!data) return;
+      setPixelConfig({
+        pixelId: data.meta_pixel_id || "",
+        isEnabled: data.meta_pixel_enabled ?? false,
+        testMode: data.meta_test_mode ?? false,
+        advancedMatching: data.meta_advanced_matching ?? true,
+      });
+      captureClickId();
+      setupLazyLoading();
+    };
+
+    // Synchronous fast path: hydrate from localStorage
+    const cached = readPixelCache();
+    if (cached) applyConfig(cached);
+
     const load = async () => {
       try {
-        const { data: rows } = await supabase
-          .rpc("get_public_site_settings");
-
-        const data = Array.isArray(rows) ? rows[0] : null;
-        if (!data) return;
-
-        setPixelConfig({
-          pixelId: data.meta_pixel_id || "",
-          isEnabled: data.meta_pixel_enabled ?? false,
-          testMode: data.meta_test_mode ?? false,
-          advancedMatching: data.meta_advanced_matching ?? true,
-        });
-
-        captureClickId();
-        setupLazyLoading();
+        // If we just hydrated from cache, skip the network call
+        if (cached) {
+          // Still set up advanced matching for the active session
+        } else {
+          const { data: rows } = await supabase
+            .rpc("get_public_site_settings");
+          const data = Array.isArray(rows) ? rows[0] : null;
+          if (data) {
+            writePixelCache(data);
+            applyConfig(data);
+          }
+        }
 
         // Restore Advanced Matching for already-logged-in user
         const { data: { session } } = await supabase.auth.getSession();

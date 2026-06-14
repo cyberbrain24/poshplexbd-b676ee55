@@ -105,3 +105,17 @@ export async function fetchLifetimeOrderTotals(): Promise<LifetimeTotals> {
   }
   return { orders, revenue, qty, statusTotals };
 }
+
+export interface DailyVisitPoint {
+  date: string;
+  visits: number;
+}
+
+export async function fetchDailyVisits(days = 30): Promise<DailyVisitPoint[]> {
+  const { data, error } = await supabase.rpc("get_daily_visits", { p_days: days });
+  if (error) throw error;
+  return ((data || []) as { date: string; visits: number }[]).map((r) => ({
+    date: r.date,
+    visits: Number(r.visits) || 0,
+  }));
+}

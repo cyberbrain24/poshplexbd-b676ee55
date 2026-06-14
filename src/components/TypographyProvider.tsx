@@ -136,6 +136,27 @@ function applyTypography(settings: TypographySettings) {
   style.textContent = buildCSS(settings);
 }
 
+const TYPO_CACHE_KEY = "pp_typo_cache_v1";
+const TYPO_CACHE_TTL = 60 * 60 * 1000; // 60 min
+
+function readTypoCache(): TypographySettings | null {
+  try {
+    const raw = localStorage.getItem(TYPO_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed?.ts || Date.now() - parsed.ts > TYPO_CACHE_TTL) return null;
+    return normalizeTypographySettings(parsed.data);
+  } catch {
+    return null;
+  }
+}
+
+function writeTypoCache(data: unknown) {
+  try {
+    localStorage.setItem(TYPO_CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
+  } catch { /* ignore */ }
+}
+
 export const TypographyProvider = () => {
   const { data } = useQuery({
     queryKey: ["site-typography"],
@@ -146,9 +167,15 @@ export const TypographyProvider = () => {
         .limit(1)
         .maybeSingle();
       if (error) throw error;
+      writeTypoCache(data?.typography);
       return normalizeTypographySettings(data?.typography);
     },
-    staleTime: 5 * 60 * 1000,
+    initialData: () => readTypoCache() ?? undefined,
+    staleTime: 60 * 60 * 1000, // 60 min
+    gcTime: 2 * 60 * 60 * 1000, // 2 h
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
   });
 
   useEffect(() => {

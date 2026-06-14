@@ -1,27 +1,24 @@
-Add a minimal "Overall Daily Visits" chart to the Admin Dashboard by following the existing dashboard data-fetching and charting patterns.
+## Performance Fix Plan (Tier 1 + 2 + 3)
 
-### 1. Data fetching
-- In `src/services/dashboard.service.ts`, add `fetchDailyVisits()`.
-- Query `page_views` directly from the client (RLS already restricts to admins).
-- Filter `created_at >= now() - interval '30 days'`.
-- Group by `created_at::date`, count rows per day, order ascending.
-- Return an array like `{ date: string; visits: number }[]`.
+Safe, no UI/data/RLS changes. Pixel integration untouched.
 
-### 2. Hook integration
-- In `src/hooks/useDashboard.ts`, add a `useQuery` call for `fetchDailyVisits` with `staleTime: 5 * 60 * 1000`.
-- Expose `dailyVisits` in the returned `DashboardAnalytics` object.
+### Tier 1 — Cache settings hooks
+- `src/providers/TypographyProvider.tsx`: staleTime 60min, gcTime 2h, disable refetchOnWindowFocus/Reconnect, localStorage hydration
+- `src/hooks/useFacebookPixel.ts`: localStorage cache with 60min TTL (keep useRef guard)
+- `src/hooks/usePixelSettings.ts`: add staleTime 10min, gcTime 30min, refetchOnWindowFocus false
+- `src/hooks/useSiteBranding.ts`: add gcTime 1h, refetchOnWindowFocus false
 
-### 3. Chart component
-- In `src/components/admin/dashboard/DashboardCharts.tsx`, add `DailyVisitsChart`.
-- Use `recharts` (`ResponsiveContainer`, `AreaChart` or `BarChart`, `XAxis`, `YAxis`, `Tooltip`, `CartesianGrid`).
-- Style with the existing Tailwind CSS / shadcn tokens (border, bg-card, muted-foreground, primary color for the fill).
-- Height ~220px, matching the existing `RevenueLast7DaysChart`.
+### Tier 2 — Throttle visitor tracking
+- `src/hooks/useVisitorTracking.ts`: dedupe by (session_id, path) in sessionStorage; use `navigator.sendBeacon` fire-and-forget
 
-### 4. Dashboard placement
-- In `src/pages/admin/AdminDashboard.tsx`, render `DailyVisitsChart` inside the "Trend" section, above or beside the existing `RevenueLast7DaysChart`.
-- Add the appropriate loading skeleton fallback if the new query is still loading.
+### Tier 3 — Slim heavy admin queries (biggest win)
+- Admin products list: replace `select('*', joins)` with pinned columns (id, name, sku, base_price, is_active, created_at, category, main image only)
+- Admin orders list: use existing `SLIM_COLUMNS.ordersList` from `src/utils/performance.ts`
 
-### Technical details
-- Query will use Supabase `.rpc()` only if a new lightweight RPC is needed; otherwise a standard `.from('page_views').select()` grouped client-side or server-side is acceptable.
-- No new dependencies needed — `recharts` is already installed.
-- No database schema changes needed.
+### Expected impact
+- Admin products/orders: ~438ms → ~50ms per page load
+- Storefront: fewer settings round-trips, faster repeat navigation
+- Visitor tracking: ~80% fewer page_views inserts from same-session navigation
+
+### Not touched
+Pixel firing, RLS, schemas, UI, business logic, get_daily_visits RPC, query keys.

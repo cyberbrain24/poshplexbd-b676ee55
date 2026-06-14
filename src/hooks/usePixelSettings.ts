@@ -31,6 +31,10 @@ export const usePixelSettings = () => {
       if (error) throw error;
       return data as PixelSettings | null;
     },
+    staleTime: 1000 * 60 * 10, // 10 min
+    gcTime: 1000 * 60 * 30, // 30 min
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 };
 

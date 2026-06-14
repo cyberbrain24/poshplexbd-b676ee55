@@ -3314,6 +3314,7 @@ export type Database = {
           meta_test_mode: boolean
         }[]
       }
+      get_visitor_analytics: { Args: { p_range?: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

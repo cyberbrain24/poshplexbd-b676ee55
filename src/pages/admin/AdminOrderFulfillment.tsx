@@ -197,7 +197,9 @@ const AdminOrderFulfillment = () => {
           <p className="font-medium">
             {statusFilter === "not_ready"
               ? "All caught up — no orders waiting to be packed."
-              : "No orders marked as Ready yet."}
+              : statusFilter === "ready"
+              ? "No orders marked as Ready yet."
+              : "No orders in review."}
           </p>
         </div>
       ) : (
@@ -207,8 +209,17 @@ const AdminOrderFulfillment = () => {
               key={order.id}
               order={order}
               onOpen={() => setOpenOrderId(order.id)}
-              onMarkReady={() => markReady.mutate(order.id)}
-              isMarking={markReady.isPending && markReady.variables === order.id}
+              onToggleReady={() =>
+                toggleReady.mutate({
+                  orderId: order.id,
+                  nextStatus:
+                    order.order_status === "processing" ? "confirmed" : "processing",
+                })
+              }
+              isToggling={
+                toggleReady.isPending &&
+                toggleReady.variables?.orderId === order.id
+              }
             />
           ))}
         </div>

@@ -114,7 +114,10 @@ const AdminDashboard = () => {
       {/* Trend */}
       <section className="space-y-3">
         <SectionTitle icon="📉">Trend</SectionTitle>
-        <RevenueLast7DaysChart data={revenueLast7Days} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          <RevenueLast7DaysChart data={revenueLast7Days} />
+          <DailyVisitsChart data={dailyVisits} />
+        </div>
       </section>
     </div>
   );

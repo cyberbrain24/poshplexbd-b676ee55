@@ -372,23 +372,30 @@ const FulfillmentCard = ({ order, onOpen, onToggleReady, isToggling }: CardProps
         <div className="flex lg:flex-col items-end justify-end gap-2 shrink-0">
           {order.order_status === "processing" ? (
             <Button
-              disabled
-              variant="outline"
-              className="w-full lg:w-auto gap-2"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleReady();
+              }}
+              disabled={isToggling}
+              className="w-full lg:w-auto gap-2 bg-green-500 hover:bg-green-600 text-white"
             >
-              <CheckCircle2 className="w-4 h-4 text-green-600" />
-              Ready
+              {isToggling ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4" />
+              )}
+              Ready to deliver
             </Button>
           ) : (
             <Button
               onClick={(e) => {
                 e.stopPropagation();
-                onMarkReady();
+                onToggleReady();
               }}
-              disabled={isMarking}
+              disabled={isToggling}
               className="w-full lg:w-auto gap-2"
             >
-              {isMarking ? (
+              {isToggling ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <PackageCheck className="w-4 h-4" />

@@ -7,9 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { PackageCheck, Search, Copy, Phone, MapPin, Loader2, Inbox, CheckCircle2 } from "lucide-react";
+import { PackageCheck, Search, Copy, Phone, MapPin, Loader2, Inbox, CheckCircle2, RefreshCw } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import { updateOrderStatus } from "@/services/order.service";
+import { useSyncSteadfastStatus } from "@/hooks/useSteadfast";
 import OrderDetailModal from "@/components/admin/OrderDetailModal";
 
 type StatusFilter = "all" | "not_ready" | "ready";
@@ -140,6 +141,33 @@ const AdminOrderFulfillment = () => {
 
   const orders = data?.orders ?? [];
 
+  const syncAllSteadfast = useSyncSteadfastStatus();
+
+  const handleSyncAllSteadfast = async () => {
+    try {
+      const { data: syncData, error } = await supabase
+        .from("orders")
+        .select("id, tracking_number, consignment_id")
+        .or("tracking_number.not.is.null,consignment_id.not.is.null");
+      if (error) throw error;
+      const ids = (syncData || [])
+        .filter((o: any) => o.tracking_number || o.consignment_id)
+        .map((o: any) => o.id);
+      if (ids.length === 0) {
+        toast.message("No shipped orders in database to sync");
+        return;
+      }
+      syncAllSteadfast.mutate(ids, {
+        onSettled: () => {
+          qc.invalidateQueries({ queryKey: ["fulfillment-orders"] });
+        },
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load orders for sync");
+    }
+  };
+
   const filterConfig: { key: StatusFilter; label: string }[] = [
     { key: "all", label: "All In Review Order" },
     { key: "not_ready", label: "Mark as not Ready" },
@@ -182,6 +210,19 @@ const AdminOrderFulfillment = () => {
               className="pl-8 h-9 w-56"
             />
           </div>
+          <Button
+            onClick={handleSyncAllSteadfast}
+            disabled={syncAllSteadfast.isPending || isLoading}
+            variant="outline"
+            size="sm"
+          >
+            {syncAllSteadfast.isPending ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4 mr-2" />
+            )}
+            Sync Steadfast
+          </Button>
         </div>
       </div>
 

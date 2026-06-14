@@ -47,8 +47,8 @@ const CategoryHeader = ({ category, categorySlug }: CategoryHeaderProps) => {
         <div className="mt-0">
           {isMobile ? (
             <>
-              <Carousel opts={{ align: "center", loop: false }} setApi={setApi} className="w-full">
-                <CarouselContent className="-ml-2 justify-center">
+              <Carousel opts={{ align: "start", loop: false }} setApi={setApi} className="w-full">
+                <CarouselContent className="-ml-2">
                   {subcategories.map((sub) => {
                     const slug = sub.name.toLowerCase().replace(/\s+/g, "-");
                     return (

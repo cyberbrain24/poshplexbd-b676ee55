@@ -44,9 +44,9 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { 
-  Package, 
-  Search, 
-  CreditCard, 
+  Package,
+  Search,
+  CreditCard,
   AlertTriangle,
   TrendingUp,
   Eye,
@@ -64,6 +64,7 @@ import {
   CheckSquare,
   X,
   ListChecks,
+  Copy,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";

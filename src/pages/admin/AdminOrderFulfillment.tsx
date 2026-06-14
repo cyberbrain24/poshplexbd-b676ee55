@@ -50,13 +50,18 @@ const PAGE_SIZE = 20;
 const AdminOrderFulfillment = () => {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("not_ready");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [openOrderId, setOpenOrderId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["fulfillment-orders", statusFilter, search],
     queryFn: async () => {
-      const statuses: ("confirmed" | "processing")[] = statusFilter === "not_ready" ? ["confirmed"] : ["processing"];
+      const statuses: ("confirmed" | "processing")[] =
+        statusFilter === "not_ready"
+          ? ["confirmed"]
+          : statusFilter === "ready"
+          ? ["processing"]
+          : ["confirmed", "processing"];
 
       let q = supabase
         .from("orders")

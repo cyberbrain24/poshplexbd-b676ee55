@@ -148,7 +148,7 @@ export const useOrders = (filters?: {
           payment_method:payment_methods(id, name, type),
           shipping_division:divisions(id, name),
           shipping_thana:thanas(id, name),
-          items:order_items(id, product_id, product_name, quantity, unit_price, line_total, fulfillment_status, variant_sku, variant_details, product:products(id, product_images(image_url, is_main, sort_order)))
+          items:order_items(*, product:products(id, product_images(image_url, is_main, sort_order)))
         `)
         .order("created_at", { ascending: false });
 

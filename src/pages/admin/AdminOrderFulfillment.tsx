@@ -141,6 +141,33 @@ const AdminOrderFulfillment = () => {
 
   const orders = data?.orders ?? [];
 
+  const syncAllSteadfast = useSyncSteadfastStatus();
+
+  const handleSyncAllSteadfast = async () => {
+    try {
+      const { data: syncData, error } = await supabase
+        .from("orders")
+        .select("id, tracking_number, consignment_id")
+        .or("tracking_number.not.is.null,consignment_id.not.is.null");
+      if (error) throw error;
+      const ids = (syncData || [])
+        .filter((o: any) => o.tracking_number || o.consignment_id)
+        .map((o: any) => o.id);
+      if (ids.length === 0) {
+        toast.message("No shipped orders in database to sync");
+        return;
+      }
+      syncAllSteadfast.mutate(ids, {
+        onSettled: () => {
+          qc.invalidateQueries({ queryKey: ["fulfillment-orders"] });
+        },
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load orders for sync");
+    }
+  };
+
   const filterConfig: { key: StatusFilter; label: string }[] = [
     { key: "all", label: "All In Review Order" },
     { key: "not_ready", label: "Mark as not Ready" },

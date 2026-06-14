@@ -331,12 +331,12 @@ const FulfillmentCard = ({ order, onOpen, onToggleReady, isToggling }: CardProps
           </div>
           <div className="flex items-center gap-2">
             {order.consignment_id ? (
-              <span className="text-base font-bold text-foreground flex items-center gap-1">
+              <span className="text-lg font-bold text-foreground flex items-center gap-1">
                 <CheckCircle2 className="w-4 h-4 text-green-600" />
                 Parcel ID: {order.consignment_id}
               </span>
             ) : (
-              <span className="text-base font-bold text-foreground flex items-center gap-1">
+              <span className="text-lg font-bold text-foreground flex items-center gap-1">
                 <Copy className="w-4 h-4 text-muted-foreground" />
                 Parcel ID: —
               </span>
@@ -377,7 +377,8 @@ const FulfillmentCard = ({ order, onOpen, onToggleReady, isToggling }: CardProps
                 onToggleReady();
               }}
               disabled={isToggling}
-              className="w-full lg:w-auto gap-2 bg-green-500 hover:bg-green-600 text-white"
+              className="w-full lg:w-auto gap-2 text-white"
+              style={{ backgroundColor: '#008080' }}
             >
               {isToggling ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

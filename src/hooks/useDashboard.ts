@@ -73,6 +73,12 @@ export function useDashboard() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const visitsQ = useQuery({
+    queryKey: ["dashboard", "daily-visits", 30],
+    queryFn: () => fetchDailyVisits(30),
+    staleTime: 5 * 60 * 1000,
+  });
+
   const analytics = useMemo<DashboardAnalytics | null>(() => {
     if (!productQ.data || !ordersQ.data || !lifetimeQ.data) return null;
     const orders = ordersQ.data;

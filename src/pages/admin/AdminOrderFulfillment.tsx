@@ -12,7 +12,7 @@ import { formatCurrency } from "@/lib/currency";
 import { updateOrderStatus } from "@/services/order.service";
 import OrderDetailModal from "@/components/admin/OrderDetailModal";
 
-type StatusFilter = "not_ready" | "ready";
+type StatusFilter = "all" | "not_ready" | "ready";
 
 interface FulfillmentItem {
   id: string;

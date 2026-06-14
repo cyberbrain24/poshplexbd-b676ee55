@@ -25,7 +25,7 @@ const CategoryHeader = ({ category, categorySlug }: CategoryHeaderProps) => {
   );
 
   const subcategories = currentCategory
-    ? categories.filter((c) => c.parent_id === currentCategory.id)
+    ? categories.filter((c) => c.parent_id === currentCategory.id && c.is_active !== false)
     : [];
 
   useEffect(() => {

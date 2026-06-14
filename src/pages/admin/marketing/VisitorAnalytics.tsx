@@ -39,9 +39,19 @@ function rangeStart(r: Range): Date {
   return d;
 }
 
+interface Aggregates {
+  total_views: number;
+  unique_visitors: number;
+  timeseries: { bucket: string; visits: number; unique: number }[];
+  top_pages: { path: string; count: number }[];
+  top_countries: { country: string; country_code: string; count: number }[];
+  devices: { device: string; count: number }[];
+}
+
 const VisitorAnalytics = () => {
   const [range, setRange] = useState<Range>("24h");
   const [views, setViews] = useState<PageView[]>([]);
+  const [agg, setAgg] = useState<Aggregates | null>(null);
   const [loading, setLoading] = useState(true);
   const [live, setLive] = useState<{ active: number; last_30m: number; today: number }>({ active: 0, last_30m: 0, today: 0 });
   const [search, setSearch] = useState("");
@@ -59,78 +69,56 @@ const VisitorAnalytics = () => {
     return () => clearInterval(t);
   }, []);
 
-  // Visits in range
+  // Aggregated analytics via RPC (handles 7d/30d without row caps)
   useEffect(() => {
     setLoading(true);
     (async () => {
-      const start = rangeStart(range).toISOString();
-      const { data } = await supabase
-        .from("page_views")
-        .select("id, path, referrer, device_type, ip_address, country, country_code, city, session_id, created_at")
-        .gte("created_at", start)
-        .order("created_at", { ascending: false })
-        .limit(5000);
-      setViews(data || []);
+      const [aggRes, recentRes] = await Promise.all([
+        (supabase.rpc as any)("get_visitor_analytics", { p_range: range }),
+        supabase
+          .from("page_views")
+          .select("id, path, referrer, device_type, ip_address, country, country_code, city, session_id, created_at")
+          .gte("created_at", rangeStart(range).toISOString())
+          .order("created_at", { ascending: false })
+          .limit(1000),
+      ]);
+      setAgg((aggRes.data as any) || null);
+      setViews(recentRes.data || []);
       setLoading(false);
     })();
   }, [range]);
 
-  const stats = useMemo(() => {
-    const sessions = new Set(views.map((v) => v.session_id).filter(Boolean));
-    return {
-      total: views.length,
-      unique: sessions.size,
-    };
-  }, [views]);
+  const stats = useMemo(() => ({
+    total: agg?.total_views || 0,
+    unique: agg?.unique_visitors || 0,
+  }), [agg]);
 
   const chartData = useMemo(() => {
-    const bucketMs = range === "24h" ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
-    const map = new Map<number, { visits: number; sessions: Set<string> }>();
-    views.forEach((v) => {
-      const t = new Date(v.created_at).getTime();
-      const key = Math.floor(t / bucketMs) * bucketMs;
-      if (!map.has(key)) map.set(key, { visits: 0, sessions: new Set() });
-      const e = map.get(key)!;
-      e.visits++;
-      if (v.session_id) e.sessions.add(v.session_id);
-    });
-    const arr = Array.from(map.entries())
-      .sort(([a], [b]) => a - b)
-      .map(([k, v]) => ({
-        time: range === "24h"
-          ? new Date(k).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-          : new Date(k).toLocaleDateString([], { month: "short", day: "numeric" }),
-        Visits: v.visits,
-        Unique: v.sessions.size,
-      }));
-    return arr;
-  }, [views, range]);
+    if (!agg?.timeseries) return [];
+    return agg.timeseries.map((b) => ({
+      time: range === "24h"
+        ? new Date(b.bucket).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        : new Date(b.bucket).toLocaleDateString([], { month: "short", day: "numeric" }),
+      Visits: b.visits,
+      Unique: b.unique,
+    }));
+  }, [agg, range]);
 
-  const topPages = useMemo(() => {
-    const m = new Map<string, number>();
-    views.forEach((v) => m.set(v.path, (m.get(v.path) || 0) + 1));
-    return Array.from(m.entries()).sort((a, b) => b[1] - a[1]).slice(0, 8);
-  }, [views]);
+  const topPages = useMemo<[string, number][]>(
+    () => (agg?.top_pages || []).map((p) => [p.path, p.count]),
+    [agg]
+  );
 
-  const topCountries = useMemo(() => {
-    const m = new Map<string, { count: number; cc: string }>();
-    views.forEach((v) => {
-      const key = v.country || "Unknown";
-      const e = m.get(key) || { count: 0, cc: v.country_code || "" };
-      e.count++;
-      m.set(key, e);
-    });
-    return Array.from(m.entries()).sort((a, b) => b[1].count - a[1].count).slice(0, 8);
-  }, [views]);
+  const topCountries = useMemo<[string, { count: number; cc: string }][]>(
+    () => (agg?.top_countries || []).map((c) => [c.country, { count: c.count, cc: c.country_code }]),
+    [agg]
+  );
 
-  const deviceSplit = useMemo(() => {
+  const deviceSplit = useMemo<Record<string, number>>(() => {
     const m: Record<string, number> = {};
-    views.forEach((v) => {
-      const k = v.device_type || "unknown";
-      m[k] = (m[k] || 0) + 1;
-    });
+    (agg?.devices || []).forEach((d) => { m[d.device] = d.count; });
     return m;
-  }, [views]);
+  }, [agg]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();

@@ -34,6 +34,7 @@ export interface DashboardAnalytics {
   thisMonth: PeriodTotals;
   statusCounts: Record<string, number>;
   revenueLast7Days: ChartPoint[];
+  dailyVisits: DailyVisitPoint[];
 }
 
 const STATUS_KEYS = ["pending", "processing", "shipped", "delivered", "cancelled"];

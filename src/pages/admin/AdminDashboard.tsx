@@ -39,7 +39,7 @@ const AdminDashboard = () => {
 
   const {
     product, lifetime, today, yesterday, dayBeforeYesterday, weekly,
-    last30Days, thisMonth, revenueLast7Days,
+    last30Days, thisMonth, revenueLast7Days, dailyVisits,
   } = analytics;
   const statusTotals = lifetime.statusTotals || {};
 

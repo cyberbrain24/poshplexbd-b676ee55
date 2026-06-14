@@ -7,12 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { PackageCheck, Search, Copy, Phone, MapPin, Loader2, Inbox } from "lucide-react";
+import { PackageCheck, Search, Copy, Phone, MapPin, Loader2, Inbox, CheckCircle2 } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import { updateOrderStatus } from "@/services/order.service";
 import OrderDetailModal from "@/components/admin/OrderDetailModal";
 
-type StatusFilter = "all" | "pending" | "confirmed" | "processing";
+type StatusFilter = "not_ready" | "ready";
 
 interface FulfillmentItem {
   id: string;
@@ -50,16 +50,13 @@ const PAGE_SIZE = 20;
 const AdminOrderFulfillment = () => {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("not_ready");
   const [openOrderId, setOpenOrderId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["fulfillment-orders", statusFilter, search],
     queryFn: async () => {
-      const statuses: ("pending" | "confirmed" | "processing")[] =
-        statusFilter === "all"
-          ? ["pending", "confirmed", "processing"]
-          : [statusFilter];
+      const statuses: ("confirmed" | "processing")[] = statusFilter === "not_ready" ? ["confirmed"] : ["processing"];
 
       let q = supabase
         .from("orders")
@@ -100,11 +97,11 @@ const AdminOrderFulfillment = () => {
       await updateOrderStatus(
         orderId,
         "processing",
-        "Marked ready to ship from Fulfillment module"
+        "Marked as Ready from Fulfillment module"
       );
     },
     onSuccess: () => {
-      toast.success("Order marked ready to ship");
+      toast.success("Order marked as Ready");
       qc.invalidateQueries({ queryKey: ["fulfillment-orders"] });
       qc.invalidateQueries({ queryKey: ["orders"] });
     },
@@ -114,6 +111,11 @@ const AdminOrderFulfillment = () => {
   });
 
   const orders = data?.orders ?? [];
+
+  const filterConfig: { key: StatusFilter; label: string }[] = [
+    { key: "not_ready", label: "Mark as not Ready" },
+    { key: "ready", label: "Mark as Ready" },
+  ];
 
   return (
     <div className="p-4 md:p-6 space-y-4">
@@ -127,20 +129,19 @@ const AdminOrderFulfillment = () => {
             </p>
           </div>
           <Badge variant="secondary" className="ml-2">
-            {data?.count ?? 0} pending
+            {data?.count ?? 0}
           </Badge>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          {(["all", "pending", "confirmed", "processing"] as StatusFilter[]).map((s) => (
+          {filterConfig.map((f) => (
             <Button
-              key={s}
+              key={f.key}
               size="sm"
-              variant={statusFilter === s ? "default" : "outline"}
-              onClick={() => setStatusFilter(s)}
-              className="capitalize"
+              variant={statusFilter === f.key ? "default" : "outline"}
+              onClick={() => setStatusFilter(f.key)}
             >
-              {s}
+              {f.label}
             </Button>
           ))}
           <div className="relative">
@@ -158,13 +159,17 @@ const AdminOrderFulfillment = () => {
       {isLoading ? (
         <div className="space-y-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-40 w-full rounded-xl" />
+            <Skeleton key={i} className="h-48 w-full rounded-xl" />
           ))}
         </div>
       ) : orders.length === 0 ? (
         <div className="border rounded-xl p-12 text-center text-muted-foreground flex flex-col items-center gap-2">
           <Inbox className="w-10 h-10 opacity-50" />
-          <p className="font-medium">All caught up — no orders waiting to be packed.</p>
+          <p className="font-medium">
+            {statusFilter === "not_ready"
+              ? "All caught up — no orders waiting to be packed."
+              : "No orders marked as Ready yet."}
+          </p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -241,12 +246,12 @@ const FulfillmentCard = ({ order, onOpen, onMarkReady, isMarking }: CardProps) =
     >
       <div className="flex flex-col lg:flex-row gap-4">
         {/* Thumbnails */}
-        <div className="flex gap-2 flex-wrap min-w-0 flex-1">
+        <div className="flex gap-3 flex-wrap min-w-0 flex-1">
           {order.items.map((item) => {
             const img = getImage(item);
             return (
-              <div key={item.id} className="flex flex-col items-center w-20 shrink-0">
-                <div className="w-20 h-20 rounded-xl bg-muted overflow-hidden border">
+              <div key={item.id} className="flex flex-col items-center w-28 shrink-0">
+                <div className="w-28 h-28 rounded-xl bg-muted overflow-hidden border">
                   {img ? (
                     <img
                       src={img}
@@ -260,10 +265,10 @@ const FulfillmentCard = ({ order, onOpen, onMarkReady, isMarking }: CardProps) =
                     </div>
                   )}
                 </div>
-                <div className="text-[10px] font-semibold mt-1 text-center leading-tight">
+                <div className="text-xs font-semibold mt-1.5 text-center leading-tight">
                   ×{item.quantity}
                 </div>
-                <div className="text-[10px] text-muted-foreground text-center leading-tight truncate w-full">
+                <div className="text-[11px] text-muted-foreground text-center leading-tight truncate w-full">
                   {variantText(item) || "—"}
                 </div>
               </div>
@@ -272,7 +277,7 @@ const FulfillmentCard = ({ order, onOpen, onMarkReady, isMarking }: CardProps) =
         </div>
 
         {/* Meta */}
-        <div className="flex-1 min-w-0 space-y-1 text-sm">
+        <div className="flex-1 min-w-0 space-y-1.5 text-sm">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-bold text-base">{order.order_number}</span>
             <Badge variant="outline" className="capitalize">
@@ -284,17 +289,19 @@ const FulfillmentCard = ({ order, onOpen, onMarkReady, isMarking }: CardProps) =
               </Badge>
             )}
           </div>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              copyText(order.consignment_id || "—", "Parcel ID");
-            }}
-            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-          >
-            <Copy className="w-3 h-3" />
-            Parcel: {order.consignment_id || "—"}
-          </button>
+          <div className="flex items-center gap-2">
+            {order.consignment_id ? (
+              <span className="text-base font-bold text-foreground flex items-center gap-1">
+                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                Parcel ID: {order.consignment_id}
+              </span>
+            ) : (
+              <span className="text-base font-bold text-foreground flex items-center gap-1">
+                <Copy className="w-4 h-4 text-muted-foreground" />
+                Parcel ID: —
+              </span>
+            )}
+          </div>
           <div className="font-medium">{order.shipping_name}</div>
           <button
             type="button"
@@ -323,21 +330,32 @@ const FulfillmentCard = ({ order, onOpen, onMarkReady, isMarking }: CardProps) =
 
         {/* Action */}
         <div className="flex lg:flex-col items-end justify-end gap-2 shrink-0">
-          <Button
-            onClick={(e) => {
-              e.stopPropagation();
-              onMarkReady();
-            }}
-            disabled={isMarking || order.order_status === "processing"}
-            className="w-full lg:w-auto"
-          >
-            {isMarking ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <PackageCheck className="w-4 h-4" />
-            )}
-            {order.order_status === "processing" ? "Ready" : "Mark Ready to Ship"}
-          </Button>
+          {order.order_status === "processing" ? (
+            <Button
+              disabled
+              variant="outline"
+              className="w-full lg:w-auto gap-2"
+            >
+              <CheckCircle2 className="w-4 h-4 text-green-600" />
+              Ready
+            </Button>
+          ) : (
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                onMarkReady();
+              }}
+              disabled={isMarking}
+              className="w-full lg:w-auto gap-2"
+            >
+              {isMarking ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <PackageCheck className="w-4 h-4" />
+              )}
+              Mark as Ready
+            </Button>
+          )}
         </div>
       </div>
     </div>

@@ -11,7 +11,6 @@ import { PackageCheck, Search, Copy, Phone, MapPin, Loader2, Inbox, CheckCircle2
 import { formatCurrency } from "@/lib/currency";
 import { updateOrderStatus } from "@/services/order.service";
 import { useSyncSteadfastStatus } from "@/hooks/useSteadfast";
-import { supabase } from "@/integrations/supabase/client";
 import OrderDetailModal from "@/components/admin/OrderDetailModal";
 
 type StatusFilter = "all" | "not_ready" | "ready";

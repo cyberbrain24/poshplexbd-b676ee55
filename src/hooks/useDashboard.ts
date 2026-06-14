@@ -4,9 +4,11 @@ import {
   fetchDashboardProductSummary,
   fetchDashboardOrders,
   fetchLifetimeOrderTotals,
+  fetchDailyVisits,
   type DashboardOrder,
   type DashboardProductSummary,
   type LifetimeTotals,
+  type DailyVisitPoint,
 } from "@/services/dashboard.service";
 
 export interface PeriodTotals {

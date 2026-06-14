@@ -44,9 +44,9 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { 
-  Package, 
-  Search, 
-  CreditCard, 
+  Package,
+  Search,
+  CreditCard,
   AlertTriangle,
   TrendingUp,
   Eye,
@@ -64,6 +64,7 @@ import {
   CheckSquare,
   X,
   ListChecks,
+  Copy,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
@@ -102,15 +103,26 @@ const ParcelIdCell = ({ order }: { order: { id: string; consignment_id: string |
     );
   }
 
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(order.consignment_id || "");
+      toast.success("Parcel ID copied to clipboard");
+    } catch {
+      toast.error("Failed to copy parcel ID");
+    }
+  };
+
   return (
     <div className="flex items-center gap-1 w-full">
       <Button
         size="sm"
         variant="outline"
-        onClick={(e) => e.stopPropagation()}
-        className="h-6 px-2 text-[10px] flex-1 bg-green-50 hover:bg-green-100 text-green-700 border-green-300 font-mono justify-center"
-        title={`Shipped — Consignment ${order.consignment_id}`}
+        onClick={handleCopy}
+        className="h-6 px-2 text-[10px] flex-1 bg-green-50 hover:bg-green-100 text-green-700 border-green-300 font-mono justify-center gap-1"
+        title={`Shipped — Consignment ${order.consignment_id} (click to copy)`}
       >
+        <Copy className="h-3 w-3" />
         Shipped: {order.consignment_id}
       </Button>
       <Button

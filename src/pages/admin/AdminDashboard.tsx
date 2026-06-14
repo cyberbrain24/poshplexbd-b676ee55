@@ -2,7 +2,7 @@ import { useDashboard } from "@/hooks/useDashboard";
 import { formatCurrency } from "@/lib/currency";
 import { Skeleton } from "@/components/ui/skeleton";
 import { KPICard, SectionTitle } from "@/components/admin/dashboard/DashboardWidgets";
-import { RevenueLast7DaysChart } from "@/components/admin/dashboard/DashboardCharts";
+import { RevenueLast7DaysChart, DailyVisitsChart } from "@/components/admin/dashboard/DashboardCharts";
 import { ORDER_STATUS_LABELS } from "@/constants";
 
 // Display only the canonical 7 statuses on the dashboard.

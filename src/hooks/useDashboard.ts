@@ -151,10 +151,3 @@ export function useDashboard() {
     error: productQ.error || ordersQ.error || lifetimeQ.error,
   };
 }
-
-  return {
-    analytics,
-    isLoading: productQ.isLoading || ordersQ.isLoading || lifetimeQ.isLoading,
-    error: productQ.error || ordersQ.error || lifetimeQ.error,
-  };
-}

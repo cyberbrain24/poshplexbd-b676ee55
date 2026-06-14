@@ -7,9 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { PackageCheck, Search, Copy, Phone, MapPin, Loader2, Inbox, CheckCircle2 } from "lucide-react";
+import { PackageCheck, Search, Copy, Phone, MapPin, Loader2, Inbox, CheckCircle2, RefreshCw } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import { updateOrderStatus } from "@/services/order.service";
+import { useSyncSteadfastStatus } from "@/hooks/useSteadfast";
+import { supabase } from "@/integrations/supabase/client";
 import OrderDetailModal from "@/components/admin/OrderDetailModal";
 
 type StatusFilter = "all" | "not_ready" | "ready";

@@ -290,8 +290,8 @@ const FulfillmentCard = ({ order, onOpen, onToggleReady, isToggling }: CardProps
           {order.items.map((item) => {
             const img = getImage(item);
             return (
-          <div key={item.id} className="flex flex-col items-center w-40 sm:w-28 shrink-0">
-                <div className="w-40 h-40 sm:w-28 sm:h-28 rounded-xl bg-muted overflow-hidden border">
+          <div key={item.id} className="flex flex-col items-center w-56 sm:w-28 shrink-0">
+                <div className="w-56 h-56 sm:w-28 sm:h-28 rounded-xl bg-muted overflow-hidden border">
                   {img ? (
                     <img
                       src={img}

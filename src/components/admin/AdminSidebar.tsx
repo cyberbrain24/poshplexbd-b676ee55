@@ -7,7 +7,7 @@ import {
   TrendingDown, Users, MapPin, Map, Crown, ShoppingCart, ExternalLink,
   LucideIcon, RefreshCw, MessageSquare, Image, Tag, Settings, Send,
   Upload, Menu, X, Music, StickyNote, Megaphone, Facebook, Server, BarChart3, LayoutGrid, Activity,
-  FileText, BarChart2, Mail, MessageCircle, Instagram, MessagesSquare, Truck, Plug,
+  FileText, BarChart2, Mail, MessageCircle, Instagram, MessagesSquare, Truck, Plug, PackageCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -40,6 +40,7 @@ const productManagementItems: NavItem[] = [
 
 const orderItems: NavItem[] = [
   { icon: ShoppingCart, label: "All Orders", path: "/admin/orders" },
+  { icon: PackageCheck, label: "Order Fulfillment", path: "/admin/order-fulfillment" },
   { icon: CreditCard, label: "Payment Methods", path: "/admin/payment-methods" },
   { icon: Tag, label: "Promo Codes", path: "/admin/promo-codes" },
   { icon: Megaphone, label: "Promotions & Ads", path: "/admin/promotions" },

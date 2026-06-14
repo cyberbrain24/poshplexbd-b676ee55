@@ -95,17 +95,42 @@ const AdminOrderFulfillment = () => {
     },
   });
 
-  const markReady = useMutation({
-    mutationFn: async (orderId: string) => {
+  const toggleReady = useMutation({
+    mutationFn: async ({
+      orderId,
+      nextStatus,
+    }: {
+      orderId: string;
+      nextStatus: "confirmed" | "processing";
+    }) => {
       await updateOrderStatus(
         orderId,
-        "processing",
-        "Marked as Ready from Fulfillment module"
+        nextStatus,
+        nextStatus === "processing"
+          ? "Marked as Ready from Fulfillment module"
+          : "Reverted from Ready in Fulfillment module"
       );
+      return { orderId, nextStatus };
     },
-    onSuccess: () => {
-      toast.success("Order marked as Ready");
-      qc.invalidateQueries({ queryKey: ["fulfillment-orders"] });
+    onSuccess: ({ orderId, nextStatus }) => {
+      toast.success(
+        nextStatus === "processing"
+          ? "Order marked as Ready"
+          : "Order moved back to Not Ready"
+      );
+      // Update all fulfillment-orders caches in place so the card stays where it is
+      qc.setQueriesData<{ orders: FulfillmentOrder[]; count: number } | undefined>(
+        { queryKey: ["fulfillment-orders"] },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            orders: old.orders.map((o) =>
+              o.id === orderId ? { ...o, order_status: nextStatus } : o
+            ),
+          };
+        }
+      );
       qc.invalidateQueries({ queryKey: ["orders"] });
     },
     onError: (e: unknown) => {
@@ -116,6 +141,7 @@ const AdminOrderFulfillment = () => {
   const orders = data?.orders ?? [];
 
   const filterConfig: { key: StatusFilter; label: string }[] = [
+    { key: "all", label: "All In Review Order" },
     { key: "not_ready", label: "Mark as not Ready" },
     { key: "ready", label: "Mark as Ready" },
   ];

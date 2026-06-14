@@ -56,7 +56,7 @@ const AdminOrderFulfillment = () => {
   const { data, isLoading } = useQuery({
     queryKey: ["fulfillment-orders", statusFilter, search],
     queryFn: async () => {
-      const statuses =
+      const statuses: ("pending" | "confirmed" | "processing")[] =
         statusFilter === "all"
           ? ["pending", "confirmed", "processing"]
           : [statusFilter];

@@ -1,8 +1,10 @@
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
+  AreaChart, Area,
 } from "recharts";
 import { formatCurrency } from "@/lib/currency";
 import type { ChartPoint } from "@/hooks/useDashboard";
+import type { DailyVisitPoint } from "@/services/dashboard.service";
 
 export function RevenueLast7DaysChart({ data }: { data: ChartPoint[] }) {
   return (

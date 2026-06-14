@@ -56,7 +56,7 @@ const AdminOrderFulfillment = () => {
   const { data, isLoading } = useQuery({
     queryKey: ["fulfillment-orders", statusFilter, search],
     queryFn: async () => {
-      const statuses = statusFilter === "not_ready" ? ["confirmed"] : ["processing"];
+      const statuses: ("confirmed" | "processing")[] = statusFilter === "not_ready" ? ["confirmed"] : ["processing"];
 
       let q = supabase
         .from("orders")

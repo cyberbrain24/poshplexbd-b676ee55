@@ -3287,6 +3287,13 @@ export type Database = {
       }
       find_product_by_short_id: { Args: { short_id: string }; Returns: string }
       get_active_visitors_count: { Args: never; Returns: Json }
+      get_daily_visits: {
+        Args: { p_days?: number }
+        Returns: {
+          date: string
+          visits: number
+        }[]
+      }
       get_my_customer_id: { Args: never; Returns: string }
       get_public_members: {
         Args: { p_customer_type_id?: string }

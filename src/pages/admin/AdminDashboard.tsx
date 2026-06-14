@@ -2,7 +2,7 @@ import { useDashboard } from "@/hooks/useDashboard";
 import { formatCurrency } from "@/lib/currency";
 import { Skeleton } from "@/components/ui/skeleton";
 import { KPICard, SectionTitle } from "@/components/admin/dashboard/DashboardWidgets";
-import { RevenueLast7DaysChart } from "@/components/admin/dashboard/DashboardCharts";
+import { RevenueLast7DaysChart, DailyVisitsChart } from "@/components/admin/dashboard/DashboardCharts";
 import { ORDER_STATUS_LABELS } from "@/constants";
 
 // Display only the canonical 7 statuses on the dashboard.
@@ -39,7 +39,7 @@ const AdminDashboard = () => {
 
   const {
     product, lifetime, today, yesterday, dayBeforeYesterday, weekly,
-    last30Days, thisMonth, revenueLast7Days,
+    last30Days, thisMonth, revenueLast7Days, dailyVisits,
   } = analytics;
   const statusTotals = lifetime.statusTotals || {};
 
@@ -114,7 +114,10 @@ const AdminDashboard = () => {
       {/* Trend */}
       <section className="space-y-3">
         <SectionTitle icon="📉">Trend</SectionTitle>
-        <RevenueLast7DaysChart data={revenueLast7Days} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          <RevenueLast7DaysChart data={revenueLast7Days} />
+          <DailyVisitsChart data={dailyVisits} />
+        </div>
       </section>
     </div>
   );

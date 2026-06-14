@@ -239,11 +239,11 @@ const AdminOrderFulfillment = () => {
 interface CardProps {
   order: FulfillmentOrder;
   onOpen: () => void;
-  onMarkReady: () => void;
-  isMarking: boolean;
+  onToggleReady: () => void;
+  isToggling: boolean;
 }
 
-const FulfillmentCard = ({ order, onOpen, onMarkReady, isMarking }: CardProps) => {
+const FulfillmentCard = ({ order, onOpen, onToggleReady, isToggling }: CardProps) => {
   const location = useMemo(() => {
     const parts = [
       order.shipping_division?.name,

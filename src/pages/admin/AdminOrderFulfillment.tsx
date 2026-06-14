@@ -75,7 +75,6 @@ const AdminOrderFulfillment = () => {
           { count: "exact" }
         )
         .in("order_status", statuses)
-        .is("consignment_id", null)
         .order("created_at", { ascending: true })
         .limit(PAGE_SIZE);
 

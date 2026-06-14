@@ -12,7 +12,7 @@ import { formatCurrency } from "@/lib/currency";
 import { updateOrderStatus } from "@/services/order.service";
 import OrderDetailModal from "@/components/admin/OrderDetailModal";
 
-type StatusFilter = "not_ready" | "ready";
+type StatusFilter = "all" | "not_ready" | "ready";
 
 interface FulfillmentItem {
   id: string;
@@ -50,13 +50,18 @@ const PAGE_SIZE = 20;
 const AdminOrderFulfillment = () => {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("not_ready");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [openOrderId, setOpenOrderId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["fulfillment-orders", statusFilter, search],
     queryFn: async () => {
-      const statuses: ("confirmed" | "processing")[] = statusFilter === "not_ready" ? ["confirmed"] : ["processing"];
+      const statuses: ("confirmed" | "processing")[] =
+        statusFilter === "not_ready"
+          ? ["confirmed"]
+          : statusFilter === "ready"
+          ? ["processing"]
+          : ["confirmed", "processing"];
 
       let q = supabase
         .from("orders")
@@ -90,17 +95,42 @@ const AdminOrderFulfillment = () => {
     },
   });
 
-  const markReady = useMutation({
-    mutationFn: async (orderId: string) => {
+  const toggleReady = useMutation({
+    mutationFn: async ({
+      orderId,
+      nextStatus,
+    }: {
+      orderId: string;
+      nextStatus: "confirmed" | "processing";
+    }) => {
       await updateOrderStatus(
         orderId,
-        "processing",
-        "Marked as Ready from Fulfillment module"
+        nextStatus,
+        nextStatus === "processing"
+          ? "Marked as Ready from Fulfillment module"
+          : "Reverted from Ready in Fulfillment module"
       );
+      return { orderId, nextStatus };
     },
-    onSuccess: () => {
-      toast.success("Order marked as Ready");
-      qc.invalidateQueries({ queryKey: ["fulfillment-orders"] });
+    onSuccess: ({ orderId, nextStatus }) => {
+      toast.success(
+        nextStatus === "processing"
+          ? "Order marked as Ready"
+          : "Order moved back to Not Ready"
+      );
+      // Update all fulfillment-orders caches in place so the card stays where it is
+      qc.setQueriesData<{ orders: FulfillmentOrder[]; count: number } | undefined>(
+        { queryKey: ["fulfillment-orders"] },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            orders: old.orders.map((o) =>
+              o.id === orderId ? { ...o, order_status: nextStatus } : o
+            ),
+          };
+        }
+      );
       qc.invalidateQueries({ queryKey: ["orders"] });
     },
     onError: (e: unknown) => {
@@ -111,6 +141,7 @@ const AdminOrderFulfillment = () => {
   const orders = data?.orders ?? [];
 
   const filterConfig: { key: StatusFilter; label: string }[] = [
+    { key: "all", label: "All In Review Order" },
     { key: "not_ready", label: "Mark as not Ready" },
     { key: "ready", label: "Mark as Ready" },
   ];
@@ -166,7 +197,9 @@ const AdminOrderFulfillment = () => {
           <p className="font-medium">
             {statusFilter === "not_ready"
               ? "All caught up — no orders waiting to be packed."
-              : "No orders marked as Ready yet."}
+              : statusFilter === "ready"
+              ? "No orders marked as Ready yet."
+              : "No orders in review."}
           </p>
         </div>
       ) : (
@@ -176,8 +209,17 @@ const AdminOrderFulfillment = () => {
               key={order.id}
               order={order}
               onOpen={() => setOpenOrderId(order.id)}
-              onMarkReady={() => markReady.mutate(order.id)}
-              isMarking={markReady.isPending && markReady.variables === order.id}
+              onToggleReady={() =>
+                toggleReady.mutate({
+                  orderId: order.id,
+                  nextStatus:
+                    order.order_status === "processing" ? "confirmed" : "processing",
+                })
+              }
+              isToggling={
+                toggleReady.isPending &&
+                toggleReady.variables?.orderId === order.id
+              }
             />
           ))}
         </div>
@@ -197,11 +239,11 @@ const AdminOrderFulfillment = () => {
 interface CardProps {
   order: FulfillmentOrder;
   onOpen: () => void;
-  onMarkReady: () => void;
-  isMarking: boolean;
+  onToggleReady: () => void;
+  isToggling: boolean;
 }
 
-const FulfillmentCard = ({ order, onOpen, onMarkReady, isMarking }: CardProps) => {
+const FulfillmentCard = ({ order, onOpen, onToggleReady, isToggling }: CardProps) => {
   const location = useMemo(() => {
     const parts = [
       order.shipping_division?.name,
@@ -330,23 +372,30 @@ const FulfillmentCard = ({ order, onOpen, onMarkReady, isMarking }: CardProps) =
         <div className="flex lg:flex-col items-end justify-end gap-2 shrink-0">
           {order.order_status === "processing" ? (
             <Button
-              disabled
-              variant="outline"
-              className="w-full lg:w-auto gap-2"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleReady();
+              }}
+              disabled={isToggling}
+              className="w-full lg:w-auto gap-2 bg-green-500 hover:bg-green-600 text-white"
             >
-              <CheckCircle2 className="w-4 h-4 text-green-600" />
-              Ready
+              {isToggling ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4" />
+              )}
+              Ready to deliver
             </Button>
           ) : (
             <Button
               onClick={(e) => {
                 e.stopPropagation();
-                onMarkReady();
+                onToggleReady();
               }}
-              disabled={isMarking}
+              disabled={isToggling}
               className="w-full lg:w-auto gap-2"
             >
-              {isMarking ? (
+              {isToggling ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <PackageCheck className="w-4 h-4" />

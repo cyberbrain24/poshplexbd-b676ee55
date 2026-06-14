@@ -141,8 +141,16 @@ export function useDashboard() {
       thisMonth: totalsFor(month),
       statusCounts,
       revenueLast7Days,
+      dailyVisits: visitsQ.data ?? [],
     };
-  }, [productQ.data, ordersQ.data, lifetimeQ.data]);
+  }, [productQ.data, ordersQ.data, lifetimeQ.data, visitsQ.data]);
+
+  return {
+    analytics,
+    isLoading: productQ.isLoading || ordersQ.isLoading || lifetimeQ.isLoading,
+    error: productQ.error || ordersQ.error || lifetimeQ.error,
+  };
+}
 
   return {
     analytics,

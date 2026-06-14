@@ -75,8 +75,7 @@ const AdminOrderFulfillment = () => {
           { count: "exact" }
         )
         .in("order_status", statuses)
-        .order("created_at", { ascending: true })
-        .limit(PAGE_SIZE);
+        .order("created_at", { ascending: true });
 
       if (search.trim()) {
         const s = search.trim();

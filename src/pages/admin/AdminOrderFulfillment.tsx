@@ -210,6 +210,19 @@ const AdminOrderFulfillment = () => {
               className="pl-8 h-9 w-56"
             />
           </div>
+          <Button
+            onClick={handleSyncAllSteadfast}
+            disabled={syncAllSteadfast.isPending || isLoading}
+            variant="outline"
+            size="sm"
+          >
+            {syncAllSteadfast.isPending ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4 mr-2" />
+            )}
+            Sync Steadfast
+          </Button>
         </div>
       </div>
 

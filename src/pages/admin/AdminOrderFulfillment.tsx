@@ -216,13 +216,7 @@ const AdminOrderFulfillment = () => {
       ) : orders.length === 0 ? (
         <div className="border rounded-xl p-12 text-center text-muted-foreground flex flex-col items-center gap-2">
           <Inbox className="w-10 h-10 opacity-50" />
-          <p className="font-medium">
-            {statusFilter === "not_ready"
-              ? "All caught up — no orders waiting to be packed."
-              : statusFilter === "ready"
-              ? "No orders marked as Ready yet."
-              : "No orders in review."}
-          </p>
+          <p className="font-medium">No orders in review.</p>
         </div>
       ) : (
         <div className="space-y-3">

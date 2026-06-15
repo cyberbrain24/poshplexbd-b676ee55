@@ -57,13 +57,6 @@ const AdminOrderFulfillment = () => {
   const { data, isLoading } = useQuery({
     queryKey: ["fulfillment-orders", statusFilter, search],
     queryFn: async () => {
-      const statuses: ("confirmed" | "processing")[] =
-        statusFilter === "not_ready"
-          ? ["confirmed"]
-          : statusFilter === "ready"
-          ? ["processing"]
-          : ["confirmed", "processing"];
-
       let q = supabase
         .from("orders")
         .select(
@@ -80,7 +73,7 @@ const AdminOrderFulfillment = () => {
         `,
           { count: "exact" }
         )
-        .in("order_status", statuses)
+        .eq("order_status", "confirmed")
         .order("created_at", { ascending: true });
 
       if (search.trim()) {

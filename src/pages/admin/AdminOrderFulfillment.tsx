@@ -106,25 +106,13 @@ const AdminOrderFulfillment = () => {
       );
       return { orderId, nextStatus };
     },
-    onSuccess: ({ orderId, nextStatus }) => {
+    onSuccess: ({ nextStatus }) => {
       toast.success(
         nextStatus === "processing"
           ? "Order marked as Ready"
           : "Order moved back to Not Ready"
       );
-      // Update all fulfillment-orders caches in place so the card stays where it is
-      qc.setQueriesData<{ orders: FulfillmentOrder[]; count: number } | undefined>(
-        { queryKey: ["fulfillment-orders"] },
-        (old) => {
-          if (!old) return old;
-          return {
-            ...old,
-            orders: old.orders.map((o) =>
-              o.id === orderId ? { ...o, order_status: nextStatus } : o
-            ),
-          };
-        }
-      );
+      qc.invalidateQueries({ queryKey: ["fulfillment-orders"] });
       qc.invalidateQueries({ queryKey: ["orders"] });
     },
     onError: (e: unknown) => {

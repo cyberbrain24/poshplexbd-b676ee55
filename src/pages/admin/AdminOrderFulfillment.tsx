@@ -330,7 +330,7 @@ const FulfillmentCard = ({ order, onOpen, onToggleReady, isToggling }: CardProps
                 <div className="text-xs font-semibold mt-1.5 text-center leading-tight">
                   ×{item.quantity}
                 </div>
-                <div className="text-[11px] text-muted-foreground text-center leading-tight truncate w-full">
+                <div className="text-sm font-bold text-foreground text-center leading-tight truncate w-full">
                   {variantText(item) || "—"}
                 </div>
               </div>

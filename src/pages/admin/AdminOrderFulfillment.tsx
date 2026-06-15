@@ -314,8 +314,12 @@ const FulfillmentCard = ({ order, onOpen, onToggleReady, isToggling }: CardProps
                     <img
                       src={img}
                       alt={item.product_name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover cursor-pointer"
                       loading="lazy"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLightbox({ src: img, alt: item.product_name });
+                      }}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">

@@ -57,13 +57,6 @@ const AdminOrderFulfillment = () => {
   const { data, isLoading } = useQuery({
     queryKey: ["fulfillment-orders", statusFilter, search],
     queryFn: async () => {
-      const statuses: ("confirmed" | "processing")[] =
-        statusFilter === "not_ready"
-          ? ["confirmed"]
-          : statusFilter === "ready"
-          ? ["processing"]
-          : ["confirmed", "processing"];
-
       let q = supabase
         .from("orders")
         .select(
@@ -80,7 +73,7 @@ const AdminOrderFulfillment = () => {
         `,
           { count: "exact" }
         )
-        .in("order_status", statuses)
+        .eq("order_status", "confirmed")
         .order("created_at", { ascending: true });
 
       if (search.trim()) {
@@ -113,25 +106,13 @@ const AdminOrderFulfillment = () => {
       );
       return { orderId, nextStatus };
     },
-    onSuccess: ({ orderId, nextStatus }) => {
+    onSuccess: ({ nextStatus }) => {
       toast.success(
         nextStatus === "processing"
           ? "Order marked as Ready"
           : "Order moved back to Not Ready"
       );
-      // Update all fulfillment-orders caches in place so the card stays where it is
-      qc.setQueriesData<{ orders: FulfillmentOrder[]; count: number } | undefined>(
-        { queryKey: ["fulfillment-orders"] },
-        (old) => {
-          if (!old) return old;
-          return {
-            ...old,
-            orders: old.orders.map((o) =>
-              o.id === orderId ? { ...o, order_status: nextStatus } : o
-            ),
-          };
-        }
-      );
+      qc.invalidateQueries({ queryKey: ["fulfillment-orders"] });
       qc.invalidateQueries({ queryKey: ["orders"] });
     },
     onError: (e: unknown) => {
@@ -235,13 +216,7 @@ const AdminOrderFulfillment = () => {
       ) : orders.length === 0 ? (
         <div className="border rounded-xl p-12 text-center text-muted-foreground flex flex-col items-center gap-2">
           <Inbox className="w-10 h-10 opacity-50" />
-          <p className="font-medium">
-            {statusFilter === "not_ready"
-              ? "All caught up — no orders waiting to be packed."
-              : statusFilter === "ready"
-              ? "No orders marked as Ready yet."
-              : "No orders in review."}
-          </p>
+          <p className="font-medium">No orders in review.</p>
         </div>
       ) : (
         <div className="space-y-3">

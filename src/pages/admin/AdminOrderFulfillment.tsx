@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { PackageCheck, Search, Copy, Phone, MapPin, Loader2, Inbox, CheckCircle2, RefreshCw } from "lucide-react";
+import { PackageCheck, Search, Copy, Phone, MapPin, Loader2, Inbox, CheckCircle2, RefreshCw, X } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import { updateOrderStatus } from "@/services/order.service";
 import { useSyncSteadfastStatus } from "@/hooks/useSteadfast";
@@ -295,6 +295,8 @@ const FulfillmentCard = ({ order, onOpen, onToggleReady, isToggling }: CardProps
     return parts.join(" · ");
   };
 
+  const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
+
   return (
     <div
       className="border rounded-xl p-4 bg-card hover:shadow-md transition-shadow cursor-pointer"
@@ -312,8 +314,12 @@ const FulfillmentCard = ({ order, onOpen, onToggleReady, isToggling }: CardProps
                     <img
                       src={img}
                       alt={item.product_name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover cursor-pointer"
                       loading="lazy"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLightbox({ src: img, alt: item.product_name });
+                      }}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
@@ -324,7 +330,7 @@ const FulfillmentCard = ({ order, onOpen, onToggleReady, isToggling }: CardProps
                 <div className="text-xs font-semibold mt-1.5 text-center leading-tight">
                   ×{item.quantity}
                 </div>
-                <div className="text-[11px] text-muted-foreground text-center leading-tight truncate w-full">
+                <div className="text-sm font-bold text-foreground text-center leading-tight truncate w-full">
                   {variantText(item) || "—"}
                 </div>
               </div>
@@ -422,6 +428,33 @@ const FulfillmentCard = ({ order, onOpen, onToggleReady, isToggling }: CardProps
           )}
         </div>
       </div>
+
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          onClick={(e) => {
+            e.stopPropagation();
+            setLightbox(null);
+          }}
+        >
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setLightbox(null);
+            }}
+            className="absolute top-4 right-4 text-white hover:text-gray-300"
+          >
+            <X className="w-8 h-8" />
+          </button>
+          <img
+            src={lightbox.src}
+            alt={lightbox.alt}
+            className="max-w-full max-h-full object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 };

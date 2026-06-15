@@ -108,36 +108,30 @@ const AdminOrderFulfillment = () => {
     },
   });
 
-  const toggleReady = useMutation({
-    mutationFn: async ({
-      orderId,
-      nextStatus,
-    }: {
-      orderId: string;
-      nextStatus: "confirmed" | "processing";
-    }) => {
-      await updateOrderStatus(
-        orderId,
-        nextStatus,
-        nextStatus === "processing"
-          ? "Marked as Ready from Fulfillment module"
-          : "Reverted from Ready in Fulfillment module"
-      );
-      return { orderId, nextStatus };
-    },
-    onSuccess: ({ nextStatus }) => {
-      toast.success(
-        nextStatus === "processing"
-          ? "Order marked as Ready"
-          : "Order moved back to Not Ready"
-      );
-      qc.invalidateQueries({ queryKey: ["fulfillment-orders"] });
-      qc.invalidateQueries({ queryKey: ["orders"] });
-    },
-    onError: (e: unknown) => {
-      toast.error(e instanceof Error ? e.message : "Failed to update");
-    },
-  });
+  const [readySet, setReadySet] = useState<Set<string>>(() => loadReadySet());
+
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === READY_STORAGE_KEY) setReadySet(loadReadySet());
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  const toggleReady = useCallback((orderId: string) => {
+    setReadySet((prev) => {
+      const next = new Set(prev);
+      if (next.has(orderId)) {
+        next.delete(orderId);
+        toast.success("Moved back to Not Ready");
+      } else {
+        next.add(orderId);
+        toast.success("Marked as Ready");
+      }
+      saveReadySet(next);
+      return next;
+    });
+  }, []);
 
   const orders = data?.orders ?? [];
 

@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,9 +9,28 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { PackageCheck, Search, Copy, Phone, MapPin, Loader2, Inbox, CheckCircle2, RefreshCw, X } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
-import { updateOrderStatus } from "@/services/order.service";
 import { useSyncSteadfastStatus } from "@/hooks/useSteadfast";
 import OrderDetailModal from "@/components/admin/OrderDetailModal";
+
+const READY_STORAGE_KEY = "fulfillment_ready_orders_v1";
+
+const loadReadySet = (): Set<string> => {
+  try {
+    const raw = localStorage.getItem(READY_STORAGE_KEY);
+    if (!raw) return new Set();
+    return new Set(JSON.parse(raw) as string[]);
+  } catch {
+    return new Set();
+  }
+};
+
+const saveReadySet = (set: Set<string>) => {
+  try {
+    localStorage.setItem(READY_STORAGE_KEY, JSON.stringify([...set]));
+  } catch {
+    /* ignore */
+  }
+};
 
 type StatusFilter = "all" | "not_ready" | "ready";
 
@@ -89,38 +108,37 @@ const AdminOrderFulfillment = () => {
     },
   });
 
-  const toggleReady = useMutation({
-    mutationFn: async ({
-      orderId,
-      nextStatus,
-    }: {
-      orderId: string;
-      nextStatus: "confirmed" | "processing";
-    }) => {
-      await updateOrderStatus(
-        orderId,
-        nextStatus,
-        nextStatus === "processing"
-          ? "Marked as Ready from Fulfillment module"
-          : "Reverted from Ready in Fulfillment module"
-      );
-      return { orderId, nextStatus };
-    },
-    onSuccess: ({ nextStatus }) => {
-      toast.success(
-        nextStatus === "processing"
-          ? "Order marked as Ready"
-          : "Order moved back to Not Ready"
-      );
-      qc.invalidateQueries({ queryKey: ["fulfillment-orders"] });
-      qc.invalidateQueries({ queryKey: ["orders"] });
-    },
-    onError: (e: unknown) => {
-      toast.error(e instanceof Error ? e.message : "Failed to update");
-    },
-  });
+  const [readySet, setReadySet] = useState<Set<string>>(() => loadReadySet());
 
-  const orders = data?.orders ?? [];
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === READY_STORAGE_KEY) setReadySet(loadReadySet());
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  const toggleReady = useCallback((orderId: string) => {
+    setReadySet((prev) => {
+      const next = new Set(prev);
+      if (next.has(orderId)) {
+        next.delete(orderId);
+        toast.success("Moved back to Not Ready");
+      } else {
+        next.add(orderId);
+        toast.success("Marked as Ready");
+      }
+      saveReadySet(next);
+      return next;
+    });
+  }, []);
+
+  const allOrders = data?.orders ?? [];
+  const orders = useMemo(() => {
+    if (statusFilter === "ready") return allOrders.filter((o) => readySet.has(o.id));
+    if (statusFilter === "not_ready") return allOrders.filter((o) => !readySet.has(o.id));
+    return allOrders;
+  }, [allOrders, statusFilter, readySet]);
 
   const syncAllSteadfast = useSyncSteadfastStatus();
 
@@ -224,18 +242,9 @@ const AdminOrderFulfillment = () => {
             <FulfillmentCard
               key={order.id}
               order={order}
+              isReady={readySet.has(order.id)}
               onOpen={() => setOpenOrderId(order.id)}
-              onToggleReady={() =>
-                toggleReady.mutate({
-                  orderId: order.id,
-                  nextStatus:
-                    order.order_status === "processing" ? "confirmed" : "processing",
-                })
-              }
-              isToggling={
-                toggleReady.isPending &&
-                toggleReady.variables?.orderId === order.id
-              }
+              onToggleReady={() => toggleReady(order.id)}
             />
           ))}
         </div>
@@ -256,10 +265,10 @@ interface CardProps {
   order: FulfillmentOrder;
   onOpen: () => void;
   onToggleReady: () => void;
-  isToggling: boolean;
+  isReady: boolean;
 }
 
-const FulfillmentCard = ({ order, onOpen, onToggleReady, isToggling }: CardProps) => {
+const FulfillmentCard = ({ order, onOpen, onToggleReady, isReady }: CardProps) => {
   const location = useMemo(() => {
     const parts = [
       order.shipping_division?.name,
@@ -392,22 +401,17 @@ const FulfillmentCard = ({ order, onOpen, onToggleReady, isToggling }: CardProps
 
         {/* Action */}
         <div className="flex lg:flex-col items-end justify-end gap-2 shrink-0">
-          {order.order_status === "processing" ? (
+          {isReady ? (
             <Button
               onClick={(e) => {
                 e.stopPropagation();
                 onToggleReady();
               }}
-              disabled={isToggling}
-              className="w-full lg:w-auto gap-2 text-white"
-              style={{ backgroundColor: '#008080' }}
+              className="w-full lg:w-auto gap-2 text-white hover:opacity-90"
+              style={{ backgroundColor: '#16a34a' }}
             >
-              {isToggling ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <CheckCircle2 className="w-4 h-4" />
-              )}
-              Ready to deliver
+              <CheckCircle2 className="w-4 h-4" />
+              Ready
             </Button>
           ) : (
             <Button
@@ -415,14 +419,9 @@ const FulfillmentCard = ({ order, onOpen, onToggleReady, isToggling }: CardProps
                 e.stopPropagation();
                 onToggleReady();
               }}
-              disabled={isToggling}
-              className="w-full lg:w-auto gap-2"
+              className="w-full lg:w-auto gap-2 bg-black text-white hover:bg-black/90"
             >
-              {isToggling ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <PackageCheck className="w-4 h-4" />
-              )}
+              <PackageCheck className="w-4 h-4" />
               Mark as Ready
             </Button>
           )}

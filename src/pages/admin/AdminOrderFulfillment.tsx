@@ -133,7 +133,12 @@ const AdminOrderFulfillment = () => {
     });
   }, []);
 
-  const orders = data?.orders ?? [];
+  const allOrders = data?.orders ?? [];
+  const orders = useMemo(() => {
+    if (statusFilter === "ready") return allOrders.filter((o) => readySet.has(o.id));
+    if (statusFilter === "not_ready") return allOrders.filter((o) => !readySet.has(o.id));
+    return allOrders;
+  }, [allOrders, statusFilter, readySet]);
 
   const syncAllSteadfast = useSyncSteadfastStatus();
 

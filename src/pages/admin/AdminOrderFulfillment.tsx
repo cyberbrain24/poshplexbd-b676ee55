@@ -401,22 +401,17 @@ const FulfillmentCard = ({ order, onOpen, onToggleReady, isReady }: CardProps) =
 
         {/* Action */}
         <div className="flex lg:flex-col items-end justify-end gap-2 shrink-0">
-          {order.order_status === "processing" ? (
+          {isReady ? (
             <Button
               onClick={(e) => {
                 e.stopPropagation();
                 onToggleReady();
               }}
-              disabled={isToggling}
-              className="w-full lg:w-auto gap-2 text-white"
-              style={{ backgroundColor: '#008080' }}
+              className="w-full lg:w-auto gap-2 text-white hover:opacity-90"
+              style={{ backgroundColor: '#16a34a' }}
             >
-              {isToggling ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <CheckCircle2 className="w-4 h-4" />
-              )}
-              Ready to deliver
+              <CheckCircle2 className="w-4 h-4" />
+              Ready
             </Button>
           ) : (
             <Button
@@ -424,14 +419,9 @@ const FulfillmentCard = ({ order, onOpen, onToggleReady, isReady }: CardProps) =
                 e.stopPropagation();
                 onToggleReady();
               }}
-              disabled={isToggling}
-              className="w-full lg:w-auto gap-2"
+              className="w-full lg:w-auto gap-2 bg-black text-white hover:bg-black/90"
             >
-              {isToggling ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <PackageCheck className="w-4 h-4" />
-              )}
+              <PackageCheck className="w-4 h-4" />
               Mark as Ready
             </Button>
           )}

@@ -295,6 +295,8 @@ const FulfillmentCard = ({ order, onOpen, onToggleReady, isToggling }: CardProps
     return parts.join(" · ");
   };
 
+  const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
+
   return (
     <div
       className="border rounded-xl p-4 bg-card hover:shadow-md transition-shadow cursor-pointer"

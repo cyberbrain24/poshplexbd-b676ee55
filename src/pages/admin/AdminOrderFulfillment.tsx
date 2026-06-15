@@ -242,18 +242,9 @@ const AdminOrderFulfillment = () => {
             <FulfillmentCard
               key={order.id}
               order={order}
+              isReady={readySet.has(order.id)}
               onOpen={() => setOpenOrderId(order.id)}
-              onToggleReady={() =>
-                toggleReady.mutate({
-                  orderId: order.id,
-                  nextStatus:
-                    order.order_status === "processing" ? "confirmed" : "processing",
-                })
-              }
-              isToggling={
-                toggleReady.isPending &&
-                toggleReady.variables?.orderId === order.id
-              }
+              onToggleReady={() => toggleReady(order.id)}
             />
           ))}
         </div>

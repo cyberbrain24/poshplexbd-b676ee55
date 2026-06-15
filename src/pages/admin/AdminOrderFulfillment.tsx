@@ -265,10 +265,10 @@ interface CardProps {
   order: FulfillmentOrder;
   onOpen: () => void;
   onToggleReady: () => void;
-  isToggling: boolean;
+  isReady: boolean;
 }
 
-const FulfillmentCard = ({ order, onOpen, onToggleReady, isToggling }: CardProps) => {
+const FulfillmentCard = ({ order, onOpen, onToggleReady, isReady }: CardProps) => {
   const location = useMemo(() => {
     const parts = [
       order.shipping_division?.name,

@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,9 +9,28 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { PackageCheck, Search, Copy, Phone, MapPin, Loader2, Inbox, CheckCircle2, RefreshCw, X } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
-import { updateOrderStatus } from "@/services/order.service";
 import { useSyncSteadfastStatus } from "@/hooks/useSteadfast";
 import OrderDetailModal from "@/components/admin/OrderDetailModal";
+
+const READY_STORAGE_KEY = "fulfillment_ready_orders_v1";
+
+const loadReadySet = (): Set<string> => {
+  try {
+    const raw = localStorage.getItem(READY_STORAGE_KEY);
+    if (!raw) return new Set();
+    return new Set(JSON.parse(raw) as string[]);
+  } catch {
+    return new Set();
+  }
+};
+
+const saveReadySet = (set: Set<string>) => {
+  try {
+    localStorage.setItem(READY_STORAGE_KEY, JSON.stringify([...set]));
+  } catch {
+    /* ignore */
+  }
+};
 
 type StatusFilter = "all" | "not_ready" | "ready";
 

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { PackageCheck, Search, Copy, Phone, MapPin, Loader2, Inbox, CheckCircle2, RefreshCw, X } from "lucide-react";
+import { PackageCheck, Search, Copy, Phone, MapPin, Loader2, Inbox, CheckCircle2, RefreshCw, X, ExternalLink } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import { useSyncSteadfastStatus } from "@/hooks/useSteadfast";
 import OrderDetailModal from "@/components/admin/OrderDetailModal";
@@ -210,6 +210,28 @@ const AdminOrderFulfillment = () => {
             />
           </div>
           <Button
+            onClick={() => {
+              const withConsignment = orders.filter((o) => o.consignment_id);
+              if (withConsignment.length === 0) {
+                toast.message("No parcel IDs in current view");
+                return;
+              }
+              withConsignment.forEach((o) => {
+                window.open(
+                  `https://steadfast.com.bd/user/consignment/${o.consignment_id}`,
+                  "_blank",
+                  "noopener,noreferrer"
+                );
+              });
+            }}
+            disabled={!orders.some((o) => o.consignment_id)}
+            variant="outline"
+            size="sm"
+          >
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Open All Parcels
+          </Button>
+          <Button
             onClick={handleSyncAllSteadfast}
             disabled={syncAllSteadfast.isPending || isLoading}
             variant="outline"
@@ -362,10 +384,17 @@ const FulfillmentCard = ({ order, onOpen, onToggleReady, isReady }: CardProps) =
           </div>
           <div className="flex items-center gap-2">
             {order.consignment_id ? (
-              <span className="text-lg font-bold text-foreground flex items-center gap-1">
+              <a
+                href={`https://steadfast.com.bd/user/consignment/${order.consignment_id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="text-lg font-bold text-foreground flex items-center gap-1 hover:underline hover:text-primary"
+              >
                 <CheckCircle2 className="w-4 h-4 text-green-600" />
                 Parcel ID: {order.consignment_id}
-              </span>
+                <ExternalLink className="w-3.5 h-3.5 opacity-70" />
+              </a>
             ) : (
               <span className="text-lg font-bold text-foreground flex items-center gap-1">
                 <Copy className="w-4 h-4 text-muted-foreground" />

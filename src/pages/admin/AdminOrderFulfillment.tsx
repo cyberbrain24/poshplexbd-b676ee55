@@ -384,17 +384,26 @@ const FulfillmentCard = ({ order, onOpen, onToggleReady, isReady }: CardProps) =
           </div>
           <div className="flex items-center gap-2">
             {order.consignment_id ? (
-              <a
-                href={`https://steadfast.com.bd/user/edit-parcel/${order.consignment_id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="text-lg font-bold text-foreground flex items-center gap-1 hover:underline hover:text-primary"
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const w = window.open(
+                    `https://steadfast.com.bd/user/edit-parcel/${order.consignment_id}`,
+                    "_blank",
+                    "noopener,noreferrer"
+                  );
+                  if (w) {
+                    w.blur();
+                    window.focus();
+                  }
+                }}
+                className="text-lg font-bold text-foreground flex items-center gap-1 hover:underline hover:text-primary bg-transparent border-0 p-0 cursor-pointer"
               >
                 <CheckCircle2 className="w-4 h-4 text-green-600" />
                 Parcel ID: {order.consignment_id}
                 <ExternalLink className="w-3.5 h-3.5 opacity-70" />
-              </a>
+              </button>
             ) : (
               <span className="text-lg font-bold text-foreground flex items-center gap-1">
                 <Copy className="w-4 h-4 text-muted-foreground" />

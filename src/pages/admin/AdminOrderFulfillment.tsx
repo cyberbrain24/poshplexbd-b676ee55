@@ -218,7 +218,7 @@ const AdminOrderFulfillment = () => {
               }
               withConsignment.forEach((o) => {
                 window.open(
-                  `https://steadfast.com.bd/user/consignment/${o.consignment_id}`,
+                  `https://steadfast.com.bd/user/edit-parcel/${o.consignment_id}`,
                   "_blank",
                   "noopener,noreferrer"
                 );
@@ -385,7 +385,7 @@ const FulfillmentCard = ({ order, onOpen, onToggleReady, isReady }: CardProps) =
           <div className="flex items-center gap-2">
             {order.consignment_id ? (
               <a
-                href={`https://steadfast.com.bd/user/consignment/${order.consignment_id}`}
+                href={`https://steadfast.com.bd/user/edit-parcel/${order.consignment_id}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}

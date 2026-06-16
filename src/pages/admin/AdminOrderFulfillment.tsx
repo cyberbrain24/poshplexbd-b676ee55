@@ -384,10 +384,17 @@ const FulfillmentCard = ({ order, onOpen, onToggleReady, isReady }: CardProps) =
           </div>
           <div className="flex items-center gap-2">
             {order.consignment_id ? (
-              <span className="text-lg font-bold text-foreground flex items-center gap-1">
+              <a
+                href={`https://steadfast.com.bd/user/consignment/${order.consignment_id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="text-lg font-bold text-foreground flex items-center gap-1 hover:underline hover:text-primary"
+              >
                 <CheckCircle2 className="w-4 h-4 text-green-600" />
                 Parcel ID: {order.consignment_id}
-              </span>
+                <ExternalLink className="w-3.5 h-3.5 opacity-70" />
+              </a>
             ) : (
               <span className="text-lg font-bold text-foreground flex items-center gap-1">
                 <Copy className="w-4 h-4 text-muted-foreground" />

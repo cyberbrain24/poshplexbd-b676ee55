@@ -1,38 +1,18 @@
-# Order Fulfillment — Tab + In-place Ready Toggle
+Add per-order Steadfast tracking links and a bulk "Open All" button to the Order Fulfillment page.
 
-## Changes to `src/pages/admin/AdminOrderFulfillment.tsx`
+1. **Per-order link**
+   - Turn the Parcel ID display into a clickable link when `consignment_id` exists.
+   - Link format: `https://steadfast.com.bd/user/consignment/{consignment_id}`
+   - Open in a new tab (`target="_blank" rel="noopener noreferrer"`).
+   - Keep the green check icon and bold text styling.
+   - If `consignment_id` is missing, keep the existing "Parcel ID: —" copy-only placeholder.
 
-### 1. Filter tabs (top right)
-Replace the current 2 filters with 3:
-- **All In Review Order** (default, selected on page load)
-- **Mark as not Ready**
-- **Mark as Ready**
+2. **Top-level "Open All" button**
+   - Add a new button next to the existing "Sync Steadfast" button at the top of the page.
+   - On click, iterate through the currently visible (filtered) orders and open a new browser tab for every order that has a `consignment_id`.
+   - Use `window.open(url, "_blank")` for each link.
+   - Disable the button when no visible orders have a `consignment_id`, and show a brief toast if the user clicks it while disabled (or simply keep it disabled with a tooltip/hint).
 
-Query logic per tab:
-- `all` → `order_status IN ('confirmed', 'processing')`
-- `not_ready` → `order_status = 'confirmed'`
-- `ready` → `order_status = 'processing'`
-
-Default `statusFilter` state becomes `"all"`.
-
-### 2. Mark as Ready button behavior
-Currently: clicking the button moves the order to the other tab (it disappears from the current view because the query refetches and the order no longer matches `confirmed`).
-
-New behavior on the **All** tab (and visually on any tab):
-- The order **stays in place** — do not invalidate/refetch the list after the mutation. Instead, update the cached row's `order_status` to `processing` via `queryClient.setQueryData(["fulfillment-orders", ...], ...)` so the card stays mounted.
-- When `order_status === 'processing'`, render the button as:
-  - Background: **tilt/light green** (`bg-green-500 hover:bg-green-600 text-white`)
-  - Label: **"Ready to deliver"**
-  - Icon: `CheckCircle2`
-- Clicking "Ready to deliver" calls `updateOrderStatus(orderId, 'confirmed', 'Reverted from Ready in Fulfillment')` and again updates the cache in place → button flips back to the default dark **"Mark as Ready"**.
-
-### 3. Filtering on the "Mark as Ready" / "Mark as not Ready" tabs
-On those two tabs the list is scoped by status, so toggling a row will naturally remove it from the visible list after cache update — that matches expectation (only the All tab shows both sides together).
-
-### 4. Empty-state copy
-Add a third message for the `all` tab: "No orders in review."
-
-## Out of scope
-- No schema changes, no RLS changes, no changes to `updateOrderStatus` service.
-- No UI changes to the order cards beyond the button color/label swap.
-- Modal, thumbnails, search input, and count badge remain unchanged.
+3. **Styling**
+   - Match existing button size (`size="sm"`) and variant (`variant="outline"`).
+   - Use a link icon (e.g., `ExternalLink` from `lucide-react`) for both the per-order link icon and the bulk button icon.

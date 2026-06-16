@@ -210,6 +210,28 @@ const AdminOrderFulfillment = () => {
             />
           </div>
           <Button
+            onClick={() => {
+              const withConsignment = orders.filter((o) => o.consignment_id);
+              if (withConsignment.length === 0) {
+                toast.message("No parcel IDs in current view");
+                return;
+              }
+              withConsignment.forEach((o) => {
+                window.open(
+                  `https://steadfast.com.bd/user/consignment/${o.consignment_id}`,
+                  "_blank",
+                  "noopener,noreferrer"
+                );
+              });
+            }}
+            disabled={!orders.some((o) => o.consignment_id)}
+            variant="outline"
+            size="sm"
+          >
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Open All Parcels
+          </Button>
+          <Button
             onClick={handleSyncAllSteadfast}
             disabled={syncAllSteadfast.isPending || isLoading}
             variant="outline"

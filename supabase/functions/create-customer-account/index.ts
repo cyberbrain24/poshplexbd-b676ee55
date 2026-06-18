@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { customerId, phone, email, name, password } = await req.json();
+    const { customerId, phone, email, name } = await req.json();
 
     if (!customerId || !phone) {
       return new Response(
@@ -29,10 +29,26 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    
+
     const supabase = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false }
     });
+
+    // Verify the customerId actually belongs to this phone number.
+    // This prevents an attacker from supplying an arbitrary customer UUID
+    // and linking a freshly-created auth account to someone else's customer record.
+    const { data: customerRow, error: customerErr } = await supabase
+      .from("customers")
+      .select("id, phone")
+      .eq("id", customerId)
+      .maybeSingle();
+
+    if (customerErr || !customerRow || customerRow.phone !== phone) {
+      return new Response(
+        JSON.stringify({ error: "Customer record does not match phone" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Check if customer already has an account
     const { data: existingAccount } = await supabase
@@ -68,9 +84,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Create auth user with phone-based email
+    // Create auth user with phone-based email.
+    // Password is server-controlled (default) — never accept caller-supplied passwords here.
     const phoneEmail = `${phone}@phone.local`;
-    const defaultPassword = (typeof password === "string" && password.length >= 6) ? password : "poshplex";
+    const defaultPassword = "poshplex";
 
     const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
       email: phoneEmail,

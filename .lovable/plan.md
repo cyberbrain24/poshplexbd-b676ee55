@@ -1,27 +1,38 @@
-## Plan: Storefront-style variant picker on Add Order
+## Order Fulfillment — issue status + card cleanup
 
-Replace the current "Choose Variant" list (one row per variant) on `/admin/add-order` with the same `VariantSelector` used on the storefront product page — color swatches + size buttons (+ custom option buttons), with auto-resolution to the matching variant.
+### 1. Database
+Add a single nullable column `fulfillment_issue` (TEXT) to `orders`. Allowed values: `stock_out`, `print_issues`, `courier_issues`, `other_issues`, or NULL (= None). Indexed for filtering. No RLS changes (uses existing admin order policies).
 
-### Changes — `src/pages/admin/AdminAddOrder.tsx` only
+### 2. Fulfillment card (`src/pages/admin/AdminOrderFulfillment.tsx`)
+Per-card changes:
+- Remove the COD/payment-method badge.
+- Remove the address line (`MapPin` / division / thana).
+- Add an order note line showing `customer_notes` (fallback `internal_notes`) — same source/style used on the All Orders card, truncated.
+- Add an **Issue Status** dropdown (shadcn `Select`) on the card, mobile-friendly:
+  - Options: `None`, `Stock Out`, `Print Issues`, `Courier Issues`, `Others Issues`.
+  - When a non-None value is selected, the trigger renders solid dark red (`bg-red-700 text-white border-red-700`); `None` stays neutral.
+  - Selecting writes `fulfillment_issue` to the order row via Supabase update; optimistic update + invalidate `fulfillment-orders` and `orders` queries.
+- "Mark as Ready" button: in addition to existing local-ready toggle, clears `fulfillment_issue` back to NULL on the same click.
 
-1. **Expand the product detail fetch** so variants carry full color/size/custom data the selector needs:
-   - `color:colors(id, name, hex_code)`
-   - `size:sizes(id, label, sort_order)`
-   - `custom_variant:custom_variants(id, label, sort_order)`
+Top toolbar:
+- Add a new **Issue filter** dropdown (`All issues / None / Stock Out / Print Issues / Courier Issues / Others Issues`) shown only when active tab is `All In Review Order` or `Mark as not Ready`. Filtering is applied client-side over the already-loaded list.
 
-2. **Swap the variant list UI** for `<VariantSelector variants={...} onVariantChange={setSelectedVariant} />` (imported from `@/components/product/VariantSelector`).
+Fetch query in this page must also `select` the new field and `customer_notes` / `internal_notes`.
 
-3. **Selected-variant preview + Add button (mobile-friendly):**
-   - Below the selector, show a compact strip: thumbnail (variant image or product main), variant label (Color / Size), SKU, stock, price.
-   - Sticky bottom action area inside the sheet with a full-width `Add to Order` button (`h-12`), disabled until a variant is chosen (or product has no variants → enabled with base price).
-   - Keep existing `Back` button at top.
+### 3. All Orders card (`src/pages/admin/AdminOrders.tsx`)
+- Change grid from `xl:grid-cols-8` to `xl:grid-cols-7` on both the skeleton grid and the live grid (line 711 and 721).
+- When `fulfillment_issue` is set, show a small dark-red badge (e.g. "Stock Out") inside the existing card details block, near the status badges. No badge when null.
+- Ensure the orders list query (in `useOptimizedOrders` or wherever the list is fetched) selects `fulfillment_issue` so the badge renders. If the hook needs an extra field, add it there.
 
-4. **Mobile polish:**
-   - Sheet stays full-height (`h-[100dvh]`).
-   - Header + product summary scroll, selector content centered with comfortable spacing, action button pinned at the bottom with safe-area padding.
-   - Touch targets already 40px+ from the storefront selector — kept as-is.
+### 4. Sync behavior
+Because the value lives in `orders.fulfillment_issue`, both pages read the same source. After any update on the fulfillment page, both `["fulfillment-orders"]` and the All Orders query keys are invalidated so the card reflects instantly.
 
-### Out of scope / unchanged
-- No DB or RPC changes.
-- Order creation flow, creator tagging, totals, promo, payment — untouched.
-- Storefront `VariantSelector` component is reused without modification.
+### Out of scope
+- No change to existing ready/not-ready local storage logic.
+- No change to other order fields, RLS, or RPCs.
+- No status history record for issue changes (lightweight UI flag only).
+
+### Technical notes
+- Status label map: `stock_out → Stock Out`, `print_issues → Print Issues`, `courier_issues → Courier Issues`, `other_issues → Others Issues`.
+- Dark red styling uses Tailwind `bg-red-700 hover:bg-red-700/90 text-white` for the trigger and badge to match the user's "fully dark red" requirement.
+- Mobile: Select trigger uses `h-9 w-full sm:w-44`, placed under the action button on small screens.

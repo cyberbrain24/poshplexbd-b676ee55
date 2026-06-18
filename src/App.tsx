@@ -66,6 +66,7 @@ const AdminDivisions = lazy(() => import("./pages/admin/AdminDivisions"));
 const AdminThanas = lazy(() => import("./pages/admin/AdminThanas"));
 const AdminCustomerTypes = lazy(() => import("./pages/admin/AdminCustomerTypes"));
 const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
+const AdminAddOrder = lazy(() => import("./pages/admin/AdminAddOrder"));
 const AdminOrderFulfillment = lazy(() => import("./pages/admin/AdminOrderFulfillment"));
 const AdminPaymentMethods = lazy(() => import("./pages/admin/AdminPaymentMethods"));
 const AdminReviews = lazy(() => import("./pages/admin/AdminReviews"));
@@ -196,6 +197,7 @@ const App = () => (
                     <Route path="divisions" element={<AdminDivisions />} />
                     <Route path="thanas" element={<AdminThanas />} />
                     <Route path="customer-types" element={<AdminCustomerTypes />} />
+                    <Route path="add-order" element={<AdminAddOrder />} />
                     <Route path="orders" element={<AdminOrders />} />
                     <Route path="order-fulfillment" element={<AdminOrderFulfillment />} />
                     <Route path="payment-methods" element={<AdminPaymentMethods />} />

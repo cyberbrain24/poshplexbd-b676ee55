@@ -17,6 +17,7 @@ import { useProductSearch } from "@/hooks/useProductSearch";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/currency";
 import { toast } from "sonner";
+import VariantSelector from "@/components/product/VariantSelector";
 
 interface SelectedItem {
   id: string;

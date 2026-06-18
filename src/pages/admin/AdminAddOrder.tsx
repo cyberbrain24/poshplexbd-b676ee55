@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Minus, Search, Trash2, Loader2, X, ShoppingCart, User, Package, Tag as TagIcon, CreditCard, MapPin } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Plus, Minus, Search, Trash2, Loader2, X, ShoppingCart, User, Package, Tag as TagIcon, CreditCard, MapPin, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { BirthDatePicker } from "@/components/ui/birth-date-picker";
 import { useDivisions, useThanas } from "@/hooks/useLocationData";
 import { usePaymentMethods, PaymentMethodType } from "@/hooks/useOrders";
 import { useCreateOrder } from "@/hooks/useCheckout";
@@ -17,7 +19,7 @@ import { formatCurrency } from "@/lib/currency";
 import { toast } from "sonner";
 
 interface SelectedItem {
-  id: string; // unique row id
+  id: string;
   productId: string;
   variantId: string | null;
   name: string;
@@ -46,6 +48,8 @@ const AdminAddOrder = () => {
     name: "",
     phone: "",
     email: "",
+    gender: "other",
+    birthdate: undefined as Date | undefined,
     address: "",
     divisionId: "",
     thanaId: "",
@@ -63,7 +67,71 @@ const AdminAddOrder = () => {
   const { data: searchResults, isLoading: searching } = useProductSearch(search);
   const [variantPick, setVariantPick] = useState<VariantPick | null>(null);
 
-  // Load images/variants for picked product (with full variant detail)
+  // Category browse state in picker
+  const [parentCatId, setParentCatId] = useState<string | null>(null);
+  const [subCatId, setSubCatId] = useState<string | null>(null);
+
+  const { data: parentCategories } = useQuery({
+    queryKey: ["addorder-parent-cats"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("id, name, parent_id, is_active, sort_order")
+        .is("parent_id", null)
+        .eq("is_active", true)
+        .order("sort_order");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: subCategories } = useQuery({
+    queryKey: ["addorder-sub-cats", parentCatId],
+    queryFn: async () => {
+      if (!parentCatId) return [];
+      const { data, error } = await supabase
+        .from("categories")
+        .select("id, name, parent_id, is_active, sort_order")
+        .eq("parent_id", parentCatId)
+        .eq("is_active", true)
+        .order("sort_order");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!parentCatId,
+  });
+
+  const activeCatId = subCatId || parentCatId;
+  const browsing = !search || search.length < 2;
+
+  const { data: categoryProducts, isLoading: loadingCatProducts } = useQuery({
+    queryKey: ["addorder-cat-products", activeCatId],
+    queryFn: async () => {
+      if (!activeCatId) {
+        const { data, error } = await supabase
+          .from("products")
+          .select("id, name, base_price, sku, images:product_images(image_url, is_main, sort_order)")
+          .eq("is_active", true)
+          .order("created_at", { ascending: false })
+          .limit(40);
+        if (error) throw error;
+        return data;
+      }
+      const { data, error } = await supabase
+        .from("product_categories")
+        .select("product:products!inner(id, name, base_price, sku, is_active, created_at, images:product_images(image_url, is_main, sort_order))")
+        .eq("category_id", activeCatId)
+        .limit(60);
+      if (error) throw error;
+      return (data || [])
+        .map((row: any) => row.product)
+        .filter((p: any) => p && p.is_active)
+        .sort((a: any, b: any) => (b.created_at || "").localeCompare(a.created_at || ""));
+    },
+    enabled: pickerOpen && browsing,
+  });
+
+  // Load images/variants for picked product
   const [productDetail, setProductDetail] = useState<any | null>(null);
   useEffect(() => {
     const fetchDetail = async () => {
@@ -111,7 +179,6 @@ const AdminAddOrder = () => {
   const selectedThana = useMemo(() => thanas?.find(t => t.id === customer.thanaId), [thanas, customer.thanaId]);
   const baseShipping = selectedThana?.shipping_cost !== undefined ? Number(selectedThana.shipping_cost) : 0;
   const shippingCost = appliedPromo?.freeDelivery ? 0 : baseShipping;
-
   const total = Math.max(0, subtotal - totalDiscount + shippingCost);
 
   // ----- Customer phone lookup -----
@@ -122,7 +189,7 @@ const AdminAddOrder = () => {
     try {
       const { data } = await supabase
         .from("customers")
-        .select("id, name, phone, email, address, division_id, thana_id")
+        .select("id, name, phone, email, gender, birthdate, address, division_id, thana_id")
         .eq("phone", phone)
         .maybeSingle();
       if (data) {
@@ -131,6 +198,8 @@ const AdminAddOrder = () => {
           id: data.id,
           name: data.name || c.name,
           email: data.email || c.email,
+          gender: (data as any).gender || c.gender,
+          birthdate: (data as any).birthdate ? new Date((data as any).birthdate) : c.birthdate,
           address: data.address || c.address,
           divisionId: data.division_id || c.divisionId,
           thanaId: data.thana_id || c.thanaId,
@@ -144,7 +213,7 @@ const AdminAddOrder = () => {
     }
   };
 
-  // ----- Add product / variant -----
+  // ----- Picker helpers -----
   const productImage = (p: any): string | null => {
     if (!p?.images?.length) return null;
     const main = p.images.find((i: any) => i.is_main);
@@ -207,6 +276,7 @@ const AdminAddOrder = () => {
   const validate = () => {
     if (!customer.name.trim()) return toast.error("Customer name required"), false;
     if (!customer.phone.trim()) return toast.error("Customer phone required"), false;
+    if (!customer.birthdate) return toast.error("Date of birth required"), false;
     if (!customer.address.trim()) return toast.error("Address required"), false;
     if (!customer.divisionId) return toast.error("Select district"), false;
     if (!customer.thanaId) return toast.error("Select thana"), false;
@@ -220,7 +290,7 @@ const AdminAddOrder = () => {
       p_name: customer.name,
       p_phone: customer.phone,
       p_email: customer.email || null,
-      p_gender: "other",
+      p_gender: customer.gender || "other",
       p_address: customer.address || null,
       p_division_id: customer.divisionId || null,
       p_thana_id: customer.thanaId || null,
@@ -229,7 +299,25 @@ const AdminAddOrder = () => {
       console.error(error);
       return null;
     }
-    return data as string;
+    const customerId = data as string;
+    // Persist gender + birthdate (RPC doesn't take birthdate)
+    if (customerId) {
+      try {
+        const birthdateStr = customer.birthdate
+          ? `${customer.birthdate.getFullYear()}-${String(customer.birthdate.getMonth() + 1).padStart(2, "0")}-${String(customer.birthdate.getDate()).padStart(2, "0")}`
+          : null;
+        await supabase
+          .from("customers")
+          .update({
+            gender: (customer.gender || "other") as any,
+            birthdate: birthdateStr,
+          } as any)
+          .eq("id", customerId);
+      } catch (e) {
+        console.warn("Failed to persist gender/birthdate", e);
+      }
+    }
+    return customerId;
   };
 
   const handlePlaceOrder = async () => {
@@ -237,7 +325,6 @@ const AdminAddOrder = () => {
     try {
       const customerId = await findOrCreateCustomer();
 
-      // Build cart items in the shape useCreateOrder expects
       const cartItems = items.map(i => ({
         id: i.id,
         productId: i.productId,
@@ -279,7 +366,6 @@ const AdminAddOrder = () => {
         cartItems,
       });
 
-      // Tag the order with creator info (groundwork for RBAC)
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user && result.orderId) {
@@ -300,13 +386,15 @@ const AdminAddOrder = () => {
 
   const isProcessing = createOrderMutation.isPending;
 
+  // Products to display in picker
+  const pickerProducts = browsing ? (categoryProducts || []) : (searchResults || []);
+  const pickerLoading = browsing ? loadingCatProducts : searching;
+
   return (
     <div className="max-w-2xl mx-auto pb-32 px-3 sm:px-6 py-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold uppercase tracking-tight">Add Order</h1>
-          <p className="text-sm text-muted-foreground">Place an order on behalf of a customer</p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold uppercase tracking-tight">Add Order</h1>
+        <p className="text-sm text-muted-foreground">Place an order on behalf of a customer</p>
       </div>
 
       {/* Customer */}
@@ -317,6 +405,7 @@ const AdminAddOrder = () => {
             <Label className="text-xs">Phone *</Label>
             <div className="relative">
               <Input
+                className="h-11"
                 value={customer.phone}
                 onChange={(e) => setCustomer(c => ({ ...c, phone: e.target.value, id: "" }))}
                 onBlur={handlePhoneBlur}
@@ -329,11 +418,33 @@ const AdminAddOrder = () => {
           </div>
           <div>
             <Label className="text-xs">Name *</Label>
-            <Input value={customer.name} onChange={(e) => setCustomer(c => ({ ...c, name: e.target.value }))} />
+            <Input className="h-11" value={customer.name} onChange={(e) => setCustomer(c => ({ ...c, name: e.target.value }))} />
           </div>
           <div>
             <Label className="text-xs">Email</Label>
-            <Input type="email" value={customer.email} onChange={(e) => setCustomer(c => ({ ...c, email: e.target.value }))} />
+            <Input className="h-11" type="email" value={customer.email} onChange={(e) => setCustomer(c => ({ ...c, email: e.target.value }))} />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Gender</Label>
+              <Select value={customer.gender} onValueChange={(v) => setCustomer(c => ({ ...c, gender: v }))}>
+                <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="male">Male</SelectItem>
+                  <SelectItem value="female">Female</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Date of Birth *</Label>
+              <BirthDatePicker
+                value={customer.birthdate}
+                onChange={(d) => setCustomer(c => ({ ...c, birthdate: d }))}
+                placeholder="Select"
+                className="h-11"
+              />
+            </div>
           </div>
         </div>
 
@@ -347,7 +458,7 @@ const AdminAddOrder = () => {
             <div>
               <Label className="text-xs">District *</Label>
               <Select value={customer.divisionId} onValueChange={(v) => setCustomer(c => ({ ...c, divisionId: v, thanaId: "" }))}>
-                <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectTrigger className="h-11"><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent>
                   {divisions?.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
                 </SelectContent>
@@ -356,7 +467,7 @@ const AdminAddOrder = () => {
             <div>
               <Label className="text-xs">Thana *</Label>
               <Select value={customer.thanaId} onValueChange={(v) => setCustomer(c => ({ ...c, thanaId: v }))} disabled={!customer.divisionId}>
-                <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectTrigger className="h-11"><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent>
                   {thanas?.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
                 </SelectContent>
@@ -365,7 +476,7 @@ const AdminAddOrder = () => {
           </div>
           <div>
             <Label className="text-xs">Postal Code</Label>
-            <Input value={customer.postalCode} onChange={(e) => setCustomer(c => ({ ...c, postalCode: e.target.value }))} />
+            <Input className="h-11" value={customer.postalCode} onChange={(e) => setCustomer(c => ({ ...c, postalCode: e.target.value }))} />
           </div>
         </div>
       </Card>
@@ -406,9 +517,9 @@ const AdminAddOrder = () => {
                   </p>
                   <div className="flex items-center justify-between mt-1">
                     <div className="flex items-center gap-1">
-                      <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => updateQty(item.id, -1)}><Minus className="h-3 w-3" /></Button>
+                      <Button size="icon" variant="outline" className="h-9 w-9" onClick={() => updateQty(item.id, -1)}><Minus className="h-3 w-3" /></Button>
                       <span className="w-8 text-center text-sm">{item.quantity}</span>
-                      <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => updateQty(item.id, 1)}><Plus className="h-3 w-3" /></Button>
+                      <Button size="icon" variant="outline" className="h-9 w-9" onClick={() => updateQty(item.id, 1)}><Plus className="h-3 w-3" /></Button>
                     </div>
                     <p className="text-sm font-semibold">{formatCurrency(item.price * item.quantity)}</p>
                   </div>
@@ -424,7 +535,7 @@ const AdminAddOrder = () => {
         <div className="flex items-center gap-2 font-semibold"><TagIcon className="h-4 w-4" /> Discount & Promo</div>
         <div>
           <Label className="text-xs">Manual Discount (৳)</Label>
-          <Input type="number" min={0} value={manualDiscount} onChange={(e) => setManualDiscount(e.target.value)} placeholder="0" />
+          <Input className="h-11" type="number" min={0} value={manualDiscount} onChange={(e) => setManualDiscount(e.target.value)} placeholder="0" />
         </div>
         <div>
           <Label className="text-xs">Promo Code</Label>
@@ -442,7 +553,7 @@ const AdminAddOrder = () => {
             </div>
           ) : (
             <div className="flex gap-2">
-              <Input value={promoCodeInput} onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())} placeholder="Enter code" />
+              <Input className="h-11" value={promoCodeInput} onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())} placeholder="Enter code" />
               <Button onClick={handleApplyPromo} disabled={applyingPromo || !promoCodeInput.trim()}>
                 {applyingPromo ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
               </Button>
@@ -457,7 +568,7 @@ const AdminAddOrder = () => {
         <div>
           <Label className="text-xs">Method *</Label>
           <Select value={paymentMethodId} onValueChange={setPaymentMethodId}>
-            <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+            <SelectTrigger className="h-11"><SelectValue placeholder="Select" /></SelectTrigger>
             <SelectContent>
               {paymentMethods?.map(pm => (
                 <SelectItem key={pm.id} value={pm.id}>{pm.name}</SelectItem>
@@ -469,17 +580,17 @@ const AdminAddOrder = () => {
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label className="text-xs">Transaction ID</Label>
-              <Input value={transactionId} onChange={(e) => setTransactionId(e.target.value)} />
+              <Input className="h-11" value={transactionId} onChange={(e) => setTransactionId(e.target.value)} />
             </div>
             <div>
               <Label className="text-xs">Sender Number</Label>
-              <Input value={senderNumber} onChange={(e) => setSenderNumber(e.target.value)} />
+              <Input className="h-11" value={senderNumber} onChange={(e) => setSenderNumber(e.target.value)} />
             </div>
           </div>
         )}
         <div>
           <Label className="text-xs">Paid Amount (optional)</Label>
-          <Input type="number" min={0} value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)} placeholder="0 = unpaid" />
+          <Input className="h-11" type="number" min={0} value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)} placeholder="0 = unpaid" />
         </div>
       </Card>
 
@@ -501,7 +612,7 @@ const AdminAddOrder = () => {
       </Card>
 
       {/* Sticky footer */}
-      <div className="fixed bottom-0 inset-x-0 bg-background border-t p-3 z-40">
+      <div className="fixed bottom-0 inset-x-0 bg-background border-t p-3 z-40 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
           <div className="flex-1">
             <p className="text-xs text-muted-foreground">Total</p>
@@ -515,52 +626,97 @@ const AdminAddOrder = () => {
       </div>
 
       {/* Product picker sheet */}
-      <Sheet open={pickerOpen} onOpenChange={(o) => { setPickerOpen(o); if (!o) { setVariantPick(null); setSearch(""); } }}>
-        <SheetContent side="bottom" className="h-[85vh] flex flex-col p-0">
-          <SheetHeader className="p-4 border-b">
-            <SheetTitle>{variantPick ? "Choose Variant" : "Add Product"}</SheetTitle>
+      <Sheet open={pickerOpen} onOpenChange={(o) => { setPickerOpen(o); if (!o) { setVariantPick(null); setSearch(""); setParentCatId(null); setSubCatId(null); } }}>
+        <SheetContent side="bottom" className="h-[100dvh] sm:h-[90vh] flex flex-col p-0">
+          <SheetHeader className="p-3 border-b shrink-0">
+            <SheetTitle className="text-base">{variantPick ? "Choose Variant" : "Add Product"}</SheetTitle>
           </SheetHeader>
 
           {!variantPick ? (
             <>
-              <div className="p-4 border-b">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    autoFocus
-                    placeholder="Search by name or SKU..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="pl-10"
-                  />
+              {/* Sticky search + categories */}
+              <div className="border-b shrink-0 bg-background">
+                <div className="p-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search by name or SKU..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="pl-10 h-11"
+                    />
+                  </div>
                 </div>
-              </div>
-              <div className="flex-1 overflow-y-auto p-2">
-                {searching && <p className="text-center text-sm text-muted-foreground py-8">Searching...</p>}
-                {!searching && search.length < 2 && <p className="text-center text-sm text-muted-foreground py-8">Type 2+ letters</p>}
-                {!searching && search.length >= 2 && searchResults?.length === 0 && (
-                  <p className="text-center text-sm text-muted-foreground py-8">No products found</p>
+                {/* Parent categories chips */}
+                <div className="px-3 pb-2 flex gap-2 overflow-x-auto snap-x scrollbar-none" style={{ scrollbarWidth: "none" }}>
+                  <CatChip
+                    label="All"
+                    active={!parentCatId}
+                    onClick={() => { setParentCatId(null); setSubCatId(null); }}
+                  />
+                  {parentCategories?.map((c: any) => (
+                    <CatChip
+                      key={c.id}
+                      label={c.name}
+                      active={parentCatId === c.id}
+                      onClick={() => { setParentCatId(c.id); setSubCatId(null); }}
+                    />
+                  ))}
+                </div>
+                {/* Sub-categories chips */}
+                {parentCatId && subCategories && subCategories.length > 0 && (
+                  <div className="px-3 pb-2 flex gap-2 overflow-x-auto border-t pt-2" style={{ scrollbarWidth: "none" }}>
+                    <CatChip
+                      label="All"
+                      active={!subCatId}
+                      small
+                      onClick={() => setSubCatId(null)}
+                    />
+                    {subCategories.map((c: any) => (
+                      <CatChip
+                        key={c.id}
+                        label={c.name}
+                        active={subCatId === c.id}
+                        small
+                        onClick={() => setSubCatId(c.id)}
+                      />
+                    ))}
+                  </div>
                 )}
-                <div className="space-y-1">
-                  {searchResults?.map((p: any) => {
+              </div>
+
+              {/* Product grid */}
+              <div className="flex-1 overflow-y-auto p-3">
+                {pickerLoading && (
+                  <div className="flex justify-center py-10">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                )}
+                {!pickerLoading && pickerProducts.length === 0 && (
+                  <p className="text-center text-sm text-muted-foreground py-10">
+                    {browsing ? "No products in this category" : "No products found"}
+                  </p>
+                )}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {pickerProducts.map((p: any) => {
                     const img = productImage(p);
                     return (
                       <button
                         key={p.id}
-                        className="w-full flex items-center gap-3 p-2 rounded hover:bg-muted text-left"
+                        className="text-left group"
                         onClick={() => setVariantPick({ product: p, variant: null })}
                       >
-                        {img ? (
-                          <img src={img} alt={p.name} className="w-12 h-12 object-cover rounded" />
-                        ) : (
-                          <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
-                            <Package className="h-5 w-5 text-muted-foreground" />
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm line-clamp-1">{p.name}</p>
-                          <p className="text-xs text-muted-foreground">{formatCurrency(p.base_price)}</p>
+                        <div className="aspect-square bg-muted rounded-lg overflow-hidden mb-1.5">
+                          {img ? (
+                            <img src={img} alt={p.name} loading="lazy" className="w-full h-full object-cover group-active:scale-95 transition-transform" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Package className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                          )}
                         </div>
+                        <p className="text-xs font-medium line-clamp-2 leading-tight">{p.name}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{formatCurrency(p.base_price)}</p>
                       </button>
                     );
                   })}
@@ -569,7 +725,9 @@ const AdminAddOrder = () => {
             </>
           ) : (
             <div className="flex-1 overflow-y-auto p-4">
-              <Button variant="ghost" size="sm" onClick={() => setVariantPick(null)} className="mb-3">← Back</Button>
+              <Button variant="ghost" size="sm" onClick={() => setVariantPick(null)} className="mb-3">
+                <ChevronLeft className="h-4 w-4 mr-1" /> Back
+              </Button>
               {!productDetail ? (
                 <Loader2 className="h-6 w-6 animate-spin mx-auto" />
               ) : (
@@ -620,6 +778,17 @@ const AdminAddOrder = () => {
     </div>
   );
 };
+
+const CatChip = ({ label, active, onClick, small }: { label: string; active: boolean; onClick: () => void; small?: boolean }) => (
+  <button
+    onClick={onClick}
+    className={`shrink-0 snap-start whitespace-nowrap rounded-full border transition-colors ${
+      small ? "px-3 py-1 text-xs" : "px-3.5 py-1.5 text-sm"
+    } ${active ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"}`}
+  >
+    {label}
+  </button>
+);
 
 const Row = ({ label, value, bold }: { label: string; value: string; bold?: boolean }) => (
   <div className={`flex items-center justify-between text-sm ${bold ? "font-bold text-base" : ""}`}>

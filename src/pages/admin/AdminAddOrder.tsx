@@ -134,9 +134,11 @@ const AdminAddOrder = () => {
 
   // Load images/variants for picked product
   const [productDetail, setProductDetail] = useState<any | null>(null);
+  const [selectedVariant, setSelectedVariant] = useState<any | null>(null);
   useEffect(() => {
     const fetchDetail = async () => {
-      if (!variantPick) { setProductDetail(null); return; }
+      if (!variantPick) { setProductDetail(null); setSelectedVariant(null); return; }
+      setSelectedVariant(null);
       const { data } = await supabase
         .from("products")
         .select(`

@@ -708,7 +708,7 @@ const AdminOrders = () => {
 
       {/* Orders Grid */}
       {ordersLoading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-3">
           {Array.from({ length: 16 }).map((_, i) => (
             <Skeleton key={i} className="h-64 w-full" />
           ))}

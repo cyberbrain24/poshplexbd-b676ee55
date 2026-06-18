@@ -1,0 +1,2 @@
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS fulfillment_issue TEXT CHECK (fulfillment_issue IS NULL OR fulfillment_issue IN ('stock_out','print_issues','courier_issues','other_issues'));
+CREATE INDEX IF NOT EXISTS idx_orders_fulfillment_issue ON public.orders(fulfillment_issue) WHERE fulfillment_issue IS NOT NULL;

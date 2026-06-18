@@ -708,7 +708,7 @@ const AdminOrders = () => {
 
       {/* Orders Grid */}
       {ordersLoading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-3">
           {Array.from({ length: 16 }).map((_, i) => (
             <Skeleton key={i} className="h-64 w-full" />
           ))}
@@ -718,7 +718,7 @@ const AdminOrders = () => {
           No orders found
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-3">
           {orders?.map((order) => {
             const items = (order.items || []) as any[];
             const itemImages = items.map((it) => {
@@ -838,6 +838,11 @@ const AdminOrders = () => {
                     <Badge className={`${paymentStatusColors[order.payment_status]} text-[10px] px-1.5 py-0`} variant="outline">
                       {order.payment_status.replace('_', ' ')}
                     </Badge>
+                    {(order as any).fulfillment_issue && (
+                      <Badge className="bg-red-700 hover:bg-red-700 text-white border-red-700 text-[10px] px-1.5 py-0">
+                        {({ stock_out: 'Stock Out', print_issues: 'Print Issues', courier_issues: 'Courier Issues', other_issues: 'Others Issues' } as Record<string, string>)[(order as any).fulfillment_issue]}
+                      </Badge>
+                    )}
                   </div>
 
                   <div className="text-[10px] text-muted-foreground truncate">

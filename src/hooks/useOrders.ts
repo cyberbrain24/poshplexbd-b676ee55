@@ -56,6 +56,7 @@ export interface Order {
   customer_called_at: string | null;
   call_center_notes: string | null;
   consignment_id?: string | null;
+  fulfillment_issue?: 'stock_out' | 'print_issues' | 'courier_issues' | 'other_issues' | null;
   created_at: string;
   updated_at: string;
   customer?: {

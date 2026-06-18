@@ -5,9 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { PackageCheck, Search, Copy, Phone, MapPin, Loader2, Inbox, CheckCircle2, RefreshCw, X, ExternalLink } from "lucide-react";
+import { PackageCheck, Search, Copy, Phone, Loader2, Inbox, CheckCircle2, RefreshCw, X, ExternalLink, StickyNote, AlertTriangle } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import { useSyncSteadfastStatus } from "@/hooks/useSteadfast";
 import OrderDetailModal from "@/components/admin/OrderDetailModal";
@@ -33,6 +40,22 @@ const saveReadySet = (set: Set<string>) => {
 };
 
 type StatusFilter = "all" | "not_ready" | "ready";
+type IssueValue = "stock_out" | "print_issues" | "courier_issues" | "other_issues";
+type IssueFilter = "all" | "none" | IssueValue;
+
+export const ISSUE_LABELS: Record<IssueValue, string> = {
+  stock_out: "Stock Out",
+  print_issues: "Print Issues",
+  courier_issues: "Courier Issues",
+  other_issues: "Others Issues",
+};
+
+const ISSUE_OPTIONS: { value: IssueValue; label: string }[] = [
+  { value: "stock_out", label: ISSUE_LABELS.stock_out },
+  { value: "print_issues", label: ISSUE_LABELS.print_issues },
+  { value: "courier_issues", label: ISSUE_LABELS.courier_issues },
+  { value: "other_issues", label: ISSUE_LABELS.other_issues },
+];
 
 interface FulfillmentItem {
   id: string;
@@ -60,17 +83,17 @@ interface FulfillmentOrder {
   shipping_name: string;
   shipping_phone: string;
   shipping_address: string;
-  shipping_division: { name: string } | null;
-  shipping_thana: { name: string } | null;
+  customer_notes: string | null;
+  internal_notes: string | null;
+  fulfillment_issue: IssueValue | null;
   items: FulfillmentItem[];
 }
-
-const PAGE_SIZE = 20;
 
 const AdminOrderFulfillment = () => {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [issueFilter, setIssueFilter] = useState<IssueFilter>("all");
   const [openOrderId, setOpenOrderId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
@@ -83,8 +106,7 @@ const AdminOrderFulfillment = () => {
           id, order_number, order_status, payment_status, total_amount,
           payment_method_type, consignment_id, created_at,
           shipping_name, shipping_phone, shipping_address,
-          shipping_division:divisions(name),
-          shipping_thana:thanas(name),
+          customer_notes, internal_notes, fulfillment_issue,
           items:order_items(
             id, product_id, product_name, variant_sku, variant_details, quantity, unit_price,
             product:products(id, images:product_images(image_url, sort_order))
@@ -118,27 +140,54 @@ const AdminOrderFulfillment = () => {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  const toggleReady = useCallback((orderId: string) => {
-    setReadySet((prev) => {
-      const next = new Set(prev);
-      if (next.has(orderId)) {
-        next.delete(orderId);
-        toast.success("Moved back to Not Ready");
-      } else {
-        next.add(orderId);
-        toast.success("Marked as Ready");
+  const setIssue = useCallback(
+    async (orderId: string, value: IssueValue | null) => {
+      const { error } = await supabase
+        .from("orders")
+        .update({ fulfillment_issue: value })
+        .eq("id", orderId);
+      if (error) {
+        toast.error("Failed to update status");
+        return;
       }
-      saveReadySet(next);
-      return next;
-    });
-  }, []);
+      qc.invalidateQueries({ queryKey: ["fulfillment-orders"] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+    [qc]
+  );
+
+  const toggleReady = useCallback(
+    (orderId: string) => {
+      setReadySet((prev) => {
+        const next = new Set(prev);
+        if (next.has(orderId)) {
+          next.delete(orderId);
+          toast.success("Moved back to Not Ready");
+        } else {
+          next.add(orderId);
+          toast.success("Marked as Ready");
+          // Clear issue status on ready
+          void setIssue(orderId, null);
+        }
+        saveReadySet(next);
+        return next;
+      });
+    },
+    [setIssue]
+  );
 
   const allOrders = data?.orders ?? [];
   const orders = useMemo(() => {
-    if (statusFilter === "ready") return allOrders.filter((o) => readySet.has(o.id));
-    if (statusFilter === "not_ready") return allOrders.filter((o) => !readySet.has(o.id));
-    return allOrders;
-  }, [allOrders, statusFilter, readySet]);
+    let list = allOrders;
+    if (statusFilter === "ready") list = list.filter((o) => readySet.has(o.id));
+    else if (statusFilter === "not_ready") list = list.filter((o) => !readySet.has(o.id));
+
+    if (issueFilter !== "all") {
+      if (issueFilter === "none") list = list.filter((o) => !o.fulfillment_issue);
+      else list = list.filter((o) => o.fulfillment_issue === issueFilter);
+    }
+    return list;
+  }, [allOrders, statusFilter, readySet, issueFilter]);
 
   const syncAllSteadfast = useSyncSteadfastStatus();
 
@@ -173,6 +222,8 @@ const AdminOrderFulfillment = () => {
     { key: "ready", label: "Mark as Ready" },
   ];
 
+  const showIssueFilter = statusFilter === "all" || statusFilter === "not_ready";
+
   return (
     <div className="p-4 md:p-6 space-y-4">
       <div className="flex flex-wrap items-center gap-3 justify-between">
@@ -200,6 +251,22 @@ const AdminOrderFulfillment = () => {
               {f.label}
             </Button>
           ))}
+          {showIssueFilter && (
+            <Select value={issueFilter} onValueChange={(v) => setIssueFilter(v as IssueFilter)}>
+              <SelectTrigger className="h-9 w-44">
+                <SelectValue placeholder="All issues" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All issues</SelectItem>
+                <SelectItem value="none">None</SelectItem>
+                {ISSUE_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <div className="relative">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -267,6 +334,7 @@ const AdminOrderFulfillment = () => {
               isReady={readySet.has(order.id)}
               onOpen={() => setOpenOrderId(order.id)}
               onToggleReady={() => toggleReady(order.id)}
+              onChangeIssue={(v) => setIssue(order.id, v)}
             />
           ))}
         </div>
@@ -288,17 +356,10 @@ interface CardProps {
   onOpen: () => void;
   onToggleReady: () => void;
   isReady: boolean;
+  onChangeIssue: (v: IssueValue | null) => void;
 }
 
-const FulfillmentCard = ({ order, onOpen, onToggleReady, isReady }: CardProps) => {
-  const location = useMemo(() => {
-    const parts = [
-      order.shipping_division?.name,
-      order.shipping_thana?.name,
-    ].filter(Boolean);
-    return parts.join(" / ");
-  }, [order]);
-
+const FulfillmentCard = ({ order, onOpen, onToggleReady, isReady, onChangeIssue }: CardProps) => {
   const copyText = async (text: string, label: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -327,6 +388,9 @@ const FulfillmentCard = ({ order, onOpen, onToggleReady, isReady }: CardProps) =
   };
 
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
+  const note = order.customer_notes?.trim() || order.internal_notes?.trim() || "";
+  const issue = order.fulfillment_issue;
+  const issueLabel = issue ? ISSUE_LABELS[issue] : "None";
 
   return (
     <div
@@ -376,11 +440,6 @@ const FulfillmentCard = ({ order, onOpen, onToggleReady, isReady }: CardProps) =
             <Badge variant="outline" className="capitalize">
               {order.order_status}
             </Badge>
-            {order.payment_method_type && (
-              <Badge variant="secondary" className="uppercase text-[10px]">
-                {order.payment_method_type}
-              </Badge>
-            )}
           </div>
           <div className="flex items-center gap-2">
             {order.consignment_id ? (
@@ -423,10 +482,10 @@ const FulfillmentCard = ({ order, onOpen, onToggleReady, isReady }: CardProps) =
             <Phone className="w-3 h-3" />
             {order.shipping_phone}
           </button>
-          {location && (
-            <div className="text-xs text-muted-foreground flex items-center gap-1">
-              <MapPin className="w-3 h-3" />
-              {location}
+          {note && (
+            <div className="text-xs text-muted-foreground flex items-start gap-1">
+              <StickyNote className="w-3 h-3 mt-0.5 shrink-0" />
+              <span className="line-clamp-2 break-words">{note}</span>
             </div>
           )}
           <div className="text-xs text-muted-foreground">
@@ -438,13 +497,42 @@ const FulfillmentCard = ({ order, onOpen, onToggleReady, isReady }: CardProps) =
         </div>
 
         {/* Action */}
-        <div className="flex lg:flex-col items-end justify-end gap-2 shrink-0">
+        <div
+          className="flex lg:flex-col items-stretch lg:items-end justify-end gap-2 shrink-0 w-full lg:w-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Select
+            value={issue ?? "none"}
+            onValueChange={(v) => onChangeIssue(v === "none" ? null : (v as IssueValue))}
+          >
+            <SelectTrigger
+              className={`h-9 w-full lg:w-44 ${
+                issue
+                  ? "bg-red-700 hover:bg-red-800 text-white border-red-700 focus:ring-red-700 [&>svg]:text-white"
+                  : ""
+              }`}
+            >
+              {issue ? (
+                <span className="flex items-center gap-1.5 truncate">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  {issueLabel}
+                </span>
+              ) : (
+                <SelectValue placeholder="Status" />
+              )}
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">None</SelectItem>
+              {ISSUE_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {isReady ? (
             <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleReady();
-              }}
+              onClick={onToggleReady}
               className="w-full lg:w-auto gap-2 text-white hover:opacity-90"
               style={{ backgroundColor: '#16a34a' }}
             >
@@ -453,10 +541,7 @@ const FulfillmentCard = ({ order, onOpen, onToggleReady, isReady }: CardProps) =
             </Button>
           ) : (
             <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleReady();
-              }}
+              onClick={onToggleReady}
               className="w-full lg:w-auto gap-2 bg-black text-white hover:bg-black/90"
             >
               <PackageCheck className="w-4 h-4" />

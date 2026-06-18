@@ -17,6 +17,7 @@ import { useProductSearch } from "@/hooks/useProductSearch";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/currency";
 import { toast } from "sonner";
+import VariantSelector from "@/components/product/VariantSelector";
 
 interface SelectedItem {
   id: string;
@@ -133,15 +134,17 @@ const AdminAddOrder = () => {
 
   // Load images/variants for picked product
   const [productDetail, setProductDetail] = useState<any | null>(null);
+  const [selectedVariant, setSelectedVariant] = useState<any | null>(null);
   useEffect(() => {
     const fetchDetail = async () => {
-      if (!variantPick) { setProductDetail(null); return; }
+      if (!variantPick) { setProductDetail(null); setSelectedVariant(null); return; }
+      setSelectedVariant(null);
       const { data } = await supabase
         .from("products")
         .select(`
           id, name, base_price, sku,
           images:product_images(id, image_url, is_main, sort_order),
-          variants:product_variants(id, sku, selling_price, stock_quantity, is_active, image_url, color:colors(name), size:sizes(label))
+          variants:product_variants(id, sku, selling_price, stock_quantity, is_active, image_url, color:colors(id, name, hex_code), size:sizes(id, label, sort_order), custom_variant:custom_variants(id, label, sort_order))
         `)
         .eq("id", variantPick.product.id)
         .single();
@@ -724,53 +727,76 @@ const AdminAddOrder = () => {
               </div>
             </>
           ) : (
-            <div className="flex-1 overflow-y-auto p-4">
-              <Button variant="ghost" size="sm" onClick={() => setVariantPick(null)} className="mb-3">
-                <ChevronLeft className="h-4 w-4 mr-1" /> Back
-              </Button>
-              {!productDetail ? (
-                <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-              ) : (
-                <>
-                  <div className="flex gap-3 mb-4">
-                    {productImage(productDetail) ? (
-                      <img src={productImage(productDetail)!} alt={productDetail.name} className="w-20 h-20 object-cover rounded" />
-                    ) : null}
-                    <div>
-                      <p className="font-semibold">{productDetail.name}</p>
-                      <p className="text-sm text-muted-foreground">Base: {formatCurrency(productDetail.base_price)}</p>
-                    </div>
+            <div className="flex-1 flex flex-col min-h-0">
+              <div className="flex-1 overflow-y-auto p-4">
+                <Button variant="ghost" size="sm" onClick={() => setVariantPick(null)} className="mb-3 -ml-2">
+                  <ChevronLeft className="h-4 w-4 mr-1" /> Back
+                </Button>
+                {!productDetail ? (
+                  <div className="flex justify-center py-10">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                   </div>
-
-                  {productDetail.variants && productDetail.variants.length > 0 ? (
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium">Select variant:</p>
-                      {productDetail.variants.filter((v: any) => v.is_active).map((v: any) => (
-                        <button
-                          key={v.id}
-                          onClick={() => addItem(v)}
-                          className="w-full flex items-center gap-3 p-3 border rounded hover:bg-muted text-left"
-                        >
-                          {v.image_url ? (
-                            <img src={v.image_url} alt="" className="w-12 h-12 object-cover rounded" />
-                          ) : null}
-                          <div className="flex-1">
-                            <p className="text-sm font-medium">
-                              {[v.color?.name, v.size?.label].filter(Boolean).join(" / ") || v.sku}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              SKU: {v.sku} • Stock: {v.stock_quantity ?? 0}
-                            </p>
-                          </div>
-                          <p className="text-sm font-semibold">{formatCurrency(v.selling_price ?? productDetail.base_price)}</p>
-                        </button>
-                      ))}
+                ) : (
+                  <>
+                    <div className="flex gap-3 mb-5">
+                      {(selectedVariant?.image_url || productImage(productDetail)) ? (
+                        <img
+                          src={selectedVariant?.image_url || productImage(productDetail)!}
+                          alt={productDetail.name}
+                          className="w-20 h-20 object-cover rounded-lg"
+                        />
+                      ) : (
+                        <div className="w-20 h-20 bg-muted rounded-lg flex items-center justify-center">
+                          <Package className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold line-clamp-2">{productDetail.name}</p>
+                        <p className="text-base font-bold mt-0.5">
+                          {formatCurrency(selectedVariant?.selling_price ?? productDetail.base_price)}
+                        </p>
+                        {selectedVariant && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            SKU: {selectedVariant.sku} • Stock: {selectedVariant.stock_quantity ?? 0}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  ) : (
-                    <Button onClick={() => addItem(null)} className="w-full">Add to order</Button>
-                  )}
-                </>
-              )}
+
+                    {productDetail.variants && productDetail.variants.length > 0 ? (
+                      <VariantSelector
+                        variants={productDetail.variants as any}
+                        onVariantChange={(v) => setSelectedVariant(v)}
+                      />
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        This product has no variants.
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Sticky add button */}
+              <div className="border-t p-3 bg-background pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+                {productDetail?.variants && productDetail.variants.length > 0 ? (
+                  <Button
+                    className="w-full h-12 text-base"
+                    disabled={!selectedVariant}
+                    onClick={() => selectedVariant && addItem(selectedVariant)}
+                  >
+                    {selectedVariant ? "Add to Order" : "Select a variant"}
+                  </Button>
+                ) : (
+                  <Button
+                    className="w-full h-12 text-base"
+                    disabled={!productDetail}
+                    onClick={() => addItem(null)}
+                  >
+                    Add to Order
+                  </Button>
+                )}
+              </div>
             </div>
           )}
         </SheetContent>

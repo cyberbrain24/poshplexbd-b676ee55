@@ -1456,6 +1456,8 @@ export type Database = {
           consignment_id: string | null
           courier_name: string | null
           created_at: string
+          created_by_source: string
+          created_by_user_id: string | null
           currency: string
           customer_called_at: string | null
           customer_id: string | null
@@ -1509,6 +1511,8 @@ export type Database = {
           consignment_id?: string | null
           courier_name?: string | null
           created_at?: string
+          created_by_source?: string
+          created_by_user_id?: string | null
           currency?: string
           customer_called_at?: string | null
           customer_id?: string | null
@@ -1562,6 +1566,8 @@ export type Database = {
           consignment_id?: string | null
           courier_name?: string | null
           created_at?: string
+          created_by_source?: string
+          created_by_user_id?: string | null
           currency?: string
           customer_called_at?: string | null
           customer_id?: string | null

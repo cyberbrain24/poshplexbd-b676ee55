@@ -331,11 +331,12 @@ const Checkout = () => {
   };
 
   // Create customer account via edge function and auto-login
-  const createCustomerAccount = async (customerId: string, phone: string, email?: string, name?: string, password?: string) => {
+  const createCustomerAccount = async (customerId: string, phone: string, email?: string, name?: string, _password?: string) => {
     try {
-      const pwd = password && password.length >= 6 ? password : DEFAULT_PASSWORD;
+      // Server always uses DEFAULT_PASSWORD; never send caller-controlled passwords
+      // to the public account-creation endpoint.
       const { error } = await supabase.functions.invoke('create-customer-account', {
-        body: { customerId, phone, email, name, password: pwd }
+        body: { customerId, phone, email, name }
       });
       if (error) {
         console.warn('Error creating customer account:', error);
@@ -346,7 +347,7 @@ const Checkout = () => {
       const phoneEmail = `${phone}@phone.local`;
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: phoneEmail,
-        password: pwd,
+        password: DEFAULT_PASSWORD,
       });
 
       if (signInError) {

@@ -179,18 +179,26 @@ const AdminMedia = () => {
 
   const handleDelete = async () => {
     if (!selectedFile) return;
+    const mainFile = resolveMainImage(selectedFile, files);
+    if (isDerivedThumbnail(selectedFile) && mainFile.name !== selectedFile.name) {
+      toast.error("You can't delete the thumbnail image because the main image is stored in the system.");
+      setIsDeleteOpen(false);
+      return;
+    }
 
     try {
+      const derivatives = getDerivativeImagesForMain(selectedFile, files);
+      const fileNames = [selectedFile.name, ...derivatives.map((file) => file.name)];
       await deleteMutation.mutateAsync({
         bucketId: selectedFile.bucket_id,
-        fileName: selectedFile.name,
+        fileNames,
       });
 
       // Also clean up any associated metadata
-      deleteMetadataMutation.mutate({
+      fileNames.forEach((filePath) => deleteMetadataMutation.mutate({
         bucketId: selectedFile.bucket_id,
-        filePath: selectedFile.name,
-      });
+        filePath,
+      }));
 
       setIsDeleteOpen(false);
       setIsPreviewOpen(false);
@@ -232,8 +240,11 @@ const AdminMedia = () => {
 
     for (const file of filesToDelete) {
       try {
-        await deleteMutation.mutateAsync({ bucketId: file.bucket_id, fileName: file.name });
-        deleteMetadataMutation.mutate({ bucketId: file.bucket_id, filePath: file.name });
+        const mainFile = resolveMainImage(file, files);
+        if (isDerivedThumbnail(file) && mainFile.name !== file.name) continue;
+        const fileNames = [file.name, ...getDerivativeImagesForMain(file, files).map((item) => item.name)];
+        await deleteMutation.mutateAsync({ bucketId: file.bucket_id, fileNames });
+        fileNames.forEach((filePath) => deleteMetadataMutation.mutate({ bucketId: file.bucket_id, filePath }));
         deleted++;
       } catch (e) {
         console.error("Bulk delete error for", file.name, e);

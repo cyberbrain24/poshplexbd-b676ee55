@@ -1,8 +1,9 @@
 import { useState, useRef, useMemo } from "react";
-import { useMediaFiles, useUploadMedia, useDeleteMedia, useRenameMedia, MediaFile } from "@/hooks/useMedia";
+import { useMediaFiles, useUploadMedia, useDeleteMediaFiles, useRenameMedia, MediaFile } from "@/hooks/useMedia";
 import { useAllMediaMetadata, useDeleteMediaMetadata } from "@/hooks/useMediaMetadata";
 import { useMediaReferences, MediaReference } from "@/hooks/useMediaReferences";
 import { getFileType, formatFileSize, copyFileUrl } from "@/services/media.service";
+import { resolveMainImage, isDerivedThumbnail, getDerivativeImagesForMain } from "@/lib/mediaThumbResolve";
 import MediaSeoEditor from "@/components/admin/MediaSeoEditor";
 import ThumbnailBackfillCard from "@/components/admin/ThumbnailBackfillCard";
 import ConvertImagesToWebpCard from "@/components/admin/ConvertImagesToWebpCard";
@@ -108,7 +109,7 @@ const AdminMedia = () => {
   const { data: allMetadata = [] } = useAllMediaMetadata();
   const { data: referencesMap } = useMediaReferences();
   const uploadMutation = useUploadMedia();
-  const deleteMutation = useDeleteMedia();
+  const deleteMutation = useDeleteMediaFiles();
   const deleteMetadataMutation = useDeleteMediaMetadata();
   const renameMutation = useRenameMedia();
 

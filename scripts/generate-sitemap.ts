@@ -132,16 +132,26 @@ async function main() {
   const categories = await fetchTable(
     "categories?select=name,updated_at&limit=200",
   );
-  const categoryEntries: UrlEntry[] = categories.map((c: any) => {
-    // Match the app's slug logic in CategoryHeader.tsx: lowercase + spaces->dashes.
-    const slug = (c.name || "").toLowerCase().trim().replace(/\s+/g, "-");
-    return {
-      loc: `${BASE_URL}/category/${slug}`,
-      lastmod: fmt(c.updated_at),
-      changefreq: "daily" as const,
-      priority: 0.8,
-    };
-  });
+  const categoryEntries: UrlEntry[] = categories
+    .map((c: any) => {
+      // URL-safe slug for sitemap: lowercase, & -> and, strip unsafe chars.
+      const slug = (c.name || "")
+        .toLowerCase()
+        .trim()
+        .replace(/&/g, "and")
+        .replace(/[^\w\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-");
+      return slug
+        ? {
+            loc: `${BASE_URL}/category/${encodeURI(slug)}`,
+            lastmod: fmt(c.updated_at),
+            changefreq: "daily" as const,
+            priority: 0.8,
+          }
+        : null;
+    })
+    .filter((e): e is UrlEntry => e !== null);
 
   const outDir = resolve("public");
   mkdirSync(outDir, { recursive: true });

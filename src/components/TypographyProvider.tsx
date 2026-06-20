@@ -1,6 +1,5 @@
 import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { findFont } from "@/lib/fontCatalog";
 import {
   normalizeTypographySettings,

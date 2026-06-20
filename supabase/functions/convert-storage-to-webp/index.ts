@@ -72,8 +72,8 @@ async function findPending(
         continue;
       }
       const ext = extOf(entry.name);
-      if (SKIP_EXT.has(ext)) continue;
-      if (!RASTER_EXT.has(ext)) continue; // unknown — skip
+      if (SKIP_EXT.has(ext)) continue; // already webp
+      if (!IMAGE_EXT.has(ext)) continue; // not an image (svg, pdf, etc.)
       const { data: lastError } = await admin
         .from("image_migration_log")
         .select("error")

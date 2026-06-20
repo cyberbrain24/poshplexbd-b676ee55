@@ -483,22 +483,23 @@ export const uploadProductImage = async (
     throw new Error('Invalid product ID format.');
   }
 
-  const fileExt = file.name.split(".").pop()?.toLowerCase();
-  const allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-  if (!fileExt || !allowedExts.includes(fileExt)) {
-    throw new Error('Invalid file extension.');
-  }
+  // Auto-convert to WebP under 250KB before upload
+  const { toWebpUnder250 } = await import("@/lib/imageToWebp");
+  const webpFile = await toWebpUnder250(file).catch(() => file);
 
   const ts = Date.now();
-  const fileName = `${productId}/${ts}.${fileExt}`;
+  const ext = webpFile.type === "image/webp" ? "webp" : (file.name.split(".").pop()?.toLowerCase() || "webp");
+  const fileName = `${productId}/${ts}.${ext}`;
 
   const { error: uploadError } = await supabase.storage
     .from("product-images")
-    .upload(fileName, file);
+    .upload(fileName, webpFile, { contentType: webpFile.type });
   if (uploadError) throw uploadError;
 
   const { data } = supabase.storage.from("product-images").getPublicUrl(fileName);
   const url = data.publicUrl;
+  // Use the converted file for variant generation too
+  file = webpFile;
 
   // Generate + upload variants in parallel; never let variant failures block the main upload.
   let thumb_url: string | null = null;

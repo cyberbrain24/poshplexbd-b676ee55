@@ -215,8 +215,11 @@ export default function AdminProductAI({ embedded = false }: Props) {
   const onUpload = async (file: File) => {
     setAttaching(true);
     try {
-      const path = `ai-uploads/${Date.now()}-${file.name.replace(/[^a-z0-9.-]/gi, "_")}`;
-      const { error } = await supabase.storage.from(PRODUCT_IMAGES_BUCKET).upload(path, file);
+      const { toWebpUnder250 } = await import("@/lib/imageToWebp");
+      const webpFile = await toWebpUnder250(file).catch(() => file);
+      const safeName = (webpFile.name || file.name).replace(/[^a-z0-9.-]/gi, "_");
+      const path = `ai-uploads/${Date.now()}-${safeName}`;
+      const { error } = await supabase.storage.from(PRODUCT_IMAGES_BUCKET).upload(path, webpFile, { contentType: webpFile.type });
       if (error) throw error;
       const { data } = supabase.storage.from(PRODUCT_IMAGES_BUCKET).getPublicUrl(path);
       setAttachedImageUrl(data.publicUrl);

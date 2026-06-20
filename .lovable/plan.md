@@ -1,73 +1,66 @@
-## Generate true smaller thumbnails for grid images (and backfill existing)
+## Goal
 
-Goal: category and subcategory grids load a lightweight 400 px WebP thumbnail (~30–80 KB) instead of the original 500 KB+ JPEG. Product detail page keeps using a larger image, zoom keeps the original. Existing uploaded images are reprocessed in the background.
+Every new image upload is auto-converted to WebP, capped at 250 KB, and stored with a `.webp` extension only. No JPEG/PNG/HEIC ever lands in storage going forward. Existing files are untouched (no destructive migration) — they keep working, and the existing `regenerate-image-thumbnails` flow already handles backfill if needed.
 
-### Schema
+## Approach (no system interruption)
 
-Migration: add two nullable columns to `product_images` so we can store the resized variant URLs alongside the original.
+One shared client-side helper does the work. Every upload call site is updated to use it. Because conversion happens in the browser before `storage.upload`, there's zero backend risk, no schema change, no edge function change, no RLS change.
 
-- `thumb_url TEXT` — 400 px wide, WebP q=72
-- `medium_url TEXT` — 800 px wide, WebP q=78
-- `image_url` (existing) stays the original — used for zoom and as fallback.
+### 1. New helper: `src/lib/imageToWebp.ts`
 
-No RLS changes; existing policies cover the new columns.
+```ts
+toWebpUnder250(file: File, opts?: { maxEdge?: number }) → Promise<File>
+```
 
-### Upload pipeline (new uploads)
+- Accepts any `image/*` (JPG, PNG, HEIC-as-image, etc.). GIF is passed through untouched (animation would be lost) — documented exception.
+- Draws to a `<canvas>`, resizes longest edge down progressively (start at 2000 px, then 1600, 1280, 1024, 800), and re-encodes as `image/webp` with quality stepping 0.85 → 0.5.
+- Stops at the first variant ≤ **250 × 1024 bytes**. If even 800 px @ q=0.5 exceeds 250 KB (extremely rare), returns the smallest produced WebP — never falls back to original format.
+- Renames the file: `<basename>.webp`, MIME `image/webp`.
+- Pure browser API (canvas + `toBlob`), no extra dependency.
 
-`src/hooks/useProducts.ts → uploadProductImage`:
+### 2. Replace existing compressors
 
-1. Upload the original as today.
-2. Client-side, build two resized WebP blobs with a `<canvas>` (no extra deps): 400 px and 800 px on the long edge, preserving aspect.
-3. Upload both to the same `product-images` bucket under `<productId>/thumbs/<ts>-400.webp` and `<productId>/medium/<ts>-800.webp`.
-4. Return `{ url, thumb_url, medium_url }`.
+`src/lib/imageCompress.ts`:
+- `compressProductImage` → thin wrapper around `toWebpUnder250` (keeps current import paths working).
+- `compressProfileImage` → same, but with a 400×400 center-crop step before WebP encode (matches today's avatar UX). 250 KB cap still applies (well under for a 400 px square).
 
-Update the two callers that insert into `product_images` (admin product modal media uploads and bulk image attach) so the new columns get populated.
+### 3. Update every upload site
 
-### Display
+Each one runs the file through `toWebpUnder250` and uploads with `contentType: "image/webp"` and a `.webp` filename:
 
-`src/components/ui/responsive-image.tsx`:
+- `src/hooks/useProducts.ts` → `uploadProductImage` (originals + already-webp thumb/medium variants — convert original too)
+- `src/services/product.service.ts` line 175 (product image upload)
+- `src/services/media.service.ts` `uploadMediaFile` (admin Media library)
+- `src/components/product/ReviewImageUpload.tsx` (customer review photos)
+- `src/components/admin/MasterDataModal.tsx` (category/brand/etc. images)
+- `src/components/admin/PromotionModal.tsx` (promo banners)
+- `src/components/admin/AdminProductAI.tsx` (AI product image upload)
+- `src/hooks/useSiteBranding.ts` (logo/favicon — **SVG passes through unchanged**, only raster → webp)
+- `src/pages/CustomerAccount.tsx` (already compresses; switch to webp helper)
 
-- Add optional `thumbUrl?: string` and `mediumUrl?: string` props.
-- Per preset, pick the smallest available variant:
-  - `grid` → `thumbUrl ?? mediumUrl ?? src`
-  - `detail` → `mediumUrl ?? src`
-  - `zoom` → `src`
-- Keep the existing `srcSet`/`sizes` behaviour for the picked URL.
+Skipped:
+- `src/pages/admin/AdminMusic.tsx` — audio bucket, not images.
+- `regenerate-image-thumbnails` edge function — already produces WebP, no change needed.
 
-`src/components/category/ProductGrid.tsx` — pass `thumbUrl` and `mediumUrl` from `product.images` into `ResponsiveImage`. Same change in any other list view that already uses `preset="grid"` (Home featured / category gallery components).
+### 4. UI copy
 
-### Hook query update
+Update upload helper text everywhere it shows "PNG, JPG up to 5MB" → **"PNG / JPG / WebP — auto-converted to WebP, max 250 KB after compression"**. Files larger than 5 MB are still rejected up front (same as today) so we don't load a 50 MB photo into a canvas.
 
-`useOptimizedCategoryProducts` (and `useOptimizedProducts`'s list select) — extend the `images:product_images(...)` projection to include `thumb_url, is_main` and `medium_url`. Tiny payload increase, big bandwidth win on the actual `<img>` request.
+## Edge cases
 
-### Backfill (existing images)
+- **Animated GIF**: passed through as-is (one-line documented carve-out). Static GIF is converted.
+- **SVG** (logo/favicon): passed through, vector — already tiny.
+- **HEIC**: most browsers can decode via `<img>`; if decode fails the helper throws and the existing toast surfaces "Invalid image" — same UX as today.
+- **Existing storage files**: untouched. Old `.jpg` URLs keep working. The product-image table already stores `thumb_url` / `medium_url` as WebP for new uploads.
 
-Edge function `regenerate-image-thumbnails`:
+## Out of scope
 
-- Admin-only (verifies Bearer token + `admin` role like the existing pattern).
-- Accepts `{ batch_size?: number, dry_run?: boolean }`. Default batch 25.
-- Selects `product_images` rows where `thumb_url IS NULL OR medium_url IS NULL`, ordered by `created_at` so newest is processed first.
-- For each row: fetches the original from storage, resizes with `https://deno.land/x/imagescript` (pure-WASM, no native deps), uploads `thumbs/...webp` and `medium/...webp`, then updates the row with the new URLs.
-- Returns `{ processed, remaining, errors }` so the admin UI can loop until done.
+- No destructive re-encode of the 260 existing files in storage (avoids any chance of breaking live pages). If you want a one-time backfill later, the existing `regenerate-image-thumbnails` admin button is the right place.
+- No RLS, no bucket changes, no migration.
 
-Admin trigger: a small section on `/admin/media` ("Regenerate thumbnails — N images pending") with a button that polls the function in a loop and shows progress. No cron — user starts it once after deploy.
+## Files touched
 
-### Out of scope
-
-- No change to RLS, buckets, review images, profile images, or media library uploads (only product images need this for now).
-- No paid image transformation — variants are precomputed and stored.
-- No change to the product detail page zoom/gallery layout.
-
-### Files touched
-
-- new migration (adds two columns)
-- `src/hooks/useProducts.ts` (upload + types)
-- `src/hooks/useOptimizedProducts.ts` (select)
-- `src/components/ui/responsive-image.tsx` (variant picker)
-- `src/components/category/ProductGrid.tsx` (pass thumb/medium urls)
-- `src/components/admin/products/*ProductModal*.tsx` (insert thumb/medium into product_images)
-- `src/types/product.ts` (image type fields)
-- new `supabase/functions/regenerate-image-thumbnails/index.ts`
-- `src/pages/admin/AdminMedia.tsx` (Regenerate button + progress)
-
-Expected outcome on `/category/fifa-collection`: per-card image transfer drops from ~500 KB JPEG → ~50 KB WebP (≈90% smaller), and the 8-card grid stops monopolising HTTP/2 connections during the LCP window.
+- new `src/lib/imageToWebp.ts`
+- `src/lib/imageCompress.ts` (rewritten as wrappers)
+- 9 upload call sites listed above (small edits — call helper, change contentType + filename ext)
+- minor copy text in `ReviewImageUpload.tsx` and any other visible upload labels

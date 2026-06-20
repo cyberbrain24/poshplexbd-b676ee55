@@ -119,12 +119,22 @@ export const fetchAllMediaFiles = async (): Promise<MediaFile[]> => {
  * Upload a file to the media bucket
  */
 export const uploadMediaFile = async (file: File): Promise<MediaFile> => {
-  const fileExt = file.name.split(".").pop();
+  // Auto-convert images to WebP under 250KB
+  let toUpload = file;
+  if (file.type.startsWith("image/")) {
+    try {
+      const { toWebpUnder250 } = await import("@/lib/imageToWebp");
+      toUpload = await toWebpUnder250(file);
+    } catch {
+      toUpload = file;
+    }
+  }
+  const fileExt = toUpload.type === "image/webp" ? "webp" : (file.name.split(".").pop() || "bin");
   const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
   const { error: uploadError } = await supabase.storage
     .from("media")
-    .upload(fileName, file);
+    .upload(fileName, toUpload, { contentType: toUpload.type });
 
   if (uploadError) throw uploadError;
 
@@ -138,8 +148,8 @@ export const uploadMediaFile = async (file: File): Promise<MediaFile> => {
     bucket_id: "media",
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-    size: file.size,
-    mime_type: file.type,
+    size: toUpload.size,
+    mime_type: toUpload.type,
     public_url: publicUrl,
   };
 };

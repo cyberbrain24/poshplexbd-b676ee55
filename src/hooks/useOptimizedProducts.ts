@@ -267,7 +267,11 @@ export const useOptimizedCategoryProducts = (
         }
       }
 
-      // Build the main query
+      // Build the main query.
+      // Note: variants are intentionally NOT fetched here. The grid only
+      // displays the base price + main image, so loading every variant
+      // (joined to colors/sizes/materials) was wasteful and was a major
+      // contributor to slow category pages.
       let query = supabase
         .from("products")
         .select(`
@@ -276,8 +280,7 @@ export const useOptimizedCategoryProducts = (
           base_price,
           created_at,
           category:categories(id, name),
-          images:product_images(id, image_url, is_main),
-          variants:product_variants(id, selling_price, is_active)
+          images:product_images(id, image_url, is_main)
         `)
         .eq("is_active", true);
 

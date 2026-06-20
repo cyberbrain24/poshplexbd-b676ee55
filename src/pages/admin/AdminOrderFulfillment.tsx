@@ -88,7 +88,7 @@ const AdminOrderFulfillment = () => {
           id, order_number, order_status, payment_status, total_amount,
           payment_method_type, consignment_id, created_at,
           shipping_name, shipping_phone, shipping_address,
-          customer_notes, internal_notes, fulfillment_issue,
+          customer_notes, internal_notes, fulfillment_issue, fulfillment_ready,
           items:order_items(
             id, product_id, product_name, variant_sku, variant_details, quantity, unit_price,
             product:products(id, images:product_images(image_url, sort_order))

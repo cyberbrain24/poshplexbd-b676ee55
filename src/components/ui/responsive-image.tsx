@@ -5,6 +5,10 @@ type ImagePreset = "grid" | "detail" | "zoom";
 
 interface ResponsiveImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, "sizes"> {
   src: string;
+  /** Optional ~400px WebP variant — used by the `grid` preset to ship a much smaller file. */
+  thumbUrl?: string | null;
+  /** Optional ~800px WebP variant — used by the `detail` preset. */
+  mediumUrl?: string | null;
   alt: string;
   fallback?: string;
   preset?: ImagePreset;
@@ -43,6 +47,8 @@ const PRESET_SIZES: Record<ImagePreset, { sizes: string; widths: { desktop: numb
  */
 const ResponsiveImage = ({
   src,
+  thumbUrl,
+  mediumUrl,
   alt,
   fallback = "/placeholder.svg",
   preset = "grid",
@@ -56,11 +62,19 @@ const ResponsiveImage = ({
   const [isInView, setIsInView] = useState(priority);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Pick the smallest acceptable variant for this preset. Falls through to the
+  // original `src` whenever the variant URL is missing (e.g. legacy uploads).
+  const pickedSrc = (() => {
+    if (preset === "grid") return thumbUrl || mediumUrl || src;
+    if (preset === "detail") return mediumUrl || src;
+    return src; // zoom — always full resolution
+  })();
+
   // Reset state when src changes
   useEffect(() => {
     setIsLoaded(false);
     setHasError(false);
-  }, [src]);
+  }, [pickedSrc]);
 
   // Lazy-load via IntersectionObserver
   useEffect(() => {
@@ -81,7 +95,7 @@ const ResponsiveImage = ({
   }, [priority, isInView]);
 
   const config = PRESET_SIZES[preset];
-  const imageSrc = hasError ? fallback : src;
+  const imageSrc = hasError ? fallback : pickedSrc;
 
   return (
     <div

@@ -111,6 +111,8 @@ export interface ProductImage {
   id: string;
   product_id: string;
   image_url: string;
+  thumb_url?: string | null;
+  medium_url?: string | null;
   alt_text: string | null;
   sort_order: number;
   is_main: boolean;

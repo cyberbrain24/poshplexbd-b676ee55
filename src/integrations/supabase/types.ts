@@ -1887,9 +1887,11 @@ export type Database = {
           image_url: string
           is_main: boolean
           material_id: string | null
+          medium_url: string | null
           product_id: string
           size_id: string | null
           sort_order: number
+          thumb_url: string | null
         }
         Insert: {
           alt_text?: string | null
@@ -1899,9 +1901,11 @@ export type Database = {
           image_url: string
           is_main?: boolean
           material_id?: string | null
+          medium_url?: string | null
           product_id: string
           size_id?: string | null
           sort_order?: number
+          thumb_url?: string | null
         }
         Update: {
           alt_text?: string | null
@@ -1911,9 +1915,11 @@ export type Database = {
           image_url?: string
           is_main?: boolean
           material_id?: string | null
+          medium_url?: string | null
           product_id?: string
           size_id?: string | null
           sort_order?: number
+          thumb_url?: string | null
         }
         Relationships: [
           {

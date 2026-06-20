@@ -272,18 +272,25 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
         // Upload images for new product
         for (const img of images) {
           let imageUrl = img.image_url;
-          
+          let thumbUrl: string | null = (img as any).thumb_url ?? null;
+          let mediumUrl: string | null = (img as any).medium_url ?? null;
+
           // Upload blob files to storage first
           if (imageUrl.startsWith("blob:")) {
             const response = await fetch(imageUrl);
             const blob = await response.blob();
             const file = new File([blob], `image-${Date.now()}.${blob.type.split('/')[1] || 'jpg'}`, { type: blob.type });
-            imageUrl = await uploadProductImage(file, newProduct.id);
+            const uploaded = await uploadProductImage(file, newProduct.id);
+            imageUrl = uploaded.url;
+            thumbUrl = uploaded.thumb_url;
+            mediumUrl = uploaded.medium_url;
           }
-          
+
           await addImage.mutateAsync({
             productId: newProduct.id,
             imageUrl,
+            thumbUrl,
+            mediumUrl,
             altText: img.alt_text || undefined,
             sortOrder: img.sort_order,
             isMain: img.is_main,
@@ -376,8 +383,13 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
         for (let i = 0; i < compressed.length; i++) {
           const file = compressed[i];
           let imageUrl: string;
+          let thumbUrl: string | null = null;
+          let mediumUrl: string | null = null;
           try {
-            imageUrl = await uploadProductImage(file, product.id);
+            const uploaded = await uploadProductImage(file, product.id);
+            imageUrl = uploaded.url;
+            thumbUrl = uploaded.thumb_url;
+            mediumUrl = uploaded.medium_url;
           } catch (err: any) {
             console.error("Upload failed:", err);
             toast.error(`"${validFiles[i].name}" upload failed: ${err?.message || "Unknown error"}`);
@@ -390,6 +402,8 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
             const inserted = await addImage.mutateAsync({
               productId: product.id,
               imageUrl,
+              thumbUrl,
+              mediumUrl,
               sortOrder: baseSort + i,
               isMain: false,
             });

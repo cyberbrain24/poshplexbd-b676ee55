@@ -27,14 +27,25 @@ const ProductGrid = ({ sortBy = "newest", filters }: ProductGridProps) => {
 
   const getMainImage = (product: typeof products[0]) => {
     const mainImage = product.images?.find(img => img.is_main);
-    return mainImage?.image_url || product.images?.[0]?.image_url || '/placeholder.svg';
+    const chosen = mainImage || product.images?.[0];
+    return {
+      src: chosen?.image_url || '/placeholder.svg',
+      thumb: (chosen as any)?.thumb_url ?? null,
+      medium: (chosen as any)?.medium_url ?? null,
+    };
   };
 
   const getHoverImage = (product: typeof products[0]) => {
     const images = product.images || [];
     if (images.length > 1) {
       const nonMainImage = images.find(img => !img.is_main);
-      return nonMainImage?.image_url || images[1]?.image_url;
+      const chosen = nonMainImage || images[1];
+      if (!chosen) return null;
+      return {
+        src: chosen.image_url,
+        thumb: (chosen as any)?.thumb_url ?? null,
+        medium: (chosen as any)?.medium_url ?? null,
+      };
     }
     return null;
   };
@@ -75,22 +86,27 @@ const ProductGrid = ({ sortBy = "newest", filters }: ProductGridProps) => {
     <section className="w-full px-6 mb-16">
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
         {products.map((product) => {
+          const mainImage = getMainImage(product);
           const hoverImage = getHoverImage(product);
-          
+
           return (
             <Link key={product.id} to={`/product/${generateProductSlug(product.name, product.id)}`}>
               <Card className="border-none shadow-none bg-transparent group cursor-pointer">
                 <CardContent className="p-0">
                   <div className="aspect-square mb-3 overflow-hidden bg-muted/10 relative">
                     <ResponsiveImage
-                      src={getMainImage(product)}
+                      src={mainImage.src}
+                      thumbUrl={mainImage.thumb}
+                      mediumUrl={mainImage.medium}
                       alt={product.name}
                       preset="grid"
                       className={`w-full h-full transition-all duration-300 ${hoverImage ? 'group-hover:opacity-0' : ''}`}
                     />
                     {hoverImage && (
                       <ResponsiveImage
-                        src={hoverImage}
+                        src={hoverImage.src}
+                        thumbUrl={hoverImage.thumb}
+                        mediumUrl={hoverImage.medium}
                         alt={`${product.name} alternate`}
                         preset="grid"
                         className="absolute inset-0 w-full h-full transition-all duration-300 opacity-0 group-hover:opacity-100"
@@ -103,7 +119,7 @@ const ProductGrid = ({ sortBy = "newest", filters }: ProductGridProps) => {
                         productId={product.id}
                         name={product.name}
                         price={product.base_price}
-                        image={getMainImage(product)}
+                        image={mainImage.src}
                         slug={generateProductSlug(product.name, product.id)}
                         className="bg-background/70 backdrop-blur-sm"
                         size={14}

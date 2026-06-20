@@ -32,10 +32,13 @@ export const MusicPlayerProvider = ({ children }: { children: ReactNode }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  // Lazily create the persistent audio element
+  const hasInteractedRef = useRef(false);
+
+  // Lazily create the persistent audio element. Don't preload audio data —
+  // the file is several MB and was hurting LCP on every page.
   if (!audioRef.current && typeof window !== "undefined") {
     audioRef.current = new Audio();
-    audioRef.current.preload = "auto";
+    audioRef.current.preload = "none";
   }
 
   // Load tracks from DB and start at a random track

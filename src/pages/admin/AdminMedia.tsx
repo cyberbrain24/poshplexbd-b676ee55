@@ -569,6 +569,14 @@ const AdminMedia = () => {
           )}
         </>
       )}
+        </TabsContent>
+
+        <TabsContent value="thumbs" className="mt-4">
+          <MediaThumbnailsGallery />
+        </TabsContent>
+      </Tabs>
+
+
 
       {/* Preview Dialog */}
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>

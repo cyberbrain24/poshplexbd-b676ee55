@@ -1,42 +1,31 @@
-// Admin-only one-time backfill: converts every non-WebP image in storage
-// to WebP, rewrites every DB row that references the old URL,
-// and deletes the original file. Designed to be polled in small batches
-// from the admin UI until `remaining === 0`.
+// Admin-only one-time backfill: converts every non-WebP image in public storage
+// to WebP, rewrites DB rows that reference the old URL, and deletes originals.
+// Runs one browser-safe image per request so the function avoids CPU timeouts.
 
-import {
-  ImageMagick,
-  initializeImageMagick,
-  MagickFormat,
-} from "npm:@imagemagick/magick-wasm@0.0.31";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
 const BUCKETS = ["product-images", "media", "review-images", "profile-images"] as const;
-const MAX_BATCH = 3;
-const DEFAULT_BATCH = 1; // magick-wasm is CPU-heavy; one image per invocation is safest
-const WEBP_QUALITY = 82;
-const MAGICK_WASM_URL = "https://cdn.jsdelivr.net/npm/@imagemagick/magick-wasm@0.0.31/dist/magick.wasm";
-// Only already-webp files are skipped; every other image format is converted.
-const SKIP_EXT = new Set(["webp"]);
-// Any non-webp file with a recognizable image extension is eligible.
+const MAX_BATCH = 1;
+const DEFAULT_BATCH = 1;
 const IMAGE_EXT = new Set([
   "jpg", "jpeg", "jpe", "jfif", "png", "gif", "bmp", "dib",
   "tif", "tiff", "heic", "heif", "avif", "ico", "tga", "ppm",
-  "pgm", "pbm", "pnm", "webp",
+  "pgm", "pbm", "pnm",
 ]);
 
 interface BodyParams {
   batch_size?: number;
+  image_data?: string;
+  error?: string;
+  source?: { bucket: string; path: string; size?: number };
 }
 
-let magickReady: Promise<void> | null = null;
-function ensureMagick() {
-  if (!magickReady) {
-    magickReady = fetch(MAGICK_WASM_URL)
-      .then((res) => res.arrayBuffer())
-      .then((bytes) => initializeImageMagick(new Uint8Array(bytes)));
-  }
-  return magickReady;
+function json(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 }
 
 function extOf(name: string): string {
@@ -46,6 +35,18 @@ function extOf(name: string): string {
 
 function publicUrl(supabase: ReturnType<typeof createClient>, bucket: string, path: string) {
   return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+}
+
+function dataUrlToBytes(dataUrl: string): Uint8Array {
+  const comma = dataUrl.indexOf(",");
+  if (comma === -1 || !dataUrl.startsWith("data:image/webp")) {
+    throw new Error("Invalid WebP image payload");
+  }
+  const base64 = dataUrl.slice(comma + 1);
+  const bin = atob(base64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
 }
 
 async function findPending(
@@ -64,7 +65,6 @@ async function findPending(
     if (error || !data || data.length === 0) break;
     for (const entry of data) {
       if (out.length >= needed) return;
-      // Folder entries have id === null
       const isFolder = !entry.id;
       const childPath = prefix ? `${prefix}/${entry.name}` : entry.name;
       if (isFolder) {
@@ -72,8 +72,8 @@ async function findPending(
         continue;
       }
       const ext = extOf(entry.name);
-      if (SKIP_EXT.has(ext)) continue; // already webp
-      if (!IMAGE_EXT.has(ext)) continue; // not an image (svg, pdf, etc.)
+      if (ext === "webp") continue;
+      if (!IMAGE_EXT.has(ext)) continue;
       const { data: lastError } = await admin
         .from("image_migration_log")
         .select("error")
@@ -83,9 +83,7 @@ async function findPending(
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      // Skip files that already failed with a real conversion/decode error so one bad file
-      // cannot block every later image. Old Web Cache errors are retried because this build fixes them.
-      if (lastError?.error && !String(lastError.error).includes("Web Cache is not available")) continue;
+      if (lastError?.error && !String(lastError.error).includes("CPU Time exceeded")) continue;
       out.push({ bucket, path: childPath, size: entry.metadata?.size ?? 0 });
     }
     if (data.length < 100) break;
@@ -93,23 +91,11 @@ async function findPending(
   }
 }
 
-async function encodeWebp(bytes: Uint8Array): Promise<Uint8Array> {
-  await ensureMagick();
-  // No size/pixel restriction — preserve original dimensions, just re-encode to WebP at high quality.
-  return await ImageMagick.read(bytes, (img) => {
-    img.autoOrient();
-    img.strip();
-    img.quality = WEBP_QUALITY;
-    return img.write(MagickFormat.WebP, (data) => new Uint8Array(data));
-  });
-}
-
 async function rewriteReferences(
   admin: ReturnType<typeof createClient>,
   oldUrl: string,
   newUrl: string,
 ) {
-  // Helper to swallow per-table errors so one failure doesn't kill the batch.
   const safe = async (label: string, fn: () => Promise<unknown>) => {
     try {
       await fn();
@@ -118,7 +104,6 @@ async function rewriteReferences(
     }
   };
 
-  // Plain text columns: simple eq update (URL is unique enough)
   const textTargets: Array<{ table: string; col: string }> = [
     { table: "categories", col: "image_url" },
     { table: "customers", col: "profile_image_url" },
@@ -142,7 +127,6 @@ async function rewriteReferences(
     );
   }
 
-  // blog_posts.content (may contain inline <img src=...>)
   await safe("blog_posts.content", async () => {
     const { data } = await admin
       .from("blog_posts")
@@ -154,7 +138,6 @@ async function rewriteReferences(
     }
   });
 
-  // reviews.images — text[] array
   await safe("reviews.images", async () => {
     const { data } = await admin
       .from("reviews")
@@ -166,7 +149,6 @@ async function rewriteReferences(
     }
   });
 
-  // return_requests.proof_images — jsonb (array of strings or objects)
   await safe("return_requests.proof_images", async () => {
     const { data } = await admin
       .from("return_requests")
@@ -179,39 +161,35 @@ async function rewriteReferences(
   });
 }
 
+async function requireAdmin(req: Request) {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const authHeader = req.headers.get("Authorization") ?? "";
+
+  const userClient = createClient(supabaseUrl, anonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+  const { data: userData, error: userErr } = await userClient.auth.getUser();
+  if (userErr || !userData?.user) return { error: json({ error: "Unauthorized" }, 401) };
+  const { data: roleData } = await userClient
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userData.user.id)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (!roleData) return { error: json({ error: "Admin only" }, 403) };
+
+  return { admin: createClient(supabaseUrl, serviceKey) };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const authHeader = req.headers.get("Authorization") ?? "";
-
-    const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: userData, error: userErr } = await userClient.auth.getUser();
-    if (userErr || !userData?.user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    const { data: roleData } = await userClient
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userData.user.id)
-      .eq("role", "admin")
-      .maybeSingle();
-    if (!roleData) {
-      return new Response(JSON.stringify({ error: "Admin only" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const admin = createClient(supabaseUrl, serviceKey);
+    const auth = await requireAdmin(req);
+    if (auth.error) return auth.error;
+    const admin = auth.admin!;
 
     let body: BodyParams = {};
     try {
@@ -219,94 +197,93 @@ Deno.serve(async (req) => {
     } catch {
       // empty body ok
     }
-    const batchSize = Math.min(MAX_BATCH, Math.max(1, body.batch_size ?? DEFAULT_BATCH));
 
-    // 1. Collect first `batchSize` pending files across all buckets (in order)
+    if (body.error && body.source) {
+      const source = body.source;
+      if (!BUCKETS.includes(source.bucket as typeof BUCKETS[number])) {
+        return json({ error: "Unsupported bucket" }, 400);
+      }
+      const newPath = source.path.replace(/\.[^.]+$/, "") + ".webp";
+      await admin.from("image_migration_log").insert({
+        bucket: source.bucket,
+        old_path: source.path,
+        new_path: newPath,
+        old_size: source.size ?? null,
+        new_size: null,
+        status: "error",
+        error: body.error,
+      });
+      return json({ processed: 0, deleted: 0, errors: [{ path: `${source.bucket}/${source.path}`, error: body.error }], more: true, batch_size: 1 });
+    }
+
+    if (body.image_data && body.source) {
+      const source = body.source;
+      if (!BUCKETS.includes(source.bucket as typeof BUCKETS[number])) {
+        return json({ error: "Unsupported bucket" }, 400);
+      }
+      if (extOf(source.path) === "webp" || !IMAGE_EXT.has(extOf(source.path))) {
+        return json({ processed: 0, deleted: 0, errors: [], more: true });
+      }
+
+      const oldUrl = publicUrl(admin, source.bucket, source.path);
+      const newPath = source.path.replace(/\.[^.]+$/, "") + ".webp";
+      const newUrl = publicUrl(admin, source.bucket, newPath);
+      const errors: Array<{ path: string; error: string }> = [];
+
+      try {
+        const webpBytes = dataUrlToBytes(body.image_data);
+        const up = await admin.storage
+          .from(source.bucket)
+          .upload(newPath, webpBytes, { contentType: "image/webp", upsert: true });
+        if (up.error) throw up.error;
+
+        await rewriteReferences(admin, oldUrl, newUrl);
+
+        const rm = await admin.storage.from(source.bucket).remove([source.path]);
+        if (rm.error) throw rm.error;
+
+        await admin.from("image_migration_log").insert({
+          bucket: source.bucket,
+          old_path: source.path,
+          new_path: newPath,
+          old_size: source.size ?? null,
+          new_size: webpBytes.byteLength,
+          status: "ok",
+        });
+        return json({ processed: 1, deleted: 1, errors, more: true, batch_size: 1 });
+      } catch (e) {
+        const msg = (e as Error).message ?? String(e);
+        errors.push({ path: `${source.bucket}/${source.path}`, error: msg });
+        await admin.from("image_migration_log").insert({
+          bucket: source.bucket,
+          old_path: source.path,
+          new_path: newPath,
+          old_size: source.size ?? null,
+          new_size: null,
+          status: "error",
+          error: msg,
+        });
+        return json({ processed: 0, deleted: 0, errors, more: true, batch_size: 1 });
+      }
+    }
+
+    const batchSize = Math.min(MAX_BATCH, Math.max(1, body.batch_size ?? DEFAULT_BATCH));
     const pending: Array<{ bucket: string; path: string; size: number }> = [];
     for (const bucket of BUCKETS) {
       if (pending.length >= batchSize) break;
       await findPending(admin, bucket, "", batchSize, pending);
     }
 
-    let processed = 0;
-    let deleted = 0;
-    const errors: Array<{ path: string; error: string }> = [];
-
-    for (const item of pending.slice(0, batchSize)) {
-      const oldUrl = publicUrl(admin, item.bucket, item.path);
-      const newPath = item.path.replace(/\.[^.]+$/, "") + ".webp";
-      const newUrl = publicUrl(admin, item.bucket, newPath);
-
-      try {
-        // Download original
-        const dl = await admin.storage.from(item.bucket).download(item.path);
-        if (dl.error || !dl.data) throw new Error(dl.error?.message ?? "download failed");
-        const origBytes = new Uint8Array(await dl.data.arrayBuffer());
-
-        // Encode to WebP without any size or pixel restriction
-        const webpBytes = await encodeWebp(origBytes);
-
-        // Upload new file (different path because extension changes)
-        const up = await admin.storage
-          .from(item.bucket)
-          .upload(newPath, webpBytes, { contentType: "image/webp", upsert: true });
-        if (up.error) throw up.error;
-
-        // Rewrite DB references
-        await rewriteReferences(admin, oldUrl, newUrl);
-
-        // Delete the original (only after upload + DB rewrite succeed)
-        const rm = await admin.storage.from(item.bucket).remove([item.path]);
-        if (rm.error) throw rm.error;
-        deleted++;
-
-        await admin.from("image_migration_log").insert({
-          bucket: item.bucket,
-          old_path: item.path,
-          new_path: newPath,
-          old_size: origBytes.byteLength,
-          new_size: webpBytes.byteLength,
-          status: "ok",
-        });
-        processed++;
-      } catch (e) {
-        const msg = (e as Error).message ?? String(e);
-        errors.push({ path: `${item.bucket}/${item.path}`, error: msg });
-        await admin.from("image_migration_log").insert({
-          bucket: item.bucket,
-          old_path: item.path,
-          new_path: newPath,
-          old_size: item.size,
-          new_size: null,
-          status: "error",
-          error: msg,
-        });
-      }
-    }
-
-    // Estimate remaining: re-scan a single page per bucket, just for the count cap
-    const remainingProbe: Array<{ bucket: string; path: string; size: number }> = [];
-    for (const bucket of BUCKETS) {
-      if (remainingProbe.length >= 1) break;
-      await findPending(admin, bucket, "", 1, remainingProbe);
-    }
-    const moreAvailable = remainingProbe.length > 0;
-
-    return new Response(
-      JSON.stringify({
-        processed,
-        deleted,
-        errors,
-        more: moreAvailable,
-        batch_size: batchSize,
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return json({
+      processed: 0,
+      deleted: 0,
+      errors: [],
+      more: pending.length > 0,
+      pending: pending.slice(0, batchSize),
+      batch_size: batchSize,
+    });
   } catch (e) {
     console.error("convert-storage-to-webp error", e);
-    return new Response(JSON.stringify({ error: (e as Error).message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ processed: 0, deleted: 0, errors: [{ path: "system", error: (e as Error).message }], more: false });
   }
 });

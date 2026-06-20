@@ -5,6 +5,49 @@ import { Loader2, FileImage } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+type PendingImage = { bucket: string; path: string; size?: number };
+
+const convertStorageImageToWebpDataUrl = async (item: PendingImage): Promise<string> => {
+  const { data, error } = await supabase.storage.from(item.bucket).download(item.path);
+  if (error || !data) throw new Error(error?.message ?? "Could not download image");
+
+  const objectUrl = URL.createObjectURL(data);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error("Browser could not decode this image"));
+      image.src = objectUrl;
+    });
+
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, img.naturalWidth || img.width);
+    canvas.height = Math.max(1, img.naturalHeight || img.height);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Browser image converter is unavailable");
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    return await new Promise<string>((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error("Could not encode WebP image"));
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => reject(new Error("Could not read WebP image"));
+          reader.readAsDataURL(blob);
+        },
+        "image/webp",
+        0.82,
+      );
+    });
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+};
+
 /**
  * One-time backfill: convert every existing non-WebP storage file to WebP,
  * rewrite every DB reference, delete the original. Polls
@@ -29,7 +72,6 @@ const ConvertImagesToWebpCard = () => {
     let totalErrors = 0;
 
     try {
-      let consecutiveFailures = 0;
       // eslint-disable-next-line no-constant-condition
       while (true) {
         const { data, error } = await supabase.functions.invoke(
@@ -37,27 +79,39 @@ const ConvertImagesToWebpCard = () => {
           { body: { batch_size: 1 } },
         );
         if (error) {
-          // CPU-timeout / transient failure — try a few more times before giving up.
-          consecutiveFailures++;
-          totalErrors++;
-          setErrors(totalErrors);
-          if (consecutiveFailures >= 3) throw error;
-          await new Promise((r) => setTimeout(r, 800));
-          continue;
+          throw error;
         }
-        consecutiveFailures = 0;
-        const batchProcessed = data?.processed ?? 0;
-        const batchDeleted = data?.deleted ?? 0;
-        const batchErrors = (data?.errors ?? []).length;
-        totalProcessed += batchProcessed;
-        totalDeleted += batchDeleted;
-        totalErrors += batchErrors;
+
+        const pending = (data?.pending ?? []) as PendingImage[];
+        if (!data?.more || pending.length === 0) break;
+
+        const item = pending[0];
+        try {
+          const imageData = await convertStorageImageToWebpDataUrl(item);
+          const result = await supabase.functions.invoke("convert-storage-to-webp", {
+            body: { source: item, image_data: imageData },
+          });
+          if (result.error) throw result.error;
+
+          const batchProcessed = result.data?.processed ?? 0;
+          const batchDeleted = result.data?.deleted ?? 0;
+          const batchErrors = (result.data?.errors ?? []).length;
+          totalProcessed += batchProcessed;
+          totalDeleted += batchDeleted;
+          totalErrors += batchErrors;
+        } catch (itemError: any) {
+          totalErrors++;
+          await supabase.functions.invoke("convert-storage-to-webp", {
+            body: {
+              source: item,
+              error: itemError?.message ?? "Browser conversion failed",
+            },
+          });
+        }
+
         setProcessed(totalProcessed);
         setDeleted(totalDeleted);
         setErrors(totalErrors);
-
-        if (!data?.more) break;
-        if (batchProcessed === 0 && batchErrors === 0) break; // no progress
       }
       setDone(true);
       toast.success(

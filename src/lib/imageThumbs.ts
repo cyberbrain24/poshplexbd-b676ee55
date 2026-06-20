@@ -1,6 +1,6 @@
 /**
  * Generate two resized WebP variants of a product image, client-side via canvas.
- * - thumb:  ~400 px on the long edge, q≈0.72  (used in grids)
+ * - thumb:  300 px wide (height auto), q≈0.72  (used in grids)
  * - medium: ~800 px on the long edge, q≈0.78  (used on product detail)
  *
  * GIFs / SVGs are skipped (animation / vector preserved as the original).

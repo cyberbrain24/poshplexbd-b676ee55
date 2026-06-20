@@ -391,6 +391,9 @@ const AdminMedia = () => {
       {/* Thumbnail backfill */}
       <ThumbnailBackfillCard />
 
+      {/* Convert all images to WebP (one-time cleanup) */}
+      <ConvertImagesToWebpCard />
+
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">

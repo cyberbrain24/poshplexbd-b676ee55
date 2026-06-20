@@ -132,16 +132,25 @@ async function main() {
   const categories = await fetchTable(
     "categories?select=name,updated_at&limit=200",
   );
-  const categoryEntries: UrlEntry[] = categories.map((c: any) => {
-    // Match the app's slug logic in CategoryHeader.tsx: lowercase + spaces->dashes.
-    const slug = (c.name || "").toLowerCase().trim().replace(/\s+/g, "-");
-    return {
-      loc: `${BASE_URL}/category/${slug}`,
-      lastmod: fmt(c.updated_at),
-      changefreq: "daily" as const,
-      priority: 0.8,
-    };
-  });
+  const categoryEntries: UrlEntry[] = categories
+    .map((c: any) => {
+      // Match app's slug logic in CategoryHeader: lowercase + spaces->dashes.
+      const slug = (c.name || "").toLowerCase().trim().replace(/\s+/g, "-");
+      if (!slug) return null;
+      // Percent-encode unsafe URL chars (&, etc.) so <loc> is valid XML and
+      // React Router still decodes back to the original slug at runtime.
+      const encoded = slug
+        .split("/")
+        .map((seg) => encodeURIComponent(seg))
+        .join("/");
+      return {
+        loc: `${BASE_URL}/category/${encoded}`,
+        lastmod: fmt(c.updated_at),
+        changefreq: "daily" as const,
+        priority: 0.8,
+      };
+    })
+    .filter((e): e is UrlEntry => e !== null);
 
   const outDir = resolve("public");
   mkdirSync(outDir, { recursive: true });

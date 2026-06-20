@@ -154,15 +154,15 @@ const AdminOrderFulfillment = () => {
   const allOrders = data?.orders ?? [];
   const orders = useMemo(() => {
     let list = allOrders;
-    if (statusFilter === "ready") list = list.filter((o) => readySet.has(o.id));
-    else if (statusFilter === "not_ready") list = list.filter((o) => !readySet.has(o.id));
+    if (statusFilter === "ready") list = list.filter((o) => !!o.fulfillment_ready);
+    else if (statusFilter === "not_ready") list = list.filter((o) => !o.fulfillment_ready);
 
     if (issueFilter !== "all") {
       if (issueFilter === "none") list = list.filter((o) => !o.fulfillment_issue);
       else list = list.filter((o) => o.fulfillment_issue === issueFilter);
     }
     return list;
-  }, [allOrders, statusFilter, readySet, issueFilter]);
+  }, [allOrders, statusFilter, issueFilter]);
 
   const syncAllSteadfast = useSyncSteadfastStatus();
 

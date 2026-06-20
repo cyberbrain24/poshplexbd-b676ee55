@@ -57,8 +57,10 @@ const FilterSortBar = ({
   parentCategoryId,
 }: FilterSortBarProps) => {
   const { data: allCategories = [] } = useCategories();
-  const { data: colors = [] } = useColors();
-  const { data: sizes = [] } = useSizes();
+  // Only fetch colors and sizes once the user opens the filter sheet.
+  // These are not needed for the initial category page render.
+  const { data: colors = [] } = useColors({ enabled: filtersOpen });
+  const { data: sizes = [] } = useSizes({ enabled: filtersOpen });
 
   // Get subcategories for the current parent category
   const subcategories = parentCategoryId

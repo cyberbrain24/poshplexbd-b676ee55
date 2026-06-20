@@ -843,11 +843,33 @@ const AdminOrders = () => {
                         {({ stock_out: 'Stock Out', print_issues: 'Print Issues', courier_issues: 'Courier Issues', other_issues: 'Others Issues' } as Record<string, string>)[(order as any).fulfillment_issue]}
                       </Badge>
                     )}
+                    {(() => {
+                      const src = (order as any).created_by_source;
+                      const isAdmin = src === 'admin';
+                      return (
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] px-1.5 py-0 ${isAdmin ? 'bg-foreground text-background border-foreground' : 'bg-transparent text-muted-foreground border-border'}`}
+                        >
+                          {isAdmin ? 'Admin Order' : 'Web Order'}
+                        </Badge>
+                      );
+                    })()}
                   </div>
+
+                  {order.customer_notes && (
+                    <div
+                      className="text-[10px] text-muted-foreground line-clamp-2 italic"
+                      title={order.customer_notes}
+                    >
+                      Note: {order.customer_notes}
+                    </div>
+                  )}
 
                   <div className="text-[10px] text-muted-foreground truncate">
                     {order.payment_method?.name || 'Unknown'}
                   </div>
+
 
                   {(() => {
                     const div = order.shipping_division?.name?.trim().toLowerCase();

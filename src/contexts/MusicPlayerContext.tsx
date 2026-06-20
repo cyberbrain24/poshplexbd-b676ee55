@@ -101,6 +101,13 @@ export const MusicPlayerProvider = ({ children }: { children: ReactNode }) => {
   const togglePlay = useCallback(() => {
     const audio = audioRef.current;
     if (!audio || !currentTrack) return;
+    // First user interaction — wire up the src now, then play.
+    if (!hasInteractedRef.current) {
+      hasInteractedRef.current = true;
+      if (audio.src !== currentTrack.file_url) {
+        audio.src = currentTrack.file_url;
+      }
+    }
     if (audio.paused) {
       audio.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
     } else {

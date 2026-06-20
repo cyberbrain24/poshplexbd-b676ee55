@@ -125,8 +125,8 @@ export const uploadMediaFile = async (file: File): Promise<MediaFile> => {
     try {
       const { toWebpUnder250 } = await import("@/lib/imageToWebp");
       toUpload = await toWebpUnder250(file);
-    } catch {
-      toUpload = file;
+    } catch (error) {
+      throw error instanceof Error ? error : new Error("Image conversion failed");
     }
   }
   const fileExt = toUpload.type === "image/webp" ? "webp" : (file.name.split(".").pop() || "bin");

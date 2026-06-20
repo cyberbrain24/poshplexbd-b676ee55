@@ -29,7 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Copy, Trash2, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { useMediaFiles, useDeleteMedia } from "@/hooks/useMedia";
+import { useMediaFiles, useDeleteMediaFiles } from "@/hooks/useMedia";
 import {
   useAllMediaMetadata,
   useDeleteMediaMetadata,
@@ -41,7 +41,7 @@ import {
   copyFileUrl,
   type MediaFile,
 } from "@/services/media.service";
-import { resolveMainImage, isDerivedThumbnail } from "@/lib/mediaThumbResolve";
+import { resolveMainImage, isDerivedThumbnail, getDerivativeImagesForMain } from "@/lib/mediaThumbResolve";
 import MediaSeoEditor from "@/components/admin/MediaSeoEditor";
 
 const BUCKET_LABELS: Record<string, string> = {
@@ -58,7 +58,7 @@ const MediaThumbnailsGallery = () => {
   const { data: files = [], isLoading } = useMediaFiles();
   const { data: allMetadata = [] } = useAllMediaMetadata();
   const { data: referencesMap } = useMediaReferences();
-  const deleteMutation = useDeleteMedia();
+  const deleteMutation = useDeleteMediaFiles();
   const deleteMetaMutation = useDeleteMediaMetadata();
 
   const [search, setSearch] = useState("");
@@ -109,16 +109,25 @@ const MediaThumbnailsGallery = () => {
 
   const handleDelete = async () => {
     if (!confirmDelete) return;
+    const confirmMain = resolveMainImage(confirmDelete, files);
+    if (isDerivedThumbnail(confirmDelete) && confirmMain.name !== confirmDelete.name) {
+      toast.error("You can't delete the thumbnail image because the main image is stored in the system.");
+      setConfirmDelete(null);
+      return;
+    }
+
     try {
+      const derivatives = getDerivativeImagesForMain(confirmDelete, files);
+      const fileNames = [confirmDelete.name, ...derivatives.map((f) => f.name)];
       await deleteMutation.mutateAsync({
         bucketId: confirmDelete.bucket_id,
-        fileName: confirmDelete.name,
+        fileNames,
       });
-      deleteMetaMutation.mutate({
+      fileNames.forEach((filePath) => deleteMetaMutation.mutate({
         bucketId: confirmDelete.bucket_id,
-        filePath: confirmDelete.name,
-      });
-      if (selected?.name === confirmDelete.name) setSelected(null);
+        filePath,
+      }));
+      if (selected && fileNames.includes(selected.name)) setSelected(null);
       setConfirmDelete(null);
     } catch (e) {
       console.error(e);

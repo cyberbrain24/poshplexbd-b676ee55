@@ -4,11 +4,10 @@
  */
 
 const ALLOWED_ORIGINS = [
-  "https://poshplexbd.lovable.app",
-  "https://id-preview--e6beb355-f51f-4a8a-bf08-33a1a11b94e1.lovable.app",
-  "https://e6beb355-f51f-4a8a-bf08-33a1a11b94e1.lovableproject.com",
   "https://poshplexbd.com",
   "https://www.poshplexbd.com",
+  "https://id-preview--e6beb355-f51f-4a8a-bf08-33a1a11b94e1.lovable.app",
+  "https://e6beb355-f51f-4a8a-bf08-33a1a11b94e1.lovableproject.com",
   "https://dev.poshplexbd.com",
   "http://localhost:8080",
   "http://localhost:5173",

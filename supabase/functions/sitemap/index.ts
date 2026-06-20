@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
 import { checkRateLimit, getClientIP, rateLimitResponse } from "../_shared/rate-limiter.ts";
 
-const SITE_URL = "https://poshplexbd.lovable.app";
+const SITE_URL = "https://poshplexbd.com";
 
 interface SitemapEntry {
   loc: string;

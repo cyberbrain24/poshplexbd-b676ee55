@@ -17,6 +17,7 @@ const IMAGE_EXT = new Set([
 interface BodyParams {
   batch_size?: number;
   image_data?: string;
+  error?: string;
   source?: { bucket: string; path: string; size?: number };
 }
 
@@ -195,6 +196,24 @@ Deno.serve(async (req) => {
       body = await req.json();
     } catch {
       // empty body ok
+    }
+
+    if (body.error && body.source) {
+      const source = body.source;
+      if (!BUCKETS.includes(source.bucket as typeof BUCKETS[number])) {
+        return json({ error: "Unsupported bucket" }, 400);
+      }
+      const newPath = source.path.replace(/\.[^.]+$/, "") + ".webp";
+      await admin.from("image_migration_log").insert({
+        bucket: source.bucket,
+        old_path: source.path,
+        new_path: newPath,
+        old_size: source.size ?? null,
+        new_size: null,
+        status: "error",
+        error: body.error,
+      });
+      return json({ processed: 0, deleted: 0, errors: [{ path: `${source.bucket}/${source.path}`, error: body.error }], more: true, batch_size: 1 });
     }
 
     if (body.image_data && body.source) {

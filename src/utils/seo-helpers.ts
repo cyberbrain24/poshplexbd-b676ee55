@@ -6,7 +6,7 @@
 // Site configuration
 export const SITE_CONFIG = {
   siteName: "Poshplex",
-  siteUrl: "https://poshplexbd.lovable.app",
+  siteUrl: "https://poshplexbd.com",
   defaultDescription: "Discover Poshplex - Be Posh With Poshplex. Shop our curated streetwear collection designed for style-conscious individuals.",
   defaultImage: "/og-image.jpg",
   twitterHandle: "@poshplex",

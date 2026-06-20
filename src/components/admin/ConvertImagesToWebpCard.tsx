@@ -29,13 +29,23 @@ const ConvertImagesToWebpCard = () => {
     let totalErrors = 0;
 
     try {
+      let consecutiveFailures = 0;
       // eslint-disable-next-line no-constant-condition
       while (true) {
         const { data, error } = await supabase.functions.invoke(
           "convert-storage-to-webp",
-          { body: { batch_size: 5 } },
+          { body: { batch_size: 1 } },
         );
-        if (error) throw error;
+        if (error) {
+          // CPU-timeout / transient failure — try a few more times before giving up.
+          consecutiveFailures++;
+          totalErrors++;
+          setErrors(totalErrors);
+          if (consecutiveFailures >= 3) throw error;
+          await new Promise((r) => setTimeout(r, 800));
+          continue;
+        }
+        consecutiveFailures = 0;
         const batchProcessed = data?.processed ?? 0;
         const batchDeleted = data?.deleted ?? 0;
         const batchErrors = (data?.errors ?? []).length;

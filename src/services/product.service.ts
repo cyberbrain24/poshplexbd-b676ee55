@@ -7,6 +7,12 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Product, ProductFormData, ProductVariant, VariantFormData } from "@/types/product";
 import { PAGINATION, STORAGE } from "@/constants";
 
+const pathFromPublicUrl = (url: string, bucket: string): string | null => {
+  const marker = `/storage/v1/object/public/${bucket}/`;
+  const idx = url.indexOf(marker);
+  return idx === -1 ? null : decodeURIComponent(url.slice(idx + marker.length));
+};
+
 export interface ProductListResult {
   data: Product[];
   count: number;
@@ -138,6 +144,24 @@ export async function updateProduct(
  * Delete a product
  */
 export async function deleteProduct(productId: string): Promise<void> {
+  const { data: productImages, error: imageFetchError } = await supabase
+    .from("product_images")
+    .select("image_url, thumb_url, medium_url")
+    .eq("product_id", productId);
+  if (imageFetchError) throw imageFetchError;
+
+  const imagePaths = (productImages ?? [])
+    .flatMap((img) => [img.image_url, img.thumb_url, img.medium_url])
+    .filter(Boolean)
+    .map((url) => pathFromPublicUrl(url as string, STORAGE.PRODUCT_IMAGES_BUCKET))
+    .filter(Boolean) as string[];
+  if (imagePaths.length > 0) {
+    const { error: storageError } = await supabase.storage
+      .from(STORAGE.PRODUCT_IMAGES_BUCKET)
+      .remove([...new Set(imagePaths)]);
+    if (storageError) throw storageError;
+  }
+
   // Delete related data first
   await supabase.from("product_images").delete().eq("product_id", productId);
   await supabase.from("product_variants").delete().eq("product_id", productId);
@@ -225,6 +249,24 @@ export async function addProductImage(
  * Delete product image
  */
 export async function deleteProductImage(imageId: string): Promise<void> {
+  const { data: image, error: fetchError } = await supabase
+    .from("product_images")
+    .select("image_url, thumb_url, medium_url")
+    .eq("id", imageId)
+    .single();
+  if (fetchError) throw fetchError;
+
+  const imagePaths = [image?.image_url, image?.thumb_url, image?.medium_url]
+    .filter(Boolean)
+    .map((url) => pathFromPublicUrl(url as string, STORAGE.PRODUCT_IMAGES_BUCKET))
+    .filter(Boolean) as string[];
+  if (imagePaths.length > 0) {
+    const { error: storageError } = await supabase.storage
+      .from(STORAGE.PRODUCT_IMAGES_BUCKET)
+      .remove([...new Set(imagePaths)]);
+    if (storageError) throw storageError;
+  }
+
   const { error } = await supabase
     .from("product_images")
     .delete()

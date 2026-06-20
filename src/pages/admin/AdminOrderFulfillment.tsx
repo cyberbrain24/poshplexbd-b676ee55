@@ -306,9 +306,9 @@ const AdminOrderFulfillment = () => {
             <FulfillmentCard
               key={order.id}
               order={order}
-              isReady={readySet.has(order.id)}
+              isReady={!!order.fulfillment_ready}
               onOpen={() => setOpenOrderId(order.id)}
-              onToggleReady={() => toggleReady(order.id)}
+              onToggleReady={() => toggleReady(order.id, !!order.fulfillment_ready)}
               onChangeIssue={(v) => setIssue(order.id, v)}
             />
           ))}

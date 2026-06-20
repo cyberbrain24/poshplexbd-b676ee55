@@ -132,14 +132,22 @@ async function main() {
   const categories = await fetchTable(
     "categories?select=name,updated_at&limit=200",
   );
-  const categoryEntries: UrlEntry[] = categories.map((c: any) => ({
-    loc: `${BASE_URL}/category/${(c.name || "")
+  const categoryEntries: UrlEntry[] = categories.map((c: any) => {
+    const slug = (c.name || "")
       .toLowerCase()
-      .replace(/\s+/g, "-")}`,
-    lastmod: fmt(c.updated_at),
-    changefreq: "daily",
-    priority: 0.8,
-  }));
+      .trim()
+      .replace(/&/g, "and")
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "");
+    return {
+      loc: `${BASE_URL}/category/${encodeURIComponent(slug)}`,
+      lastmod: fmt(c.updated_at),
+      changefreq: "daily" as const,
+      priority: 0.8,
+    };
+  });
 
   const outDir = resolve("public");
   mkdirSync(outDir, { recursive: true });

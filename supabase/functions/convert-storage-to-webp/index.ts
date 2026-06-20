@@ -16,8 +16,14 @@ const MAX_BATCH = 20;
 const DEFAULT_BATCH = 5;
 const WEBP_QUALITY = 85; // high-quality re-encode; no size/pixel cap on existing images
 const MAGICK_WASM_URL = "https://cdn.jsdelivr.net/npm/@imagemagick/magick-wasm@0.0.31/dist/magick.wasm";
-const SKIP_EXT = new Set(["webp", "gif", "svg"]); // pass-through formats
-const RASTER_EXT = new Set(["jpg", "jpeg", "png", "bmp", "tif", "tiff", "heic", "heif", "avif"]);
+// Only already-webp files are skipped; every other image format is converted.
+const SKIP_EXT = new Set(["webp"]);
+// Any non-webp file with a recognizable image extension is eligible.
+const IMAGE_EXT = new Set([
+  "jpg", "jpeg", "jpe", "jfif", "png", "gif", "bmp", "dib",
+  "tif", "tiff", "heic", "heif", "avif", "ico", "tga", "ppm",
+  "pgm", "pbm", "pnm", "webp",
+]);
 
 interface BodyParams {
   batch_size?: number;

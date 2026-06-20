@@ -134,8 +134,8 @@ Deno.serve(async (req) => {
         let medium_url = row.medium_url as string | null;
 
         if (!thumb_url) {
-          const tBytes = await buildVariant(img, { width: 400 }, 0.72);
-          const tPath = `${row.product_id}/thumbs/${idStem}-400.jpg`;
+          const tBytes = await buildVariant(img, { width: 300 }, 0.72);
+          const tPath = `${row.product_id}/thumbs/${idStem}-300.jpg`;
           const { error } = await admin.storage
             .from(BUCKET)
             .upload(tPath, tBytes, { contentType: "image/jpeg", upsert: true });

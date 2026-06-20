@@ -19,25 +19,6 @@ import { formatCurrency } from "@/lib/currency";
 import { useSyncSteadfastStatus } from "@/hooks/useSteadfast";
 import OrderDetailModal from "@/components/admin/OrderDetailModal";
 
-const READY_STORAGE_KEY = "fulfillment_ready_orders_v1";
-
-const loadReadySet = (): Set<string> => {
-  try {
-    const raw = localStorage.getItem(READY_STORAGE_KEY);
-    if (!raw) return new Set();
-    return new Set(JSON.parse(raw) as string[]);
-  } catch {
-    return new Set();
-  }
-};
-
-const saveReadySet = (set: Set<string>) => {
-  try {
-    localStorage.setItem(READY_STORAGE_KEY, JSON.stringify([...set]));
-  } catch {
-    /* ignore */
-  }
-};
 
 type StatusFilter = "all" | "not_ready" | "ready";
 type IssueValue = "stock_out" | "print_issues" | "courier_issues" | "other_issues";
@@ -86,6 +67,7 @@ interface FulfillmentOrder {
   customer_notes: string | null;
   internal_notes: string | null;
   fulfillment_issue: IssueValue | null;
+  fulfillment_ready: boolean | null;
   items: FulfillmentItem[];
 }
 
@@ -106,7 +88,7 @@ const AdminOrderFulfillment = () => {
           id, order_number, order_status, payment_status, total_amount,
           payment_method_type, consignment_id, created_at,
           shipping_name, shipping_phone, shipping_address,
-          customer_notes, internal_notes, fulfillment_issue,
+          customer_notes, internal_notes, fulfillment_issue, fulfillment_ready,
           items:order_items(
             id, product_id, product_name, variant_sku, variant_details, quantity, unit_price,
             product:products(id, images:product_images(image_url, sort_order))
@@ -130,16 +112,6 @@ const AdminOrderFulfillment = () => {
     },
   });
 
-  const [readySet, setReadySet] = useState<Set<string>>(() => loadReadySet());
-
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === READY_STORAGE_KEY) setReadySet(loadReadySet());
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
-
   const setIssue = useCallback(
     async (orderId: string, value: IssueValue | null) => {
       const { error } = await supabase
@@ -157,37 +129,40 @@ const AdminOrderFulfillment = () => {
   );
 
   const toggleReady = useCallback(
-    (orderId: string) => {
-      setReadySet((prev) => {
-        const next = new Set(prev);
-        if (next.has(orderId)) {
-          next.delete(orderId);
-          toast.success("Moved back to Not Ready");
-        } else {
-          next.add(orderId);
-          toast.success("Marked as Ready");
-          // Clear issue status on ready
-          void setIssue(orderId, null);
-        }
-        saveReadySet(next);
-        return next;
-      });
+    async (orderId: string, currentlyReady: boolean) => {
+      const next = !currentlyReady;
+      const update: { fulfillment_ready: boolean; fulfillment_issue?: null } = {
+        fulfillment_ready: next,
+      };
+      if (next) update.fulfillment_issue = null;
+      const { error } = await supabase
+        .from("orders")
+        .update(update)
+        .eq("id", orderId);
+      if (error) {
+        toast.error("Failed to update status");
+        return;
+      }
+      toast.success(next ? "Marked as Ready" : "Moved back to Not Ready");
+      qc.invalidateQueries({ queryKey: ["fulfillment-orders"] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
     },
-    [setIssue]
+    [qc]
   );
+
 
   const allOrders = data?.orders ?? [];
   const orders = useMemo(() => {
     let list = allOrders;
-    if (statusFilter === "ready") list = list.filter((o) => readySet.has(o.id));
-    else if (statusFilter === "not_ready") list = list.filter((o) => !readySet.has(o.id));
+    if (statusFilter === "ready") list = list.filter((o) => !!o.fulfillment_ready);
+    else if (statusFilter === "not_ready") list = list.filter((o) => !o.fulfillment_ready);
 
     if (issueFilter !== "all") {
       if (issueFilter === "none") list = list.filter((o) => !o.fulfillment_issue);
       else list = list.filter((o) => o.fulfillment_issue === issueFilter);
     }
     return list;
-  }, [allOrders, statusFilter, readySet, issueFilter]);
+  }, [allOrders, statusFilter, issueFilter]);
 
   const syncAllSteadfast = useSyncSteadfastStatus();
 
@@ -331,9 +306,9 @@ const AdminOrderFulfillment = () => {
             <FulfillmentCard
               key={order.id}
               order={order}
-              isReady={readySet.has(order.id)}
+              isReady={!!order.fulfillment_ready}
               onOpen={() => setOpenOrderId(order.id)}
-              onToggleReady={() => toggleReady(order.id)}
+              onToggleReady={() => toggleReady(order.id, !!order.fulfillment_ready)}
               onChangeIssue={(v) => setIssue(order.id, v)}
             />
           ))}

@@ -397,6 +397,14 @@ const AdminMedia = () => {
       {/* Convert all images to WebP (one-time cleanup) */}
       <ConvertImagesToWebpCard />
 
+      <Tabs defaultValue="all" className="w-full">
+        <TabsList>
+          <TabsTrigger value="all">All Files</TabsTrigger>
+          <TabsTrigger value="thumbs">Thumbnails</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="all" className="space-y-6 mt-4">
+
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">

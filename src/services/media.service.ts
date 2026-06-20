@@ -163,6 +163,16 @@ export const deleteMediaFile = async (bucketId: string, fileName: string): Promi
 };
 
 /**
+ * Delete a main image together with its generated thumbnail/medium files.
+ */
+export const deleteMediaFiles = async (bucketId: string, fileNames: string[]): Promise<void> => {
+  const uniqueNames = [...new Set(fileNames.filter(Boolean))];
+  if (uniqueNames.length === 0) return;
+  const { error } = await supabase.storage.from(bucketId).remove(uniqueNames);
+  if (error) throw error;
+};
+
+/**
  * Rename/move a file (copy + delete)
  */
 export const renameMediaFile = async (

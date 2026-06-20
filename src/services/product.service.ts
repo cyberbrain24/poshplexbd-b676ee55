@@ -165,7 +165,7 @@ export async function uploadProductImage(
 
   // Auto-convert to WebP under 250KB
   const { toWebpUnder250 } = await import("@/lib/imageToWebp");
-  const webpFile = await toWebpUnder250(file).catch(() => file);
+  const webpFile = await toWebpUnder250(file);
   const fileExt = webpFile.type === "image/webp" ? "webp" : (file.name.split(".").pop() || "jpg").toLowerCase();
   const baseName = `${productId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 

@@ -101,6 +101,10 @@ const MediaThumbnailsGallery = () => {
     : null;
 
   const refs = selected ? referencesMap?.get(selected.public_url) ?? [] : [];
+  const confirmMain = confirmDelete ? resolveMainImage(confirmDelete, files) : null;
+  const protectedThumb = Boolean(
+    confirmDelete && confirmMain && isDerivedThumbnail(confirmDelete) && confirmMain.name !== confirmDelete.name,
+  );
 
   const handleCopy = async (url: string) => {
     await copyFileUrl(url);
@@ -109,8 +113,7 @@ const MediaThumbnailsGallery = () => {
 
   const handleDelete = async () => {
     if (!confirmDelete) return;
-    const confirmMain = resolveMainImage(confirmDelete, files);
-    if (isDerivedThumbnail(confirmDelete) && confirmMain.name !== confirmDelete.name) {
+    if (protectedThumb) {
       toast.error("You can't delete the thumbnail image because the main image is stored in the system.");
       setConfirmDelete(null);
       return;
@@ -323,7 +326,9 @@ const MediaThumbnailsGallery = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this image?</AlertDialogTitle>
             <AlertDialogDescription>
-              {confirmDelete && referencesMap?.get(confirmDelete.public_url)?.length
+              {protectedThumb
+                ? "You can't delete the thumbnail image because the main image is stored in the system. Delete the main image to remove its thumbnails automatically."
+                : confirmDelete && referencesMap?.get(confirmDelete.public_url)?.length
                 ? `This image is used in ${
                     referencesMap.get(confirmDelete.public_url)!.length
                   } place(s). Deleting will break those references.`
@@ -331,16 +336,18 @@ const MediaThumbnailsGallery = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleteMutation.isPending ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : null}
-              Delete
-            </AlertDialogAction>
+            <AlertDialogCancel>{protectedThumb ? "Close" : "Cancel"}</AlertDialogCancel>
+            {!protectedThumb && (
+              <AlertDialogAction
+                onClick={handleDelete}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deleteMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : null}
+                Delete
+              </AlertDialogAction>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

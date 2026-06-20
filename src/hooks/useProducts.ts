@@ -247,28 +247,47 @@ export const useDeleteProduct = () => {
   return useMutation({
     mutationFn: async (id: string) => {
       // Manual cascade deletion: delete related records first
-      // 1. Delete product images
+      // 1. Delete product image storage files, including thumbnails/medium variants
+      const { data: productImages, error: imageFetchError } = await supabase
+        .from("product_images")
+        .select("image_url, thumb_url, medium_url")
+        .eq("product_id", id);
+      if (imageFetchError) throw imageFetchError;
+
+      const imagePaths = (productImages ?? [])
+        .flatMap((img) => [img.image_url, img.thumb_url, img.medium_url])
+        .filter(Boolean)
+        .map((url) => pathFromPublicUrl(url as string, "product-images"))
+        .filter(Boolean) as string[];
+      if (imagePaths.length > 0) {
+        const { error: storageError } = await supabase.storage
+          .from("product-images")
+          .remove([...new Set(imagePaths)]);
+        if (storageError) throw storageError;
+      }
+
+      // 2. Delete product images
       const { error: imagesError } = await supabase
         .from("product_images")
         .delete()
         .eq("product_id", id);
       if (imagesError) throw imagesError;
 
-      // 2. Delete product variants
+      // 3. Delete product variants
       const { error: variantsError } = await supabase
         .from("product_variants")
         .delete()
         .eq("product_id", id);
       if (variantsError) throw variantsError;
 
-      // 3. Nullify order_items product references (preserve order history)
+      // 4. Nullify order_items product references (preserve order history)
       const { error: orderItemsError } = await supabase
         .from("order_items")
         .update({ product_id: null, variant_id: null })
         .eq("product_id", id);
       if (orderItemsError) throw orderItemsError;
 
-      // 4. Delete the product
+      // 5. Delete the product
       const { error } = await supabase.from("products").delete().eq("id", id);
       if (error) throw error;
     },

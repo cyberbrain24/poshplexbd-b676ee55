@@ -1,6 +1,6 @@
 /**
  * Generate two resized WebP variants of a product image, client-side via canvas.
- * - thumb:  ~400 px on the long edge, q≈0.72  (used in grids)
+ * - thumb:  300 px wide (height auto), q≈0.72  (used in grids)
  * - medium: ~800 px on the long edge, q≈0.78  (used on product detail)
  *
  * GIFs / SVGs are skipped (animation / vector preserved as the original).
@@ -13,7 +13,7 @@ export interface ImageVariants {
 }
 
 const VARIANT_SPECS = [
-  { label: "thumb" as const, width: 400, quality: 0.72 },
+  { label: "thumb" as const, width: 300, quality: 0.72 },
   { label: "medium" as const, edge: 800, quality: 0.78 },
 ];
 
@@ -39,7 +39,7 @@ async function resizeToWebp(
   baseName: string,
   label: string,
 ): Promise<File | null> {
-  // Thumbnail width is fixed at 400px; height follows the original image ratio.
+  // Thumbnail width is fixed at 300px; height follows the original image ratio.
   const longest = Math.max(img.width, img.height);
   const scale = spec.width ? spec.width / img.width : longest > spec.edge! ? spec.edge! / longest : 1;
   const w = Math.max(1, Math.round(img.width * scale));

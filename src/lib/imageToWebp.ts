@@ -36,7 +36,7 @@ export async function toWebpUnder250(
 
   // Optional square center-crop (used for avatars)
   if (opts.squareCrop) {
-    const size = opts.squareSize ?? 400;
+    const size = opts.squareSize ?? 300;
     const blob = await encodeSquare(img, size, maxBytes);
     if (blob) return new File([blob], `${baseName}.webp`, { type: "image/webp" });
   }

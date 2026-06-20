@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import {
   setPixelConfig,
   setupLazyLoading,
@@ -9,109 +10,70 @@ import {
   captureClickId,
 } from "@/services/facebook-pixel.service";
 
-
 /**
  * Global hook that:
- * 1. Fetches pixel settings from DB once
+ * 1. Reads pixel settings from the shared site_settings React Query cache
  * 2. Sets up lazy script injection
  * 3. Tracks PageView on every SPA route change
  */
-const PIXEL_CACHE_KEY = "pp_pixel_cfg_v1";
-const PIXEL_CACHE_TTL = 60 * 60 * 1000; // 60 min
-
-function readPixelCache(): any | null {
-  try {
-    const raw = localStorage.getItem(PIXEL_CACHE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!parsed?.ts || Date.now() - parsed.ts > PIXEL_CACHE_TTL) return null;
-    return parsed.data;
-  } catch {
-    return null;
-  }
-}
-
-function writePixelCache(data: any) {
-  try {
-    localStorage.setItem(PIXEL_CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
-  } catch { /* ignore */ }
-}
-
 export const useFacebookPixel = () => {
   const location = useLocation();
-  const configLoaded = useRef(false);
+  const configApplied = useRef(false);
+  const matchingApplied = useRef(false);
   const lastPath = useRef<string | null>(null);
+  const { data: settings } = useSiteSettings();
 
-  // 1. Load config once
+  // 1. Apply config when settings arrive (memory or network)
   useEffect(() => {
-    if (configLoaded.current) return;
-    configLoaded.current = true;
+    if (configApplied.current || !settings) return;
+    configApplied.current = true;
 
-    const applyConfig = (data: any) => {
-      if (!data) return;
-      setPixelConfig({
-        pixelId: data.meta_pixel_id || "",
-        isEnabled: data.meta_pixel_enabled ?? false,
-        testMode: data.meta_test_mode ?? false,
-        advancedMatching: data.meta_advanced_matching ?? true,
-      });
-      captureClickId();
-      setupLazyLoading();
-    };
+    setPixelConfig({
+      pixelId: settings.meta_pixel_id || "",
+      isEnabled: settings.meta_pixel_enabled ?? false,
+      testMode: settings.meta_test_mode ?? false,
+      advancedMatching: settings.meta_advanced_matching ?? true,
+    });
+    captureClickId();
+    setupLazyLoading();
+  }, [settings]);
 
-    // Synchronous fast path: hydrate from localStorage
-    const cached = readPixelCache();
-    if (cached) applyConfig(cached);
-
-    const load = async () => {
+  // 2. Restore Advanced Matching for already-logged-in user (once)
+  useEffect(() => {
+    if (matchingApplied.current) return;
+    matchingApplied.current = true;
+    (async () => {
       try {
-        // If we just hydrated from cache, skip the network call
-        if (cached) {
-          // Still set up advanced matching for the active session
-        } else {
-          const { data: rows } = await supabase
-            .rpc("get_public_site_settings");
-          const data = Array.isArray(rows) ? rows[0] : null;
-          if (data) {
-            writePixelCache(data);
-            applyConfig(data);
-          }
-        }
-
-        // Restore Advanced Matching for already-logged-in user
         const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          const u = session.user;
-          const meta: any = u.user_metadata || {};
-          const isPhoneEmail = (u.email || "").endsWith("@phone.local");
-          const phoneDigits = isPhoneEmail ? (u.email || "").split("@")[0] : (meta.phone || "").replace(/\D/g, "");
-          const fullName: string = meta.name || "";
-          const [fn, ...rest] = fullName.split(/\s+/).filter(Boolean);
-          setAdvancedMatchingUser({
-            em: !isPhoneEmail ? u.email : undefined,
-            ph: phoneDigits || undefined,
-            fn: fn || undefined,
-            ln: rest.join(" ") || undefined,
-            external_id: u.id,
-            country: "bd",
-          });
-        }
+        if (!session?.user) return;
+        const u = session.user;
+        const meta: any = u.user_metadata || {};
+        const isPhoneEmail = (u.email || "").endsWith("@phone.local");
+        const phoneDigits = isPhoneEmail
+          ? (u.email || "").split("@")[0]
+          : (meta.phone || "").replace(/\D/g, "");
+        const fullName: string = meta.name || "";
+        const [fn, ...rest] = fullName.split(/\s+/).filter(Boolean);
+        setAdvancedMatchingUser({
+          em: !isPhoneEmail ? u.email : undefined,
+          ph: phoneDigits || undefined,
+          fn: fn || undefined,
+          ln: rest.join(" ") || undefined,
+          external_id: u.id,
+          country: "bd",
+        });
       } catch {
         // Fail silently
       }
-    };
-
-    load();
+    })();
   }, []);
 
-
-  // 2. Track PageView on route change (deduplicated)
+  // 3. Track PageView on route change (deduplicated)
   useEffect(() => {
     const currentPath = location.pathname + location.search;
     if (lastPath.current === currentPath) return;
     lastPath.current = currentPath;
 
-    // Small delay to ensure script has loaded after lazy init
     const timer = setTimeout(() => {
       trackPageView();
     }, 100);
@@ -119,3 +81,4 @@ export const useFacebookPixel = () => {
     return () => clearTimeout(timer);
   }, [location.pathname, location.search]);
 };
+

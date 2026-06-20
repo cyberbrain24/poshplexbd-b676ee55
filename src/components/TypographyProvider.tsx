@@ -1,6 +1,5 @@
 import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { findFont } from "@/lib/fontCatalog";
 import {
   normalizeTypographySettings,
@@ -158,29 +157,12 @@ function writeTypoCache(data: unknown) {
 }
 
 export const TypographyProvider = () => {
-  const { data } = useQuery({
-    queryKey: ["site-typography"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("site_settings")
-        .select("typography")
-        .limit(1)
-        .maybeSingle();
-      if (error) throw error;
-      writeTypoCache(data?.typography);
-      return normalizeTypographySettings(data?.typography);
-    },
-    initialData: () => readTypoCache() ?? undefined,
-    staleTime: 60 * 60 * 1000, // 60 min
-    gcTime: 2 * 60 * 60 * 1000, // 2 h
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    refetchOnMount: false,
-  });
+  const { data: settings } = useSiteSettings();
+  const typography = normalizeTypographySettings(settings?.typography ?? null);
 
   useEffect(() => {
-    applyTypography(data || normalizeTypographySettings(null));
-  }, [data]);
+    applyTypography(typography);
+  }, [typography]);
 
   return null;
 };

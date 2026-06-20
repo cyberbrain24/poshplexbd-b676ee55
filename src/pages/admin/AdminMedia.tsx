@@ -6,6 +6,8 @@ import { getFileType, formatFileSize, copyFileUrl } from "@/services/media.servi
 import MediaSeoEditor from "@/components/admin/MediaSeoEditor";
 import ThumbnailBackfillCard from "@/components/admin/ThumbnailBackfillCard";
 import ConvertImagesToWebpCard from "@/components/admin/ConvertImagesToWebpCard";
+import MediaThumbnailsGallery from "@/components/admin/MediaThumbnailsGallery";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -395,6 +397,14 @@ const AdminMedia = () => {
       {/* Convert all images to WebP (one-time cleanup) */}
       <ConvertImagesToWebpCard />
 
+      <Tabs defaultValue="all" className="w-full">
+        <TabsList>
+          <TabsTrigger value="all">All Files</TabsTrigger>
+          <TabsTrigger value="thumbs">Thumbnails</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="all" className="space-y-6 mt-4">
+
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
@@ -559,6 +569,14 @@ const AdminMedia = () => {
           )}
         </>
       )}
+        </TabsContent>
+
+        <TabsContent value="thumbs" className="mt-4">
+          <MediaThumbnailsGallery />
+        </TabsContent>
+      </Tabs>
+
+
 
       {/* Preview Dialog */}
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>

@@ -6,12 +6,24 @@ Allow: /
 Disallow: /admin
 Disallow: /checkout
 Disallow: /auth
+Disallow: /login
+Disallow: /complete-profile
+Disallow: /account
+Disallow: /my-orders
+Disallow: /favorites
+Disallow: /email/
 
 User-agent: Bingbot
 Allow: /
 Disallow: /admin
 Disallow: /checkout
 Disallow: /auth
+Disallow: /login
+Disallow: /complete-profile
+Disallow: /account
+Disallow: /my-orders
+Disallow: /favorites
+Disallow: /email/
 
 User-agent: Twitterbot
 Allow: /
@@ -24,7 +36,12 @@ Allow: /
 Disallow: /admin
 Disallow: /checkout
 Disallow: /auth
-Disallow: /order-tracking
+Disallow: /login
+Disallow: /complete-profile
+Disallow: /account
+Disallow: /my-orders
+Disallow: /favorites
+Disallow: /email/
 
 # Sitemap location
-Sitemap: https://zspmhkzosumopyfmlwvl.supabase.co/functions/v1/sitemap
+Sitemap: https://poshplexbd.com/sitemap_index.xml

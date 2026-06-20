@@ -633,7 +633,36 @@ const AdminOrders = () => {
         </div>
       </div>
 
+      {/* Status Breakdown */}
+      <div className="border border-border p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Status Breakdown</p>
+        {statsLoading ? (
+          <Skeleton className="h-16 w-full" />
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+            {ALLOWED_ORDER_STATUSES
+              .filter((s) => (stats?.byStatus?.[s]?.count || 0) > 0)
+              .map((s) => {
+                const row = stats!.byStatus![s];
+                return (
+                  <div key={s} className="border border-border p-2 flex flex-col gap-0.5">
+                    <Badge className={`${orderStatusColors[s]} text-[10px] px-1.5 py-0 self-start`} variant="outline">
+                      {ORDER_STATUS_LABELS[s]}
+                    </Badge>
+                    <p className="text-sm font-semibold">{row.count} order{row.count !== 1 ? 's' : ''}</p>
+                    <p className="text-[11px] text-muted-foreground">{formatCurrency(row.amount)}</p>
+                  </div>
+                );
+              })}
+            {ALLOWED_ORDER_STATUSES.every((s) => (stats?.byStatus?.[s]?.count || 0) === 0) && (
+              <p className="col-span-full text-xs text-muted-foreground">No orders yet.</p>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Filters */}
+
       <div className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

@@ -12,6 +12,19 @@ Disallow: /account
 Disallow: /my-orders
 Disallow: /favorites
 Disallow: /email/
+# Legacy WordPress/WooCommerce URLs (do not exist on this site)
+Disallow: /shop
+Disallow: /shop/
+Disallow: /product-category/
+Disallow: /products/
+Disallow: /*?p_noticias=
+Disallow: /*?orderby=
+Disallow: /*?filter_
+Disallow: /*?min_price=
+Disallow: /*?max_price=
+Disallow: /*?per_page=
+Disallow: /*?per_row=
+Disallow: /*?shop_view=
 
 User-agent: Bingbot
 Allow: /
@@ -24,6 +37,18 @@ Disallow: /account
 Disallow: /my-orders
 Disallow: /favorites
 Disallow: /email/
+Disallow: /shop
+Disallow: /shop/
+Disallow: /product-category/
+Disallow: /products/
+Disallow: /*?p_noticias=
+Disallow: /*?orderby=
+Disallow: /*?filter_
+Disallow: /*?min_price=
+Disallow: /*?max_price=
+Disallow: /*?per_page=
+Disallow: /*?per_row=
+Disallow: /*?shop_view=
 
 User-agent: Twitterbot
 Allow: /
@@ -42,6 +67,19 @@ Disallow: /account
 Disallow: /my-orders
 Disallow: /favorites
 Disallow: /email/
+Disallow: /shop
+Disallow: /shop/
+Disallow: /product-category/
+Disallow: /products/
+Disallow: /*?p_noticias=
+Disallow: /*?orderby=
+Disallow: /*?filter_
+Disallow: /*?min_price=
+Disallow: /*?max_price=
+Disallow: /*?per_page=
+Disallow: /*?per_row=
+Disallow: /*?shop_view=
 
 # Sitemap location
 Sitemap: https://poshplexbd.com/sitemap_index.xml
+

@@ -51,7 +51,7 @@ function slugify(name: string, id: string) {
 function urlsetXml(entries: UrlEntry[]): string {
   const items = entries
     .map((e) => {
-      const parts = [`    <loc>${e.loc}</loc>`];
+      const parts = [`    <loc>${e.loc.replace(/&/g, "&amp;")}</loc>`];
       if (e.lastmod) parts.push(`    <lastmod>${e.lastmod}</lastmod>`);
       if (e.changefreq) parts.push(`    <changefreq>${e.changefreq}</changefreq>`);
       if (e.priority !== undefined)
@@ -132,14 +132,16 @@ async function main() {
   const categories = await fetchTable(
     "categories?select=name,updated_at&limit=200",
   );
-  const categoryEntries: UrlEntry[] = categories.map((c: any) => ({
-    loc: `${BASE_URL}/category/${(c.name || "")
-      .toLowerCase()
-      .replace(/\s+/g, "-")}`,
-    lastmod: fmt(c.updated_at),
-    changefreq: "daily",
-    priority: 0.8,
-  }));
+  const categoryEntries: UrlEntry[] = categories.map((c: any) => {
+    // Match the app's slug logic in CategoryHeader.tsx: lowercase + spaces->dashes.
+    const slug = (c.name || "").toLowerCase().trim().replace(/\s+/g, "-");
+    return {
+      loc: `${BASE_URL}/category/${slug}`,
+      lastmod: fmt(c.updated_at),
+      changefreq: "daily" as const,
+      priority: 0.8,
+    };
+  });
 
   const outDir = resolve("public");
   mkdirSync(outDir, { recursive: true });

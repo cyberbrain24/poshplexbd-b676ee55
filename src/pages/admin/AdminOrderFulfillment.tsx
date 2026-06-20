@@ -112,16 +112,6 @@ const AdminOrderFulfillment = () => {
     },
   });
 
-  const [readySet, setReadySet] = useState<Set<string>>(() => loadReadySet());
-
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === READY_STORAGE_KEY) setReadySet(loadReadySet());
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
-
   const setIssue = useCallback(
     async (orderId: string, value: IssueValue | null) => {
       const { error } = await supabase
@@ -139,24 +129,27 @@ const AdminOrderFulfillment = () => {
   );
 
   const toggleReady = useCallback(
-    (orderId: string) => {
-      setReadySet((prev) => {
-        const next = new Set(prev);
-        if (next.has(orderId)) {
-          next.delete(orderId);
-          toast.success("Moved back to Not Ready");
-        } else {
-          next.add(orderId);
-          toast.success("Marked as Ready");
-          // Clear issue status on ready
-          void setIssue(orderId, null);
-        }
-        saveReadySet(next);
-        return next;
-      });
+    async (orderId: string, currentlyReady: boolean) => {
+      const next = !currentlyReady;
+      const update: { fulfillment_ready: boolean; fulfillment_issue?: null } = {
+        fulfillment_ready: next,
+      };
+      if (next) update.fulfillment_issue = null;
+      const { error } = await supabase
+        .from("orders")
+        .update(update)
+        .eq("id", orderId);
+      if (error) {
+        toast.error("Failed to update status");
+        return;
+      }
+      toast.success(next ? "Marked as Ready" : "Moved back to Not Ready");
+      qc.invalidateQueries({ queryKey: ["fulfillment-orders"] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
     },
-    [setIssue]
+    [qc]
   );
+
 
   const allOrders = data?.orders ?? [];
   const orders = useMemo(() => {

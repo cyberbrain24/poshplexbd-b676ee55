@@ -15,6 +15,8 @@ export async function toWebpUnder250(
   if (!file.type.startsWith("image/")) return file;
   if (file.type === "image/gif") return file;
   if (file.type === "image/svg+xml") return file;
+  // Already-WebP and under cap: skip re-encoding
+  if (file.type === "image/webp" && file.size <= maxBytes && !opts.squareCrop) return file;
 
   const dataUrl = await new Promise<string>((resolve, reject) => {
     const r = new FileReader();

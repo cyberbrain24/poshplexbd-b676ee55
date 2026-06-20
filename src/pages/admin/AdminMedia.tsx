@@ -391,6 +391,16 @@ const AdminMedia = () => {
               <Button variant="outline" size="sm" onClick={selectedIds.size === visibleFiles.length ? deselectAll : selectAll}>
                 {selectedIds.size === visibleFiles.length ? "Deselect All" : "Select All"}
               </Button>
+              {selectedConvertTargets.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsBulkConvertOpen(true)}
+                >
+                  <FileImage className="h-4 w-4 mr-2" />
+                  Convert {selectedConvertTargets.length} to WebP
+                </Button>
+              )}
               {selectedIds.size > 0 && (
                 <Button
                   variant="destructive"
@@ -471,6 +481,19 @@ const AdminMedia = () => {
             <SelectItem value="audio">Audio</SelectItem>
             <SelectItem value="pdf">PDF</SelectItem>
             <SelectItem value="file">Other</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filterFormat} onValueChange={setFilterFormat}>
+          <SelectTrigger className="w-full sm:w-36">
+            <SelectValue placeholder="Format" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Formats</SelectItem>
+            {formats.map((ext) => (
+              <SelectItem key={ext} value={ext}>
+                {ext.toUpperCase()}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Select value={filterBucket} onValueChange={setFilterBucket}>

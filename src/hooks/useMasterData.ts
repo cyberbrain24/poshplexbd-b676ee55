@@ -69,7 +69,7 @@ export const useDeleteColor = () => {
 };
 
 // Sizes
-export const useSizes = () => {
+export const useSizes = (options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: ["sizes"],
     queryFn: async () => {
@@ -82,6 +82,7 @@ export const useSizes = () => {
     },
     staleTime: MASTER_DATA_STALE_TIME,
     gcTime: MASTER_DATA_GC_TIME,
+    enabled: options?.enabled ?? true,
   });
 };
 

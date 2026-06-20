@@ -283,6 +283,8 @@ export const useAddProductImage = () => {
     mutationFn: async ({
       productId,
       imageUrl,
+      thumbUrl,
+      mediumUrl,
       altText,
       sortOrder,
       isMain,
@@ -290,6 +292,8 @@ export const useAddProductImage = () => {
     }: {
       productId: string;
       imageUrl: string;
+      thumbUrl?: string | null;
+      mediumUrl?: string | null;
       altText?: string;
       sortOrder?: number;
       isMain?: boolean;
@@ -300,6 +304,8 @@ export const useAddProductImage = () => {
         .insert({
           product_id: productId,
           image_url: imageUrl,
+          thumb_url: thumbUrl ?? null,
+          medium_url: mediumUrl ?? null,
           alt_text: altText || null,
           sort_order: sortOrder || 0,
           is_main: isMain || false,
@@ -446,8 +452,19 @@ export const useDeleteProductVariant = () => {
   });
 };
 
-// Upload product image to storage
-export const uploadProductImage = async (file: File, productId: string): Promise<string> => {
+// Upload product image to storage along with two pre-rendered WebP variants
+// (~400 px thumb, ~800 px medium) so category grids ship a much smaller file
+// than the original. Falls back gracefully when variants can't be produced.
+export interface UploadedProductImage {
+  url: string;
+  thumb_url: string | null;
+  medium_url: string | null;
+}
+
+export const uploadProductImage = async (
+  file: File,
+  productId: string,
+): Promise<UploadedProductImage> => {
   // Validate file type
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
   if (!allowedTypes.includes(file.type)) {
@@ -472,14 +489,55 @@ export const uploadProductImage = async (file: File, productId: string): Promise
     throw new Error('Invalid file extension.');
   }
 
-  const fileName = `${productId}/${Date.now()}.${fileExt}`;
+  const ts = Date.now();
+  const fileName = `${productId}/${ts}.${fileExt}`;
 
   const { error: uploadError } = await supabase.storage
     .from("product-images")
     .upload(fileName, file);
-
   if (uploadError) throw uploadError;
 
   const { data } = supabase.storage.from("product-images").getPublicUrl(fileName);
-  return data.publicUrl;
+  const url = data.publicUrl;
+
+  // Generate + upload variants in parallel; never let variant failures block the main upload.
+  let thumb_url: string | null = null;
+  let medium_url: string | null = null;
+  try {
+    const { generateImageVariants } = await import("@/lib/imageThumbs");
+    const variants = await generateImageVariants(file);
+
+    const tasks: Promise<void>[] = [];
+    if (variants.thumb) {
+      const path = `${productId}/thumbs/${ts}-400.webp`;
+      tasks.push(
+        supabase.storage
+          .from("product-images")
+          .upload(path, variants.thumb, { contentType: "image/webp" })
+          .then(({ error }) => {
+            if (!error) {
+              thumb_url = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
+            }
+          }),
+      );
+    }
+    if (variants.medium) {
+      const path = `${productId}/medium/${ts}-800.webp`;
+      tasks.push(
+        supabase.storage
+          .from("product-images")
+          .upload(path, variants.medium, { contentType: "image/webp" })
+          .then(({ error }) => {
+            if (!error) {
+              medium_url = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
+            }
+          }),
+      );
+    }
+    await Promise.all(tasks);
+  } catch (err) {
+    console.warn("Variant generation failed, original will be used:", err);
+  }
+
+  return { url, thumb_url, medium_url };
 };

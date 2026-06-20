@@ -4,6 +4,7 @@ import { useAllMediaMetadata, useDeleteMediaMetadata } from "@/hooks/useMediaMet
 import { useMediaReferences, MediaReference } from "@/hooks/useMediaReferences";
 import { getFileType, formatFileSize, copyFileUrl } from "@/services/media.service";
 import MediaSeoEditor from "@/components/admin/MediaSeoEditor";
+import ThumbnailBackfillCard from "@/components/admin/ThumbnailBackfillCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -386,6 +387,9 @@ const AdminMedia = () => {
           )}
         </div>
       </div>
+
+      {/* Thumbnail backfill */}
+      <ThumbnailBackfillCard />
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">

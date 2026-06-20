@@ -2,6 +2,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Product, ProductFormData, ProductImage, ProductVariant, VariantFormData } from "@/types/product";
 
+const pathFromPublicUrl = (url: string, bucket: string): string | null => {
+  const marker = `/storage/v1/object/public/${bucket}/`;
+  const idx = url.indexOf(marker);
+  return idx === -1 ? null : decodeURIComponent(url.slice(idx + marker.length));
+};
+
 // Lightweight product list query - for admin list and category pages
 // NOTE: Supabase has a 1000 row default limit. For >1000 products, use useOptimizedProducts
 export const useProductsList = (limit?: number) => {
@@ -351,6 +357,24 @@ export const useDeleteProductImage = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      const { data: image, error: fetchError } = await supabase
+        .from("product_images")
+        .select("image_url, thumb_url, medium_url")
+        .eq("id", id)
+        .single();
+      if (fetchError) throw fetchError;
+
+      const paths = [image?.image_url, image?.thumb_url, image?.medium_url]
+        .filter(Boolean)
+        .map((url) => pathFromPublicUrl(url as string, "product-images"))
+        .filter(Boolean) as string[];
+      if (paths.length > 0) {
+        const { error: storageError } = await supabase.storage
+          .from("product-images")
+          .remove([...new Set(paths)]);
+        if (storageError) throw storageError;
+      }
+
       const { error } = await supabase.from("product_images").delete().eq("id", id);
       if (error) throw error;
     },
@@ -485,7 +509,7 @@ export const uploadProductImage = async (
 
   // Auto-convert to WebP under 250KB before upload
   const { toWebpUnder250 } = await import("@/lib/imageToWebp");
-  const webpFile = await toWebpUnder250(file).catch(() => file);
+  const webpFile = await toWebpUnder250(file);
 
   const ts = Date.now();
   const ext = webpFile.type === "image/webp" ? "webp" : (file.name.split(".").pop()?.toLowerCase() || "webp");

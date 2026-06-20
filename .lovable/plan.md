@@ -1,65 +1,71 @@
-## Goals
-Four small, independent tweaks to the order module — no impact to existing data flows.
+## Why `/category/fifa-collection` feels slow
 
----
+I loaded the live page and profiled it. The slowness is not one bug — it is several small things stacking up. Concrete numbers below.
 
-### 1. Show "Order Notes" on the All Orders card
-On `src/pages/admin/AdminOrders.tsx`, every order box already has access to `customer_notes` (the field filled by the "Order Notes (Optional)" textarea on Checkout / Add Order). When `customer_notes` is non-empty, render a small note line inside the card details block (label "Note:" + truncated text, 2-line clamp, muted). Nothing rendered when empty.
+### Measured
 
-No DB / hook changes — `customer_notes` is already in the orders payload.
+- **TTFB**: 1636 ms (just to get the HTML)
+- **FCP**: 2664 ms, full load: 2238 ms
+- **18 parallel Supabase calls** fire on load; each one takes **500–760 ms** in the user's region (a single empty REST call already takes ~600 ms)
+- **2 edge functions block early**: `meta-capi` 1538 ms, `track-visit` 2055 ms
+- A **16.7 s background MP3** is downloaded eagerly by the floating music player
+- Product images are **~2 seconds each**, served as raw 500 KB+ JPEGs from storage with no resizing
+- Slowest DB query (from `pg_stat_statements`): the products fetch with `*` plus joins to category/brand/size_guide/care_instruction/images/variants(+color+size+material) — **mean 438 ms, max 982 ms** over 218 calls. ProductDetail uses the `*` shape.
+- The category list itself runs a **6-step sequential waterfall** before the first product appears.
 
----
+### Top causes, in order of impact
 
-### 2. Tag each order as **Web Order** vs **Admin Order**
+**1. Sequential request waterfall in `useOptimizedCategoryProducts` (`src/hooks/useOptimizedProducts.ts`)**
+For a category slug it runs, one after the other:
 
-**Database (migration):**
-- Add column `orders.order_source TEXT` with allowed values `'web'` and `'admin'` (CHECK constraint), default `'web'`, indexed.
-- Backfill existing rows to `'web'` so historical orders look unchanged.
+```text
+categories (lookup parent by name) ─► categories (active subcategories)
+        ─► product_categories (junction filter) ─► products + count + reviews
+```
 
-**Code:**
-- `src/pages/Checkout.tsx` order insert → set `order_source: 'web'`.
-- `src/pages/admin/AdminAddOrder.tsx` order insert → set `order_source: 'admin'`.
-- `src/services/order.service.ts` `CreateOrderData` gains optional `order_source`; passed through on insert (default `'web'` if omitted).
-- `src/hooks/useOrders.ts` `Order` type adds `order_source: 'web' | 'admin' | null`.
-- `src/pages/admin/AdminOrders.tsx` order card → small badge next to status: `Web Order` (neutral outline) or `Admin Order` (filled dark).
+That is 4 round-trips × ~600 ms = ~2.4 s before any card paints.
 
-No filter UI added (out of scope).
+**2. `track-visit` and `meta-capi` edge functions block on the same network as the data calls**
+Together they hold ~3.5 s of bandwidth/connections during the most important moment. They should be deferred to `requestIdleCallback` after first paint, or fired with `keepalive: true` without being awaited.
 
----
+**3. The floating music player eagerly downloads the full MP3** (`MusicPlayerContext.tsx` sets `audioRef.current.preload = "auto"`). 16.7 s of audio = several MB on every page load. Switch to `preload="none"` (or `"metadata"`) and only load on user interaction.
 
-### 3. Mobile keyboard auto-opens on Add Product sheet
-On `src/pages/admin/AdminAddOrder.tsx`, the picker `<Sheet>` opens and Radix auto-focuses the first focusable element (the search `<Input>`), which triggers the mobile keyboard.
+**4. Eager fetches that are irrelevant to a category page**
+On `/category/...` the app currently fetches: `colors`, `sizes`, `categories` (twice), `site_branding`, `site_settings.typography`, `get_public_site_settings` RPC, three separate `promotions` queries. Most of those belong to the filter sheet / footer / header and can be `useQuery({ enabled: open })` or lazy-loaded with the components that need them.
 
-Fix: pass `onOpenAutoFocus={(e) => e.preventDefault()}` to `<SheetContent>` of the product picker sheet (line ~633). Search box stays usable — user taps it intentionally to open the keyboard. Variant sub-sheet is unaffected.
+**5. The slow product DB query is over-fetching**
+The 438 ms-average query selects `products.*` plus full rows from 4 reference tables and full variant rows joined to colors/sizes/materials. ProductDetail and some list paths use this shape. The category list itself already uses a slim shape — keep slim shape for lists, and trim the detail shape (only fields the UI reads).
 
----
+**6. Unoptimized images**
+Each card image is 2 s and the originals are uncompressed JPEGs. Memory says paid Supabase Image Transformation isn't available, so the practical fixes are: pre-compress on upload (already used elsewhere — make sure new uploads go through `imageCompress.ts`), serve a single product card image (not all gallery shots), and add `loading="lazy"` + `decoding="async"` + explicit width/height to grid `<img>` tags.
 
-### 4. Status breakdown card on top of All Orders page
-Replace / extend the top stats area on `src/pages/admin/AdminOrders.tsx` with a single new card that lists, per order status, both the **order count** and **total amount**.
+**7. Render-blocking Google Fonts**
+`fonts.googleapis.com/css2?...` is loaded as a render-blocking `<link>`. Either self-host (project already has `.ttf` files) or load with `media="print" onload="this.media='all'"` so it stops blocking FCP.
 
-**Hook change (`src/hooks/useOrders.ts → useOrderStats`):**
-- Already fetches `id, order_status, payment_status, total_amount, created_at`. Add a `byStatus` aggregate:
-  ```
-  byStatus: Record<OrderStatus, { count: number; amount: number }>
-  ```
-  Computed client-side from the same `orders` array (no extra query).
+### Plan
 
-**UI change (AdminOrders.tsx, after the existing 5 stat cards, before Filters):**
-- One bordered card titled "Status Breakdown".
-- Inside: a responsive row (`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3`) — one mini cell per status that has count > 0, showing: status label, count (e.g. "12 orders"), total amount (`formatCurrency`). Statuses with 0 orders are hidden to keep it compact.
-- Color of the label uses the same status color tokens already used on order cards.
+When you switch to build mode, I'll do this in one pass — every change is small and isolated, no schema or RLS work.
 
-Existing 5 cards (Total Orders / Today's Orders / Today's Order Amount / Today's Revenue / Total Revenue) stay untouched.
+1. **`src/hooks/useOptimizedProducts.ts`**
+   - Run parent-category lookup, active-subcategory lookup, and product_categories junction in parallel where possible.
+   - Cache the parent-category-id lookup with its own `useQuery(["category-by-slug", slug])` so it isn't re-run inside `queryFn` and survives navigation.
+   - Drop `variants:product_variants(...)` from the list query — the grid only needs `base_price` + main image. (Variant prices for "from ৳X" can be precomputed or fetched on hover.)
 
----
+2. **`src/contexts/MusicPlayerContext.tsx`** — change `preload = "auto"` to `"none"`, set `src` only when the user clicks play.
 
-### Files touched
-- `supabase` migration (new column + backfill + index)
-- `src/pages/Checkout.tsx` (set `order_source: 'web'`)
-- `src/pages/admin/AdminAddOrder.tsx` (set `order_source: 'admin'`, `onOpenAutoFocus` fix)
-- `src/services/order.service.ts` (type + pass-through)
-- `src/hooks/useOrders.ts` (`Order.order_source`, `useOrderStats.byStatus`)
-- `src/pages/admin/AdminOrders.tsx` (note line, source badge, status breakdown card, switch grid back from 7 to keep current layout — no change to `xl:grid-cols-7`)
+3. **`src/components/tracking/VisitorTracker.tsx` / `FacebookPixelTracker.tsx`** — wrap the `track-visit` and `meta-capi` calls in `requestIdleCallback` (with a `setTimeout` fallback) so they don't run during the initial paint window.
+
+4. **`src/components/category/FilterSortBar.tsx`** — make `colors` and `sizes` queries `enabled: filtersOpen`. They aren't needed until the user opens the filter sheet.
+
+5. **`src/components/header/PoshplexHeader.tsx` / promo slots** — collapse the three `promotions` queries into one with an `in("placement", [...])` filter; gate non-header promotions behind their slot's intersection observer.
+
+6. **`src/components/category/ProductGrid.tsx`** — add `loading="lazy"`, `decoding="async"`, and explicit width/height to card `<img>` tags so they don't compete for connections during FCP and don't cause layout work.
+
+7. **`index.html`** — load the Google Fonts stylesheet non-blocking (`media="print" onload="this.media='all'"` + `<noscript>` fallback). Add `<link rel="preconnect" href="https://zspmhkzosumopyfmlwvl.supabase.co" crossorigin>` so the very first Supabase round-trip is faster.
 
 ### Out of scope
-No changes to RLS, fulfillment page, order creation logic beyond the source tag, or any existing styles/columns not listed above.
+- No change to RLS, schema, or storage buckets.
+- No paid image transform — handled with HTML hints + existing client-side compression on upload.
+- No change to ProductDetail's data shape (separate concern; only relevant if you also report PDP slowness).
+
+Expected outcome: time-to-first-product on this category should drop from ~2.5–3 s to well under 1 s on a warm cache, with FCP improving by ~600–900 ms thanks to deferring tracking + non-blocking fonts.

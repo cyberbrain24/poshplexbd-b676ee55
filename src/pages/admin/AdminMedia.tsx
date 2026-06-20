@@ -825,6 +825,27 @@ const AdminMedia = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bulk Convert to WebP Dialog */}
+      <Dialog open={isBulkConvertOpen} onOpenChange={setIsBulkConvertOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Convert selected images to WebP</DialogTitle>
+          </DialogHeader>
+          <ConvertImagesToWebpCard
+            targets={selectedConvertTargets}
+            onDone={() => {
+              exitSelectionMode();
+              setIsBulkConvertOpen(false);
+            }}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsBulkConvertOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

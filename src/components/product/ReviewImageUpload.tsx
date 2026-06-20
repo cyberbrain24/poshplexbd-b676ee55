@@ -47,12 +47,20 @@ const ReviewImageUpload = ({ images, onChange, maxImages = 3 }: ReviewImageUploa
           continue;
         }
 
-        const fileExt = file.name.split(".").pop();
-        const fileName = `${session.user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const { toWebpUnder250 } = await import("@/lib/imageToWebp");
+        let webpFile: File;
+        try {
+          webpFile = await toWebpUnder250(file);
+        } catch {
+          toast.error(`${file.name} could not be processed`);
+          continue;
+        }
+
+        const fileName = `${session.user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.webp`;
 
         const { error: uploadError } = await supabase.storage
           .from("review-images")
-          .upload(fileName, file);
+          .upload(fileName, webpFile, { contentType: "image/webp" });
 
         if (uploadError) {
           console.error("Upload error:", uploadError);

@@ -248,9 +248,9 @@ const CustomerAccount = () => {
   const handleProfileImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const allowed = ["image/jpeg", "image/jpg", "image/png"];
+    const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
     if (!allowed.includes(file.type.toLowerCase())) {
-      toast.error("Only JPG, JPEG, or PNG files are allowed");
+      toast.error("Only JPG, JPEG, PNG, or WebP files are allowed");
       return;
     }
     if (!accountData?.customer_id) return;
@@ -258,13 +258,13 @@ const CustomerAccount = () => {
     setIsUploadingImage(true);
     try {
       const { compressProfileImage } = await import("@/lib/imageCompress");
-      const compressed = await compressProfileImage(file, 400, 100 * 1024);
+      const compressed = await compressProfileImage(file, 400, 250 * 1024);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
-      const filePath = `${user.id}/profile.jpg`;
+      const filePath = `${user.id}/profile.webp`;
       const { error: uploadError } = await supabase.storage
         .from("profile-images")
-        .upload(filePath, compressed, { upsert: true, contentType: "image/jpeg" });
+        .upload(filePath, compressed, { upsert: true, contentType: "image/webp" });
       if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage.from("profile-images").getPublicUrl(filePath);
       const publicUrl = urlData.publicUrl + "?t=" + Date.now();

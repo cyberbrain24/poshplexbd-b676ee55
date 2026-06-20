@@ -187,7 +187,7 @@ const ReviewImageUpload = ({ images, onChange, maxImages = 3 }: ReviewImageUploa
                 Click to upload <span className="text-muted-foreground font-normal">or drag and drop</span>
               </p>
               <p className="text-xs text-muted-foreground">
-                PNG, JPG up to 5MB · max {maxImages} images
+                PNG / JPG / WebP — auto-converted to WebP, up to 5MB · max {maxImages} images
               </p>
             </>
           )}

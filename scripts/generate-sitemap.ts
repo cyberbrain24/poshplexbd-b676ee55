@@ -133,16 +133,10 @@ async function main() {
     "categories?select=name,updated_at&limit=200",
   );
   const categoryEntries: UrlEntry[] = categories.map((c: any) => {
-    const slug = (c.name || "")
-      .toLowerCase()
-      .trim()
-      .replace(/&/g, "and")
-      .replace(/[^\w\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-")
-      .replace(/^-|-$/g, "");
+    // Match the app's slug logic in CategoryHeader.tsx: lowercase + spaces->dashes.
+    const slug = (c.name || "").toLowerCase().trim().replace(/\s+/g, "-");
     return {
-      loc: `${BASE_URL}/category/${encodeURIComponent(slug)}`,
+      loc: `${BASE_URL}/category/${slug}`,
       lastmod: fmt(c.updated_at),
       changefreq: "daily" as const,
       priority: 0.8,

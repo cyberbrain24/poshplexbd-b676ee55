@@ -19,25 +19,6 @@ import { formatCurrency } from "@/lib/currency";
 import { useSyncSteadfastStatus } from "@/hooks/useSteadfast";
 import OrderDetailModal from "@/components/admin/OrderDetailModal";
 
-const READY_STORAGE_KEY = "fulfillment_ready_orders_v1";
-
-const loadReadySet = (): Set<string> => {
-  try {
-    const raw = localStorage.getItem(READY_STORAGE_KEY);
-    if (!raw) return new Set();
-    return new Set(JSON.parse(raw) as string[]);
-  } catch {
-    return new Set();
-  }
-};
-
-const saveReadySet = (set: Set<string>) => {
-  try {
-    localStorage.setItem(READY_STORAGE_KEY, JSON.stringify([...set]));
-  } catch {
-    /* ignore */
-  }
-};
 
 type StatusFilter = "all" | "not_ready" | "ready";
 type IssueValue = "stock_out" | "print_issues" | "courier_issues" | "other_issues";

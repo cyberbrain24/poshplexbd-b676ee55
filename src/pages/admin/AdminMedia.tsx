@@ -6,7 +6,7 @@ import { getFileType, formatFileSize, copyFileUrl } from "@/services/media.servi
 import { resolveMainImage, isDerivedThumbnail, getDerivativeImagesForMain } from "@/lib/mediaThumbResolve";
 import MediaSeoEditor from "@/components/admin/MediaSeoEditor";
 import ThumbnailBackfillCard from "@/components/admin/ThumbnailBackfillCard";
-import ConvertImagesToWebpCard from "@/components/admin/ConvertImagesToWebpCard";
+import ConvertImagesToWebpCard, { PendingImage } from "@/components/admin/ConvertImagesToWebpCard";
 import MediaThumbnailsGallery from "@/components/admin/MediaThumbnailsGallery";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -59,6 +59,7 @@ import {
   CheckSquare,
   Square,
   X,
+  FileImage,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -92,18 +93,25 @@ const LOAD_MORE_SIZE = 50;
 const AdminMedia = () => {
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
+  const [filterFormat, setFilterFormat] = useState<string>("all");
   const [filterBucket, setFilterBucket] = useState<string>("all");
   const [selectedFile, setSelectedFile] = useState<MediaFile | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isRenameOpen, setIsRenameOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
+  const [isBulkConvertOpen, setIsBulkConvertOpen] = useState(false);
   const [newFileName, setNewFileName] = useState("");
   const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const getExt = (name: string) => {
+    const i = name.lastIndexOf(".");
+    return i === -1 ? "" : name.slice(i + 1).toLowerCase();
+  };
 
   const { data: files = [], isLoading } = useMediaFiles();
   const { data: allMetadata = [] } = useAllMediaMetadata();
@@ -120,14 +128,15 @@ const AdminMedia = () => {
       const fileType = getFileType(file.mime_type, file.name);
       const matchesType = filterType === "all" || fileType === filterType;
       const matchesBucket = filterBucket === "all" || file.bucket_id === filterBucket;
-      return matchesSearch && matchesType && matchesBucket;
+      const matchesFormat = filterFormat === "all" || getExt(file.name) === filterFormat;
+      return matchesSearch && matchesType && matchesBucket && matchesFormat;
     });
-  }, [files, search, filterType, filterBucket]);
+  }, [files, search, filterType, filterBucket, filterFormat]);
 
   // Reset visible count when filters change
   useMemo(() => {
     setVisibleCount(INITIAL_LOAD);
-  }, [search, filterType, filterBucket]);
+  }, [search, filterType, filterBucket, filterFormat]);
 
   // Paginated slice for display
   const visibleFiles = useMemo(() => filteredFiles.slice(0, visibleCount), [filteredFiles, visibleCount]);
@@ -136,6 +145,24 @@ const AdminMedia = () => {
   const buckets = useMemo(() => {
     return [...new Set(files.map((f) => f.bucket_id))];
   }, [files]);
+
+  const formats = useMemo(() => {
+    const set = new Set<string>();
+    for (const f of files) {
+      if (getFileType(f.mime_type, f.name) !== "image") continue;
+      const ext = getExt(f.name);
+      if (ext) set.add(ext);
+    }
+    return [...set].sort();
+  }, [files]);
+
+  const selectedConvertTargets = useMemo<PendingImage[]>(() => {
+    return files
+      .filter((f) => selectedIds.has(`${f.bucket_id}::${f.name}`))
+      .filter((f) => getFileType(f.mime_type, f.name) === "image")
+      .filter((f) => getExt(f.name) !== "webp")
+      .map((f) => ({ bucket: f.bucket_id, path: f.name, size: f.size }));
+  }, [files, selectedIds]);
 
   const getFileReferences = (file: MediaFile): MediaReference[] => {
     if (!referencesMap) return [];

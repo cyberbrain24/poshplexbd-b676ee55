@@ -163,7 +163,10 @@ export async function uploadProductImage(
     throw new Error("Invalid file type. Allowed: JPEG, PNG, WebP, GIF");
   }
 
-  const fileExt = (file.name.split(".").pop() || "jpg").toLowerCase();
+  // Auto-convert to WebP under 250KB
+  const { toWebpUnder250 } = await import("@/lib/imageToWebp");
+  const webpFile = await toWebpUnder250(file).catch(() => file);
+  const fileExt = webpFile.type === "image/webp" ? "webp" : (file.name.split(".").pop() || "jpg").toLowerCase();
   const baseName = `${productId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
   // Retry transient storage failures (520/timeouts) up to 3 attempts with backoff
@@ -172,7 +175,7 @@ export async function uploadProductImage(
     const fileName = `${baseName}-${attempt}.${fileExt}`;
     const { error: uploadError } = await supabase.storage
       .from(STORAGE.PRODUCT_IMAGES_BUCKET)
-      .upload(fileName, file, { contentType: file.type, upsert: false });
+      .upload(fileName, webpFile, { contentType: webpFile.type, upsert: false });
 
     if (!uploadError) {
       const { data: urlData } = supabase.storage

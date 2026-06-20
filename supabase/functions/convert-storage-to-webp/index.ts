@@ -68,6 +68,18 @@ async function findPending(
       const ext = extOf(entry.name);
       if (SKIP_EXT.has(ext)) continue;
       if (!RASTER_EXT.has(ext)) continue; // unknown — skip
+      const { data: lastError } = await admin
+        .from("image_migration_log")
+        .select("error")
+        .eq("bucket", bucket)
+        .eq("old_path", childPath)
+        .eq("status", "error")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      // Skip files that already failed with a real conversion/decode error so one bad file
+      // cannot block every later image. Old Web Cache errors are retried because this build fixes them.
+      if (lastError?.error && !String(lastError.error).includes("Web Cache is not available")) continue;
       out.push({ bucket, path: childPath, size: entry.metadata?.size ?? 0 });
     }
     if (data.length < 100) break;

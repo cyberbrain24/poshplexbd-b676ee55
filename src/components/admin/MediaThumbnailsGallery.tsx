@@ -29,7 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Copy, Trash2, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { useMediaFiles, useDeleteMedia } from "@/hooks/useMedia";
+import { useMediaFiles, useDeleteMediaFiles } from "@/hooks/useMedia";
 import {
   useAllMediaMetadata,
   useDeleteMediaMetadata,
@@ -41,7 +41,7 @@ import {
   copyFileUrl,
   type MediaFile,
 } from "@/services/media.service";
-import { resolveMainImage, isDerivedThumbnail } from "@/lib/mediaThumbResolve";
+import { resolveMainImage, isDerivedThumbnail, getDerivativeImagesForMain } from "@/lib/mediaThumbResolve";
 import MediaSeoEditor from "@/components/admin/MediaSeoEditor";
 
 const BUCKET_LABELS: Record<string, string> = {
@@ -58,7 +58,7 @@ const MediaThumbnailsGallery = () => {
   const { data: files = [], isLoading } = useMediaFiles();
   const { data: allMetadata = [] } = useAllMediaMetadata();
   const { data: referencesMap } = useMediaReferences();
-  const deleteMutation = useDeleteMedia();
+  const deleteMutation = useDeleteMediaFiles();
   const deleteMetaMutation = useDeleteMediaMetadata();
 
   const [search, setSearch] = useState("");
@@ -101,6 +101,10 @@ const MediaThumbnailsGallery = () => {
     : null;
 
   const refs = selected ? referencesMap?.get(selected.public_url) ?? [] : [];
+  const confirmMain = confirmDelete ? resolveMainImage(confirmDelete, files) : null;
+  const protectedThumb = Boolean(
+    confirmDelete && confirmMain && isDerivedThumbnail(confirmDelete) && confirmMain.name !== confirmDelete.name,
+  );
 
   const handleCopy = async (url: string) => {
     await copyFileUrl(url);
@@ -109,16 +113,24 @@ const MediaThumbnailsGallery = () => {
 
   const handleDelete = async () => {
     if (!confirmDelete) return;
+    if (protectedThumb) {
+      toast.error("You can't delete the thumbnail image because the main image is stored in the system.");
+      setConfirmDelete(null);
+      return;
+    }
+
     try {
+      const derivatives = getDerivativeImagesForMain(confirmDelete, files);
+      const fileNames = [confirmDelete.name, ...derivatives.map((f) => f.name)];
       await deleteMutation.mutateAsync({
         bucketId: confirmDelete.bucket_id,
-        fileName: confirmDelete.name,
+        fileNames,
       });
-      deleteMetaMutation.mutate({
+      fileNames.forEach((filePath) => deleteMetaMutation.mutate({
         bucketId: confirmDelete.bucket_id,
-        filePath: confirmDelete.name,
-      });
-      if (selected?.name === confirmDelete.name) setSelected(null);
+        filePath,
+      }));
+      if (selected && fileNames.includes(selected.name)) setSelected(null);
       setConfirmDelete(null);
     } catch (e) {
       console.error(e);
@@ -314,7 +326,9 @@ const MediaThumbnailsGallery = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this image?</AlertDialogTitle>
             <AlertDialogDescription>
-              {confirmDelete && referencesMap?.get(confirmDelete.public_url)?.length
+              {protectedThumb
+                ? "You can't delete the thumbnail image because the main image is stored in the system. Delete the main image to remove its thumbnails automatically."
+                : confirmDelete && referencesMap?.get(confirmDelete.public_url)?.length
                 ? `This image is used in ${
                     referencesMap.get(confirmDelete.public_url)!.length
                   } place(s). Deleting will break those references.`
@@ -322,16 +336,18 @@ const MediaThumbnailsGallery = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleteMutation.isPending ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : null}
-              Delete
-            </AlertDialogAction>
+            <AlertDialogCancel>{protectedThumb ? "Close" : "Cancel"}</AlertDialogCancel>
+            {!protectedThumb && (
+              <AlertDialogAction
+                onClick={handleDelete}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deleteMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : null}
+                Delete
+              </AlertDialogAction>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

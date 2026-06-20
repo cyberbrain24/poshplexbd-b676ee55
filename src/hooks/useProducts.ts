@@ -2,6 +2,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Product, ProductFormData, ProductImage, ProductVariant, VariantFormData } from "@/types/product";
 
+const pathFromPublicUrl = (url: string, bucket: string): string | null => {
+  const marker = `/storage/v1/object/public/${bucket}/`;
+  const idx = url.indexOf(marker);
+  return idx === -1 ? null : decodeURIComponent(url.slice(idx + marker.length));
+};
+
 // Lightweight product list query - for admin list and category pages
 // NOTE: Supabase has a 1000 row default limit. For >1000 products, use useOptimizedProducts
 export const useProductsList = (limit?: number) => {
@@ -241,28 +247,47 @@ export const useDeleteProduct = () => {
   return useMutation({
     mutationFn: async (id: string) => {
       // Manual cascade deletion: delete related records first
-      // 1. Delete product images
+      // 1. Delete product image storage files, including thumbnails/medium variants
+      const { data: productImages, error: imageFetchError } = await supabase
+        .from("product_images")
+        .select("image_url, thumb_url, medium_url")
+        .eq("product_id", id);
+      if (imageFetchError) throw imageFetchError;
+
+      const imagePaths = (productImages ?? [])
+        .flatMap((img) => [img.image_url, img.thumb_url, img.medium_url])
+        .filter(Boolean)
+        .map((url) => pathFromPublicUrl(url as string, "product-images"))
+        .filter(Boolean) as string[];
+      if (imagePaths.length > 0) {
+        const { error: storageError } = await supabase.storage
+          .from("product-images")
+          .remove([...new Set(imagePaths)]);
+        if (storageError) throw storageError;
+      }
+
+      // 2. Delete product images
       const { error: imagesError } = await supabase
         .from("product_images")
         .delete()
         .eq("product_id", id);
       if (imagesError) throw imagesError;
 
-      // 2. Delete product variants
+      // 3. Delete product variants
       const { error: variantsError } = await supabase
         .from("product_variants")
         .delete()
         .eq("product_id", id);
       if (variantsError) throw variantsError;
 
-      // 3. Nullify order_items product references (preserve order history)
+      // 4. Nullify order_items product references (preserve order history)
       const { error: orderItemsError } = await supabase
         .from("order_items")
         .update({ product_id: null, variant_id: null })
         .eq("product_id", id);
       if (orderItemsError) throw orderItemsError;
 
-      // 4. Delete the product
+      // 5. Delete the product
       const { error } = await supabase.from("products").delete().eq("id", id);
       if (error) throw error;
     },
@@ -351,6 +376,24 @@ export const useDeleteProductImage = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      const { data: image, error: fetchError } = await supabase
+        .from("product_images")
+        .select("image_url, thumb_url, medium_url")
+        .eq("id", id)
+        .single();
+      if (fetchError) throw fetchError;
+
+      const paths = [image?.image_url, image?.thumb_url, image?.medium_url]
+        .filter(Boolean)
+        .map((url) => pathFromPublicUrl(url as string, "product-images"))
+        .filter(Boolean) as string[];
+      if (paths.length > 0) {
+        const { error: storageError } = await supabase.storage
+          .from("product-images")
+          .remove([...new Set(paths)]);
+        if (storageError) throw storageError;
+      }
+
       const { error } = await supabase.from("product_images").delete().eq("id", id);
       if (error) throw error;
     },
@@ -485,7 +528,7 @@ export const uploadProductImage = async (
 
   // Auto-convert to WebP under 250KB before upload
   const { toWebpUnder250 } = await import("@/lib/imageToWebp");
-  const webpFile = await toWebpUnder250(file).catch(() => file);
+  const webpFile = await toWebpUnder250(file);
 
   const ts = Date.now();
   const ext = webpFile.type === "image/webp" ? "webp" : (file.name.split(".").pop()?.toLowerCase() || "webp");

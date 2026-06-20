@@ -1,20 +1,21 @@
 // Admin-only one-time backfill: converts every non-WebP image in storage
-// to WebP under 250 KB, rewrites every DB row that references the old URL,
+// to WebP, rewrites every DB row that references the old URL,
 // and deletes the original file. Designed to be polled in small batches
 // from the admin UI until `remaining === 0`.
 
-import { createClient } from "npm:@supabase/supabase-js@2";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import {
   ImageMagick,
-  initialize as initImageMagick,
+  initializeImageMagick,
   MagickFormat,
-} from "https://deno.land/x/imagemagick_deno@0.0.31/mod.ts";
+} from "npm:@imagemagick/magick-wasm@0.0.31";
+import { createClient } from "npm:@supabase/supabase-js@2";
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
 const BUCKETS = ["product-images", "media", "review-images", "profile-images"] as const;
 const MAX_BATCH = 20;
 const DEFAULT_BATCH = 5;
 const WEBP_QUALITY = 85; // high-quality re-encode; no size/pixel cap on existing images
+const MAGICK_WASM_URL = "https://cdn.jsdelivr.net/npm/@imagemagick/magick-wasm@0.0.31/dist/magick.wasm";
 const SKIP_EXT = new Set(["webp", "gif", "svg"]); // pass-through formats
 const RASTER_EXT = new Set(["jpg", "jpeg", "png", "bmp", "tif", "tiff", "heic", "heif", "avif"]);
 
@@ -24,7 +25,11 @@ interface BodyParams {
 
 let magickReady: Promise<void> | null = null;
 function ensureMagick() {
-  if (!magickReady) magickReady = initImageMagick();
+  if (!magickReady) {
+    magickReady = fetch(MAGICK_WASM_URL)
+      .then((res) => res.arrayBuffer())
+      .then((bytes) => initializeImageMagick(new Uint8Array(bytes)));
+  }
   return magickReady;
 }
 
@@ -63,6 +68,18 @@ async function findPending(
       const ext = extOf(entry.name);
       if (SKIP_EXT.has(ext)) continue;
       if (!RASTER_EXT.has(ext)) continue; // unknown — skip
+      const { data: lastError } = await admin
+        .from("image_migration_log")
+        .select("error")
+        .eq("bucket", bucket)
+        .eq("old_path", childPath)
+        .eq("status", "error")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      // Skip files that already failed with a real conversion/decode error so one bad file
+      // cannot block every later image. Old Web Cache errors are retried because this build fixes them.
+      if (lastError?.error && !String(lastError.error).includes("Web Cache is not available")) continue;
       out.push({ bucket, path: childPath, size: entry.metadata?.size ?? 0 });
     }
     if (data.length < 100) break;
@@ -70,18 +87,14 @@ async function findPending(
   }
 }
 
-async function encodeWebpUnder250(bytes: Uint8Array): Promise<Uint8Array> {
+async function encodeWebp(bytes: Uint8Array): Promise<Uint8Array> {
   await ensureMagick();
   // No size/pixel restriction — preserve original dimensions, just re-encode to WebP at high quality.
-  return await new Promise<Uint8Array>((resolve, reject) => {
-    try {
-      ImageMagick.read(bytes, (img) => {
-        img.quality = WEBP_QUALITY;
-        img.write(MagickFormat.Webp, (data) => resolve(new Uint8Array(data)));
-      });
-    } catch (e) {
-      reject(e);
-    }
+  return await ImageMagick.read(bytes, (img) => {
+    img.autoOrient();
+    img.strip();
+    img.quality = WEBP_QUALITY;
+    return img.write(MagickFormat.WebP, (data) => new Uint8Array(data));
   });
 }
 
@@ -224,8 +237,8 @@ Deno.serve(async (req) => {
         if (dl.error || !dl.data) throw new Error(dl.error?.message ?? "download failed");
         const origBytes = new Uint8Array(await dl.data.arrayBuffer());
 
-        // Encode to WebP under cap
-        const webpBytes = await encodeWebpUnder250(origBytes);
+        // Encode to WebP without any size or pixel restriction
+        const webpBytes = await encodeWebp(origBytes);
 
         // Upload new file (different path because extension changes)
         const up = await admin.storage

@@ -216,7 +216,7 @@ export default function AdminProductAI({ embedded = false }: Props) {
     setAttaching(true);
     try {
       const { toWebpUnder250 } = await import("@/lib/imageToWebp");
-      const webpFile = await toWebpUnder250(file).catch(() => file);
+      const webpFile = await toWebpUnder250(file);
       const safeName = (webpFile.name || file.name).replace(/[^a-z0-9.-]/gi, "_");
       const path = `ai-uploads/${Date.now()}-${safeName}`;
       const { error } = await supabase.storage.from(PRODUCT_IMAGES_BUCKET).upload(path, webpFile, { contentType: webpFile.type });

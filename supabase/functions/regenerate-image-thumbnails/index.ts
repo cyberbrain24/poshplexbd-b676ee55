@@ -38,10 +38,10 @@ async function fetchBytes(url: string): Promise<Uint8Array | null> {
   }
 }
 
-async function buildVariant(img: Image, maxEdge: number, quality: number): Promise<Uint8Array> {
+async function buildVariant(img: Image, spec: { width?: number; maxEdge?: number }, quality: number): Promise<Uint8Array> {
   // Image.clone preserves the original so we can render multiple sizes.
   const longest = Math.max(img.width, img.height);
-  const scale = longest > maxEdge ? maxEdge / longest : 1;
+  const scale = spec.width ? spec.width / img.width : longest > spec.maxEdge! ? spec.maxEdge! / longest : 1;
   const w = Math.max(1, Math.round(img.width * scale));
   const h = Math.max(1, Math.round(img.height * scale));
   const resized = scale === 1 ? img.clone() : img.clone().resize(w, h);
@@ -134,7 +134,7 @@ Deno.serve(async (req) => {
         let medium_url = row.medium_url as string | null;
 
         if (!thumb_url) {
-          const tBytes = await buildVariant(img, 400, 0.72);
+          const tBytes = await buildVariant(img, { width: 400 }, 0.72);
           const tPath = `${row.product_id}/thumbs/${idStem}-400.jpg`;
           const { error } = await admin.storage
             .from(BUCKET)
@@ -144,7 +144,7 @@ Deno.serve(async (req) => {
         }
 
         if (!medium_url) {
-          const mBytes = await buildVariant(img, 800, 0.78);
+          const mBytes = await buildVariant(img, { maxEdge: 800 }, 0.78);
           const mPath = `${row.product_id}/medium/${idStem}-800.jpg`;
           const { error } = await admin.storage
             .from(BUCKET)

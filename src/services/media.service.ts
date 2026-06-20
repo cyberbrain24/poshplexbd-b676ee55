@@ -125,8 +125,8 @@ export const uploadMediaFile = async (file: File): Promise<MediaFile> => {
     try {
       const { toWebpUnder250 } = await import("@/lib/imageToWebp");
       toUpload = await toWebpUnder250(file);
-    } catch {
-      toUpload = file;
+    } catch (error) {
+      throw error instanceof Error ? error : new Error("Image conversion failed");
     }
   }
   const fileExt = toUpload.type === "image/webp" ? "webp" : (file.name.split(".").pop() || "bin");
@@ -159,6 +159,16 @@ export const uploadMediaFile = async (file: File): Promise<MediaFile> => {
  */
 export const deleteMediaFile = async (bucketId: string, fileName: string): Promise<void> => {
   const { error } = await supabase.storage.from(bucketId).remove([fileName]);
+  if (error) throw error;
+};
+
+/**
+ * Delete a main image together with its generated thumbnail/medium files.
+ */
+export const deleteMediaFiles = async (bucketId: string, fileNames: string[]): Promise<void> => {
+  const uniqueNames = [...new Set(fileNames.filter(Boolean))];
+  if (uniqueNames.length === 0) return;
+  const { error } = await supabase.storage.from(bucketId).remove(uniqueNames);
   if (error) throw error;
 };
 

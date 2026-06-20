@@ -3,6 +3,7 @@ import {
   fetchAllMediaFiles,
   uploadMediaFile,
   deleteMediaFile,
+  deleteMediaFiles,
   renameMediaFile,
   MediaFile,
 } from "@/services/media.service";
@@ -56,6 +57,23 @@ export const useDeleteMedia = () => {
     onError: (error: Error) => {
       console.error("Delete error:", error);
       toast.error("Failed to delete file");
+    },
+  });
+};
+
+export const useDeleteMediaFiles = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ bucketId, fileNames }: { bucketId: string; fileNames: string[] }) =>
+      deleteMediaFiles(bucketId, fileNames),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: MEDIA_QUERY_KEY });
+      toast.success("Files deleted successfully");
+    },
+    onError: (error: Error) => {
+      console.error("Delete error:", error);
+      toast.error("Failed to delete files");
     },
   });
 };

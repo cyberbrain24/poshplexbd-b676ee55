@@ -92,7 +92,7 @@ const PromotionModal = ({ open, onOpenChange, promotion }: Props) => {
     setUploading(true);
     try {
       const { toWebpUnder250 } = await import("@/lib/imageToWebp");
-      const webpFile = await toWebpUnder250(file).catch(() => file);
+      const webpFile = await toWebpUnder250(file);
       const ext = webpFile.type === "image/webp" ? "webp" : (file.name.split(".").pop() || "webp");
       const path = `promotions/${crypto.randomUUID()}.${ext}`;
       const { error } = await supabase.storage.from("media").upload(path, webpFile, { upsert: false, contentType: webpFile.type });

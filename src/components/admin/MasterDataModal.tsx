@@ -244,7 +244,7 @@ const MasterDataModal = ({ isOpen, onClose, onSave, title, type, initialData }: 
           setIsUploading(true);
           try {
             const { toWebpUnder250 } = await import("@/lib/imageToWebp");
-            const webpFile = await toWebpUnder250(file).catch(() => file);
+            const webpFile = await toWebpUnder250(file);
             const ext = webpFile.type === "image/webp" ? "webp" : (file.name.split('.').pop()?.toLowerCase() || "webp");
             const fileName = `categories/${Date.now()}.${ext}`;
 

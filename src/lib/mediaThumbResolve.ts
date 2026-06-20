@@ -1,6 +1,23 @@
 import type { MediaFile } from "@/services/media.service";
 
-const SUFFIX_RE = /-(thumb|medium)(\.[a-z0-9]+)$/i;
+const SAME_FOLDER_SUFFIX_RE = /-(thumb|medium)(\.[a-z0-9]+)$/i;
+const VARIANT_FOLDER_RE = /^(.*\/)?(thumbs|medium)\/([^/]+?)-(400|800|thumb|medium)(\.[a-z0-9]+)$/i;
+
+function stemOf(path: string): string {
+  return path.replace(/\.[^/.]+$/, "");
+}
+
+function derivedMainStem(path: string): string | null {
+  const folderMatch = path.match(VARIANT_FOLDER_RE);
+  if (folderMatch) {
+    const parent = (folderMatch[1] || "").replace(/\/$/, "");
+    return parent ? `${parent}/${folderMatch[3]}` : folderMatch[3];
+  }
+
+  const suffixMatch = path.match(SAME_FOLDER_SUFFIX_RE);
+  if (!suffixMatch) return null;
+  return path.slice(0, suffixMatch.index!);
+}
 
 /**
  * Resolve a media file to its "main image" — the canonical original.
@@ -16,27 +33,28 @@ export function resolveMainImage(
   file: MediaFile,
   allFiles: MediaFile[],
 ): MediaFile {
-  const m = file.name.match(SUFFIX_RE);
-  if (!m) return file;
+  const mainStem = derivedMainStem(file.name);
+  if (!mainStem) return file;
 
-  const baseStem = file.name.slice(0, m.index!); // path without "-thumb.ext"
-  const folder = baseStem.includes("/") ? baseStem.slice(0, baseStem.lastIndexOf("/")) : "";
-  const stemName = baseStem.includes("/") ? baseStem.slice(baseStem.lastIndexOf("/") + 1) : baseStem;
-
-  const candidate = allFiles.find((f) => {
-    if (f.bucket_id !== file.bucket_id) return false;
-    const fFolder = f.name.includes("/") ? f.name.slice(0, f.name.lastIndexOf("/")) : "";
-    if (fFolder !== folder) return false;
-    const fName = f.name.includes("/") ? f.name.slice(f.name.lastIndexOf("/") + 1) : f.name;
-    const fStem = fName.replace(/\.[^.]+$/, "");
-    // Skip other thumb/medium variants
-    if (/-thumb$|-medium$/i.test(fStem)) return false;
-    return fStem === stemName;
-  });
+  const candidate = allFiles.find((f) => (
+    f.bucket_id === file.bucket_id
+    && f.name !== file.name
+    && !derivedMainStem(f.name)
+    && stemOf(f.name) === mainStem
+  ));
 
   return candidate ?? file;
 }
 
 export function isDerivedThumbnail(file: MediaFile): boolean {
-  return SUFFIX_RE.test(file.name);
+  return Boolean(derivedMainStem(file.name));
+}
+
+export function getDerivativeImagesForMain(file: MediaFile, allFiles: MediaFile[]): MediaFile[] {
+  const mainStem = stemOf(file.name);
+  return allFiles.filter((f) => (
+    f.bucket_id === file.bucket_id
+    && f.name !== file.name
+    && derivedMainStem(f.name) === mainStem
+  ));
 }

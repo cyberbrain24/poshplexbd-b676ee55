@@ -1,8 +1,9 @@
 import { useState, useRef, useMemo } from "react";
-import { useMediaFiles, useUploadMedia, useDeleteMedia, useRenameMedia, MediaFile } from "@/hooks/useMedia";
+import { useMediaFiles, useUploadMedia, useDeleteMediaFiles, useRenameMedia, MediaFile } from "@/hooks/useMedia";
 import { useAllMediaMetadata, useDeleteMediaMetadata } from "@/hooks/useMediaMetadata";
 import { useMediaReferences, MediaReference } from "@/hooks/useMediaReferences";
 import { getFileType, formatFileSize, copyFileUrl } from "@/services/media.service";
+import { resolveMainImage, isDerivedThumbnail, getDerivativeImagesForMain } from "@/lib/mediaThumbResolve";
 import MediaSeoEditor from "@/components/admin/MediaSeoEditor";
 import ThumbnailBackfillCard from "@/components/admin/ThumbnailBackfillCard";
 import ConvertImagesToWebpCard from "@/components/admin/ConvertImagesToWebpCard";
@@ -108,7 +109,7 @@ const AdminMedia = () => {
   const { data: allMetadata = [] } = useAllMediaMetadata();
   const { data: referencesMap } = useMediaReferences();
   const uploadMutation = useUploadMedia();
-  const deleteMutation = useDeleteMedia();
+  const deleteMutation = useDeleteMediaFiles();
   const deleteMetadataMutation = useDeleteMediaMetadata();
   const renameMutation = useRenameMedia();
 
@@ -140,6 +141,11 @@ const AdminMedia = () => {
     if (!referencesMap) return [];
     return referencesMap.get(file.public_url) || [];
   };
+
+  const selectedMainFile = selectedFile ? resolveMainImage(selectedFile, files) : null;
+  const selectedIsProtectedThumb = Boolean(
+    selectedFile && selectedMainFile && isDerivedThumbnail(selectedFile) && selectedMainFile.name !== selectedFile.name,
+  );
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files;
@@ -178,18 +184,26 @@ const AdminMedia = () => {
 
   const handleDelete = async () => {
     if (!selectedFile) return;
+    const mainFile = resolveMainImage(selectedFile, files);
+    if (isDerivedThumbnail(selectedFile) && mainFile.name !== selectedFile.name) {
+      toast.error("You can't delete the thumbnail image because the main image is stored in the system.");
+      setIsDeleteOpen(false);
+      return;
+    }
 
     try {
+      const derivatives = getDerivativeImagesForMain(selectedFile, files);
+      const fileNames = [selectedFile.name, ...derivatives.map((file) => file.name)];
       await deleteMutation.mutateAsync({
         bucketId: selectedFile.bucket_id,
-        fileName: selectedFile.name,
+        fileNames,
       });
 
       // Also clean up any associated metadata
-      deleteMetadataMutation.mutate({
+      fileNames.forEach((filePath) => deleteMetadataMutation.mutate({
         bucketId: selectedFile.bucket_id,
-        filePath: selectedFile.name,
-      });
+        filePath,
+      }));
 
       setIsDeleteOpen(false);
       setIsPreviewOpen(false);
@@ -231,8 +245,11 @@ const AdminMedia = () => {
 
     for (const file of filesToDelete) {
       try {
-        await deleteMutation.mutateAsync({ bucketId: file.bucket_id, fileName: file.name });
-        deleteMetadataMutation.mutate({ bucketId: file.bucket_id, filePath: file.name });
+        const mainFile = resolveMainImage(file, files);
+        if (isDerivedThumbnail(file) && mainFile.name !== file.name) continue;
+        const fileNames = [file.name, ...getDerivativeImagesForMain(file, files).map((item) => item.name)];
+        await deleteMutation.mutateAsync({ bucketId: file.bucket_id, fileNames });
+        fileNames.forEach((filePath) => deleteMetadataMutation.mutate({ bucketId: file.bucket_id, filePath }));
         deleted++;
       } catch (e) {
         console.error("Bulk delete error for", file.name, e);
@@ -696,8 +713,12 @@ const AdminMedia = () => {
             <AlertDialogTitle>Delete File</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-2">
-                <p>Are you sure you want to delete "{selectedFile?.name}"? This action cannot be undone.</p>
-                {selectedFile && getFileReferences(selectedFile).length > 0 && (
+                <p>
+                  {selectedIsProtectedThumb
+                    ? "You can't delete the thumbnail image because the main image is stored in the system. Delete the main image to remove its thumbnails automatically."
+                    : `Are you sure you want to delete "${selectedFile?.name}"? This action cannot be undone.`}
+                </p>
+                {!selectedIsProtectedThumb && selectedFile && getFileReferences(selectedFile).length > 0 && (
                   <div className="bg-muted p-3 rounded text-sm space-y-1 mt-2">
                     <p className="font-medium text-foreground">⚠️ This file is currently used by:</p>
                     <ul className="list-disc list-inside text-muted-foreground">
@@ -712,16 +733,18 @@ const AdminMedia = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleteMutation.isPending ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : null}
-              Delete
-            </AlertDialogAction>
+            <AlertDialogCancel>{selectedIsProtectedThumb ? "Close" : "Cancel"}</AlertDialogCancel>
+            {!selectedIsProtectedThumb && (
+              <AlertDialogAction
+                onClick={handleDelete}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deleteMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : null}
+                Delete
+              </AlertDialogAction>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

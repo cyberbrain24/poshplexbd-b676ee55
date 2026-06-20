@@ -51,7 +51,7 @@ function slugify(name: string, id: string) {
 function urlsetXml(entries: UrlEntry[]): string {
   const items = entries
     .map((e) => {
-      const parts = [`    <loc>${e.loc}</loc>`];
+      const parts = [`    <loc>${e.loc.replace(/&/g, "&amp;")}</loc>`];
       if (e.lastmod) parts.push(`    <lastmod>${e.lastmod}</lastmod>`);
       if (e.changefreq) parts.push(`    <changefreq>${e.changefreq}</changefreq>`);
       if (e.priority !== undefined)

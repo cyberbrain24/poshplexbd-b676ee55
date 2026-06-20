@@ -5,6 +5,7 @@ import { useMediaReferences, MediaReference } from "@/hooks/useMediaReferences";
 import { getFileType, formatFileSize, copyFileUrl } from "@/services/media.service";
 import MediaSeoEditor from "@/components/admin/MediaSeoEditor";
 import ThumbnailBackfillCard from "@/components/admin/ThumbnailBackfillCard";
+import ConvertImagesToWebpCard from "@/components/admin/ConvertImagesToWebpCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -390,6 +391,9 @@ const AdminMedia = () => {
 
       {/* Thumbnail backfill */}
       <ThumbnailBackfillCard />
+
+      {/* Convert all images to WebP (one-time cleanup) */}
+      <ConvertImagesToWebpCard />
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">

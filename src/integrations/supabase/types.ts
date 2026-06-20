@@ -836,6 +836,42 @@ export type Database = {
         }
         Relationships: []
       }
+      image_migration_log: {
+        Row: {
+          bucket: string
+          created_at: string
+          error: string | null
+          id: string
+          new_path: string
+          new_size: number | null
+          old_path: string
+          old_size: number | null
+          status: string
+        }
+        Insert: {
+          bucket: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          new_path: string
+          new_size?: number | null
+          old_path: string
+          old_size?: number | null
+          status: string
+        }
+        Update: {
+          bucket?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          new_path?: string
+          new_size?: number | null
+          old_path?: string
+          old_size?: number | null
+          status?: string
+        }
+        Relationships: []
+      }
       inventory_categories: {
         Row: {
           created_at: string

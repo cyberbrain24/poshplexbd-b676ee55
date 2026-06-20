@@ -1,66 +1,105 @@
 ## Goal
 
-Every new image upload is auto-converted to WebP, capped at 250 KB, and stored with a `.webp` extension only. No JPEG/PNG/HEIC ever lands in storage going forward. Existing files are untouched (no destructive migration) — they keep working, and the existing `regenerate-image-thumbnails` flow already handles backfill if needed.
+Convert every existing image already in storage (≈260 files across `product-images`, `media`, `review-images`, `profile-images`) to WebP under 250 KB, update every database row that references them, and **delete the original non-WebP files** once the replacement is verified live. The site stays online for the entire run.
 
-## Approach (no system interruption)
+New uploads are already WebP-only (done in the previous turn). The `music` bucket is audio and is excluded.
 
-One shared client-side helper does the work. Every upload call site is updated to use it. Because conversion happens in the browser before `storage.upload`, there's zero backend risk, no schema change, no edge function change, no RLS change.
+## Per-file algorithm (safe order — never breaks a live page)
 
-### 1. New helper: `src/lib/imageToWebp.ts`
+For each non-WebP object:
 
-```ts
-toWebpUnder250(file: File, opts?: { maxEdge?: number }) → Promise<File>
+1. Skip if filename already ends in `.webp`.
+2. Skip animated GIF and SVG (kept as-is — pass-through, documented carve-out).
+3. Download bytes via service role.
+4. Decode with `imagescript` (already used by `regenerate-image-thumbnails`).
+5. Progressive resize (longest edge 2000 → 1600 → 1280 → 1024 → 800) and quality stepping (0.85 → 0.5) until encoded WebP ≤ 250 KB. WebP encode via `@jsquash/webp` WASM (works in Deno edge runtime). If even 800 px @ q=0.5 won't fit (extremely rare), keep the smallest WebP produced — never leave a non-WebP behind.
+6. Upload new file at the same in-bucket path with `.webp` extension, `contentType: image/webp`, `upsert: true`.
+7. Update every DB row that contains the old public URL to point to the new one (see "DB rewrites" below). All wrapped — single failure aborts that file only and leaves the original in place.
+8. **Delete the original object** from storage.
+9. Log `{ bucket, old_path, new_path, old_size, new_size, ok/error }` to a new `image_migration_log` table for audit / re-run visibility.
+
+The order matters: upload → DB rewrite → delete. If any step fails, the original file stays live and the page still works. Nothing is destroyed before its replacement is referenced.
+
+## DB rewrites (every place a URL is stored)
+
+The function discovers columns at runtime via `information_schema.columns` so adding/removing a URL column later doesn't require a code change. For each file it runs targeted `update ... set col = replace(col, old_url, new_url) where col like '%old_url%'` on:
+
+- `products.image_url`
+- `product_images.image_url`, `thumb_url`, `medium_url`
+- `categories.image_url`, `brands.image_url`, `materials.image_url`, `colors.image_url`, `sizes.image_url`, `care_instructions.image_url` (where present)
+- `customers.profile_image_url`
+- `reviews.image_urls` (text[]/jsonb — handled with array map / jsonb cast)
+- `promotions.image_url`
+- `site_branding.logo_url`, `favicon_url`, `desktop_hero_url`, `mobile_hero_url`
+- `seo_pages.og_image` and any text content blob via `replace()`
+- `media_metadata` if it stores URLs
+- `blog_posts.cover_image_url`, `content` (long text — `replace()` covers inline `<img src=...>`)
+
+## Edge Function: `convert-storage-to-webp`
+
+Admin-only, batched, resumable:
+
+- Auth: same JWT + user_roles admin check pattern as `regenerate-image-thumbnails`.
+- Body: `{ batch_size?: number (default 5, max 20), bucket?: string }`.
+- Returns: `{ processed, deleted, remaining, errors[], totals_by_bucket }`.
+- Resumable: "pending" = "object whose name doesn't end in `.webp` and isn't GIF/SVG". The function picks up wherever it left off — closing the admin tab is safe.
+- Batch size 5 keeps each invocation under the edge CPU budget.
+
+## Admin UI
+
+New card on **Admin → Site Settings**, next to the existing "Regenerate thumbnails" button: **"Convert all images to WebP"**.
+
+- Stats: `Total images: N · Already WebP: A · Pending: P · Converted this run: K · Deleted originals: K`.
+- "Start" button polls the function in batches every ~2 s until `pending === 0`.
+- Progress bar + last 10 errors inline.
+- Stop / Resume buttons; safe to close the tab and resume later.
+
+## Migration
+
+```sql
+create table public.image_migration_log (
+  id uuid primary key default gen_random_uuid(),
+  bucket text not null,
+  old_path text not null,
+  new_path text not null,
+  old_size bigint,
+  new_size bigint,
+  status text not null,          -- 'ok' | 'error'
+  error text,
+  created_at timestamptz not null default now()
+);
+grant select, insert on public.image_migration_log to authenticated;
+grant all on public.image_migration_log to service_role;
+alter table public.image_migration_log enable row level security;
+create policy "Admins manage image migration log"
+  on public.image_migration_log for all
+  to authenticated using (public.is_admin()) with check (public.is_admin());
 ```
 
-- Accepts any `image/*` (JPG, PNG, HEIC-as-image, etc.). GIF is passed through untouched (animation would be lost) — documented exception.
-- Draws to a `<canvas>`, resizes longest edge down progressively (start at 2000 px, then 1600, 1280, 1024, 800), and re-encodes as `image/webp` with quality stepping 0.85 → 0.5.
-- Stops at the first variant ≤ **250 × 1024 bytes**. If even 800 px @ q=0.5 exceeds 250 KB (extremely rare), returns the smallest produced WebP — never falls back to original format.
-- Renames the file: `<basename>.webp`, MIME `image/webp`.
-- Pure browser API (canvas + `toBlob`), no extra dependency.
+## Files to add / change
 
-### 2. Replace existing compressors
+**New:**
+- `supabase/functions/convert-storage-to-webp/index.ts`
+- `src/components/admin/ConvertImagesToWebpCard.tsx`
+- One migration for `image_migration_log`.
 
-`src/lib/imageCompress.ts`:
-- `compressProductImage` → thin wrapper around `toWebpUnder250` (keeps current import paths working).
-- `compressProfileImage` → same, but with a 400×400 center-crop step before WebP encode (matches today's avatar UX). 250 KB cap still applies (well under for a 400 px square).
-
-### 3. Update every upload site
-
-Each one runs the file through `toWebpUnder250` and uploads with `contentType: "image/webp"` and a `.webp` filename:
-
-- `src/hooks/useProducts.ts` → `uploadProductImage` (originals + already-webp thumb/medium variants — convert original too)
-- `src/services/product.service.ts` line 175 (product image upload)
-- `src/services/media.service.ts` `uploadMediaFile` (admin Media library)
-- `src/components/product/ReviewImageUpload.tsx` (customer review photos)
-- `src/components/admin/MasterDataModal.tsx` (category/brand/etc. images)
-- `src/components/admin/PromotionModal.tsx` (promo banners)
-- `src/components/admin/AdminProductAI.tsx` (AI product image upload)
-- `src/hooks/useSiteBranding.ts` (logo/favicon — **SVG passes through unchanged**, only raster → webp)
-- `src/pages/CustomerAccount.tsx` (already compresses; switch to webp helper)
-
-Skipped:
-- `src/pages/admin/AdminMusic.tsx` — audio bucket, not images.
-- `regenerate-image-thumbnails` edge function — already produces WebP, no change needed.
-
-### 4. UI copy
-
-Update upload helper text everywhere it shows "PNG, JPG up to 5MB" → **"PNG / JPG / WebP — auto-converted to WebP, max 250 KB after compression"**. Files larger than 5 MB are still rejected up front (same as today) so we don't load a 50 MB photo into a canvas.
-
-## Edge cases
-
-- **Animated GIF**: passed through as-is (one-line documented carve-out). Static GIF is converted.
-- **SVG** (logo/favicon): passed through, vector — already tiny.
-- **HEIC**: most browsers can decode via `<img>`; if decode fails the helper throws and the existing toast surfaces "Invalid image" — same UX as today.
-- **Existing storage files**: untouched. Old `.jpg` URLs keep working. The product-image table already stores `thumb_url` / `medium_url` as WebP for new uploads.
+**Edited:**
+- `src/pages/admin/AdminSiteSettings.tsx` — mount the new card.
 
 ## Out of scope
 
-- No destructive re-encode of the 260 existing files in storage (avoids any chance of breaking live pages). If you want a one-time backfill later, the existing `regenerate-image-thumbnails` admin button is the right place.
-- No RLS, no bucket changes, no migration.
+- The `music` bucket (audio).
+- Re-running thumb/medium generation — `regenerate-image-thumbnails` already does that and will see the new `.webp` originals correctly.
+- Any client-side upload changes (already WebP-only).
 
-## Files touched
+## Risks & mitigations
 
-- new `src/lib/imageToWebp.ts`
-- `src/lib/imageCompress.ts` (rewritten as wrappers)
-- 9 upload call sites listed above (small edits — call helper, change contentType + filename ext)
-- minor copy text in `ReviewImageUpload.tsx` and any other visible upload labels
+| Risk | Mitigation |
+|---|---|
+| Old URL still cached on Cloudflare after delete | Original is removed only after upload + DB rewrite succeed; first request to the new URL hydrates cache. Worst case: brief 404 on a stale cached page until refresh. |
+| WebP WASM init fails in edge runtime | Function aborts that batch with a clear error rather than writing a non-WebP — admin sees it and we troubleshoot. No silent fallback that violates the "WebP-only" requirement. |
+| A column we forgot stores a URL | `information_schema` discovery + audit log makes orphans visible; we can run a one-shot "verify" query that searches every text column for any remaining old-format URL. |
+| Long-running run timing out | Small batches, idempotent. Admin re-clicks "Start" to resume; per-file writes are sequential and safe to retry. |
+| Reviews `image_urls` is an array | Handled explicitly with array unnest+map update path, not a naive `replace()` on the whole column. |
+
+Approve and I'll implement it.

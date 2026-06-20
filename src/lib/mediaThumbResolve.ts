@@ -1,7 +1,7 @@
 import type { MediaFile } from "@/services/media.service";
 
 const SAME_FOLDER_SUFFIX_RE = /-(thumb|medium)(\.[a-z0-9]+)$/i;
-const VARIANT_FOLDER_RE = /^(.*\/)?(thumbs|medium)\/([^/]+?)-(400|800|thumb|medium)(\.[a-z0-9]+)$/i;
+const VARIANT_FOLDER_RE = /^(.*\/)?(thumbs|medium)\/([^/]+?)-(300|400|800|thumb|medium)(\.[a-z0-9]+)$/i;
 
 function stemOf(path: string): string {
   return path.replace(/\.[^/.]+$/, "");

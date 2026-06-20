@@ -1,6 +1,6 @@
 /**
  * Convert any browser-decodable image to a WebP File under a target byte cap.
- * Strategy: progressively shrink longest edge and step quality until under cap.
+ * Strategy: progressively shrink and step quality until under cap.
  * - GIFs pass through (animation would be lost).
  * - SVGs pass through (vector, already tiny).
  * - On decode failure, throws — caller surfaces toast.
@@ -41,8 +41,8 @@ export async function toWebpUnder250(
     if (blob) return new File([blob], `${baseName}.webp`, { type: "image/webp" });
   }
 
-  const edges = [startEdge, 1600, 1280, 1024, 800].filter((e, i, a) => a.indexOf(e) === i);
-  const qualities = [0.85, 0.78, 0.7, 0.6, 0.5];
+  const edges = [startEdge, 1600, 1280, 1024, 800, 640, 480, 360, 280].filter((e, i, a) => a.indexOf(e) === i);
+  const qualities = [0.85, 0.78, 0.7, 0.6, 0.5, 0.4, 0.32];
 
   let smallest: Blob | null = null;
   for (const edge of edges) {
@@ -73,8 +73,7 @@ export async function toWebpUnder250(
   if (smallest) {
     return new File([smallest], `${baseName}.webp`, { type: "image/webp" });
   }
-  // Should be unreachable; fall back to original.
-  return file;
+  throw new Error("Could not compress image under 250KB");
 }
 
 async function encodeSquare(img: HTMLImageElement, size: number, maxBytes: number): Promise<Blob | null> {

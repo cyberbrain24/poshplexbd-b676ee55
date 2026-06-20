@@ -63,7 +63,7 @@ export function useVisitorTracking() {
     if (alreadyTracked(session_id, path)) return;
 
     if (timer.current) window.clearTimeout(timer.current);
-    timer.current = window.setTimeout(async () => {
+    const run = async () => {
       try {
         let customer_id: string | null = null;
         try {
@@ -89,7 +89,16 @@ export function useVisitorTracking() {
           },
         });
       } catch { /* ignore */ }
-    }, 600);
+    };
+    // Defer to idle so visit tracking never competes with the initial
+    // paint or product fetches for HTTP connections.
+    timer.current = window.setTimeout(() => {
+      const ric = (window as any).requestIdleCallback as
+        | ((cb: () => void, opts?: { timeout: number }) => number)
+        | undefined;
+      if (ric) ric(() => { void run(); }, { timeout: 4000 });
+      else void run();
+    }, 1200);
 
     return () => {
       if (timer.current) window.clearTimeout(timer.current);

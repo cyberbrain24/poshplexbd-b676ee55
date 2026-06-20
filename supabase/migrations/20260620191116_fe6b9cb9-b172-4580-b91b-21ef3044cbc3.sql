@@ -1,0 +1,2 @@
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS fulfillment_ready boolean NOT NULL DEFAULT false;
+CREATE INDEX IF NOT EXISTS idx_orders_fulfillment_ready ON public.orders(fulfillment_ready) WHERE fulfillment_ready = true;

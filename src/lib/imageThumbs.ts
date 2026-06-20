@@ -13,7 +13,7 @@ export interface ImageVariants {
 }
 
 const VARIANT_SPECS = [
-  { label: "thumb" as const, edge: 400, quality: 0.72 },
+  { label: "thumb" as const, width: 400, quality: 0.72 },
   { label: "medium" as const, edge: 800, quality: 0.78 },
 ];
 
@@ -34,14 +34,14 @@ async function fileToImage(file: File): Promise<HTMLImageElement> {
 
 async function resizeToWebp(
   img: HTMLImageElement,
-  maxEdge: number,
+  spec: { width?: number; edge?: number },
   quality: number,
   baseName: string,
   label: string,
 ): Promise<File | null> {
+  // Thumbnail width is fixed at 400px; height follows the original image ratio.
   const longest = Math.max(img.width, img.height);
-  // Don't upscale — but still re-encode to WebP for smaller file size
-  const scale = longest > maxEdge ? maxEdge / longest : 1;
+  const scale = spec.width ? spec.width / img.width : longest > spec.edge! ? spec.edge! / longest : 1;
   const w = Math.max(1, Math.round(img.width * scale));
   const h = Math.max(1, Math.round(img.height * scale));
 
@@ -75,7 +75,7 @@ export async function generateImageVariants(file: File): Promise<ImageVariants> 
 
   try {
     const [thumb, medium] = await Promise.all(
-      VARIANT_SPECS.map((spec) => resizeToWebp(img, spec.edge, spec.quality, baseName, spec.label)),
+      VARIANT_SPECS.map((spec) => resizeToWebp(img, spec, spec.quality, baseName, spec.label)),
     );
     return { thumb, medium };
   } catch {

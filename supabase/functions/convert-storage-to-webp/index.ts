@@ -72,33 +72,17 @@ async function findPending(
 
 async function encodeWebpUnder250(bytes: Uint8Array): Promise<Uint8Array> {
   await ensureMagick();
-  const edges = [2000, 1600, 1280, 1024, 800];
-  const qualities = [85, 78, 70, 60, 50];
-  let smallest: Uint8Array | null = null;
-
-  for (const edge of edges) {
-    for (const q of qualities) {
-      const out = await new Promise<Uint8Array>((resolve, reject) => {
-        try {
-          ImageMagick.read(bytes, (img) => {
-            const longest = Math.max(img.width, img.height);
-            if (longest > edge) {
-              const scale = edge / longest;
-              img.resize(Math.max(1, Math.round(img.width * scale)), Math.max(1, Math.round(img.height * scale)));
-            }
-            img.quality = q;
-            img.write(MagickFormat.Webp, (data) => resolve(new Uint8Array(data)));
-          });
-        } catch (e) {
-          reject(e);
-        }
+  // No size/pixel restriction — preserve original dimensions, just re-encode to WebP at high quality.
+  return await new Promise<Uint8Array>((resolve, reject) => {
+    try {
+      ImageMagick.read(bytes, (img) => {
+        img.quality = WEBP_QUALITY;
+        img.write(MagickFormat.Webp, (data) => resolve(new Uint8Array(data)));
       });
-      if (!smallest || out.byteLength < smallest.byteLength) smallest = out;
-      if (out.byteLength <= TARGET_BYTES) return out;
+    } catch (e) {
+      reject(e);
     }
-  }
-  if (!smallest) throw new Error("WebP encode produced no output");
-  return smallest;
+  });
 }
 
 async function rewriteReferences(

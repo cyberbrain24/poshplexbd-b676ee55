@@ -630,7 +630,12 @@ const AdminAddOrder = () => {
 
       {/* Product picker sheet */}
       <Sheet open={pickerOpen} onOpenChange={(o) => { setPickerOpen(o); if (!o) { setVariantPick(null); setSearch(""); setParentCatId(null); setSubCatId(null); } }}>
-        <SheetContent side="bottom" className="h-[100dvh] sm:h-[90vh] flex flex-col p-0">
+        <SheetContent
+          side="bottom"
+          className="h-[100dvh] sm:h-[90vh] flex flex-col p-0"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
+
           <SheetHeader className="p-3 border-b shrink-0">
             <SheetTitle className="text-base">{variantPick ? "Choose Variant" : "Add Product"}</SheetTitle>
           </SheetHeader>

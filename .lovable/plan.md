@@ -1,38 +1,65 @@
-## Order Fulfillment — issue status + card cleanup
+## Goals
+Four small, independent tweaks to the order module — no impact to existing data flows.
 
-### 1. Database
-Add a single nullable column `fulfillment_issue` (TEXT) to `orders`. Allowed values: `stock_out`, `print_issues`, `courier_issues`, `other_issues`, or NULL (= None). Indexed for filtering. No RLS changes (uses existing admin order policies).
+---
 
-### 2. Fulfillment card (`src/pages/admin/AdminOrderFulfillment.tsx`)
-Per-card changes:
-- Remove the COD/payment-method badge.
-- Remove the address line (`MapPin` / division / thana).
-- Add an order note line showing `customer_notes` (fallback `internal_notes`) — same source/style used on the All Orders card, truncated.
-- Add an **Issue Status** dropdown (shadcn `Select`) on the card, mobile-friendly:
-  - Options: `None`, `Stock Out`, `Print Issues`, `Courier Issues`, `Others Issues`.
-  - When a non-None value is selected, the trigger renders solid dark red (`bg-red-700 text-white border-red-700`); `None` stays neutral.
-  - Selecting writes `fulfillment_issue` to the order row via Supabase update; optimistic update + invalidate `fulfillment-orders` and `orders` queries.
-- "Mark as Ready" button: in addition to existing local-ready toggle, clears `fulfillment_issue` back to NULL on the same click.
+### 1. Show "Order Notes" on the All Orders card
+On `src/pages/admin/AdminOrders.tsx`, every order box already has access to `customer_notes` (the field filled by the "Order Notes (Optional)" textarea on Checkout / Add Order). When `customer_notes` is non-empty, render a small note line inside the card details block (label "Note:" + truncated text, 2-line clamp, muted). Nothing rendered when empty.
 
-Top toolbar:
-- Add a new **Issue filter** dropdown (`All issues / None / Stock Out / Print Issues / Courier Issues / Others Issues`) shown only when active tab is `All In Review Order` or `Mark as not Ready`. Filtering is applied client-side over the already-loaded list.
+No DB / hook changes — `customer_notes` is already in the orders payload.
 
-Fetch query in this page must also `select` the new field and `customer_notes` / `internal_notes`.
+---
 
-### 3. All Orders card (`src/pages/admin/AdminOrders.tsx`)
-- Change grid from `xl:grid-cols-8` to `xl:grid-cols-7` on both the skeleton grid and the live grid (line 711 and 721).
-- When `fulfillment_issue` is set, show a small dark-red badge (e.g. "Stock Out") inside the existing card details block, near the status badges. No badge when null.
-- Ensure the orders list query (in `useOptimizedOrders` or wherever the list is fetched) selects `fulfillment_issue` so the badge renders. If the hook needs an extra field, add it there.
+### 2. Tag each order as **Web Order** vs **Admin Order**
 
-### 4. Sync behavior
-Because the value lives in `orders.fulfillment_issue`, both pages read the same source. After any update on the fulfillment page, both `["fulfillment-orders"]` and the All Orders query keys are invalidated so the card reflects instantly.
+**Database (migration):**
+- Add column `orders.order_source TEXT` with allowed values `'web'` and `'admin'` (CHECK constraint), default `'web'`, indexed.
+- Backfill existing rows to `'web'` so historical orders look unchanged.
+
+**Code:**
+- `src/pages/Checkout.tsx` order insert → set `order_source: 'web'`.
+- `src/pages/admin/AdminAddOrder.tsx` order insert → set `order_source: 'admin'`.
+- `src/services/order.service.ts` `CreateOrderData` gains optional `order_source`; passed through on insert (default `'web'` if omitted).
+- `src/hooks/useOrders.ts` `Order` type adds `order_source: 'web' | 'admin' | null`.
+- `src/pages/admin/AdminOrders.tsx` order card → small badge next to status: `Web Order` (neutral outline) or `Admin Order` (filled dark).
+
+No filter UI added (out of scope).
+
+---
+
+### 3. Mobile keyboard auto-opens on Add Product sheet
+On `src/pages/admin/AdminAddOrder.tsx`, the picker `<Sheet>` opens and Radix auto-focuses the first focusable element (the search `<Input>`), which triggers the mobile keyboard.
+
+Fix: pass `onOpenAutoFocus={(e) => e.preventDefault()}` to `<SheetContent>` of the product picker sheet (line ~633). Search box stays usable — user taps it intentionally to open the keyboard. Variant sub-sheet is unaffected.
+
+---
+
+### 4. Status breakdown card on top of All Orders page
+Replace / extend the top stats area on `src/pages/admin/AdminOrders.tsx` with a single new card that lists, per order status, both the **order count** and **total amount**.
+
+**Hook change (`src/hooks/useOrders.ts → useOrderStats`):**
+- Already fetches `id, order_status, payment_status, total_amount, created_at`. Add a `byStatus` aggregate:
+  ```
+  byStatus: Record<OrderStatus, { count: number; amount: number }>
+  ```
+  Computed client-side from the same `orders` array (no extra query).
+
+**UI change (AdminOrders.tsx, after the existing 5 stat cards, before Filters):**
+- One bordered card titled "Status Breakdown".
+- Inside: a responsive row (`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3`) — one mini cell per status that has count > 0, showing: status label, count (e.g. "12 orders"), total amount (`formatCurrency`). Statuses with 0 orders are hidden to keep it compact.
+- Color of the label uses the same status color tokens already used on order cards.
+
+Existing 5 cards (Total Orders / Today's Orders / Today's Order Amount / Today's Revenue / Total Revenue) stay untouched.
+
+---
+
+### Files touched
+- `supabase` migration (new column + backfill + index)
+- `src/pages/Checkout.tsx` (set `order_source: 'web'`)
+- `src/pages/admin/AdminAddOrder.tsx` (set `order_source: 'admin'`, `onOpenAutoFocus` fix)
+- `src/services/order.service.ts` (type + pass-through)
+- `src/hooks/useOrders.ts` (`Order.order_source`, `useOrderStats.byStatus`)
+- `src/pages/admin/AdminOrders.tsx` (note line, source badge, status breakdown card, switch grid back from 7 to keep current layout — no change to `xl:grid-cols-7`)
 
 ### Out of scope
-- No change to existing ready/not-ready local storage logic.
-- No change to other order fields, RLS, or RPCs.
-- No status history record for issue changes (lightweight UI flag only).
-
-### Technical notes
-- Status label map: `stock_out → Stock Out`, `print_issues → Print Issues`, `courier_issues → Courier Issues`, `other_issues → Others Issues`.
-- Dark red styling uses Tailwind `bg-red-700 hover:bg-red-700/90 text-white` for the trigger and badge to match the user's "fully dark red" requirement.
-- Mobile: Select trigger uses `h-9 w-full sm:w-44`, placed under the action button on small screens.
+No changes to RLS, fulfillment page, order creation logic beyond the source tag, or any existing styles/columns not listed above.

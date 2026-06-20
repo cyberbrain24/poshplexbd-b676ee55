@@ -57,8 +57,11 @@ export interface Order {
   call_center_notes: string | null;
   consignment_id?: string | null;
   fulfillment_issue?: 'stock_out' | 'print_issues' | 'courier_issues' | 'other_issues' | null;
+  created_by_source?: string | null;
+  created_by_user_id?: string | null;
   created_at: string;
   updated_at: string;
+
   customer?: {
     id: string;
     name: string;
@@ -617,6 +620,15 @@ export const useOrderStats = () => {
 
       const totalRevenue = (allPayments || []).reduce((sum, p) => sum + (p.amount || 0), 0);
 
+      // Per-status breakdown (count + total amount)
+      const byStatus: Record<string, { count: number; amount: number }> = {};
+      (orders || []).forEach((o) => {
+        const k = o.order_status as string;
+        if (!byStatus[k]) byStatus[k] = { count: 0, amount: 0 };
+        byStatus[k].count += 1;
+        byStatus[k].amount += o.total_amount || 0;
+      });
+
       return {
         totalOrders: orders?.length || 0,
         todayOrders: todayOrders.length,
@@ -625,7 +637,9 @@ export const useOrderStats = () => {
         pendingVerification: pendingVerification.length,
         pendingFulfillment: pendingFulfillment.length,
         totalRevenue,
+        byStatus,
       };
+
     },
     staleTime: 1000 * 60,
   });

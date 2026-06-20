@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import PoshplexHeader from "../components/header/PoshplexHeader";
 import PoshplexFooter from "../components/footer/PoshplexFooter";
 
@@ -6,6 +7,10 @@ const NotFound = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <Helmet>
+        <title>Page Not Found | Poshplex</title>
+        <meta name="robots" content="noindex, follow" />
+      </Helmet>
       <PoshplexHeader />
       
       <main className="flex-1 flex items-center justify-center px-6">

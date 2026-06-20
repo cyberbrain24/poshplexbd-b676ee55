@@ -5,7 +5,7 @@ import { Loader2, FileImage } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-type PendingImage = { bucket: string; path: string; size?: number };
+export type PendingImage = { bucket: string; path: string; size?: number };
 
 const convertStorageImageToWebpDataUrl = async (item: PendingImage): Promise<string> => {
   const { data, error } = await supabase.storage.from(item.bucket).download(item.path);
@@ -48,17 +48,42 @@ const convertStorageImageToWebpDataUrl = async (item: PendingImage): Promise<str
   }
 };
 
-/**
- * One-time backfill: convert every existing non-WebP storage file to WebP,
- * rewrite every DB reference, delete the original. Polls
- * the edge function in small batches until no more pending files remain.
- */
-const ConvertImagesToWebpCard = () => {
+type Props = {
+  targets?: PendingImage[];
+  title?: string;
+  description?: string;
+  buttonLabel?: string;
+  onDone?: () => void;
+};
+
+const ConvertImagesToWebpCard = ({ targets, title, description, buttonLabel, onDone }: Props) => {
   const [running, setRunning] = useState(false);
   const [processed, setProcessed] = useState(0);
   const [deleted, setDeleted] = useState(0);
   const [errors, setErrors] = useState(0);
   const [done, setDone] = useState(false);
+
+  const processOne = async (
+    item: PendingImage,
+  ): Promise<{ processed: number; deleted: number; errors: number }> => {
+    try {
+      const imageData = await convertStorageImageToWebpDataUrl(item);
+      const result = await supabase.functions.invoke("convert-storage-to-webp", {
+        body: { source: item, image_data: imageData },
+      });
+      if (result.error) throw result.error;
+      return {
+        processed: result.data?.processed ?? 0,
+        deleted: result.data?.deleted ?? 0,
+        errors: (result.data?.errors ?? []).length,
+      };
+    } catch (itemError: any) {
+      await supabase.functions.invoke("convert-storage-to-webp", {
+        body: { source: item, error: itemError?.message ?? "Browser conversion failed" },
+      });
+      return { processed: 0, deleted: 0, errors: 1 };
+    }
+  };
 
   const run = async () => {
     if (running) return;
@@ -72,51 +97,50 @@ const ConvertImagesToWebpCard = () => {
     let totalErrors = 0;
 
     try {
-      // eslint-disable-next-line no-constant-condition
-      while (true) {
-        const { data, error } = await supabase.functions.invoke(
-          "convert-storage-to-webp",
-          { body: { batch_size: 1 } },
-        );
-        if (error) {
-          throw error;
+      if (targets && targets.length > 0) {
+        // Selected-only mode: skip the listing endpoint, hit each target directly.
+        const items = targets.filter((t) => !t.path.toLowerCase().endsWith(".webp"));
+        if (items.length === 0) {
+          toast.info("All selected images are already WebP.");
+          setDone(true);
+          return;
         }
-
-        const pending = (data?.pending ?? []) as PendingImage[];
-        if (!data?.more || pending.length === 0) break;
-
-        const item = pending[0];
-        try {
-          const imageData = await convertStorageImageToWebpDataUrl(item);
-          const result = await supabase.functions.invoke("convert-storage-to-webp", {
-            body: { source: item, image_data: imageData },
-          });
-          if (result.error) throw result.error;
-
-          const batchProcessed = result.data?.processed ?? 0;
-          const batchDeleted = result.data?.deleted ?? 0;
-          const batchErrors = (result.data?.errors ?? []).length;
-          totalProcessed += batchProcessed;
-          totalDeleted += batchDeleted;
-          totalErrors += batchErrors;
-        } catch (itemError: any) {
-          totalErrors++;
-          await supabase.functions.invoke("convert-storage-to-webp", {
-            body: {
-              source: item,
-              error: itemError?.message ?? "Browser conversion failed",
-            },
-          });
+        for (const item of items) {
+          const r = await processOne(item);
+          totalProcessed += r.processed;
+          totalDeleted += r.deleted;
+          totalErrors += r.errors;
+          setProcessed(totalProcessed);
+          setDeleted(totalDeleted);
+          setErrors(totalErrors);
         }
+      } else {
+        // Convert-all mode: poll the edge function for the next pending image.
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          const { data, error } = await supabase.functions.invoke(
+            "convert-storage-to-webp",
+            { body: { batch_size: 1 } },
+          );
+          if (error) throw error;
 
-        setProcessed(totalProcessed);
-        setDeleted(totalDeleted);
-        setErrors(totalErrors);
+          const pending = (data?.pending ?? []) as PendingImage[];
+          if (!data?.more || pending.length === 0) break;
+
+          const r = await processOne(pending[0]);
+          totalProcessed += r.processed;
+          totalDeleted += r.deleted;
+          totalErrors += r.errors;
+          setProcessed(totalProcessed);
+          setDeleted(totalDeleted);
+          setErrors(totalErrors);
+        }
       }
       setDone(true);
       toast.success(
-        `Converted ${totalProcessed} images to WebP${totalErrors > 0 ? ` (${totalErrors} skipped)` : ""}`,
+        `Converted ${totalProcessed} image${totalProcessed === 1 ? "" : "s"} to WebP${totalErrors > 0 ? ` (${totalErrors} skipped)` : ""}`,
       );
+      onDone?.();
     } catch (e: any) {
       toast.error(`Conversion failed: ${e?.message ?? "unknown error"}`);
     } finally {
@@ -124,16 +148,22 @@ const ConvertImagesToWebpCard = () => {
     }
   };
 
+  const targetCount = targets?.length ?? 0;
+  const heading =
+    title ?? (targets ? `Convert ${targetCount} selected image${targetCount === 1 ? "" : "s"} to WebP` : "Convert all images to WebP");
+  const desc =
+    description ??
+    (targets
+      ? "Re-encodes the selected non-WebP images as WebP, updates database references, and deletes the originals."
+      : "One-time cleanup: re-encodes every existing JPG/PNG in storage as WebP, updates every reference in the database, and deletes the originals. New uploads are already WebP-only. Safe to close and resume — runs in small batches.");
+  const cta = buttonLabel ?? "Run conversion";
+
   return (
     <Card className="border-dashed">
       <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="space-y-1">
-          <h3 className="text-sm font-semibold">Convert all images to WebP</h3>
-          <p className="text-xs text-muted-foreground">
-            One-time cleanup: re-encodes every existing JPG/PNG in storage as WebP,
-            updates every reference in the database, and deletes the originals. New uploads are
-            already WebP-only. Safe to close and resume — runs in small batches.
-          </p>
+          <h3 className="text-sm font-semibold">{heading}</h3>
+          <p className="text-xs text-muted-foreground">{desc}</p>
           {(running || processed > 0) && (
             <p className="text-xs text-muted-foreground">
               Converted {processed} · Deleted originals {deleted}
@@ -142,7 +172,7 @@ const ConvertImagesToWebpCard = () => {
             </p>
           )}
         </div>
-        <Button onClick={run} disabled={running} size="sm" variant="outline">
+        <Button onClick={run} disabled={running || (targets && targets.length === 0)} size="sm" variant="outline">
           {running ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -151,7 +181,7 @@ const ConvertImagesToWebpCard = () => {
           ) : (
             <>
               <FileImage className="h-4 w-4 mr-2" />
-              Run conversion
+              {cta}
             </>
           )}
         </Button>

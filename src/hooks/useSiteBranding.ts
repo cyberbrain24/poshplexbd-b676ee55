@@ -59,13 +59,25 @@ export const useUpdateSiteBranding = () => {
 export const useUploadBrandingAsset = () => {
   return useMutation({
     mutationFn: async ({ file, path }: { file: File; path: string }) => {
+      // Auto-convert raster images to WebP under 250KB; SVGs/non-images pass through
+      let toUpload: File = file;
+      let finalPath = path;
+      if (file.type.startsWith("image/") && file.type !== "image/svg+xml" && file.type !== "image/gif") {
+        try {
+          const { toWebpUnder250 } = await import("@/lib/imageToWebp");
+          toUpload = await toWebpUnder250(file);
+          finalPath = path.replace(/\.[^.]+$/, "") + ".webp";
+        } catch {
+          toUpload = file;
+        }
+      }
       const { error } = await supabase.storage
         .from("media")
-        .upload(path, file, { upsert: true });
+        .upload(finalPath, toUpload, { upsert: true, contentType: toUpload.type });
       if (error) throw error;
       const { data: urlData } = supabase.storage
         .from("media")
-        .getPublicUrl(path);
+        .getPublicUrl(finalPath);
       return urlData.publicUrl;
     },
     onError: (err: any) => {

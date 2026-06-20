@@ -13,7 +13,7 @@ export interface ImageVariants {
 }
 
 const VARIANT_SPECS = [
-  { label: "thumb" as const, width: 400, quality: 0.72 },
+  { label: "thumb" as const, width: 300, quality: 0.72 },
   { label: "medium" as const, edge: 800, quality: 0.78 },
 ];
 

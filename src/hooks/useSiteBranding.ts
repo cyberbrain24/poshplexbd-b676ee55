@@ -63,13 +63,9 @@ export const useUploadBrandingAsset = () => {
       let toUpload: File = file;
       let finalPath = path;
       if (file.type.startsWith("image/") && file.type !== "image/svg+xml" && file.type !== "image/gif") {
-        try {
-          const { toWebpUnder250 } = await import("@/lib/imageToWebp");
-          toUpload = await toWebpUnder250(file);
-          finalPath = path.replace(/\.[^.]+$/, "") + ".webp";
-        } catch {
-          toUpload = file;
-        }
+        const { toWebpUnder250 } = await import("@/lib/imageToWebp");
+        toUpload = await toWebpUnder250(file);
+        finalPath = path.replace(/\.[^.]+$/, "") + ".webp";
       }
       const { error } = await supabase.storage
         .from("media")

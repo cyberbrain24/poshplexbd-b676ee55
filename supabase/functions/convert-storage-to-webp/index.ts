@@ -14,7 +14,7 @@ import {
 const BUCKETS = ["product-images", "media", "review-images", "profile-images"] as const;
 const MAX_BATCH = 20;
 const DEFAULT_BATCH = 5;
-const TARGET_BYTES = 250 * 1024;
+const WEBP_QUALITY = 85; // high-quality re-encode; no size/pixel cap on existing images
 const SKIP_EXT = new Set(["webp", "gif", "svg"]); // pass-through formats
 const RASTER_EXT = new Set(["jpg", "jpeg", "png", "bmp", "tif", "tiff", "heic", "heif", "avif"]);
 

@@ -60,10 +60,13 @@ export const MusicPlayerProvider = ({ children }: { children: ReactNode }) => {
 
   const currentTrack = tracks[currentIndex] || null;
 
-  // Update audio src when track changes
+  // Update audio src when track changes — but only after the user has
+  // interacted with the player at least once. Before that, leave the
+  // <audio> element with no src so the browser doesn't fetch anything.
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !currentTrack) return;
+    if (!hasInteractedRef.current) return;
     if (audio.src !== currentTrack.file_url) {
       audio.src = currentTrack.file_url;
       if (isPlaying) audio.play().catch(() => setIsPlaying(false));

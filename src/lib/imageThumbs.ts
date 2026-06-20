@@ -39,7 +39,7 @@ async function resizeToWebp(
   baseName: string,
   label: string,
 ): Promise<File | null> {
-  // Thumbnail width is fixed at 400px; height follows the original image ratio.
+  // Thumbnail width is fixed at 300px; height follows the original image ratio.
   const longest = Math.max(img.width, img.height);
   const scale = spec.width ? spec.width / img.width : longest > spec.edge! ? spec.edge! / longest : 1;
   const w = Math.max(1, Math.round(img.width * scale));

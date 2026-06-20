@@ -67,6 +67,7 @@ interface FulfillmentOrder {
   customer_notes: string | null;
   internal_notes: string | null;
   fulfillment_issue: IssueValue | null;
+  fulfillment_ready: boolean | null;
   items: FulfillmentItem[];
 }
 

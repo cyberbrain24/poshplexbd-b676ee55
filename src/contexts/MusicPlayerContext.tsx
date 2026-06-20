@@ -32,10 +32,13 @@ export const MusicPlayerProvider = ({ children }: { children: ReactNode }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  // Lazily create the persistent audio element
+  const hasInteractedRef = useRef(false);
+
+  // Lazily create the persistent audio element. Don't preload audio data —
+  // the file is several MB and was hurting LCP on every page.
   if (!audioRef.current && typeof window !== "undefined") {
     audioRef.current = new Audio();
-    audioRef.current.preload = "auto";
+    audioRef.current.preload = "none";
   }
 
   // Load tracks from DB and start at a random track
@@ -57,10 +60,13 @@ export const MusicPlayerProvider = ({ children }: { children: ReactNode }) => {
 
   const currentTrack = tracks[currentIndex] || null;
 
-  // Update audio src when track changes
+  // Update audio src when track changes — but only after the user has
+  // interacted with the player at least once. Before that, leave the
+  // <audio> element with no src so the browser doesn't fetch anything.
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !currentTrack) return;
+    if (!hasInteractedRef.current) return;
     if (audio.src !== currentTrack.file_url) {
       audio.src = currentTrack.file_url;
       if (isPlaying) audio.play().catch(() => setIsPlaying(false));
@@ -95,6 +101,13 @@ export const MusicPlayerProvider = ({ children }: { children: ReactNode }) => {
   const togglePlay = useCallback(() => {
     const audio = audioRef.current;
     if (!audio || !currentTrack) return;
+    // First user interaction — wire up the src now, then play.
+    if (!hasInteractedRef.current) {
+      hasInteractedRef.current = true;
+      if (audio.src !== currentTrack.file_url) {
+        audio.src = currentTrack.file_url;
+      }
+    }
     if (audio.paused) {
       audio.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
     } else {

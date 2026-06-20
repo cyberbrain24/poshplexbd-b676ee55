@@ -230,32 +230,41 @@ export const captureClickId = () => {
  * Send event to server-side Conversions API for browser+server deduplication.
  * Fired in parallel with fbq — Meta dedupes by (event_name, event_id).
  */
-const sendCapi = async (
+const sendCapi = (
   eventName: string,
   eventId: string,
   customData?: Record<string, unknown>,
 ) => {
-  try {
-    // Lazy import to avoid pulling supabase client into critical render path
-    const { supabase } = await import('@/integrations/supabase/client');
-    const userData = {
-      ..._userData,
-      fbp: getCookie('_fbp'),
-      fbc: getCookie('_fbc'),
-    };
-    await supabase.functions.invoke('meta-capi', {
-      body: {
-        event_name: eventName,
-        event_id: eventId,
-        event_source_url: typeof window !== 'undefined' ? window.location.href : undefined,
-        user_data: userData,
-        custom_data: customData,
-        action_source: 'website',
-      },
-    });
-  } catch {
-    // Silently fail — CAPI is enhancement, not critical
-  }
+  // Defer to idle time so CAPI never competes with the initial paint
+  // or critical data fetches for HTTP connections.
+  const run = async () => {
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const userData = {
+        ..._userData,
+        fbp: getCookie('_fbp'),
+        fbc: getCookie('_fbc'),
+      };
+      await supabase.functions.invoke('meta-capi', {
+        body: {
+          event_name: eventName,
+          event_id: eventId,
+          event_source_url: typeof window !== 'undefined' ? window.location.href : undefined,
+          user_data: userData,
+          custom_data: customData,
+          action_source: 'website',
+        },
+      });
+    } catch {
+      // Silently fail — CAPI is enhancement, not critical
+    }
+  };
+  if (typeof window === 'undefined') return;
+  const ric = (window as any).requestIdleCallback as
+    | ((cb: () => void, opts?: { timeout: number }) => number)
+    | undefined;
+  if (ric) ric(run, { timeout: 3000 });
+  else setTimeout(run, 1500);
 };
 
 /**

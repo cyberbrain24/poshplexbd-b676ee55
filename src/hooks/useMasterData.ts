@@ -7,7 +7,7 @@ const MASTER_DATA_STALE_TIME = 1000 * 60 * 5; // 5 minutes
 const MASTER_DATA_GC_TIME = 1000 * 60 * 10; // 10 minutes
 
 // Colors
-export const useColors = () => {
+export const useColors = (options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: ["colors"],
     queryFn: async () => {
@@ -20,6 +20,7 @@ export const useColors = () => {
     },
     staleTime: MASTER_DATA_STALE_TIME,
     gcTime: MASTER_DATA_GC_TIME,
+    enabled: options?.enabled ?? true,
   });
 };
 
@@ -68,7 +69,7 @@ export const useDeleteColor = () => {
 };
 
 // Sizes
-export const useSizes = () => {
+export const useSizes = (options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: ["sizes"],
     queryFn: async () => {
@@ -81,6 +82,7 @@ export const useSizes = () => {
     },
     staleTime: MASTER_DATA_STALE_TIME,
     gcTime: MASTER_DATA_GC_TIME,
+    enabled: options?.enabled ?? true,
   });
 };
 

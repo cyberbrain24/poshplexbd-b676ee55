@@ -12,9 +12,9 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
 const BUCKETS = ["product-images", "media", "review-images", "profile-images"] as const;
-const MAX_BATCH = 20;
-const DEFAULT_BATCH = 5;
-const WEBP_QUALITY = 85; // high-quality re-encode; no size/pixel cap on existing images
+const MAX_BATCH = 3;
+const DEFAULT_BATCH = 1; // magick-wasm is CPU-heavy; one image per invocation is safest
+const WEBP_QUALITY = 82;
 const MAGICK_WASM_URL = "https://cdn.jsdelivr.net/npm/@imagemagick/magick-wasm@0.0.31/dist/magick.wasm";
 // Only already-webp files are skipped; every other image format is converted.
 const SKIP_EXT = new Set(["webp"]);

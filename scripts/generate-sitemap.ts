@@ -134,22 +134,21 @@ async function main() {
   );
   const categoryEntries: UrlEntry[] = categories
     .map((c: any) => {
-      // URL-safe slug for sitemap: lowercase, & -> and, strip unsafe chars.
-      const slug = (c.name || "")
-        .toLowerCase()
-        .trim()
-        .replace(/&/g, "and")
-        .replace(/[^\w\s-]/g, "")
-        .replace(/\s+/g, "-")
-        .replace(/-+/g, "-");
-      return slug
-        ? {
-            loc: `${BASE_URL}/category/${encodeURI(slug)}`,
-            lastmod: fmt(c.updated_at),
-            changefreq: "daily" as const,
-            priority: 0.8,
-          }
-        : null;
+      // Match app's slug logic in CategoryHeader: lowercase + spaces->dashes.
+      const slug = (c.name || "").toLowerCase().trim().replace(/\s+/g, "-");
+      if (!slug) return null;
+      // Percent-encode unsafe URL chars (&, etc.) so <loc> is valid XML and
+      // React Router still decodes back to the original slug at runtime.
+      const encoded = slug
+        .split("/")
+        .map((seg) => encodeURIComponent(seg))
+        .join("/");
+      return {
+        loc: `${BASE_URL}/category/${encoded}`,
+        lastmod: fmt(c.updated_at),
+        changefreq: "daily" as const,
+        priority: 0.8,
+      };
     })
     .filter((e): e is UrlEntry => e !== null);
 

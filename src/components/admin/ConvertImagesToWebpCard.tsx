@@ -6,8 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 /**
- * One-time backfill: convert every existing non-WebP storage file to WebP
- * (under 250 KB), rewrite every DB reference, delete the original. Polls
+ * One-time backfill: convert every existing non-WebP storage file to WebP,
+ * rewrite every DB reference, delete the original. Polls
  * the edge function in small batches until no more pending files remain.
  */
 const ConvertImagesToWebpCard = () => {
@@ -66,7 +66,7 @@ const ConvertImagesToWebpCard = () => {
         <div className="space-y-1">
           <h3 className="text-sm font-semibold">Convert all images to WebP</h3>
           <p className="text-xs text-muted-foreground">
-            One-time cleanup: re-encodes every existing JPG/PNG in storage as WebP under 250 KB,
+            One-time cleanup: re-encodes every existing JPG/PNG in storage as WebP,
             updates every reference in the database, and deletes the originals. New uploads are
             already WebP-only. Safe to close and resume — runs in small batches.
           </p>

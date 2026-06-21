@@ -70,7 +70,6 @@ const marketingChannelItems: NavItem[] = [
 
 const marketingItems: NavItem[] = [
   { icon: LayoutGrid, label: "Overview", path: "/admin/marketing" },
-  { icon: Activity, label: "Visitors", path: "/admin/marketing/visitors" },
   { icon: Facebook, label: "Meta Pixel", path: "/admin/marketing/meta-pixel" },
   { icon: Server, label: "Meta CAPI", path: "/admin/marketing/meta-capi" },
   { icon: BarChart3, label: "Google Analytics 4", path: "/admin/marketing/ga4" },

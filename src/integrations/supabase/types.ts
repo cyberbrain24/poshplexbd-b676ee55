@@ -1046,42 +1046,6 @@ export type Database = {
           },
         ]
       }
-      ip_geo_cache: {
-        Row: {
-          cached_at: string
-          city: string | null
-          country: string | null
-          country_code: string | null
-          ip_address: string
-          isp: string | null
-          lat: number | null
-          lon: number | null
-          region: string | null
-        }
-        Insert: {
-          cached_at?: string
-          city?: string | null
-          country?: string | null
-          country_code?: string | null
-          ip_address: string
-          isp?: string | null
-          lat?: number | null
-          lon?: number | null
-          region?: string | null
-        }
-        Update: {
-          cached_at?: string
-          city?: string | null
-          country?: string | null
-          country_code?: string | null
-          ip_address?: string
-          isp?: string | null
-          lat?: number | null
-          lon?: number | null
-          region?: string | null
-        }
-        Relationships: []
-      }
       materials: {
         Row: {
           created_at: string
@@ -1692,54 +1656,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      page_views: {
-        Row: {
-          city: string | null
-          country: string | null
-          country_code: string | null
-          created_at: string
-          customer_id: string | null
-          device_type: string | null
-          id: string
-          ip_address: string | null
-          path: string
-          referrer: string | null
-          region: string | null
-          session_id: string | null
-          user_agent: string | null
-        }
-        Insert: {
-          city?: string | null
-          country?: string | null
-          country_code?: string | null
-          created_at?: string
-          customer_id?: string | null
-          device_type?: string | null
-          id?: string
-          ip_address?: string | null
-          path: string
-          referrer?: string | null
-          region?: string | null
-          session_id?: string | null
-          user_agent?: string | null
-        }
-        Update: {
-          city?: string | null
-          country?: string | null
-          country_code?: string | null
-          created_at?: string
-          customer_id?: string | null
-          device_type?: string | null
-          id?: string
-          ip_address?: string | null
-          path?: string
-          referrer?: string | null
-          region?: string | null
-          session_id?: string | null
-          user_agent?: string | null
-        }
-        Relationships: []
       }
       payment_methods: {
         Row: {
@@ -3332,7 +3248,6 @@ export type Database = {
     }
     Functions: {
       admin_list_schema: { Args: never; Returns: Json }
-      cleanup_visitor_analytics: { Args: never; Returns: undefined }
       create_order_atomic: {
         Args: { p_items: Json; p_order: Json }
         Returns: Json
@@ -3343,14 +3258,6 @@ export type Database = {
         Returns: string[]
       }
       find_product_by_short_id: { Args: { short_id: string }; Returns: string }
-      get_active_visitors_count: { Args: never; Returns: Json }
-      get_daily_visits: {
-        Args: { p_days?: number }
-        Returns: {
-          date: string
-          visits: number
-        }[]
-      }
       get_my_customer_id: { Args: never; Returns: string }
       get_public_members: {
         Args: { p_customer_type_id?: string }
@@ -3378,7 +3285,6 @@ export type Database = {
           meta_test_mode: boolean
         }[]
       }
-      get_visitor_analytics: { Args: { p_range?: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

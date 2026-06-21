@@ -2,19 +2,29 @@ import { Helmet } from "react-helmet-async";
 import { useSiteBranding } from "@/hooks/useSiteBranding";
 
 const HeroSection = () => {
-  const { data: branding } = useSiteBranding();
+  const { data: branding, isLoading } = useSiteBranding();
 
-  if (branding && !branding.hero_enabled) return null;
+  // While branding is loading, reserve the hero space so we don't shift
+  // layout (CLS) the moment the banner image attaches.
+  if (isLoading || !branding) {
+    return (
+      <section className="w-full">
+        <div
+          className="w-full aspect-[3/1] md:aspect-[4/1] bg-muted"
+          aria-hidden="true"
+        />
+      </section>
+    );
+  }
 
-  const desktopBanner = branding?.desktop_hero_url;
-  const mobileBanner = branding?.mobile_hero_url;
+  if (!branding.hero_enabled) return null;
 
+  const desktopBanner = branding.desktop_hero_url;
+  const mobileBanner = branding.mobile_hero_url;
   const hasBanner = desktopBanner || mobileBanner;
 
-  if (branding && !hasBanner) return null;
+  if (!hasBanner) return null;
 
-  // Pick the right banner to preload based on viewport so mobile doesn't
-  // waste bandwidth fetching the desktop image (which competes with the LCP).
   const desktopPreload = desktopBanner || mobileBanner;
   const mobilePreload = mobileBanner || desktopBanner;
 
@@ -43,10 +53,8 @@ const HeroSection = () => {
         )}
       </Helmet>
       <section className="w-full">
-        {!hasBanner && (
-          <div className="w-full aspect-[3/1] md:aspect-[4/1] bg-muted animate-pulse" aria-hidden="true" />
-        )}
-        {hasBanner && (
+        {/* aspect-ratio wrapper reserves layout space before <img> resolves */}
+        <div className="w-full aspect-[3/1] md:aspect-[4/1] bg-muted">
           <picture>
             {desktopBanner && (
               <source media="(min-width: 768px)" srcSet={desktopBanner} />
@@ -61,11 +69,11 @@ const HeroSection = () => {
               // @ts-ignore
               fetchpriority="high"
               decoding="async"
-              className="w-full h-auto block"
+              className="w-full h-full object-cover block"
               style={{ imageRendering: "auto" }}
             />
           </picture>
-        )}
+        </div>
       </section>
     </>
   );

@@ -1,53 +1,74 @@
-## Goal
 
-Split `/admin/media` into two pages via a tab bar at the top:
+# Performance Fixes — Safety-First
 
-1. **All Files** — the existing media browser (unchanged).
-2. **Thumbnails** (new) — a dense gallery of every image across all buckets (`product-images`, `media`, `review-images`, `profile-images`), shown as square thumbnails only, with preview / copy URL / delete actions. SEO meta edits made on a thumbnail are written to the **main image**'s `media_metadata` row so alt text / title stay in sync.
+Goal: cut FCP from ~6s to ~2s, CLS from 0.25 to <0.1, without changing any business logic, Pixel events, CAPI events, or visitor analytics.
 
-## Layout
+## Will this break anything?
 
-- Tab bar at the top of `/admin/media`: `All Files` · `Thumbnails`. Same route, internal `useState` tab switch — no new route entry needed.
-- Thumbnails tab content:
-  - Search (filename) + bucket filter (`All / product-images / media / review-images / profile-images`).
-  - Square thumbnail grid (8 cols desktop, 4 tablet, 3 mobile, `aspect-square rounded-2xl`, `object-cover`, lazy-loaded).
-  - Image-only — non-image files are excluded.
-  - "Load more" button after the first 60 (matches existing pattern).
+**No.** Each change is non-breaking by design:
 
-## Click → action sheet
+| Fix | What changes | What does NOT change |
+|---|---|---|
+| Defer Facebook Pixel | Loads ~1–2s later (after first paint or first interaction) | Same Pixel ID, same events (PageView, ViewContent, AddToCart, Purchase), same dedup with CAPI |
+| Defer `track-visit` | Fires after page is interactive | Same visitor row written, same analytics data |
+| Defer `meta-capi` PageView | Fires from idle callback | Same event payload, same server-side delivery |
+| Reserve hero/section heights (CLS) | Adds `min-height` / `aspect-ratio` placeholders | No visual change once loaded |
+| Lazy-load `This_is_Fire.ttf` | Font swaps in after text paints | Same font on same elements |
+| Deep-import lucide icons | Smaller JS bundle | Same icons render |
+| Add `<link rel="preconnect">` | Browser warms DNS/TLS earlier | No functional change |
 
-Clicking a thumbnail opens a `Dialog` with:
+Pixel + CAPI keep firing the **exact same events with the same parameters** — we are only delaying the script load by ~1–2 seconds, which Meta explicitly supports (the SDK queues calls made before init).
 
-- Full-size preview (max 80vh, contained).
-- File name, bucket, size, dimensions (read once on first preview).
-- **Copy URL** button → uses existing `copyFileUrl` helper.
-- **Edit SEO** → embeds the existing `MediaSeoEditor`. Save path is changed: when the file is a derived thumbnail (filename matches `…-thumb.webp` / `…-medium.webp` or sits next to a same-stem original), the editor saves under the **main image's URL key** instead of the thumbnail's, so editing a thumb updates the canonical record.
-- **Delete** → reuses `useDeleteMedia` + the existing in-use guard (`useMediaReferences`); shows the same "this image is used in N places" warning before allowing delete.
+---
 
-## "Sync SEO meta to main image" rule
+## Scope of changes
 
-`media_metadata` is keyed by `image_url`. For a clicked file we resolve its "main image URL" with this priority:
+### 1. Fix CLS (the visible jank)
+- `src/components/home/HeroSection.tsx` — already has `aspect-[3/1] md:aspect-[4/1]` skeleton; verify it actually reserves space before branding loads (currently it short-circuits to `null` while branding is loading → causes shift).
+- Reserve min-height on `CategorySection` and `FeaturedProducts` Suspense fallbacks (already partially there, tune values).
 
-1. If the file path ends in `-thumb.<ext>` or `-medium.<ext>`, strip that suffix → that's the main URL.
-2. Else if the same stem `.webp` / `.jpg` / `.png` exists in the same folder without the suffix, use that.
-3. Else the file itself is the main image — save normally.
+### 2. Defer tracking off the critical path
+- `src/components/tracking/FacebookPixelTracker.tsx` — wrap script injection in `requestIdleCallback` (fallback `setTimeout(…, 2000)`) or fire on first user interaction. Queue any early `fbq(...)` calls so no events are lost.
+- `src/components/tracking/VisitorTracker.tsx` — move the `track-visit` fetch into `requestIdleCallback`.
+- Meta CAPI PageView call — same idle-defer treatment.
 
-`MediaSeoEditor` already accepts an `image_url`; we'll pass the resolved main URL. No schema change.
+### 3. Font optimization
+- `index.css` / wherever `This_is_Fire` is declared — add `font-display: swap` and `unicode-range` if applicable. Consider preloading only when the slogan is actually on screen.
 
-## Files
+### 4. Lucide-react bundle
+- Audit imports; replace barrel `import { X, Y } from "lucide-react"` with per-icon paths only where it matters (header, footer, product card). Low risk, mechanical change.
 
-**New:**
-- `src/components/admin/MediaThumbnailsGallery.tsx` — the new tab's view (grid + dialog).
-- `src/lib/mediaThumbResolve.ts` — small helper for the main-image URL resolver.
+### 5. Preconnects in `index.html`
+- Add: `https://zspmhkzosumopyfmlwvl.supabase.co`, `https://connect.facebook.net`, `https://www.facebook.com`.
 
-**Edited:**
-- `src/pages/admin/AdminMedia.tsx` — wrap existing content in a `Tabs` component, mount the new gallery as the second tab. Existing All Files behavior unchanged.
+### 6. DOM trim (optional, lower priority)
+- Marquee announcement bar duplicates content for scroll — cap copies. Mega menu pre-renders all panels — render lazily on hover.
 
-## Out of scope
+---
 
-- New routes, new sidebar entries (single Media entry stays).
-- Bulk delete in the Thumbnails tab — deferred; users can use All Files for bulk ops.
-- Re-running thumbnail regeneration — `regenerate-image-thumbnails` already does that.
-- Music bucket (audio).
+## Out of scope (not touching)
+- Pixel ID, event names, parameters, dedup logic
+- CAPI edge function `meta-capi`
+- Visitor analytics schema or `track-visit` payload
+- Product/order/checkout logic
+- Admin panel
+- Any database changes
 
-Approve and I'll implement.
+---
+
+## Verification steps after build
+1. Open DevTools → Network → filter `facebook` → confirm `fbevents.js` still loads and `PageView` still fires.
+2. Open Meta Events Manager → Test Events → confirm PageView arrives from both browser and server (CAPI) with matching `event_id`.
+3. Re-run performance profile → expect FCP ~2s, CLS <0.1.
+4. Check `/admin/marketing/visitor-analytics` → new visit row recorded for the test session.
+
+---
+
+## Rollout order
+1. Preconnects + CLS reserves (lowest risk, instant win)
+2. Defer Pixel + CAPI + visitor tracking
+3. Font `font-display: swap`
+4. Lucide deep imports
+5. (Optional) DOM trim
+
+Each step is independently revertible.

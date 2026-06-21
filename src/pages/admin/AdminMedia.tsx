@@ -416,6 +416,16 @@ const AdminMedia = () => {
                   Convert {selectedConvertTargets.length} to WebP
                 </Button>
               )}
+              {selectedThumbTargets.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsBulkThumbOpen(true)}
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Generate thumbs ({selectedThumbTargets.length})
+                </Button>
+              )}
               {selectedIds.size > 0 && (
                 <Button
                   variant="destructive"

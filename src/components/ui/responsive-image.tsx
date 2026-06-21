@@ -117,13 +117,14 @@ const ResponsiveImage = ({
       {isInView && (
         <img
           src={imageSrc}
+          srcSet={hasError ? undefined : srcSet}
           alt={alt}
           sizes={config.sizes}
           width={config.widths.desktop}
           height={config.widths.desktop}
           loading={priority ? "eager" : "lazy"}
           decoding="async"
-          fetchPriority={priority ? "high" : "auto"}
+          {...(priority ? { fetchpriority: "high" as any } : {})}
           onLoad={() => setIsLoaded(true)}
           onError={() => {
             setHasError(true);

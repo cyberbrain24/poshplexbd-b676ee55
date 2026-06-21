@@ -60,17 +60,21 @@ const FeaturedProducts = () => {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
-        {products.map((product, index) => (
+        {products.map((product, index) => {
+          const variants = getImageVariants(product);
+          return (
           <div key={product.id} className="group relative">
             <Link
               to={`/product/${generateProductSlug(product.name, product.id)}`}
               className="block relative aspect-[3/4] overflow-hidden bg-muted mb-3"
             >
               <img
-                src={getMainImage(product)}
+                src={variants.src}
+                srcSet={variants.srcSet}
+                sizes="(min-width: 768px) 450px, 300px"
                 alt={product.name}
-                width={300}
-                height={400}
+                width={450}
+                height={600}
                 loading="lazy"
                 className="w-full h-full object-cover object-center md:transition-all md:duration-500 md:group-hover:scale-105"
               />

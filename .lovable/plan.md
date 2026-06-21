@@ -1,39 +1,37 @@
-Goal: Break the critical request chain that causes a 3,671 ms maximum critical-path latency on the homepage.
+# Streamline Code (Safe Subset)
 
-### Problems identified
+Implement code-streamlining optimizations **without touching the inline gtag script** in `index.html`. GA bootstrap stays exactly as it is today.
 
-1. **Google Fonts CSS blocks first render** — `src/index.css` uses `@import url('https://fonts.googleapis.com/...')`. The browser must download the CSS bundle, parse it, discover the `@import`, then fetch the Google Fonts CSS, then fetch the woff2 files. This creates a 3-link blocking chain.
+## Changes
 
-2. **Meta CAPI edge function is on the critical path** — `trackPageView()` fires a server-side `meta-capi` edge-function call on every route change, including the initial homepage load. The screenshot shows this call alone takes **3,671 ms**, making it the single longest request in the chain.
+### 1. HTML Minification
+Add `vite-plugin-html` to `vite.config.ts` with `minify: true`. The built `index.html` will have whitespace, line breaks, and comments stripped, and inline `<script>`/`<style>` blocks compacted. No tag is removed or reordered — the GA snippet stays intact, just minified.
 
-3. **Too many parallel promotion API calls** — Each `<PromotionSlot>` fetches promotions separately by placement. The screenshot shows 5–6 separate `promotions?select=...` requests hitting Supabase at once.
+### 2. Preload Main JS Entry Chunk
+Use `vite-plugin-html`'s inject option to add `<link rel="modulepreload" href="/src/main.tsx">` (resolved to the hashed entry chunk at build time) so the browser begins fetching app JS in parallel with CSS. Pure browser hint; ignored by older browsers.
 
-### Fixes
+### 3. Strip esbuild Legal Comments
+Add `esbuild: { legalComments: "none" }` to `vite.config.ts` to remove license banners from the JS output, shrinking bundle size slightly.
 
-#### 1. Move Google Fonts out of CSS and into `index.html`
-- Remove the `@import` line from `src/index.css`.
-- Add the font stylesheet as a standard `<link>` in `index.html` inside `<head>`.
-- Add `<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>` (the actual font files are served from `gstatic.com`, not `googleapis.com`).
-- Keep the existing `preconnect` to `fonts.googleapis.com`.
+## Files Touched
 
-This shortens the chain because the browser discovers the font CSS immediately while parsing the HTML, instead of waiting for the CSS bundle to download and parse first.
+- `vite.config.ts` — register `vite-plugin-html`, add `esbuild.legalComments`.
+- `package.json` — add `vite-plugin-html` dev dependency.
 
-#### 2. Defer Meta CAPI `PageView` on initial load
-- In `src/services/facebook-pixel.service.ts`, modify `trackPageView()` so the **first** `PageView` on a fresh page load only fires the browser `fbq` event and skips the server-side `sendCapi` mirror.
-- Keep `sendCapi` for subsequent SPA navigations and for higher-value events (`AddToCart`, `Purchase`, etc.).
-- This removes the 3.6 s `meta-capi` request from the initial critical path entirely.
+## Files NOT Touched
 
-#### 3. Combine promotion fetches into one call
-- Refactor the promotions hook so the homepage makes a **single** `promotions?select=...` call that fetches all active promotions, then filters by placement client-side.
-- Update `<PromotionSlot>` to consume from this shared cache instead of issuing its own query per placement.
-- This replaces 5–6 parallel Supabase requests with 1 request, freeing HTTP connections for the other critical data fetches (products, reviews, categories).
+- `index.html` — gtag inline script and all `<head>` content remain unchanged in source.
+- `public/` — no new files.
+- Any React/route code — no lazy-loading changes.
 
-### What will NOT change
-- The product, review, category, and branding API calls are already as parallel as possible and are needed for homepage content. They will remain, but with fewer promotion requests competing for connections they should complete faster.
-- The main JS bundle size will not be reduced in this pass (that requires deeper bundle analysis).
+## Success Criteria
 
-### Verification
-After the changes, re-run Lighthouse/PageSpeed Insights and confirm:
-- The Google Fonts chain is no longer flagged as a critical request chain.
-- The `meta-capi` request no longer appears in the initial critical path.
-- The number of `promotions` requests on initial load is reduced to 1.
+- Built `index.html` is minified (single-line, no comments).
+- Modulepreload link present for main entry chunk.
+- JS bundle no longer contains `/*! ... */` license banners.
+- GA tracking continues to work identically (no behavioral change).
+- No regression in dev mode (`vite-plugin-html` only acts at build time).
+
+## Risk
+
+Near-zero. All three changes are build-time output transformations. Runtime behavior of the app is unchanged.

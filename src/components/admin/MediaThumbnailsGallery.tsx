@@ -67,9 +67,10 @@ const MediaThumbnailsGallery = () => {
   const [confirmDelete, setConfirmDelete] = useState<MediaFile | null>(null);
   const [visible, setVisible] = useState(INITIAL);
 
-  // Image-only across all buckets
+  // Image-only across all buckets — Thumbnails tab shows ONLY derived thumbnails
+  // (files in thumbs/medium/large folders or with -thumb/-small/-medium/-large suffixes).
   const imageFiles = useMemo(
-    () => files.filter((f) => getFileType(f.mime_type, f.name) === "image"),
+    () => files.filter((f) => getFileType(f.mime_type, f.name) === "image" && isDerivedThumbnail(f)),
     [files],
   );
 

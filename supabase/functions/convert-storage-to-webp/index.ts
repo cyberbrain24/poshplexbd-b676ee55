@@ -111,6 +111,7 @@ async function rewriteReferences(
     { table: "product_images", col: "image_url" },
     { table: "product_images", col: "thumb_url" },
     { table: "product_images", col: "medium_url" },
+    { table: "product_images", col: "large_url" },
     { table: "product_variants", col: "image_url" },
     { table: "promotions", col: "image_url" },
     { table: "seo_pages", col: "og_image_url" },

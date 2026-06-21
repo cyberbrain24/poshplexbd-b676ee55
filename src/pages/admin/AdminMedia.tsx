@@ -3,10 +3,11 @@ import { useMediaFiles, useUploadMedia, useDeleteMediaFiles, useRenameMedia, Med
 import { useAllMediaMetadata, useDeleteMediaMetadata } from "@/hooks/useMediaMetadata";
 import { useMediaReferences, MediaReference } from "@/hooks/useMediaReferences";
 import { getFileType, formatFileSize, copyFileUrl } from "@/services/media.service";
-import { resolveMainImage, isDerivedThumbnail, getDerivativeImagesForMain } from "@/lib/mediaThumbResolve";
+import { resolveMainImage, isDerivedThumbnail, getDerivativeImagesForMain, thumbnailStatusFor } from "@/lib/mediaThumbResolve";
 import MediaSeoEditor from "@/components/admin/MediaSeoEditor";
 import ThumbnailBackfillCard from "@/components/admin/ThumbnailBackfillCard";
 import ConvertImagesToWebpCard, { PendingImage } from "@/components/admin/ConvertImagesToWebpCard";
+import GenerateThumbnailsCard from "@/components/admin/GenerateThumbnailsCard";
 import MediaThumbnailsGallery from "@/components/admin/MediaThumbnailsGallery";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -60,6 +61,8 @@ import {
   Square,
   X,
   FileImage,
+  CheckCircle2,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -101,6 +104,7 @@ const AdminMedia = () => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
   const [isBulkConvertOpen, setIsBulkConvertOpen] = useState(false);
+  const [isBulkThumbOpen, setIsBulkThumbOpen] = useState(false);
   const [newFileName, setNewFileName] = useState("");
   const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD);
   const [selectionMode, setSelectionMode] = useState(false);
@@ -163,6 +167,17 @@ const AdminMedia = () => {
       .filter((f) => getExt(f.name) !== "webp")
       .map((f) => ({ bucket: f.bucket_id, path: f.name, size: f.size }));
   }, [files, selectedIds]);
+
+  // Thumbnail generation only runs against main images — never against
+  // existing derivatives, otherwise we'd recursively shrink them.
+  const selectedThumbTargets = useMemo<PendingImage[]>(() => {
+    return files
+      .filter((f) => selectedIds.has(`${f.bucket_id}::${f.name}`))
+      .filter((f) => getFileType(f.mime_type, f.name) === "image")
+      .filter((f) => !isDerivedThumbnail(f))
+      .map((f) => ({ bucket: f.bucket_id, path: f.name, size: f.size }));
+  }, [files, selectedIds]);
+
 
   const getFileReferences = (file: MediaFile): MediaReference[] => {
     if (!referencesMap) return [];
@@ -401,6 +416,16 @@ const AdminMedia = () => {
                   Convert {selectedConvertTargets.length} to WebP
                 </Button>
               )}
+              {selectedThumbTargets.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsBulkThumbOpen(true)}
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Generate thumbs ({selectedThumbTargets.length})
+                </Button>
+              )}
               {selectedIds.size > 0 && (
                 <Button
                   variant="destructive"
@@ -534,6 +559,10 @@ const AdminMedia = () => {
               const fileType = getFileType(file.mime_type, file.name);
               const refs = getFileReferences(file);
               const isSelected = selectedIds.has(fileKey(file));
+              const thumbStatus =
+                fileType === "image" && !isDerivedThumbnail(file)
+                  ? thumbnailStatusFor(file, files)
+                  : null;
 
               return (
                 <Card
@@ -566,6 +595,23 @@ const AdminMedia = () => {
                       <Badge variant="default" className="absolute top-2 left-2 text-xs">
                         {refs.length} ref{refs.length > 1 ? "s" : ""}
                       </Badge>
+                    )}
+                    {thumbStatus && thumbStatus.count > 0 && (
+                      <div
+                        className={`absolute bottom-2 left-2 z-10 flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold shadow ${
+                          thumbStatus.count === 3
+                            ? "bg-emerald-600 text-white"
+                            : "bg-amber-500 text-white"
+                        }`}
+                        title={
+                          thumbStatus.count === 3
+                            ? "All 3 thumbnails generated (150 / 300 / 450 px)"
+                            : `Only ${thumbStatus.count} of 3 thumbnails generated`
+                        }
+                      >
+                        <CheckCircle2 className="h-3 w-3" />
+                        {thumbStatus.count}/3 thumbs
+                      </div>
                     )}
                   </div>
                   <CardContent className="p-3 space-y-2">
@@ -841,6 +887,27 @@ const AdminMedia = () => {
           />
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsBulkConvertOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Generate Thumbnails Dialog */}
+      <Dialog open={isBulkThumbOpen} onOpenChange={setIsBulkThumbOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Generate thumbnails for selected images</DialogTitle>
+          </DialogHeader>
+          <GenerateThumbnailsCard
+            targets={selectedThumbTargets}
+            onDone={() => {
+              exitSelectionMode();
+              setIsBulkThumbOpen(false);
+            }}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsBulkThumbOpen(false)}>
               Close
             </Button>
           </DialogFooter>

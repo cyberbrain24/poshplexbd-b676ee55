@@ -503,10 +503,14 @@ export const useDeleteProductVariant = () => {
   });
 };
 
-// Upload product image to storage along with two pre-rendered WebP variants
-// (~400 px thumb, ~800 px medium) so category grids ship a much smaller file
-// than the original. Falls back gracefully when variants can't be produced.
-export interface UploadedProductImage {
+// Upload product image to storage along with three pre-rendered WebP
+// thumbnails (150 / 300 / 450 px). Each derived variant is generated FROM the
+// main image so SEO metadata + deletion stay anchored to it. Falls back
+// gracefully when variants can't be produced.
+export const uploadProductImage = async (
+  file: File,
+  productId: string,
+): Promise<{
   url: string;
   thumb_url: string | null;
   medium_url: string | null;

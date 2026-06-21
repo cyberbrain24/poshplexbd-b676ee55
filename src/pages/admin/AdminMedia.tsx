@@ -104,6 +104,7 @@ const AdminMedia = () => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
   const [isBulkConvertOpen, setIsBulkConvertOpen] = useState(false);
+  const [isBulkThumbOpen, setIsBulkThumbOpen] = useState(false);
   const [newFileName, setNewFileName] = useState("");
   const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD);
   const [selectionMode, setSelectionMode] = useState(false);
@@ -166,6 +167,17 @@ const AdminMedia = () => {
       .filter((f) => getExt(f.name) !== "webp")
       .map((f) => ({ bucket: f.bucket_id, path: f.name, size: f.size }));
   }, [files, selectedIds]);
+
+  // Thumbnail generation only runs against main images — never against
+  // existing derivatives, otherwise we'd recursively shrink them.
+  const selectedThumbTargets = useMemo<PendingImage[]>(() => {
+    return files
+      .filter((f) => selectedIds.has(`${f.bucket_id}::${f.name}`))
+      .filter((f) => getFileType(f.mime_type, f.name) === "image")
+      .filter((f) => !isDerivedThumbnail(f))
+      .map((f) => ({ bucket: f.bucket_id, path: f.name, size: f.size }));
+  }, [files, selectedIds]);
+
 
   const getFileReferences = (file: MediaFile): MediaReference[] => {
     if (!referencesMap) return [];

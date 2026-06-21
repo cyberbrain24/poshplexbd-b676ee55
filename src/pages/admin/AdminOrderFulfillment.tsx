@@ -318,7 +318,7 @@ const AdminOrderFulfillment = () => {
           </Button>
           <Button
             onClick={handleSyncAllSteadfast}
-            disabled={syncAllSteadfast.isPending || isLoading}
+            disabled={syncAllSteadfast.isPending || isLoading || !!syncProgress}
             variant="outline"
             size="sm"
           >

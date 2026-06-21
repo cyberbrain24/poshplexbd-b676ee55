@@ -559,6 +559,10 @@ const AdminMedia = () => {
               const fileType = getFileType(file.mime_type, file.name);
               const refs = getFileReferences(file);
               const isSelected = selectedIds.has(fileKey(file));
+              const thumbStatus =
+                fileType === "image" && !isDerivedThumbnail(file)
+                  ? thumbnailStatusFor(file, files)
+                  : null;
 
               return (
                 <Card
@@ -591,6 +595,23 @@ const AdminMedia = () => {
                       <Badge variant="default" className="absolute top-2 left-2 text-xs">
                         {refs.length} ref{refs.length > 1 ? "s" : ""}
                       </Badge>
+                    )}
+                    {thumbStatus && thumbStatus.count > 0 && (
+                      <div
+                        className={`absolute bottom-2 left-2 z-10 flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold shadow ${
+                          thumbStatus.count === 3
+                            ? "bg-emerald-600 text-white"
+                            : "bg-amber-500 text-white"
+                        }`}
+                        title={
+                          thumbStatus.count === 3
+                            ? "All 3 thumbnails generated (150 / 300 / 450 px)"
+                            : `Only ${thumbStatus.count} of 3 thumbnails generated`
+                        }
+                      >
+                        <CheckCircle2 className="h-3 w-3" />
+                        {thumbStatus.count}/3 thumbs
+                      </div>
                     )}
                   </div>
                   <CardContent className="p-3 space-y-2">

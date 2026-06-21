@@ -553,7 +553,7 @@ export const uploadProductImage = async (
 
     const tasks: Promise<void>[] = [];
     if (variants.thumb) {
-      const path = `${productId}/thumbs/${ts}-400.webp`;
+      const path = `${productId}/thumbs/${ts}-300.webp`;
       tasks.push(
         supabase.storage
           .from("product-images")

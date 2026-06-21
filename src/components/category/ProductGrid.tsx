@@ -100,6 +100,7 @@ const ProductGrid = ({ sortBy = "newest", filters }: ProductGridProps) => {
                       src={mainImage.src}
                       thumbUrl={mainImage.thumb}
                       mediumUrl={mainImage.medium}
+                      largeUrl={mainImage.large}
                       alt={product.name}
                       preset="grid"
                       className={`w-full h-full transition-all duration-300 ${hoverImage ? 'group-hover:opacity-0' : ''}`}
@@ -109,6 +110,7 @@ const ProductGrid = ({ sortBy = "newest", filters }: ProductGridProps) => {
                         src={hoverImage.src}
                         thumbUrl={hoverImage.thumb}
                         mediumUrl={hoverImage.medium}
+                        largeUrl={hoverImage.large}
                         alt={`${product.name} alternate`}
                         preset="grid"
                         className="absolute inset-0 w-full h-full transition-all duration-300 opacity-0 group-hover:opacity-100"

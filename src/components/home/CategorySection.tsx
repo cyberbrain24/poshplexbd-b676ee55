@@ -63,8 +63,9 @@ const CategorySection = () => {
                       <img
                         src={category.image_url || "/placeholder.svg"}
                         alt={category.name}
-                        width={100}
-                        height={100}
+                        width={450}
+                        height={450}
+                        sizes="(min-width: 768px) 450px, 300px"
                         loading="lazy"
                         decoding="async"
                         className="w-full h-full object-cover"

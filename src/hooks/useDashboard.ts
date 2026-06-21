@@ -4,11 +4,9 @@ import {
   fetchDashboardProductSummary,
   fetchDashboardOrders,
   fetchLifetimeOrderTotals,
-  fetchDailyVisits,
   type DashboardOrder,
   type DashboardProductSummary,
   type LifetimeTotals,
-  type DailyVisitPoint,
 } from "@/services/dashboard.service";
 
 export interface PeriodTotals {
@@ -34,7 +32,6 @@ export interface DashboardAnalytics {
   thisMonth: PeriodTotals;
   statusCounts: Record<string, number>;
   revenueLast7Days: ChartPoint[];
-  dailyVisits: DailyVisitPoint[];
 }
 
 const STATUS_KEYS = ["pending", "processing", "shipped", "delivered", "cancelled"];
@@ -70,12 +67,6 @@ export function useDashboard() {
   const lifetimeQ = useQuery({
     queryKey: ["dashboard", "lifetime"],
     queryFn: fetchLifetimeOrderTotals,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const visitsQ = useQuery({
-    queryKey: ["dashboard", "daily-visits", 30],
-    queryFn: () => fetchDailyVisits(30),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -141,9 +132,8 @@ export function useDashboard() {
       thisMonth: totalsFor(month),
       statusCounts,
       revenueLast7Days,
-      dailyVisits: visitsQ.data ?? [],
     };
-  }, [productQ.data, ordersQ.data, lifetimeQ.data, visitsQ.data]);
+  }, [productQ.data, ordersQ.data, lifetimeQ.data]);
 
   return {
     analytics,

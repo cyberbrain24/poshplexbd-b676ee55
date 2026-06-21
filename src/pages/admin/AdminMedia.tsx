@@ -128,6 +128,8 @@ const AdminMedia = () => {
   // Filter files based on search, type, and bucket (filters work across ALL files)
   const filteredFiles = useMemo(() => {
     return files.filter((file) => {
+      // All Files tab excludes derived thumbnails — those live in the Thumbnails tab.
+      if (isDerivedThumbnail(file)) return false;
       const matchesSearch = file.name.toLowerCase().includes(search.toLowerCase());
       const fileType = getFileType(file.mime_type, file.name);
       const matchesType = filterType === "all" || fileType === filterType;

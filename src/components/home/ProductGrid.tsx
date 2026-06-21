@@ -110,14 +110,17 @@ const ProductGrid = () => {
 
       {/* Product Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 relative z-10">
-        {displayProducts.map((product, index) => (
+        {displayProducts.map((product, index) => {
+          const variants = getImageVariants(product);
+          return (
           <div key={product.id} className="group relative">
             <Link 
               to={`/product/${generateProductSlug(product.name, product.id)}`}
               className="block relative aspect-[3/4] overflow-hidden bg-muted mb-3"
             >
               <img 
-                src={getMainImage(product)}
+                src={variants.src}
+                srcSet={variants.srcSet}
                 alt={product.name}
                 width={450}
                 height={600}

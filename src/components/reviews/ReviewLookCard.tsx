@@ -47,7 +47,11 @@ const ReviewLookCard = ({ review }: { review: ReviewLookData }) => {
           <img
             src={heroImage}
             alt={review.product?.name || "Customer look"}
+            width={450}
+            height={563}
+            sizes="(min-width: 768px) 450px, 300px"
             loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
         </div>

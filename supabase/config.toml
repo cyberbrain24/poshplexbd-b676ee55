@@ -20,7 +20,3 @@ verify_jwt = false
 
 [functions.meta-capi]
 verify_jwt = false
-
-
-[functions.track-visit]
-verify_jwt = false

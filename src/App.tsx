@@ -13,7 +13,7 @@ import { MusicPlayerProvider } from "./contexts/MusicPlayerContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import MobileFooterNav from "./components/navigation/MobileFooterNav";
 import FacebookPixelTracker from "./components/tracking/FacebookPixelTracker";
-import VisitorTracker from "./components/tracking/VisitorTracker";
+
 import GoogleAnalyticsTracker from "./components/tracking/GoogleAnalyticsTracker";
 import FloatingMusicPlayer from "./components/music/FloatingMusicPlayer";
 import TypographyProvider from "./components/TypographyProvider";
@@ -87,7 +87,7 @@ const MarketingOverview = lazy(() => import("./pages/admin/marketing/MarketingOv
 const MetaPixelSettings = lazy(() => import("./pages/admin/marketing/MetaPixelSettings"));
 const MetaCapiSettings = lazy(() => import("./pages/admin/marketing/MetaCapiSettings"));
 const GA4Settings = lazy(() => import("./pages/admin/marketing/GA4Settings"));
-const VisitorAnalytics = lazy(() => import("./pages/admin/marketing/VisitorAnalytics"));
+
 const AIProviderCredentials = lazy(() => import("./pages/admin/marketing/AIProviderCredentials"));
 const SteadfastSettings = lazy(() => import("./pages/admin/marketing/SteadfastSettings"));
 const DocsIndex = lazy(() => import("./pages/admin/docs/DocsIndex"));
@@ -140,7 +140,7 @@ const App = () => (
                 <ScrollToTop />
                 <TypographyProvider />
                 <FacebookPixelTracker />
-                <VisitorTracker />
+                
                 <GoogleAnalyticsTracker />
                 <Routes>
                   <Route path="/" element={<Index />} />
@@ -216,7 +216,7 @@ const App = () => (
                       <Route path="meta-pixel" element={<MetaPixelSettings />} />
                       <Route path="meta-capi" element={<MetaCapiSettings />} />
                       <Route path="ga4" element={<GA4Settings />} />
-                      <Route path="visitors" element={<VisitorAnalytics />} />
+                      
                       <Route path="ai-providers" element={<AIProviderCredentials />} />
                       <Route path="steadfast" element={<SteadfastSettings />} />
                     </Route>

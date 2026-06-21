@@ -14,6 +14,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import MobileFooterNav from "./components/navigation/MobileFooterNav";
 import FacebookPixelTracker from "./components/tracking/FacebookPixelTracker";
 import VisitorTracker from "./components/tracking/VisitorTracker";
+import GoogleAnalyticsTracker from "./components/tracking/GoogleAnalyticsTracker";
 import FloatingMusicPlayer from "./components/music/FloatingMusicPlayer";
 import TypographyProvider from "./components/TypographyProvider";
 import FloatingPromotion from "./components/promotions/FloatingPromotion";
@@ -140,6 +141,7 @@ const App = () => (
                 <TypographyProvider />
                 <FacebookPixelTracker />
                 <VisitorTracker />
+                <GoogleAnalyticsTracker />
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/categories" element={<Suspense fallback={<LoadingFallback />}><CategoryBrowser /></Suspense>} />

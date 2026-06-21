@@ -362,10 +362,10 @@ export function useSyncSteadfastStatus() {
 // Delivery status mapper
 export const STEADFAST_STATUS_MAP: Record<string, { label: string; color: string }> = {
   pending: { label: "Pending", color: "yellow" },
-  delivered_approval_pending: { label: "Delivered (Pending Approval)", color: "blue" },
-  partial_delivered_approval_pending: { label: "Partial Delivered (Pending)", color: "blue" },
-  cancelled_approval_pending: { label: "Cancelled (Pending)", color: "orange" },
-  unknown_approval_pending: { label: "Unknown (Pending)", color: "gray" },
+  delivered_approval_pending: { label: "Delivered (COD Approval Pending)", color: "blue" },
+  partial_delivered_approval_pending: { label: "Partial Delivered (COD Pending)", color: "blue" },
+  cancelled_approval_pending: { label: "Cancelled (COD Pending)", color: "orange" },
+  unknown_approval_pending: { label: "Unknown (COD Pending)", color: "gray" },
   delivered: { label: "Delivered", color: "green" },
   partial_delivered: { label: "Partially Delivered", color: "teal" },
   cancelled: { label: "Cancelled", color: "red" },

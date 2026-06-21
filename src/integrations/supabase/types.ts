@@ -1925,6 +1925,7 @@ export type Database = {
           id: string
           image_url: string
           is_main: boolean
+          large_url: string | null
           material_id: string | null
           medium_url: string | null
           product_id: string
@@ -1939,6 +1940,7 @@ export type Database = {
           id?: string
           image_url: string
           is_main?: boolean
+          large_url?: string | null
           material_id?: string | null
           medium_url?: string | null
           product_id: string
@@ -1953,6 +1955,7 @@ export type Database = {
           id?: string
           image_url?: string
           is_main?: boolean
+          large_url?: string | null
           material_id?: string | null
           medium_url?: string | null
           product_id?: string

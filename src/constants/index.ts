@@ -36,13 +36,13 @@ export const ORDER_STATUS_LABELS: Record<OrderStatusType, string> = {
 
 /** Statuses exposed in admin dropdowns (in workflow order) */
 export const ALLOWED_ORDER_STATUSES: OrderStatusType[] = [
-  'pending',
-  'confirmed',
-  'shipped',
-  'processing',
-  'delivered',
-  'partially_delivered',
-  'cancelled',
+  'pending',            // Order Placed
+  'confirmed',          // In Review
+  'processing',         // Pending
+  'shipped',            // Approval Pending
+  'delivered',          // Delivered
+  'partially_delivered',// Partially Delivered
+  'cancelled',          // Cancel
 ];
 
 export const ORDER_STATUS_COLORS: Record<OrderStatusType, string> = {

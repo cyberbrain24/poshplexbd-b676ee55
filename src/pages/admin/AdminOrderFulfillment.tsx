@@ -166,27 +166,70 @@ const AdminOrderFulfillment = () => {
 
   const syncAllSteadfast = useSyncSteadfastStatus();
 
+  const [syncProgress, setSyncProgress] = useState<{ done: number; total: number } | null>(null);
+
   const handleSyncAllSteadfast = async () => {
     try {
+      // Only sync orders that still need an update — skip orders already in a final state.
       const { data: syncData, error } = await supabase
         .from("orders")
-        .select("id, tracking_number, consignment_id")
-        .or("tracking_number.not.is.null,consignment_id.not.is.null");
+        .select("id, tracking_number, consignment_id, order_status")
+        .or("tracking_number.not.is.null,consignment_id.not.is.null")
+        .not("order_status", "in", "(delivered,cancelled,returned,refunded)");
       if (error) throw error;
       const ids = (syncData || [])
         .filter((o: any) => o.tracking_number || o.consignment_id)
         .map((o: any) => o.id);
       if (ids.length === 0) {
-        toast.message("No shipped orders in database to sync");
+        toast.message("No active shipped orders to sync");
         return;
       }
-      syncAllSteadfast.mutate(ids, {
-        onSettled: () => {
-          qc.invalidateQueries({ queryKey: ["fulfillment-orders"] });
-        },
-      });
+
+      // Chunk the IDs so each edge-function invocation finishes well under the timeout.
+      const CHUNK = 20;
+      const chunks: string[][] = [];
+      for (let i = 0; i < ids.length; i += CHUNK) chunks.push(ids.slice(i, i + CHUNK));
+
+      setSyncProgress({ done: 0, total: ids.length });
+      const toastId = toast.loading(`Syncing 0 / ${ids.length} orders…`);
+
+      let totalUpdated = 0;
+      let totalSkipped = 0;
+      let totalFailed = 0;
+      let processed = 0;
+
+      for (const chunk of chunks) {
+        try {
+          const res = await new Promise<any>((resolve, reject) => {
+            syncAllSteadfast.mutate(chunk, {
+              onSuccess: (d) => resolve(d),
+              onError: (e) => reject(e),
+            });
+          });
+          const results = (res?.results || []) as Array<{ mapped_status?: string; skipped?: boolean }>;
+          totalUpdated += results.filter((r) => r.mapped_status).length;
+          totalSkipped += results.filter((r) => r.skipped).length;
+        } catch (e) {
+          console.error("[Sync chunk failed]", e);
+          totalFailed += chunk.length;
+        }
+        processed += chunk.length;
+        setSyncProgress({ done: processed, total: ids.length });
+        toast.loading(`Syncing ${processed} / ${ids.length} orders…`, { id: toastId });
+      }
+
+      toast.dismiss(toastId);
+      if (totalUpdated > 0) toast.success(`${totalUpdated} order(s) synced with Steadfast`);
+      else if (totalSkipped > 0 && totalFailed === 0) toast.message(`No status changes (${totalSkipped} skipped)`);
+      if (totalFailed > 0) toast.error(`${totalFailed} order(s) failed to sync`);
+
+      setSyncProgress(null);
+      qc.invalidateQueries({ queryKey: ["fulfillment-orders"] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
+      qc.invalidateQueries({ queryKey: ["orders-optimized"] });
     } catch (err) {
       console.error(err);
+      setSyncProgress(null);
       toast.error("Failed to load orders for sync");
     }
   };
@@ -275,16 +318,16 @@ const AdminOrderFulfillment = () => {
           </Button>
           <Button
             onClick={handleSyncAllSteadfast}
-            disabled={syncAllSteadfast.isPending || isLoading}
+            disabled={syncAllSteadfast.isPending || isLoading || !!syncProgress}
             variant="outline"
             size="sm"
           >
-            {syncAllSteadfast.isPending ? (
+            {syncAllSteadfast.isPending || syncProgress ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (
               <RefreshCw className="h-4 w-4 mr-2" />
             )}
-            Sync Steadfast
+            {syncProgress ? `Syncing ${syncProgress.done}/${syncProgress.total}` : "Sync Steadfast"}
           </Button>
         </div>
       </div>

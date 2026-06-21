@@ -20,6 +20,17 @@ const ProductGrid = () => {
     return mainImage?.image_url || product.images?.[0]?.image_url || '/placeholder.svg';
   };
 
+  const getImageVariants = (product: typeof displayProducts[0]) => {
+    const main = product.images?.find(img => img.is_main) || product.images?.[0];
+    const src = main?.image_url || "/placeholder.svg";
+    const medium = (main as any)?.medium_url as string | null | undefined;
+    const large = (main as any)?.large_url as string | null | undefined;
+    const parts: string[] = [];
+    if (medium) parts.push(`${medium} 300w`);
+    if (large) parts.push(`${large} 450w`);
+    return { src: large || medium || src, srcSet: parts.length ? parts.join(", ") : undefined };
+  };
+
   if (isLoading) {
     return (
       <section className="w-full px-4 md:px-8 py-12 md:py-16 bg-background relative overflow-hidden" style={{ minHeight: 600 }}>

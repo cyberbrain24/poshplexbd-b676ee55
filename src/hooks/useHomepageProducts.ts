@@ -19,7 +19,7 @@ export const useHomepageProducts = () => {
           base_price,
           is_active,
           category:categories(id, name, is_active),
-          images:product_images(id, image_url, is_main, sort_order)
+          images:product_images(id, image_url, thumb_url, medium_url, large_url, is_main, sort_order)
         `)
         .order("created_at", { ascending: false })
         .limit(20);

@@ -38,7 +38,6 @@ const { data, error } = await supabase.functions.invoke("admin-product-ai", {
 | `sms-order-placed` | Order-placed SMS notification. | Internal |
 | `sitemap` | Generates `sitemap.xml` for SEO. | Public |
 | `steadfast-courier` | Creates consignments on Steadfast. | Admin only |
-| `track-visit` | Anonymous visitor analytics ping. | Public |
 
 ## Rate limiting
 

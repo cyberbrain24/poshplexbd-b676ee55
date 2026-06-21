@@ -178,7 +178,8 @@ const ProductGrid = () => {
               />
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Mobile View All */}

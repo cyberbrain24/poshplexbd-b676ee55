@@ -322,12 +322,12 @@ const AdminOrderFulfillment = () => {
             variant="outline"
             size="sm"
           >
-            {syncAllSteadfast.isPending ? (
+            {syncAllSteadfast.isPending || syncProgress ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (
               <RefreshCw className="h-4 w-4 mr-2" />
             )}
-            Sync Steadfast
+            {syncProgress ? `Syncing ${syncProgress.done}/${syncProgress.total}` : "Sync Steadfast"}
           </Button>
         </div>
       </div>

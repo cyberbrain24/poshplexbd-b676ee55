@@ -113,6 +113,7 @@ export interface ProductImage {
   image_url: string;
   thumb_url?: string | null;
   medium_url?: string | null;
+  large_url?: string | null;
   alt_text: string | null;
   sort_order: number;
   is_main: boolean;

@@ -280,7 +280,7 @@ export const useOptimizedCategoryProducts = (
           base_price,
           created_at,
           category:categories(id, name),
-          images:product_images(id, image_url, thumb_url, medium_url, is_main)
+          images:product_images(id, image_url, thumb_url, medium_url, large_url, is_main)
         `)
         .eq("is_active", true);
 

@@ -250,12 +250,12 @@ export const useDeleteProduct = () => {
       // 1. Delete product image storage files, including thumbnails/medium variants
       const { data: productImages, error: imageFetchError } = await supabase
         .from("product_images")
-        .select("image_url, thumb_url, medium_url")
+        .select("image_url, thumb_url, medium_url, large_url")
         .eq("product_id", id);
       if (imageFetchError) throw imageFetchError;
 
       const imagePaths = (productImages ?? [])
-        .flatMap((img) => [img.image_url, img.thumb_url, img.medium_url])
+        .flatMap((img: any) => [img.image_url, img.thumb_url, img.medium_url, img.large_url])
         .filter(Boolean)
         .map((url) => pathFromPublicUrl(url as string, "product-images"))
         .filter(Boolean) as string[];
@@ -310,6 +310,7 @@ export const useAddProductImage = () => {
       imageUrl,
       thumbUrl,
       mediumUrl,
+      largeUrl,
       altText,
       sortOrder,
       isMain,
@@ -319,6 +320,7 @@ export const useAddProductImage = () => {
       imageUrl: string;
       thumbUrl?: string | null;
       mediumUrl?: string | null;
+      largeUrl?: string | null;
       altText?: string;
       sortOrder?: number;
       isMain?: boolean;
@@ -331,11 +333,12 @@ export const useAddProductImage = () => {
           image_url: imageUrl,
           thumb_url: thumbUrl ?? null,
           medium_url: mediumUrl ?? null,
+          large_url: largeUrl ?? null,
           alt_text: altText || null,
           sort_order: sortOrder || 0,
           is_main: isMain || false,
           color_id: colorId || null,
-        })
+        } as any)
         .select()
         .single();
 
@@ -378,12 +381,17 @@ export const useDeleteProductImage = () => {
     mutationFn: async (id: string) => {
       const { data: image, error: fetchError } = await supabase
         .from("product_images")
-        .select("image_url, thumb_url, medium_url")
+        .select("image_url, thumb_url, medium_url, large_url")
         .eq("id", id)
         .single();
       if (fetchError) throw fetchError;
 
-      const paths = [image?.image_url, image?.thumb_url, image?.medium_url]
+      const paths = [
+        (image as any)?.image_url,
+        (image as any)?.thumb_url,
+        (image as any)?.medium_url,
+        (image as any)?.large_url,
+      ]
         .filter(Boolean)
         .map((url) => pathFromPublicUrl(url as string, "product-images"))
         .filter(Boolean) as string[];
@@ -495,38 +503,19 @@ export const useDeleteProductVariant = () => {
   });
 };
 
-// Upload product image to storage along with two pre-rendered WebP variants
-// (~400 px thumb, ~800 px medium) so category grids ship a much smaller file
-// than the original. Falls back gracefully when variants can't be produced.
-export interface UploadedProductImage {
-  url: string;
-  thumb_url: string | null;
-  medium_url: string | null;
-}
-
+// Upload product image to storage along with three pre-rendered WebP
+// thumbnails (150 / 300 / 450 px). Each derived variant is generated FROM the
+// main image so SEO metadata + deletion stay anchored to it. Falls back
+// gracefully when variants can't be produced.
 export const uploadProductImage = async (
   file: File,
   productId: string,
-): Promise<UploadedProductImage> => {
-  // Validate file type
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-  if (!allowedTypes.includes(file.type)) {
-    throw new Error('Invalid file type. Only images (JPEG, PNG, GIF, WebP) are allowed.');
-  }
-
-  // Validate file size (5MB limit)
-  const maxSize = 5 * 1024 * 1024;
-  if (file.size > maxSize) {
-    throw new Error('File size exceeds 5MB limit.');
-  }
-
-  // Validate productId format (UUID)
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  if (!uuidRegex.test(productId)) {
-    throw new Error('Invalid product ID format.');
-  }
-
-  // Auto-convert to WebP under 250KB before upload
+): Promise<{
+  url: string;
+  thumb_url: string | null;
+  medium_url: string | null;
+  large_url: string | null;
+}> => {
   const { toWebpUnder250 } = await import("@/lib/imageToWebp");
   const webpFile = await toWebpUnder250(file);
 
@@ -544,44 +533,44 @@ export const uploadProductImage = async (
   // Use the converted file for variant generation too
   file = webpFile;
 
-  // Generate + upload variants in parallel; never let variant failures block the main upload.
+  // Generate + upload three derived variants in parallel; never let variant
+  // failures block the main upload. Each derived file lives under a
+  // bucket-prefix that the resolver recognises so they stay tied to the main.
   let thumb_url: string | null = null;
   let medium_url: string | null = null;
+  let large_url: string | null = null;
   try {
     const { generateImageVariants } = await import("@/lib/imageThumbs");
     const variants = await generateImageVariants(file);
 
     const tasks: Promise<void>[] = [];
-    if (variants.thumb) {
-      const path = `${productId}/thumbs/${ts}-300.webp`;
+    const buildTask = (
+      file: File | null,
+      folder: string,
+      width: number,
+      assign: (u: string) => void,
+    ) => {
+      if (!file) return;
+      const path = `${productId}/${folder}/${ts}-${width}.webp`;
       tasks.push(
         supabase.storage
           .from("product-images")
-          .upload(path, variants.thumb, { contentType: "image/webp" })
+          .upload(path, file, { contentType: "image/webp" })
           .then(({ error }) => {
             if (!error) {
-              thumb_url = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
+              assign(supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl);
             }
           }),
       );
-    }
-    if (variants.medium) {
-      const path = `${productId}/medium/${ts}-800.webp`;
-      tasks.push(
-        supabase.storage
-          .from("product-images")
-          .upload(path, variants.medium, { contentType: "image/webp" })
-          .then(({ error }) => {
-            if (!error) {
-              medium_url = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
-            }
-          }),
-      );
-    }
+    };
+    buildTask(variants.small, "thumbs", 150, (u) => { thumb_url = u; });
+    buildTask(variants.medium, "medium", 300, (u) => { medium_url = u; });
+    buildTask(variants.large, "large", 450, (u) => { large_url = u; });
     await Promise.all(tasks);
   } catch (err) {
     console.warn("Variant generation failed, original will be used:", err);
   }
 
-  return { url, thumb_url, medium_url };
+  return { url, thumb_url, medium_url, large_url };
 };
+

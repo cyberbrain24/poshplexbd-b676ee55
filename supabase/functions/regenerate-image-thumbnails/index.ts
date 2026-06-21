@@ -1,6 +1,9 @@
-// Admin-only backfill: regenerates 400px thumb + 800px medium WebP variants
-// for product_images rows that are missing them. Designed to be polled in
-// batches from the admin UI until `remaining === 0`.
+// Admin-only backfill: regenerates the three WebP-shaped thumbnail
+// variants for product_images rows that are missing any of them:
+//   - 150 px wide  → thumb_url   (small)
+//   - 300 px wide  → medium_url
+//   - 450 px wide  → large_url
+// Designed to be polled in batches from the admin UI until `remaining === 0`.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
@@ -15,13 +18,23 @@ const BUCKET = "product-images";
 const MAX_BATCH = 50;
 const DEFAULT_BATCH = 10;
 
+const VARIANT_SPECS: Array<{
+  column: "thumb_url" | "medium_url" | "large_url";
+  folder: "thumbs" | "medium" | "large";
+  width: 150 | 300 | 450;
+  quality: number;
+}> = [
+  { column: "thumb_url", folder: "thumbs", width: 150, quality: 0.7 },
+  { column: "medium_url", folder: "medium", width: 300, quality: 0.74 },
+  { column: "large_url", folder: "large", width: 450, quality: 0.8 },
+];
+
 function publicUrlFor(supabase: ReturnType<typeof createClient>, path: string): string {
   return supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
 }
 
 /** Convert a public Supabase storage URL back to its in-bucket path. */
 function pathFromPublicUrl(url: string): string | null {
-  // .../storage/v1/object/public/product-images/<path>
   const marker = `/storage/v1/object/public/${BUCKET}/`;
   const idx = url.indexOf(marker);
   if (idx === -1) return null;
@@ -38,16 +51,13 @@ async function fetchBytes(url: string): Promise<Uint8Array | null> {
   }
 }
 
-async function buildVariant(img: Image, spec: { width?: number; maxEdge?: number }, quality: number): Promise<Uint8Array> {
-  // Image.clone preserves the original so we can render multiple sizes.
-  const longest = Math.max(img.width, img.height);
-  const scale = spec.width ? spec.width / img.width : longest > spec.maxEdge! ? spec.maxEdge! / longest : 1;
+async function buildVariant(img: Image, width: number, quality: number): Promise<Uint8Array> {
+  const scale = width / img.width;
   const w = Math.max(1, Math.round(img.width * scale));
   const h = Math.max(1, Math.round(img.height * scale));
   const resized = scale === 1 ? img.clone() : img.clone().resize(w, h);
   // imagescript only supports PNG/JPEG via encode/encodeJPEG. WebP is not
-  // available, so we use JPEG (q≈75) for the variants — still ~85% smaller
-  // than a 1500px JPEG, which is the actual goal here.
+  // available, so we use JPEG (q≈70-80) for the variants.
   return await resized.encodeJPEG(Math.round(quality * 100));
 }
 
@@ -97,16 +107,18 @@ Deno.serve(async (req) => {
     }
     const batchSize = Math.min(MAX_BATCH, Math.max(1, body.batch_size ?? DEFAULT_BATCH));
 
+    const missingFilter = "thumb_url.is.null,medium_url.is.null,large_url.is.null";
+
     // 3. Pending count
     const { count: remainingBefore } = await admin
       .from("product_images")
       .select("id", { count: "exact", head: true })
-      .or("thumb_url.is.null,medium_url.is.null");
+      .or(missingFilter);
 
     const { data: rows, error: rowsErr } = await admin
       .from("product_images")
-      .select("id, product_id, image_url, thumb_url, medium_url")
-      .or("thumb_url.is.null,medium_url.is.null")
+      .select("id, product_id, image_url, thumb_url, medium_url, large_url")
+      .or(missingFilter)
       .order("created_at", { ascending: false })
       .limit(batchSize);
 
@@ -121,7 +133,6 @@ Deno.serve(async (req) => {
         if (!bytes) throw new Error("source download failed");
 
         const decoded = await decode(bytes);
-        // Ignore animated GIFs etc. — decode returns a Frame|Image union.
         const img = decoded instanceof Image ? decoded : null;
         if (!img) throw new Error("not a still image");
 
@@ -130,34 +141,27 @@ Deno.serve(async (req) => {
           ? sourcePath.split("/").pop()!.replace(/\.[^.]+$/, "")
           : `${Date.now()}-${row.id.slice(0, 8)}`;
 
-        let thumb_url = row.thumb_url as string | null;
-        let medium_url = row.medium_url as string | null;
+        const updates: Record<string, string> = {};
 
-        if (!thumb_url) {
-          const tBytes = await buildVariant(img, { width: 300 }, 0.72);
-          const tPath = `${row.product_id}/thumbs/${idStem}-300.jpg`;
+        for (const spec of VARIANT_SPECS) {
+          const existing = (row as any)[spec.column] as string | null;
+          if (existing) continue;
+          const out = await buildVariant(img, spec.width, spec.quality);
+          const path = `${row.product_id}/${spec.folder}/${idStem}-${spec.width}.jpg`;
           const { error } = await admin.storage
             .from(BUCKET)
-            .upload(tPath, tBytes, { contentType: "image/jpeg", upsert: true });
+            .upload(path, out, { contentType: "image/jpeg", upsert: true });
           if (error) throw error;
-          thumb_url = publicUrlFor(admin, tPath);
+          updates[spec.column] = publicUrlFor(admin, path);
         }
 
-        if (!medium_url) {
-          const mBytes = await buildVariant(img, { maxEdge: 800 }, 0.78);
-          const mPath = `${row.product_id}/medium/${idStem}-800.jpg`;
-          const { error } = await admin.storage
-            .from(BUCKET)
-            .upload(mPath, mBytes, { contentType: "image/jpeg", upsert: true });
-          if (error) throw error;
-          medium_url = publicUrlFor(admin, mPath);
+        if (Object.keys(updates).length > 0) {
+          const { error: updErr } = await admin
+            .from("product_images")
+            .update(updates)
+            .eq("id", row.id);
+          if (updErr) throw updErr;
         }
-
-        const { error: updErr } = await admin
-          .from("product_images")
-          .update({ thumb_url, medium_url })
-          .eq("id", row.id);
-        if (updErr) throw updErr;
         processed++;
       } catch (e) {
         errors.push({ id: row.id, error: (e as Error).message });
@@ -176,5 +180,8 @@ Deno.serve(async (req) => {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+  }
+});
+
   }
 });

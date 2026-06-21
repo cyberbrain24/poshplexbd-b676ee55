@@ -274,6 +274,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
           let imageUrl = img.image_url;
           let thumbUrl: string | null = (img as any).thumb_url ?? null;
           let mediumUrl: string | null = (img as any).medium_url ?? null;
+          let largeUrl: string | null = (img as any).large_url ?? null;
 
           // Upload blob files to storage first
           if (imageUrl.startsWith("blob:")) {
@@ -284,6 +285,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
             imageUrl = uploaded.url;
             thumbUrl = uploaded.thumb_url;
             mediumUrl = uploaded.medium_url;
+            largeUrl = uploaded.large_url;
           }
 
           await addImage.mutateAsync({
@@ -291,6 +293,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
             imageUrl,
             thumbUrl,
             mediumUrl,
+            largeUrl,
             altText: img.alt_text || undefined,
             sortOrder: img.sort_order,
             isMain: img.is_main,
@@ -385,11 +388,13 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
           let imageUrl: string;
           let thumbUrl: string | null = null;
           let mediumUrl: string | null = null;
+          let largeUrl: string | null = null;
           try {
             const uploaded = await uploadProductImage(file, product.id);
             imageUrl = uploaded.url;
             thumbUrl = uploaded.thumb_url;
             mediumUrl = uploaded.medium_url;
+            largeUrl = uploaded.large_url;
           } catch (err: any) {
             console.error("Upload failed:", err);
             toast.error(`"${validFiles[i].name}" upload failed: ${err?.message || "Unknown error"}`);
@@ -404,6 +409,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
               imageUrl,
               thumbUrl,
               mediumUrl,
+              largeUrl,
               sortOrder: baseSort + i,
               isMain: false,
             });

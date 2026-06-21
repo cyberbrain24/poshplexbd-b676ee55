@@ -146,12 +146,12 @@ export async function updateProduct(
 export async function deleteProduct(productId: string): Promise<void> {
   const { data: productImages, error: imageFetchError } = await supabase
     .from("product_images")
-    .select("image_url, thumb_url, medium_url")
+    .select("image_url, thumb_url, medium_url, large_url")
     .eq("product_id", productId);
   if (imageFetchError) throw imageFetchError;
 
   const imagePaths = (productImages ?? [])
-    .flatMap((img) => [img.image_url, img.thumb_url, img.medium_url])
+    .flatMap((img: any) => [img.image_url, img.thumb_url, img.medium_url, img.large_url])
     .filter(Boolean)
     .map((url) => pathFromPublicUrl(url as string, STORAGE.PRODUCT_IMAGES_BUCKET))
     .filter(Boolean) as string[];
@@ -251,12 +251,17 @@ export async function addProductImage(
 export async function deleteProductImage(imageId: string): Promise<void> {
   const { data: image, error: fetchError } = await supabase
     .from("product_images")
-    .select("image_url, thumb_url, medium_url")
+    .select("image_url, thumb_url, medium_url, large_url")
     .eq("id", imageId)
     .single();
   if (fetchError) throw fetchError;
 
-  const imagePaths = [image?.image_url, image?.thumb_url, image?.medium_url]
+  const imagePaths = [
+    (image as any)?.image_url,
+    (image as any)?.thumb_url,
+    (image as any)?.medium_url,
+    (image as any)?.large_url,
+  ]
     .filter(Boolean)
     .map((url) => pathFromPublicUrl(url as string, STORAGE.PRODUCT_IMAGES_BUCKET))
     .filter(Boolean) as string[];

@@ -5,10 +5,12 @@ type ImagePreset = "grid" | "detail" | "zoom";
 
 interface ResponsiveImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, "sizes"> {
   src: string;
-  /** Optional ~400px WebP variant — used by the `grid` preset to ship a much smaller file. */
+  /** ~150px WebP variant. */
   thumbUrl?: string | null;
-  /** Optional ~800px WebP variant — used by the `detail` preset. */
+  /** ~300px WebP variant. */
   mediumUrl?: string | null;
+  /** ~450px WebP variant. */
+  largeUrl?: string | null;
   alt: string;
   fallback?: string;
   preset?: ImagePreset;
@@ -49,6 +51,7 @@ const ResponsiveImage = ({
   src,
   thumbUrl,
   mediumUrl,
+  largeUrl,
   alt,
   fallback = "/placeholder.svg",
   preset = "grid",
@@ -62,12 +65,20 @@ const ResponsiveImage = ({
   const [isInView, setIsInView] = useState(priority);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Pick the smallest acceptable variant for this preset. Falls through to the
-  // original `src` whenever the variant URL is missing (e.g. legacy uploads).
+  // Default src — best-fitting single image for the preset.
   const pickedSrc = (() => {
-    if (preset === "grid") return thumbUrl || mediumUrl || src;
+    if (preset === "grid") return largeUrl || mediumUrl || src;
     if (preset === "detail") return mediumUrl || src;
-    return src; // zoom — always full resolution
+    return src; // zoom — full resolution
+  })();
+
+  // Build srcSet so the browser picks the closest variant for the device width.
+  const srcSet = (() => {
+    if (preset !== "grid") return undefined;
+    const parts: string[] = [];
+    if (mediumUrl) parts.push(`${mediumUrl} 300w`);
+    if (largeUrl) parts.push(`${largeUrl} 450w`);
+    return parts.length ? parts.join(", ") : undefined;
   })();
 
   // Reset state when src changes
@@ -106,13 +117,14 @@ const ResponsiveImage = ({
       {isInView && (
         <img
           src={imageSrc}
+          srcSet={hasError ? undefined : srcSet}
           alt={alt}
           sizes={config.sizes}
           width={config.widths.desktop}
           height={config.widths.desktop}
           loading={priority ? "eager" : "lazy"}
           decoding="async"
-          fetchPriority={priority ? "high" : "auto"}
+          {...(priority ? { fetchpriority: "high" as any } : {})}
           onLoad={() => setIsLoaded(true)}
           onError={() => {
             setHasError(true);

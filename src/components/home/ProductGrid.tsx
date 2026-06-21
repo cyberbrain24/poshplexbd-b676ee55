@@ -20,6 +20,17 @@ const ProductGrid = () => {
     return mainImage?.image_url || product.images?.[0]?.image_url || '/placeholder.svg';
   };
 
+  const getImageVariants = (product: typeof displayProducts[0]) => {
+    const main = product.images?.find(img => img.is_main) || product.images?.[0];
+    const src = main?.image_url || "/placeholder.svg";
+    const medium = (main as any)?.medium_url as string | null | undefined;
+    const large = (main as any)?.large_url as string | null | undefined;
+    const parts: string[] = [];
+    if (medium) parts.push(`${medium} 300w`);
+    if (large) parts.push(`${large} 450w`);
+    return { src: large || medium || src, srcSet: parts.length ? parts.join(", ") : undefined };
+  };
+
   if (isLoading) {
     return (
       <section className="w-full px-4 md:px-8 py-12 md:py-16 bg-background relative overflow-hidden" style={{ minHeight: 600 }}>
@@ -99,14 +110,17 @@ const ProductGrid = () => {
 
       {/* Product Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 relative z-10">
-        {displayProducts.map((product, index) => (
+        {displayProducts.map((product, index) => {
+          const variants = getImageVariants(product);
+          return (
           <div key={product.id} className="group relative">
             <Link 
               to={`/product/${generateProductSlug(product.name, product.id)}`}
               className="block relative aspect-[3/4] overflow-hidden bg-muted mb-3"
             >
               <img 
-                src={getMainImage(product)}
+                src={variants.src}
+                srcSet={variants.srcSet}
                 alt={product.name}
                 width={450}
                 height={600}
@@ -164,7 +178,8 @@ const ProductGrid = () => {
               />
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Mobile View All */}

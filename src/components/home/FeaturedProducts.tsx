@@ -18,6 +18,17 @@ const FeaturedProducts = () => {
     return mainImage?.image_url || product.images?.[0]?.image_url || "/placeholder.svg";
   };
 
+  const getImageVariants = (product: NonNullable<typeof products>[0]) => {
+    const main = product.images?.find(img => img.is_main) || product.images?.[0];
+    const src = main?.image_url || "/placeholder.svg";
+    const medium = (main as any)?.medium_url as string | null | undefined;
+    const large = (main as any)?.large_url as string | null | undefined;
+    const parts: string[] = [];
+    if (medium) parts.push(`${medium} 300w`);
+    if (large) parts.push(`${large} 450w`);
+    return { src: large || medium || src, srcSet: parts.length ? parts.join(", ") : undefined };
+  };
+
   if (isLoading) {
     return (
       <section className="w-full px-4 md:px-8 py-8 md:py-12 bg-background">
@@ -49,17 +60,21 @@ const FeaturedProducts = () => {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
-        {products.map((product, index) => (
+        {products.map((product, index) => {
+          const variants = getImageVariants(product);
+          return (
           <div key={product.id} className="group relative">
             <Link
               to={`/product/${generateProductSlug(product.name, product.id)}`}
               className="block relative aspect-[3/4] overflow-hidden bg-muted mb-3"
             >
               <img
-                src={getMainImage(product)}
+                src={variants.src}
+                srcSet={variants.srcSet}
+                sizes="(min-width: 768px) 450px, 300px"
                 alt={product.name}
-                width={300}
-                height={400}
+                width={450}
+                height={600}
                 loading="lazy"
                 className="w-full h-full object-cover object-center md:transition-all md:duration-500 md:group-hover:scale-105"
               />
@@ -100,7 +115,8 @@ const FeaturedProducts = () => {
               />
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

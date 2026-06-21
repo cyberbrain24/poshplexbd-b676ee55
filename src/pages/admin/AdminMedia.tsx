@@ -3,10 +3,11 @@ import { useMediaFiles, useUploadMedia, useDeleteMediaFiles, useRenameMedia, Med
 import { useAllMediaMetadata, useDeleteMediaMetadata } from "@/hooks/useMediaMetadata";
 import { useMediaReferences, MediaReference } from "@/hooks/useMediaReferences";
 import { getFileType, formatFileSize, copyFileUrl } from "@/services/media.service";
-import { resolveMainImage, isDerivedThumbnail, getDerivativeImagesForMain } from "@/lib/mediaThumbResolve";
+import { resolveMainImage, isDerivedThumbnail, getDerivativeImagesForMain, thumbnailStatusFor } from "@/lib/mediaThumbResolve";
 import MediaSeoEditor from "@/components/admin/MediaSeoEditor";
 import ThumbnailBackfillCard from "@/components/admin/ThumbnailBackfillCard";
 import ConvertImagesToWebpCard, { PendingImage } from "@/components/admin/ConvertImagesToWebpCard";
+import GenerateThumbnailsCard from "@/components/admin/GenerateThumbnailsCard";
 import MediaThumbnailsGallery from "@/components/admin/MediaThumbnailsGallery";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -60,6 +61,8 @@ import {
   Square,
   X,
   FileImage,
+  CheckCircle2,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";

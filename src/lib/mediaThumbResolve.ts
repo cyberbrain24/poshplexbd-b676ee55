@@ -61,3 +61,29 @@ export function getDerivativeImagesForMain(file: MediaFile, allFiles: MediaFile[
     && derivedMainStem(f.name) === mainStem
   ));
 }
+
+/**
+ * Detect which of the three required thumbnail sizes (150/300/450 px) are
+ * present for a given main image. Used to render the "thumbs ready" badge.
+ */
+export function thumbnailStatusFor(
+  file: MediaFile,
+  allFiles: MediaFile[],
+): { has150: boolean; has300: boolean; has450: boolean; count: 0 | 1 | 2 | 3 } {
+  if (isDerivedThumbnail(file)) {
+    return { has150: false, has300: false, has450: false, count: 0 };
+  }
+  const derivatives = getDerivativeImagesForMain(file, allFiles);
+  const widthRe = /-(150|300|450)\.[a-z0-9]+$/i;
+  const found = new Set<string>();
+  for (const d of derivatives) {
+    const m = d.name.match(widthRe);
+    if (m) found.add(m[1]);
+  }
+  const has150 = found.has("150");
+  const has300 = found.has("300");
+  const has450 = found.has("450");
+  const count = ((has150 ? 1 : 0) + (has300 ? 1 : 0) + (has450 ? 1 : 0)) as 0 | 1 | 2 | 3;
+  return { has150, has300, has450, count };
+}
+

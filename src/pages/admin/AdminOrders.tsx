@@ -601,15 +601,15 @@ const AdminOrders = () => {
           )}
           <Button
             onClick={handleSyncAllSteadfast}
-            disabled={syncAllSteadfast.isPending || ordersLoading}
+            disabled={syncAllSteadfast.isPending || ordersLoading || !!syncProgress}
             variant="outline"
           >
-            {syncAllSteadfast.isPending ? (
+            {syncAllSteadfast.isPending || syncProgress ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (
               <RefreshCw className="h-4 w-4 mr-2" />
             )}
-            Sync Steadfast
+            {syncProgress ? `Syncing ${syncProgress.done}/${syncProgress.total}` : "Sync Steadfast"}
           </Button>
           <Button onClick={handleDownloadPdf} disabled={downloadingPdf || ordersLoading} variant="outline">
             {downloadingPdf ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}

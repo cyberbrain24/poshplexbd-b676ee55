@@ -51,6 +51,7 @@ const ResponsiveImage = ({
   src,
   thumbUrl,
   mediumUrl,
+  largeUrl,
   alt,
   fallback = "/placeholder.svg",
   preset = "grid",
@@ -64,12 +65,20 @@ const ResponsiveImage = ({
   const [isInView, setIsInView] = useState(priority);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Pick the smallest acceptable variant for this preset. Falls through to the
-  // original `src` whenever the variant URL is missing (e.g. legacy uploads).
+  // Default src — best-fitting single image for the preset.
   const pickedSrc = (() => {
-    if (preset === "grid") return thumbUrl || mediumUrl || src;
+    if (preset === "grid") return largeUrl || mediumUrl || src;
     if (preset === "detail") return mediumUrl || src;
-    return src; // zoom — always full resolution
+    return src; // zoom — full resolution
+  })();
+
+  // Build srcSet so the browser picks the closest variant for the device width.
+  const srcSet = (() => {
+    if (preset !== "grid") return undefined;
+    const parts: string[] = [];
+    if (mediumUrl) parts.push(`${mediumUrl} 300w`);
+    if (largeUrl) parts.push(`${largeUrl} 450w`);
+    return parts.length ? parts.join(", ") : undefined;
   })();
 
   // Reset state when src changes

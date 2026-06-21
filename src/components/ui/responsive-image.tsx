@@ -24,8 +24,8 @@ interface ResponsiveImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>,
  */
 const PRESET_SIZES: Record<ImagePreset, { sizes: string; widths: { desktop: number; tablet: number; mobile: number } }> = {
   grid: {
-    sizes: "(min-width: 1024px) 400px, (min-width: 768px) 300px, 200px",
-    widths: { desktop: 400, tablet: 300, mobile: 200 },
+    sizes: "(min-width: 768px) 450px, 300px",
+    widths: { desktop: 450, tablet: 450, mobile: 300 },
   },
   detail: {
     sizes: "(min-width: 1024px) 800px, (min-width: 768px) 600px, 400px",

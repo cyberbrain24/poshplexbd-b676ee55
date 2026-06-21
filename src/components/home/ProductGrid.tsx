@@ -108,8 +108,9 @@ const ProductGrid = () => {
               <img 
                 src={getMainImage(product)}
                 alt={product.name}
-                width={300}
-                height={400}
+                width={450}
+                height={600}
+                sizes="(min-width: 768px) 450px, 300px"
                 loading={index < 4 ? "eager" : "lazy"}
                 className="w-full h-full object-cover object-center md:transition-all md:duration-500 md:group-hover:scale-105"
               />

@@ -1,20 +1,29 @@
 /**
- * Generate two resized WebP variants of a product image, client-side via canvas.
- * - thumb:  300 px wide (height auto), q≈0.72  (used in grids)
- * - medium: ~800 px on the long edge, q≈0.78  (used on product detail)
+ * Generate three resized WebP variants of a product image, client-side via canvas.
+ * - small:  150 px wide (height auto), q≈0.70  (tiny grids / mobile)
+ * - medium: 300 px wide (height auto), q≈0.74  (category grids)
+ * - large:  450 px wide (height auto), q≈0.80  (product detail / zoom preview)
+ *
+ * Every derived variant is generated FROM the same main image, so deletion
+ * cascading + SEO metadata sync stay anchored to that main file.
  *
  * GIFs / SVGs are skipped (animation / vector preserved as the original).
  * If anything fails (canvas tainted, decode error, no WebP support), returns
- * `{ thumb: null, medium: null }` and the caller falls back to the original.
+ * `{ small: null, medium: null, large: null }` and the caller falls back
+ * to the original.
  */
 export interface ImageVariants {
-  thumb: File | null;
+  small: File | null;
   medium: File | null;
+  large: File | null;
+  /** @deprecated alias for `small`, kept for legacy callers. */
+  thumb: File | null;
 }
 
 const VARIANT_SPECS = [
-  { label: "thumb" as const, width: 300, quality: 0.72 },
-  { label: "medium" as const, edge: 800, quality: 0.78 },
+  { label: "small" as const, width: 150, quality: 0.7 },
+  { label: "medium" as const, width: 300, quality: 0.74 },
+  { label: "large" as const, width: 450, quality: 0.8 },
 ];
 
 async function fileToImage(file: File): Promise<HTMLImageElement> {
@@ -27,21 +36,19 @@ async function fileToImage(file: File): Promise<HTMLImageElement> {
       img.src = url;
     });
   } finally {
-    // Revoke after image has fully decoded
     setTimeout(() => URL.revokeObjectURL(url), 0);
   }
 }
 
 async function resizeToWebp(
   img: HTMLImageElement,
-  spec: { width?: number; edge?: number },
+  spec: { width: number },
   quality: number,
   baseName: string,
   label: string,
 ): Promise<File | null> {
-  // Thumbnail width is fixed at 300px; height follows the original image ratio.
-  const longest = Math.max(img.width, img.height);
-  const scale = spec.width ? spec.width / img.width : longest > spec.edge! ? spec.edge! / longest : 1;
+  // Width-locked, height follows the original aspect ratio.
+  const scale = spec.width / img.width;
   const w = Math.max(1, Math.round(img.width * scale));
   const h = Math.max(1, Math.round(img.height * scale));
 
@@ -60,25 +67,26 @@ async function resizeToWebp(
 }
 
 export async function generateImageVariants(file: File): Promise<ImageVariants> {
+  const empty: ImageVariants = { small: null, medium: null, large: null, thumb: null };
   if (!file.type.startsWith("image/") || file.type === "image/gif" || file.type === "image/svg+xml") {
-    return { thumb: null, medium: null };
+    return empty;
   }
 
   let img: HTMLImageElement;
   try {
     img = await fileToImage(file);
   } catch {
-    return { thumb: null, medium: null };
+    return empty;
   }
 
   const baseName = file.name.replace(/\.[^.]+$/, "") || "image";
 
   try {
-    const [thumb, medium] = await Promise.all(
+    const [small, medium, large] = await Promise.all(
       VARIANT_SPECS.map((spec) => resizeToWebp(img, spec, spec.quality, baseName, spec.label)),
     );
-    return { thumb, medium };
+    return { small, medium, large, thumb: small };
   } catch {
-    return { thumb: null, medium: null };
+    return empty;
   }
 }

@@ -64,8 +64,10 @@ const ThumbnailBackfillCard = () => {
         <div className="space-y-1">
           <h3 className="text-sm font-semibold">Regenerate product image thumbnails</h3>
           <p className="text-xs text-muted-foreground">
-            Builds 300 px and 800 px variants for older product images so category pages load faster.
-            New uploads already get them automatically.
+            Builds 150 px (small), 300 px (medium), and 450 px (large) variants
+            for older product images. Every variant is generated from the main
+            image and shares its SEO metadata. New uploads already get them
+            automatically.
           </p>
           {(running || processed > 0) && (
             <p className="text-xs text-muted-foreground">

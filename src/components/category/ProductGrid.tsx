@@ -32,6 +32,7 @@ const ProductGrid = ({ sortBy = "newest", filters }: ProductGridProps) => {
       src: chosen?.image_url || '/placeholder.svg',
       thumb: (chosen as any)?.thumb_url ?? null,
       medium: (chosen as any)?.medium_url ?? null,
+      large: (chosen as any)?.large_url ?? null,
     };
   };
 
@@ -45,6 +46,7 @@ const ProductGrid = ({ sortBy = "newest", filters }: ProductGridProps) => {
         src: chosen.image_url,
         thumb: (chosen as any)?.thumb_url ?? null,
         medium: (chosen as any)?.medium_url ?? null,
+        large: (chosen as any)?.large_url ?? null,
       };
     }
     return null;

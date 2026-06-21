@@ -1,7 +1,9 @@
 import type { MediaFile } from "@/services/media.service";
 
-const SAME_FOLDER_SUFFIX_RE = /-(thumb|medium)(\.[a-z0-9]+)$/i;
-const VARIANT_FOLDER_RE = /^(.*\/)?(thumbs|medium)\/([^/]+?)-(300|400|800|thumb|medium)(\.[a-z0-9]+)$/i;
+// Same-folder suffix style: <stem>-thumb.webp / -small.webp / -medium.webp / -large.webp
+const SAME_FOLDER_SUFFIX_RE = /-(thumb|small|medium|large)(\.[a-z0-9]+)$/i;
+// Folder style: <prefix>/(thumbs|medium|large)/<stem>-(150|300|400|450|800|small|medium|large|thumb).<ext>
+const VARIANT_FOLDER_RE = /^(.*\/)?(thumbs|medium|large)\/([^/]+?)-(150|300|400|450|800|thumb|small|medium|large)(\.[a-z0-9]+)$/i;
 
 function stemOf(path: string): string {
   return path.replace(/\.[^/.]+$/, "");
@@ -25,8 +27,9 @@ function derivedMainStem(path: string): string | null {
  * the original image's record, keeping alt text / titles in sync.
  *
  * Rules:
- *  1. If the file name ends in `-thumb.<ext>` or `-medium.<ext>`, strip the
- *     suffix and look up a file in the same folder + bucket whose stem matches.
+ *  1. Files inside a `thumbs/`, `medium/`, or `large/` subfolder, OR ending
+ *     in `-thumb / -small / -medium / -large`, are derived. Their main is
+ *     the same-stem file in the parent folder.
  *  2. Otherwise the file itself is treated as the main image.
  */
 export function resolveMainImage(

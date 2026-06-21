@@ -5,10 +5,12 @@ type ImagePreset = "grid" | "detail" | "zoom";
 
 interface ResponsiveImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, "sizes"> {
   src: string;
-  /** Optional ~400px WebP variant — used by the `grid` preset to ship a much smaller file. */
+  /** ~150px WebP variant. */
   thumbUrl?: string | null;
-  /** Optional ~800px WebP variant — used by the `detail` preset. */
+  /** ~300px WebP variant. */
   mediumUrl?: string | null;
+  /** ~450px WebP variant. */
+  largeUrl?: string | null;
   alt: string;
   fallback?: string;
   preset?: ImagePreset;

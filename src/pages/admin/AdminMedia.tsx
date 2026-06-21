@@ -892,6 +892,27 @@ const AdminMedia = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk Generate Thumbnails Dialog */}
+      <Dialog open={isBulkThumbOpen} onOpenChange={setIsBulkThumbOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Generate thumbnails for selected images</DialogTitle>
+          </DialogHeader>
+          <GenerateThumbnailsCard
+            targets={selectedThumbTargets}
+            onDone={() => {
+              exitSelectionMode();
+              setIsBulkThumbOpen(false);
+            }}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsBulkThumbOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

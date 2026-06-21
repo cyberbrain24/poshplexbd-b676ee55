@@ -365,28 +365,60 @@ const AdminOrders = () => {
   }, [ordersRaw, productFilter]);
   const deleteOrder = useDeleteOrder();
   const syncAllSteadfast = useSyncSteadfastStatus();
+  const [syncProgress, setSyncProgress] = useState<{ done: number; total: number } | null>(null);
 
   const handleSyncAllSteadfast = async () => {
     try {
-      // Sync across the entire orders DB, not just the current view
+      // Sync across the entire orders DB, only orders not in a final state
       const { data, error } = await supabase
         .from("orders")
-        .select("id, tracking_number, consignment_id")
+        .select("id, tracking_number, consignment_id, order_status")
         .or("tracking_number.not.is.null,consignment_id.not.is.null");
       if (error) throw error;
+      const FINAL = new Set(["delivered", "cancelled", "returned", "refunded", "rto"]);
       const ids = (data || [])
-        .filter((o: any) => o.tracking_number || o.consignment_id)
+        .filter((o: any) => (o.tracking_number || o.consignment_id) && !FINAL.has(o.order_status))
         .map((o: any) => o.id);
       if (ids.length === 0) {
-        toast.message("No shipped orders in database to sync");
+        toast.message("No shipped orders to sync");
         return;
       }
-      syncAllSteadfast.mutate(ids);
+      const CHUNK = 20;
+      const chunks: string[][] = [];
+      for (let i = 0; i < ids.length; i += CHUNK) chunks.push(ids.slice(i, i + CHUNK));
+
+      let updated = 0;
+      let failed = 0;
+      let processed = 0;
+      setSyncProgress({ done: 0, total: ids.length });
+      const loadingId = toast.loading(`Syncing 0/${ids.length} orders…`);
+
+      for (const chunk of chunks) {
+        try {
+          const data: any = await syncAllSteadfast.mutateAsync(chunk);
+          const results = (data?.results || []) as Array<{ mapped_status?: string }>;
+          updated += results.filter(r => r.mapped_status).length;
+        } catch (e) {
+          console.error("[Sync chunk failed]", e);
+          failed += chunk.length;
+        }
+        processed += chunk.length;
+        setSyncProgress({ done: processed, total: ids.length });
+        toast.loading(`Syncing ${processed}/${ids.length} orders…`, { id: loadingId });
+      }
+
+      toast.dismiss(loadingId);
+      if (updated > 0) toast.success(`${updated} order(s) synced${failed ? ` (${failed} failed)` : ""}`);
+      else if (failed > 0) toast.error(`Sync failed for ${failed} order(s)`);
+      else toast.message("Status unchanged");
+      setSyncProgress(null);
     } catch (err) {
       console.error(err);
       toast.error("Failed to load orders for sync");
+      setSyncProgress(null);
     }
   };
+
 
 
   // Helper: which orders does an action target — selected ones if any, otherwise all visible
@@ -569,15 +601,15 @@ const AdminOrders = () => {
           )}
           <Button
             onClick={handleSyncAllSteadfast}
-            disabled={syncAllSteadfast.isPending || ordersLoading}
+            disabled={syncAllSteadfast.isPending || ordersLoading || !!syncProgress}
             variant="outline"
           >
-            {syncAllSteadfast.isPending ? (
+            {syncAllSteadfast.isPending || syncProgress ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (
               <RefreshCw className="h-4 w-4 mr-2" />
             )}
-            Sync Steadfast
+            {syncProgress ? `Syncing ${syncProgress.done}/${syncProgress.total}` : "Sync Steadfast"}
           </Button>
           <Button onClick={handleDownloadPdf} disabled={downloadingPdf || ordersLoading} variant="outline">
             {downloadingPdf ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}

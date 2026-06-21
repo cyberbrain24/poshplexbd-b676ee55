@@ -53,27 +53,24 @@ const HeroSection = () => {
         )}
       </Helmet>
       <section className="w-full">
-        {/* aspect-ratio wrapper reserves layout space before <img> resolves */}
-        <div className="w-full aspect-[3/1] md:aspect-[4/1] bg-muted">
-          <picture>
-            {desktopBanner && (
-              <source media="(min-width: 768px)" srcSet={desktopBanner} />
-            )}
-            {mobileBanner && (
-              <source media="(max-width: 767px)" srcSet={mobileBanner} />
-            )}
-            <img
-              src={desktopBanner || mobileBanner || ""}
-              alt="Hero banner"
-              loading="eager"
-              // @ts-ignore
-              fetchpriority="high"
-              decoding="async"
-              className="w-full h-full object-cover block"
-              style={{ imageRendering: "auto" }}
-            />
-          </picture>
-        </div>
+        <picture>
+          {desktopBanner && (
+            <source media="(min-width: 768px)" srcSet={desktopBanner} />
+          )}
+          {mobileBanner && (
+            <source media="(max-width: 767px)" srcSet={mobileBanner} />
+          )}
+          <img
+            src={desktopBanner || mobileBanner || ""}
+            alt="Hero banner"
+            loading="eager"
+            // @ts-ignore
+            fetchpriority="high"
+            decoding="async"
+            className="w-full h-auto block"
+            style={{ imageRendering: "auto" }}
+          />
+        </picture>
       </section>
     </>
   );

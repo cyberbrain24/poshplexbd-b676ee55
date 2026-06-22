@@ -4,6 +4,7 @@ import PoshplexHeader from "../components/header/PoshplexHeader";
 import PoshplexFooter from "../components/footer/PoshplexFooter";
 import HeroSection from "../components/home/HeroSection";
 import FeaturesBar from "../components/home/FeaturesBar";
+import LazyOnVisible from "../components/perf/LazyOnVisible";
 import { useStorefrontPrefetch } from "@/hooks/useStorefrontPrefetch";
 
 // Lazy-load below-fold sections to reduce initial bundle
@@ -40,20 +41,32 @@ const Index = () => {
         <Suspense fallback={<GalleryFallback />}>
           <CategorySection />
         </Suspense>
-        <Suspense fallback={<GridFallback />}>
-          <FeaturedProducts />
-        </Suspense>
-        <div className="px-4 md:px-8 my-8"><PromotionSlot placement="home_middle" /></div>
-        <Suspense fallback={<GridFallback />}>
-          <ProductGrid />
-        </Suspense>
-        <Suspense fallback={<GridFallback />}>
-          <CustomerReviewsSection />
-        </Suspense>
-        <Suspense fallback={<StoryFallback />}>
-          <OurStorySection />
-        </Suspense>
-        <div className="px-4 md:px-8 my-8"><PromotionSlot placement="home_bottom" /></div>
+        <LazyOnVisible minHeight={600}>
+          <Suspense fallback={<GridFallback />}>
+            <FeaturedProducts />
+          </Suspense>
+        </LazyOnVisible>
+        <LazyOnVisible minHeight={120}>
+          <div className="px-4 md:px-8 my-8"><PromotionSlot placement="home_middle" /></div>
+        </LazyOnVisible>
+        <LazyOnVisible minHeight={600}>
+          <Suspense fallback={<GridFallback />}>
+            <ProductGrid />
+          </Suspense>
+        </LazyOnVisible>
+        <LazyOnVisible minHeight={400}>
+          <Suspense fallback={<GridFallback />}>
+            <CustomerReviewsSection />
+          </Suspense>
+        </LazyOnVisible>
+        <LazyOnVisible minHeight={200}>
+          <Suspense fallback={<StoryFallback />}>
+            <OurStorySection />
+          </Suspense>
+        </LazyOnVisible>
+        <LazyOnVisible minHeight={120}>
+          <div className="px-4 md:px-8 my-8"><PromotionSlot placement="home_bottom" /></div>
+        </LazyOnVisible>
       </main>
       
       <PoshplexFooter />

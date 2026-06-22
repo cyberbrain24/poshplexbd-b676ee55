@@ -1,13 +1,12 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Facebook, Server, BarChart3, Sparkles, Truck } from "lucide-react";
+import { LayoutDashboard, Facebook, Server, BarChart3, Truck } from "lucide-react";
 
 const tabs = [
   { to: "/admin/marketing", label: "Overview", icon: LayoutDashboard, end: true },
   { to: "/admin/marketing/meta-pixel", label: "Meta Pixel", icon: Facebook },
   { to: "/admin/marketing/meta-capi", label: "Meta CAPI", icon: Server },
   { to: "/admin/marketing/ga4", label: "Google Analytics 4", icon: BarChart3 },
-  { to: "/admin/marketing/ai-providers", label: "AI Providers", icon: Sparkles },
   { to: "/admin/marketing/steadfast", label: "Steadfast API", icon: Truck },
 ];
 

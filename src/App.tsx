@@ -141,9 +141,12 @@ const App = () => (
               >
                 <ScrollToTop />
                 <TypographyProvider />
-                <FacebookPixelTracker />
-                
-                <GoogleAnalyticsTracker />
+                <DeferredMount>
+                  <Suspense fallback={null}>
+                    <FacebookPixelTracker />
+                    <GoogleAnalyticsTracker />
+                  </Suspense>
+                </DeferredMount>
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/categories" element={<Suspense fallback={<LoadingFallback />}><CategoryBrowser /></Suspense>} />
@@ -237,8 +240,12 @@ const App = () => (
                   <Route path="*" element={<NotFound />} />
                 </Routes>
                 <MobileFooterNav />
-                <FloatingMusicPlayer />
-                <FloatingPromotion />
+                <DeferredMount delay={1500}>
+                  <Suspense fallback={null}>
+                    <FloatingMusicPlayer />
+                    <FloatingPromotion />
+                  </Suspense>
+                </DeferredMount>
               </BrowserRouter>
             </TooltipProvider>
             </MusicPlayerProvider>

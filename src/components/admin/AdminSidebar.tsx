@@ -73,7 +73,7 @@ const marketingItems: NavItem[] = [
   { icon: Facebook, label: "Meta Pixel", path: "/admin/marketing/meta-pixel" },
   { icon: Server, label: "Meta CAPI", path: "/admin/marketing/meta-capi" },
   { icon: BarChart3, label: "Google Analytics 4", path: "/admin/marketing/ga4" },
-  { icon: Sparkles, label: "AI Providers", path: "/admin/marketing/ai-providers" },
+  
   { icon: Truck, label: "Steadfast API", path: "/admin/marketing/steadfast" },
 ];
 

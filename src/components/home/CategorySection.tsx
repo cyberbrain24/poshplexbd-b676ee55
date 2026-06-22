@@ -54,9 +54,8 @@ const CategorySection = () => {
         </div>
         <Carousel opts={{ align: "start", loop: false }} setApi={setApi} className="w-full">
           <CarouselContent className="-ml-2">
-            {mainCategories.map((category, index) => {
+            {mainCategories.map((category) => {
               const slug = category.name.toLowerCase().replace(/\s+/g, "-");
-              const aboveFold = index < 4;
               return (
                 <CarouselItem key={category.id} className="basis-1/4 pl-2">
                   <Link to={`/category/${slug}`} className="block text-center">
@@ -67,9 +66,7 @@ const CategorySection = () => {
                         width={450}
                         height={450}
                         sizes="(min-width: 768px) 450px, 300px"
-                        loading={aboveFold ? "eager" : "lazy"}
-                        // @ts-ignore - valid HTML attribute
-                        fetchpriority={aboveFold ? "high" : "auto"}
+                        loading="lazy"
                         decoding="async"
                         className="w-full h-full object-cover"
                       />
@@ -101,9 +98,8 @@ const CategorySection = () => {
         <h2 className="text-2xl md:text-3xl font-normal tracking-tight text-foreground uppercase">Shop by Category</h2>
       </div>
       <div className="flex justify-center gap-4 md:gap-6">
-        {mainCategories.map((category, index) => {
+        {mainCategories.map((category) => {
           const slug = category.name.toLowerCase().replace(/\s+/g, "-");
-          const aboveFold = index < 6;
           return (
             <Link
               key={category.id}
@@ -117,9 +113,7 @@ const CategorySection = () => {
                   width={450}
                   height={450}
                   sizes="(min-width: 768px) 450px, 300px"
-                  loading={aboveFold ? "eager" : "lazy"}
-                  // @ts-ignore - valid HTML attribute
-                  fetchpriority={aboveFold ? "high" : "auto"}
+                  loading="lazy"
                   decoding="async"
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />

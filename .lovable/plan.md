@@ -1,65 +1,52 @@
-# First-Visit Speed Optimization Plan
+# Lazy Loading for Home, Category & Subcategory Pages
 
-Goal: make the **very first paint** on home and category pages as fast as possible (better LCP, FCP, TBT in Google PageSpeed) for users who land cold with no cache.
+Scope narrowed per your request: optimize **only** the pages users land on directly — Home (`/`), Category (`/category/:category`), and Category Browser / subcategories (`/categories`). Goal is instant first paint on those routes.
 
-Cache-lifetime headers are skipped here on purpose — they only help repeat visitors.
+## What changes
 
-## What we'll do
+### 1. Defer below-the-fold homepage sections until scroll
+On `Index.tsx`, sections currently using `Suspense` still get scheduled to load right after first paint. Switch them to **scroll-triggered** loading using a small `IntersectionObserver` wrapper:
+- `FeaturedProducts`
+- `ProductGrid`
+- `CustomerReviewsSection`
+- `OurStorySection`
+- Middle/bottom `PromotionSlot`s
 
-### 1. Preload the LCP image (homepage hero)
-The hero banner is the Largest Contentful Paint element on the homepage. Currently the browser only discovers it after parsing React. We'll add a `<link rel="preload" as="image" fetchpriority="high">` in `index.html` so the browser starts downloading it immediately in parallel with the JS bundle.
+The hero, header, features bar, and category strip stay eager so the first paint is instant. Each deferred section reserves height to prevent layout shift (CLS).
 
-Result: ~300–800ms faster LCP on mobile.
+### 2. Lazy-load images on Home / Category / Subcategory
+Add `loading="lazy"` + `decoding="async"` to product card images on these pages, **except** the first row (first 4 cards on desktop / first 2 on mobile) which become `loading="eager"` + `fetchpriority="high"` so above-the-fold imagery still loads immediately.
 
-### 2. Mark hero `<img>` with `fetchpriority="high"` and remove `loading="lazy"` from above-the-fold images
-The hero and the first row of category/product tiles are above the fold. They must NOT be lazy-loaded — that delays LCP. We'll audit `Hero`, `FeaturedProducts`, `ProductGrid`, and category grid to ensure:
-- LCP image: `fetchpriority="high"`, eager
-- First ~4 product tiles: eager
-- Everything else: `loading="lazy"` (already done)
+Files touched:
+- `src/components/home/ProductGrid.tsx`
+- `src/components/home/FeaturedProducts.tsx` (verify)
+- `src/components/home/CategorySection.tsx` (verify)
+- Category page product grid component(s)
+- `src/pages/CategoryBrowser.tsx`
 
-### 3. Code-split heavy non-critical components on home & category pages
-Defer JS that isn't needed for the first paint:
-- Footer, Mobile Hamburger menu, Chatbot widget, Reviews, "Our Story" section → `React.lazy` + Suspense
-- Mega menu dropdown panels → load on hover/open, not on mount
-- Meta Pixel / GA4 scripts → already deferred, verify they load `after` interactive
+### 3. Defer non-critical global scripts on these pages
+`FacebookPixelTracker`, `GoogleAnalyticsTracker`, `FloatingMusicPlayer`, and `FloatingPromotion` currently mount in the initial bundle from `App.tsx`. Wrap them in a `DeferredMount` that mounts after `requestIdleCallback` (fallback `setTimeout`). Trackers still fire well within analytics tolerance but stop blocking LCP/TBT on the landing pages.
 
-This reduces the initial JS bundle parsed/executed before first paint.
+### 4. Split the Category page below-the-fold strip
+On `/category/:category`, only the filter bar + first product rows render eagerly. Filters' advanced panels, related-category strips, and the SEO/meta blocks load on scroll via the same `LazyOnVisible` wrapper.
 
-### 4. Preconnect to critical third parties
-Add `<link rel="preconnect">` in `index.html` for:
-- Supabase storage (image CDN host)
-- Google Fonts (if used)
+## Out of scope (untouched)
 
-Saves the DNS+TLS handshake on the first image/font request (~100–300ms).
+- Product detail, checkout, account, orders, admin — kept as-is.
+- Image format conversion (AVIF/WebP build pipeline) — separate effort.
+- Backend / data fetching changes.
 
-### 5. Inline critical font-face + `font-display: swap`
-Ensure no invisible-text flash and no render-blocking font request. Use `font-display: swap` on all `@font-face` and preload only the one weight used above the fold.
+## Technical details
 
-### 6. Verify with PageSpeed
-Run `browser--performance_profile` against home and a category page before/after to confirm LCP, FCP, and TBT improvements.
+- New `src/components/perf/LazyOnVisible.tsx` — renders a reserved-height placeholder until the wrapper enters viewport (`rootMargin: 300px`), then mounts children. CLS-safe via required `minHeight`.
+- New `src/components/perf/DeferredMount.tsx` — `requestIdleCallback` (fallback `setTimeout(0)`) mount; used in `App.tsx` for trackers + floating widgets.
+- `Index.tsx`: wrap below-fold `<Suspense>` blocks in `<LazyOnVisible>`.
+- Category pages: same wrapper around non-critical sections; image attribute pass on product cards.
+- App.tsx: convert trackers/floating widgets to `lazy()` + `<DeferredMount>`.
 
-## Scope (only these pages)
-- `/` (Index / home)
-- `/category/*` and subcategory routes
+## Expected impact on Home, Category, Subcategory
 
-Other routes (admin, account, checkout) are untouched.
-
-## Files likely to change
-- `index.html` (preload, preconnect, font-display)
-- `src/components/home/Hero.tsx` (fetchpriority, eager)
-- `src/components/home/FeaturedProducts.tsx`, `ProductGrid.tsx` (first-N eager)
-- `src/components/category/ProductGrid.tsx` (first-N eager)
-- `src/pages/Index.tsx` (lazy-load below-the-fold sections)
-- `src/App.tsx` (lazy-load Footer / Chatbot already partially done — verify)
-
-## What you'll see in PageSpeed
-- LCP: meaningful drop (target <2.5s on mobile)
-- FCP: small improvement
-- "Largest Contentful Paint image was lazily loaded" warning: gone
-- "Preconnect to required origins": gone
-- Total Blocking Time: lower from smaller initial JS
-
-## Out of scope
-- Cache-Control headers (server-side, doesn't help first visit)
-- Image format conversion to AVIF/WebP at the CDN (Supabase paid feature, per your constraints)
-- Admin / account / checkout routes
+- **LCP**: faster — fewer images and scripts compete with the hero.
+- **TBT / INP**: lower — tracker JS deferred past first paint.
+- **Initial JS bytes**: smaller — below-fold section chunks load only on scroll.
+- **CLS**: unchanged — placeholders reserve height.

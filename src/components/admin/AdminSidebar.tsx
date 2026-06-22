@@ -73,7 +73,7 @@ const marketingItems: NavItem[] = [
   { icon: Facebook, label: "Meta Pixel", path: "/admin/marketing/meta-pixel" },
   { icon: Server, label: "Meta CAPI", path: "/admin/marketing/meta-capi" },
   { icon: BarChart3, label: "Google Analytics 4", path: "/admin/marketing/ga4" },
-  { icon: Sparkles, label: "AI Providers", path: "/admin/marketing/ai-providers" },
+  
   { icon: Truck, label: "Steadfast API", path: "/admin/marketing/steadfast" },
 ];
 
@@ -228,7 +228,6 @@ const AdminSidebar = () => {
       
       <nav className="flex-1 p-3 md:p-4 space-y-0.5 overflow-y-auto">
         {renderNavLink("/admin", LayoutDashboard, "Business Intelligence")}
-        {renderNavLink("/admin/ai-assistant", Sparkles, "AI Agent")}
         {renderCollapsible(Megaphone, "Marketing Channels", marketingChannelItems, openGroup === 'channels', () => toggleGroup('channels'), isChannelsActive)}
         {renderCollapsible(Package, "Product Management", productManagementItems, openGroup === 'product', () => toggleGroup('product'), isProductMgmtActive)}
         {renderCollapsible(ShoppingCart, "Order Management", orderItems, openGroup === 'orders', () => toggleGroup('orders'), isOrdersActive)}

@@ -48,6 +48,3 @@ export { default as PromoUsageHistoryModal } from "./PromoUsageHistoryModal";
 export { default as ThanaModal } from "./ThanaModal";
 export { default as TransactionModal } from "./TransactionModal";
 export { default as TransferModal } from "./TransferModal";
-
-// AI components
-export { default as AiGenerateButton } from "./AiGenerateButton";

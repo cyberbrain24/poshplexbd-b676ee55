@@ -50,7 +50,7 @@ const CustomerReviews = lazy(() => import("./pages/CustomerReviews"));
 const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminProducts = lazy(() => import("./pages/admin/AdminProducts"));
-const AdminAIAssistant = lazy(() => import("./pages/admin/AdminAIAssistant"));
+
 const AdminColors = lazy(() => import("./pages/admin/AdminColors"));
 const AdminSizes = lazy(() => import("./pages/admin/AdminSizes"));
 const AdminMaterials = lazy(() => import("./pages/admin/AdminMaterials"));
@@ -90,7 +90,7 @@ const MetaPixelSettings = lazy(() => import("./pages/admin/marketing/MetaPixelSe
 const MetaCapiSettings = lazy(() => import("./pages/admin/marketing/MetaCapiSettings"));
 const GA4Settings = lazy(() => import("./pages/admin/marketing/GA4Settings"));
 
-const AIProviderCredentials = lazy(() => import("./pages/admin/marketing/AIProviderCredentials"));
+
 const SteadfastSettings = lazy(() => import("./pages/admin/marketing/SteadfastSettings"));
 const DocsIndex = lazy(() => import("./pages/admin/docs/DocsIndex"));
 const DocPage = lazy(() => import("./pages/admin/docs/DocPage"));
@@ -184,7 +184,7 @@ const App = () => (
                   }>
                     <Route index element={<AdminDashboard />} />
                     <Route path="products" element={<AdminProducts />} />
-                    <Route path="ai-assistant" element={<AdminAIAssistant />} />
+                    
                     <Route path="reviews" element={<AdminReviews />} />
                     <Route path="media" element={<AdminMedia />} />
                     <Route path="colors" element={<AdminColors />} />
@@ -221,8 +221,8 @@ const App = () => (
                       <Route path="meta-pixel" element={<MetaPixelSettings />} />
                       <Route path="meta-capi" element={<MetaCapiSettings />} />
                       <Route path="ga4" element={<GA4Settings />} />
-                      
-                      <Route path="ai-providers" element={<AIProviderCredentials />} />
+
+
                       <Route path="steadfast" element={<SteadfastSettings />} />
                     </Route>
                     <Route path="docs" element={<DocsIndex />} />

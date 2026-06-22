@@ -1,7 +1,7 @@
-import { ReactNode, Suspense, useEffect, useRef, useTransition, lazy } from "react";
+import { ReactNode, Suspense, useEffect, useRef, useTransition } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import AdminSidebar from "./AdminSidebar";
-const AdminProductAIFloating = lazy(() => import("./AdminProductAIFloating"));
+
 import { AdminErrorBoundary } from "./AdminErrorBoundary";
 import { AdminLoadingSpinner } from "./AdminLoadingState";
 import { useERPDataPrefetch } from "@/hooks/useERPPrefetch";
@@ -55,9 +55,6 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           </Suspense>
         </AdminErrorBoundary>
       </main>
-      <Suspense fallback={null}>
-        <AdminProductAIFloating />
-      </Suspense>
     </div>
   );
 };

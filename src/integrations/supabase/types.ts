@@ -698,42 +698,6 @@ export type Database = {
         }
         Relationships: []
       }
-      image_migration_log: {
-        Row: {
-          bucket: string
-          created_at: string
-          error: string | null
-          id: string
-          new_path: string
-          new_size: number | null
-          old_path: string
-          old_size: number | null
-          status: string
-        }
-        Insert: {
-          bucket: string
-          created_at?: string
-          error?: string | null
-          id?: string
-          new_path: string
-          new_size?: number | null
-          old_path: string
-          old_size?: number | null
-          status: string
-        }
-        Update: {
-          bucket?: string
-          created_at?: string
-          error?: string | null
-          id?: string
-          new_path?: string
-          new_size?: number | null
-          old_path?: string
-          old_size?: number | null
-          status?: string
-        }
-        Relationships: []
-      }
       inventory_categories: {
         Row: {
           created_at: string
@@ -1027,53 +991,6 @@ export type Database = {
           verify_token?: string
         }
         Relationships: []
-      }
-      meta_conversations: {
-        Row: {
-          channel: string
-          conversation_id: string | null
-          created_at: string
-          customer_id: string | null
-          display_name: string | null
-          external_user_id: string
-          id: string
-          last_message_at: string
-          meta_channel_id: string
-          updated_at: string
-        }
-        Insert: {
-          channel: string
-          conversation_id?: string | null
-          created_at?: string
-          customer_id?: string | null
-          display_name?: string | null
-          external_user_id: string
-          id?: string
-          last_message_at?: string
-          meta_channel_id: string
-          updated_at?: string
-        }
-        Update: {
-          channel?: string
-          conversation_id?: string | null
-          created_at?: string
-          customer_id?: string | null
-          display_name?: string | null
-          external_user_id?: string
-          id?: string
-          last_message_at?: string
-          meta_channel_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "meta_conversations_meta_channel_id_fkey"
-            columns: ["meta_channel_id"]
-            isOneToOne: false
-            referencedRelation: "meta_channels"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       music_tracks: {
         Row: {
@@ -1818,45 +1735,6 @@ export type Database = {
           },
         ]
       }
-      product_variant_shared_links: {
-        Row: {
-          created_at: string
-          id: string
-          product_variant_id: string
-          quantity: number
-          shared_variant_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          product_variant_id: string
-          quantity?: number
-          shared_variant_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          product_variant_id?: string
-          quantity?: number
-          shared_variant_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "product_variant_shared_links_product_variant_id_fkey"
-            columns: ["product_variant_id"]
-            isOneToOne: false
-            referencedRelation: "product_variants"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "product_variant_shared_links_shared_variant_id_fkey"
-            columns: ["shared_variant_id"]
-            isOneToOne: false
-            referencedRelation: "shared_variants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       product_variants: {
         Row: {
           color_id: string | null
@@ -2393,42 +2271,6 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      shared_variant_categories: {
-        Row: {
-          category_id: string
-          created_at: string
-          id: string
-          shared_variant_id: string
-        }
-        Insert: {
-          category_id: string
-          created_at?: string
-          id?: string
-          shared_variant_id: string
-        }
-        Update: {
-          category_id?: string
-          created_at?: string
-          id?: string
-          shared_variant_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "shared_variant_categories_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "shared_variant_categories_shared_variant_id_fkey"
-            columns: ["shared_variant_id"]
-            isOneToOne: false
-            referencedRelation: "shared_variants"
             referencedColumns: ["id"]
           },
         ]
@@ -3004,7 +2846,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      admin_list_schema: { Args: never; Returns: Json }
       create_order_atomic: {
         Args: { p_items: Json; p_order: Json }
         Returns: Json

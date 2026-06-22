@@ -21,7 +21,6 @@ Storing roles on the `profiles` or `customers` table is a privilege-escalation r
 ## Admin identity
 
 - Primary admin email: **poshplexbd@gmail.com**
-- Password reset for the primary admin is handled by the `admin-reset-password` edge function (rate-limited, audited).
 
 ## Adding a new admin
 

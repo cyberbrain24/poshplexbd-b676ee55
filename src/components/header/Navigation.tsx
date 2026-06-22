@@ -63,9 +63,9 @@ const Navigation = () => {
   const navItems = [
     { name: "SHOP", href: "/category/all", hasMegaMenu: true },
     { name: "NEW ARRIVALS", href: "/category/new-arrivals", hasMegaMenu: false },
-    { name: "BLOG", href: "/blog", hasMegaMenu: false },
     { name: "ABOUT", href: "/pages/our-story", hasMegaMenu: false },
   ];
+
 
   return (
     <nav className="relative bg-white border-b border-border">

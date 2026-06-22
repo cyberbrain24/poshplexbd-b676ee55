@@ -50,7 +50,7 @@ const CustomerReviews = lazy(() => import("./pages/CustomerReviews"));
 const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminProducts = lazy(() => import("./pages/admin/AdminProducts"));
-const AdminAIAssistant = lazy(() => import("./pages/admin/AdminAIAssistant"));
+
 const AdminColors = lazy(() => import("./pages/admin/AdminColors"));
 const AdminSizes = lazy(() => import("./pages/admin/AdminSizes"));
 const AdminMaterials = lazy(() => import("./pages/admin/AdminMaterials"));

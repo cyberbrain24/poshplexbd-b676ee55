@@ -12,12 +12,14 @@ import { FavoritesProvider } from "./contexts/FavoritesContext";
 import { MusicPlayerProvider } from "./contexts/MusicPlayerContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import MobileFooterNav from "./components/navigation/MobileFooterNav";
-import FacebookPixelTracker from "./components/tracking/FacebookPixelTracker";
-
-import GoogleAnalyticsTracker from "./components/tracking/GoogleAnalyticsTracker";
-import FloatingMusicPlayer from "./components/music/FloatingMusicPlayer";
 import TypographyProvider from "./components/TypographyProvider";
-import FloatingPromotion from "./components/promotions/FloatingPromotion";
+import DeferredMount from "./components/perf/DeferredMount";
+
+// Non-critical: defer past first paint to lower LCP/TBT on landing pages
+const FacebookPixelTracker = lazy(() => import("./components/tracking/FacebookPixelTracker"));
+const GoogleAnalyticsTracker = lazy(() => import("./components/tracking/GoogleAnalyticsTracker"));
+const FloatingMusicPlayer = lazy(() => import("./components/music/FloatingMusicPlayer"));
+const FloatingPromotion = lazy(() => import("./components/promotions/FloatingPromotion"));
 
 
 // Storefront pages - eagerly loaded (critical path)
@@ -139,9 +141,12 @@ const App = () => (
               >
                 <ScrollToTop />
                 <TypographyProvider />
-                <FacebookPixelTracker />
-                
-                <GoogleAnalyticsTracker />
+                <DeferredMount>
+                  <Suspense fallback={null}>
+                    <FacebookPixelTracker />
+                    <GoogleAnalyticsTracker />
+                  </Suspense>
+                </DeferredMount>
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/categories" element={<Suspense fallback={<LoadingFallback />}><CategoryBrowser /></Suspense>} />
@@ -235,8 +240,12 @@ const App = () => (
                   <Route path="*" element={<NotFound />} />
                 </Routes>
                 <MobileFooterNav />
-                <FloatingMusicPlayer />
-                <FloatingPromotion />
+                <DeferredMount delay={1500}>
+                  <Suspense fallback={null}>
+                    <FloatingMusicPlayer />
+                    <FloatingPromotion />
+                  </Suspense>
+                </DeferredMount>
               </BrowserRouter>
             </TooltipProvider>
             </MusicPlayerProvider>

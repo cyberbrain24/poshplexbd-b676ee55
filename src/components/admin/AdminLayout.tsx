@@ -55,7 +55,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           </Suspense>
         </AdminErrorBoundary>
       </main>
-
+    </div>
   );
 };
 

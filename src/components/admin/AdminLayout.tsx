@@ -55,10 +55,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           </Suspense>
         </AdminErrorBoundary>
       </main>
-      <Suspense fallback={null}>
-        <AdminProductAIFloating />
-      </Suspense>
-    </div>
+
   );
 };
 

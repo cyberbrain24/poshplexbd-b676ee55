@@ -89,7 +89,6 @@ const ProductGrid = ({ sortBy = "newest", filters }: ProductGridProps) => {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
         {products.map((product, index) => {
           const mainImage = getMainImage(product);
-          const hoverImage = getHoverImage(product);
           const isAboveFold = index < 4;
 
           return (
@@ -105,19 +104,8 @@ const ProductGrid = ({ sortBy = "newest", filters }: ProductGridProps) => {
                       alt={product.name}
                       preset="grid"
                       priority={isAboveFold}
-                      className={`w-full h-full transition-all duration-300 ${hoverImage ? 'group-hover:opacity-0' : ''}`}
+                      className="w-full h-full"
                     />
-                    {hoverImage && (
-                      <ResponsiveImage
-                        src={hoverImage.src}
-                        thumbUrl={hoverImage.thumb}
-                        mediumUrl={hoverImage.medium}
-                        largeUrl={hoverImage.large}
-                        alt={`${product.name} alternate`}
-                        preset="grid"
-                        className="absolute inset-0 w-full h-full transition-all duration-300 opacity-0 group-hover:opacity-100"
-                      />
-                    )}
                     <div className="absolute inset-0 bg-black/[0.03] pointer-events-none"></div>
                     {/* Favorite button */}
                     <div className="absolute top-2 right-2 z-10">

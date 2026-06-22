@@ -9,7 +9,9 @@ import FavoriteButton from "@/components/product/FavoriteButton";
 import ProductRatingBadge from "@/components/product/ProductRatingBadge";
 import { useProductRatings } from "@/hooks/useProductRatings";
 import { ResponsiveImage } from "@/components/ui/responsive-image";
+import { Helmet } from "react-helmet-async";
 import type { SortOption, ProductFilters } from "./FilterSortBar";
+
 
 interface ProductGridProps {
   sortBy?: SortOption;
@@ -84,9 +86,18 @@ const ProductGrid = ({ sortBy = "newest", filters }: ProductGridProps) => {
     );
   }
 
+  const lcpImage = products[0] ? getMainImage(products[0]) : null;
+  const lcpHref = lcpImage ? (lcpImage.medium || lcpImage.large || lcpImage.src) : null;
+
   return (
     <section className="w-full px-6 mb-16">
+      {lcpHref && (
+        <Helmet>
+          <link rel="preload" as="image" href={lcpHref} fetchPriority="high" />
+        </Helmet>
+      )}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+
         {products.map((product, index) => {
           const mainImage = getMainImage(product);
           const isAboveFold = index < 4;

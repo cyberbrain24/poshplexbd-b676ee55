@@ -75,7 +75,9 @@ const FeaturedProducts = () => {
                 alt={product.name}
                 width={450}
                 height={600}
-                loading="lazy"
+                loading={index < 4 ? "eager" : "lazy"}
+                fetchPriority={index < 4 ? "high" : "auto"}
+                decoding="async"
                 className="w-full h-full object-cover object-center md:transition-all md:duration-500 md:group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-foreground/0 md:group-hover:bg-foreground/10 md:transition-colors md:duration-300" />

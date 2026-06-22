@@ -87,9 +87,10 @@ const ProductGrid = ({ sortBy = "newest", filters }: ProductGridProps) => {
   return (
     <section className="w-full px-6 mb-16">
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-        {products.map((product) => {
+        {products.map((product, index) => {
           const mainImage = getMainImage(product);
           const hoverImage = getHoverImage(product);
+          const isAboveFold = index < 4;
 
           return (
             <Link key={product.id} to={`/product/${generateProductSlug(product.name, product.id)}`}>
@@ -103,6 +104,7 @@ const ProductGrid = ({ sortBy = "newest", filters }: ProductGridProps) => {
                       largeUrl={mainImage.large}
                       alt={product.name}
                       preset="grid"
+                      priority={isAboveFold}
                       className={`w-full h-full transition-all duration-300 ${hoverImage ? 'group-hover:opacity-0' : ''}`}
                     />
                     {hoverImage && (

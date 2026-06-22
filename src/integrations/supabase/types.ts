@@ -3303,6 +3303,10 @@ export type Database = {
       increment_promotion_click: { Args: { p_id: string }; Returns: undefined }
       increment_promotion_view: { Args: { p_id: string }; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
+      public_unsubscribe_email: {
+        Args: { p_email: string; p_reason?: string }
+        Returns: undefined
+      }
       record_order_payment_atomic: {
         Args: {
           p_account_id: string

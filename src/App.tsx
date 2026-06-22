@@ -221,8 +221,8 @@ const App = () => (
                       <Route path="meta-pixel" element={<MetaPixelSettings />} />
                       <Route path="meta-capi" element={<MetaCapiSettings />} />
                       <Route path="ga4" element={<GA4Settings />} />
-                      
-                      <Route path="ai-providers" element={<AIProviderCredentials />} />
+
+
                       <Route path="steadfast" element={<SteadfastSettings />} />
                     </Route>
                     <Route path="docs" element={<DocsIndex />} />

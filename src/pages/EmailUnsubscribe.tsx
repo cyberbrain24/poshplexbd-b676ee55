@@ -14,8 +14,8 @@ export default function EmailUnsubscribe() {
     try { decoded = atob(e); } catch { setState("invalid"); return; }
     if (!decoded.includes("@")) { setState("invalid"); return; }
     setEmail(decoded);
-    supabase.from("email_suppression").insert({ email: decoded, reason: "unsubscribe" }).then(() => {
-      setState("done");
+    supabase.rpc("public_unsubscribe_email", { p_email: decoded, p_reason: "unsubscribe" }).then(({ error }) => {
+      setState(error ? "invalid" : "done");
     });
   }, [params]);
 

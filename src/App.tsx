@@ -90,7 +90,7 @@ const MetaPixelSettings = lazy(() => import("./pages/admin/marketing/MetaPixelSe
 const MetaCapiSettings = lazy(() => import("./pages/admin/marketing/MetaCapiSettings"));
 const GA4Settings = lazy(() => import("./pages/admin/marketing/GA4Settings"));
 
-const AIProviderCredentials = lazy(() => import("./pages/admin/marketing/AIProviderCredentials"));
+
 const SteadfastSettings = lazy(() => import("./pages/admin/marketing/SteadfastSettings"));
 const DocsIndex = lazy(() => import("./pages/admin/docs/DocsIndex"));
 const DocPage = lazy(() => import("./pages/admin/docs/DocPage"));

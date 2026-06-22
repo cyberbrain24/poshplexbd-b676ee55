@@ -184,7 +184,7 @@ const App = () => (
                   }>
                     <Route index element={<AdminDashboard />} />
                     <Route path="products" element={<AdminProducts />} />
-                    <Route path="ai-assistant" element={<AdminAIAssistant />} />
+                    
                     <Route path="reviews" element={<AdminReviews />} />
                     <Route path="media" element={<AdminMedia />} />
                     <Route path="colors" element={<AdminColors />} />

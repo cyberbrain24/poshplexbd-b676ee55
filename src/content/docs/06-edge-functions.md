@@ -16,8 +16,8 @@ From the frontend:
 ```ts
 import { supabase } from "@/integrations/supabase/client";
 
-const { data, error } = await supabase.functions.invoke("admin-product-ai", {
-  body: { message: "Create a black tee at 1200 BDT" },
+const { data, error } = await supabase.functions.invoke("create-customer-account", {
+  body: { name: "Jane", phone: "01700000000", password: "secret" },
 });
 ```
 
@@ -25,18 +25,15 @@ const { data, error } = await supabase.functions.invoke("admin-product-ai", {
 
 | Function | Purpose | Auth |
 |---|---|---|
-| `admin-product-ai` | Conversational product CRUD (Gemini). Writes require a confirm step. | Admin only |
-| `admin-reset-password` | Securely reset the primary admin password. | Service role |
-| `ai-search-suggest` | Storefront search autocomplete. | Public, rate-limited |
-| `ai-seo-generate` | Generates product descriptions and meta tags. | Admin only |
+| `convert-storage-to-webp` | Background image migration to WebP. | Service role |
 | `create-customer-account` | Server-side customer signup with hashed password. | Public, rate-limited |
 | `delete-auth-users` | Removes orphaned auth users. | Service role |
-| `gemini-credentials-status` | Health check for AI credentials. | Admin only |
+| `email-send` | Sends transactional email via configured provider. | Internal |
 | `impersonate-customer` | "Login as Customer" for admin support. | Admin only |
 | `meta-capi` | Server-side Meta CAPI mirror. | Internal |
+| `regenerate-image-thumbnails` | Rebuilds thumbnail variants for media. | Admin only |
 | `sms-send` | Sends an SMS via configured provider. | Internal |
 | `sms-order-placed` | Order-placed SMS notification. | Internal |
-| `sitemap` | Generates `sitemap.xml` for SEO. | Public |
 | `steadfast-courier` | Creates consignments on Steadfast. | Admin only |
 
 ## Rate limiting

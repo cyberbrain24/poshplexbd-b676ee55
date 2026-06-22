@@ -16,7 +16,7 @@ const MarketingLayout = () => {
       <div className="mb-6">
         <h1 className="text-xl md:text-2xl font-semibold tracking-tight uppercase">Integration & Tracking</h1>
         <p className="text-xs md:text-sm text-muted-foreground mt-1">
-          Configure pixels, analytics, AI provider credentials, and third-party APIs from a single hub.
+          Configure pixels, analytics, and third-party APIs from a single hub.
         </p>
       </div>
 

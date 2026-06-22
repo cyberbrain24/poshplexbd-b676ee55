@@ -114,13 +114,10 @@ async function rewriteReferences(
     { table: "product_images", col: "large_url" },
     { table: "product_variants", col: "image_url" },
     { table: "promotions", col: "image_url" },
-    { table: "seo_pages", col: "og_image_url" },
     { table: "shared_variants", col: "image_url" },
     { table: "site_branding", col: "logo_url" },
     { table: "site_branding", col: "desktop_hero_url" },
     { table: "site_branding", col: "mobile_hero_url" },
-    { table: "blog_posts", col: "cover_image_url" },
-    { table: "blog_posts", col: "og_image_url" },
   ];
   for (const t of textTargets) {
     await safe(`${t.table}.${t.col}`, () =>
@@ -128,16 +125,7 @@ async function rewriteReferences(
     );
   }
 
-  await safe("blog_posts.content", async () => {
-    const { data } = await admin
-      .from("blog_posts")
-      .select("id, content")
-      .ilike("content", `%${oldUrl}%`);
-    for (const row of data ?? []) {
-      const next = (row.content as string).split(oldUrl).join(newUrl);
-      await admin.from("blog_posts").update({ content: next }).eq("id", row.id);
-    }
-  });
+
 
   await safe("reviews.images", async () => {
     const { data } = await admin

@@ -55,22 +55,7 @@ const TypographySettingsPanel = () => {
     setSettings(normalizeTypographySettings(data.typography));
   }, [data]);
 
-  // Lazy-load preview fonts for both family slots
-  useEffect(() => {
-    [settings.families.serif, settings.families.sans].forEach((name) => {
-      const f = findFont(name);
-      if (f?.googleParam) {
-        const id = "preview-font-" + f.googleParam.replace(/[^a-zA-Z0-9]/g, "_");
-        if (!document.getElementById(id)) {
-          const link = document.createElement("link");
-          link.id = id;
-          link.rel = "stylesheet";
-          link.href = `https://fonts.googleapis.com/css2?family=${f.googleParam}&display=swap`;
-          document.head.appendChild(link);
-        }
-      }
-    });
-  }, [settings.families.serif, settings.families.sans]);
+  // Preview fonts are self-hosted via public/fonts/google/fonts.css — no external CDN loading.
 
   const updateFamily = (slot: FamilySlot, value: string) => {
     setSettings((s) => ({ ...s, families: { ...s.families, [slot]: value } }));

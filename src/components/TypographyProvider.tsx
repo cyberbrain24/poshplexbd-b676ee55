@@ -10,7 +10,6 @@ import {
 } from "@/lib/typographyTokens";
 
 const STYLE_ID = "dynamic-typography";
-const LINK_ID_PREFIX = "dynamic-font-";
 
 const NOT = ":not(.admin-shell):not(.admin-shell *)";
 
@@ -18,16 +17,6 @@ function familyStack(name: string, fallbackKind: "serif" | "sans" | "mono") {
   if (fallbackKind === "mono") return `'${name}', ui-monospace, monospace`;
   if (fallbackKind === "serif") return `'${name}', 'Cormorant Garamond', Georgia, serif`;
   return `'${name}', 'Helvetica Neue', Arial, sans-serif`;
-}
-
-function ensureGoogleFontLoaded(googleParam: string) {
-  const id = LINK_ID_PREFIX + googleParam.replace(/[^a-zA-Z0-9+_:;,@-]/g, "_");
-  if (document.getElementById(id)) return;
-  const link = document.createElement("link");
-  link.id = id;
-  link.rel = "stylesheet";
-  link.href = `https://fonts.googleapis.com/css2?family=${googleParam}&display=swap`;
-  document.head.appendChild(link);
 }
 
 function cssVarName(token: TypographyToken) {
@@ -58,8 +47,6 @@ function tokenMobileDeclarations(c: TokenConfig) {
 function buildCSS(settings: TypographySettings): string {
   const serifFont = findFont(settings.families.serif);
   const sansFont = findFont(settings.families.sans);
-  if (serifFont?.googleParam) ensureGoogleFontLoaded(serifFont.googleParam);
-  if (sansFont?.googleParam) ensureGoogleFontLoaded(sansFont.googleParam);
 
   const serifStack = familyStack(settings.families.serif, serifFont?.category === "sans" ? "sans" : "serif");
   const sansStack = familyStack(settings.families.sans, sansFont?.category === "serif" ? "serif" : "sans");

@@ -373,7 +373,7 @@ const AdminOrders = () => {
       const { data, error } = await supabase
         .from("orders")
         .select("id, tracking_number, consignment_id, order_status")
-        .or("tracking_number.not.is.null,consignment_id.not.is.null");
+        .limit(5000);
       if (error) throw error;
       const FINAL = new Set(["delivered", "cancelled", "returned", "refunded", "rto"]);
       const ids = (data || [])

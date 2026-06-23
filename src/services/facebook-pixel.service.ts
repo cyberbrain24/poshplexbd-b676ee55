@@ -304,17 +304,12 @@ const dispatch = (eventName: string, params: Record<string, any>) => {
 
 // ─── Standard Events ───────────────────────────────────────────
 
-let _firstPageView = true;
 export const trackPageView = () => {
-  // PageView is high-volume; skip CAPI mirror on the very first page load so
-  // the meta-capi edge function never competes with the homepage critical path.
-  // Subsequent SPA navigations still fire CAPI for full coverage.
+  // Always mirror PageView to CAPI for full event coverage (≥75% target).
+  // sendCapi is already deferred via requestIdleCallback, so it never
+  // competes with the homepage critical path.
   const eventId = uuid();
   safeFbq('track', 'PageView', undefined, { eventID: eventId });
-  if (_firstPageView) {
-    _firstPageView = false;
-    return;
-  }
   void sendCapi('PageView', eventId);
 };
 

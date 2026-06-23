@@ -54,10 +54,16 @@ const isValidEmail = (raw: string): boolean => {
   return true;
 };
 
-// Phones must be all-digit, 7-15 chars per Meta spec (E.164 without "+")
-const isValidPhone = (raw: string): boolean => {
-  const digits = raw.replace(/\D/g, '');
-  return digits.length >= 7 && digits.length <= 15;
+// Phones must be E.164 digits only (no "+"), 10-15 chars per Meta spec.
+// Bangladesh local numbers ("01XXXXXXXXX") get normalized to "8801XXXXXXXXX".
+const normalizePhoneE164 = (raw: string): string | null => {
+  let digits = raw.replace(/\D/g, '');
+  if (!digits) return null;
+  if (digits.startsWith('00')) digits = digits.slice(2);
+  if (digits.length === 11 && digits.startsWith('01')) digits = '880' + digits.slice(1);
+  else if (digits.length === 10 && digits.startsWith('1')) digits = '880' + digits;
+  if (digits.length < 10 || digits.length > 15) return null;
+  return digits;
 };
 
 async function hashUserData(u: UserData) {
@@ -66,8 +72,9 @@ async function hashUserData(u: UserData) {
   if (u.em && isValidEmail(u.em)) {
     out.em = await sha256Hex(u.em);
   }
-  if (u.ph && isValidPhone(u.ph)) {
-    out.ph = await sha256Hex(u.ph.replace(/\D/g, ''));
+  if (u.ph) {
+    const normalized = normalizePhoneE164(u.ph);
+    if (normalized) out.ph = await sha256Hex(normalized);
   }
   if (u.fn && u.fn.trim()) out.fn = await sha256Hex(u.fn);
   if (u.ln && u.ln.trim()) out.ln = await sha256Hex(u.ln);

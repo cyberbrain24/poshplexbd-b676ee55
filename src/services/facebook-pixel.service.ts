@@ -72,8 +72,13 @@ export const setAdvancedMatchingUser = (data: AdvancedMatchingUserData | null) =
       }
     }
     if (data.ph) {
-      const digits = String(data.ph).replace(/\D/g, '');
-      if (digits.length >= 7 && digits.length <= 15) clean.ph = digits;
+      // Normalize Bangladesh numbers to E.164 (without leading "+") per Meta spec.
+      // Examples: "01712345678" -> "8801712345678", "+8801712345678" -> "8801712345678".
+      let digits = String(data.ph).replace(/\D/g, '');
+      if (digits.startsWith('00')) digits = digits.slice(2);
+      if (digits.length === 11 && digits.startsWith('01')) digits = '880' + digits.slice(1);
+      else if (digits.length === 10 && digits.startsWith('1')) digits = '880' + digits;
+      if (digits.length >= 10 && digits.length <= 15) clean.ph = digits;
     }
     if (data.fn && String(data.fn).trim()) clean.fn = String(data.fn).trim();
     if (data.ln && String(data.ln).trim()) clean.ln = String(data.ln).trim();

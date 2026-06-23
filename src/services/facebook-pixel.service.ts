@@ -160,6 +160,9 @@ export const setupLazyLoading = () => {
   if (_interactionBound || _scriptInjected) return;
   // Early-return if pixel is disabled or missing — don't attach listeners
   if (!_config?.isEnabled || !_config?.pixelId) return;
+  // Pre-mint _fbp so the very first pixel event (and any CAPI mirror) has
+  // a stable Browser ID — fbevents.js will reuse the cookie if present.
+  ensureFbp();
   _interactionBound = true;
 
   const trigger = () => {

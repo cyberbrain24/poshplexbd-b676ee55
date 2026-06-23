@@ -25,6 +25,7 @@ interface UserData {
 interface CapiEventPayload {
   event_name: string;
   event_id: string;
+  event_time?: number; // unix seconds from browser; preferred for dedup
   event_source_url?: string;
   user_data?: UserData;
   custom_data?: Record<string, unknown>;

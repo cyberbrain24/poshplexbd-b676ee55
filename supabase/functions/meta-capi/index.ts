@@ -25,6 +25,7 @@ interface UserData {
 interface CapiEventPayload {
   event_name: string;
   event_id: string;
+  event_time?: number; // unix seconds from browser; preferred for dedup
   event_source_url?: string;
   user_data?: UserData;
   custom_data?: Record<string, unknown>;
@@ -161,9 +162,19 @@ Deno.serve(async (req) => {
 
     const hashedUser = await hashUserData(userData);
 
+    // Use browser-provided event_time when available so pixel + CAPI share
+    // the same timestamp (Meta requires close alignment for deduplication).
+    // Clamp to Meta's allowed window: not in the future, not older than 7 days.
+    const nowSec = Math.floor(Date.now() / 1000);
+    let eventTime = typeof body.event_time === 'number' && Number.isFinite(body.event_time)
+      ? Math.floor(body.event_time)
+      : nowSec;
+    if (eventTime > nowSec + 60) eventTime = nowSec;
+    if (eventTime < nowSec - 7 * 24 * 60 * 60) eventTime = nowSec;
+
     const eventPayload: Record<string, unknown> = {
       event_name: body.event_name,
-      event_time: Math.floor(Date.now() / 1000),
+      event_time: eventTime,
       event_id: body.event_id,
       action_source: body.action_source || 'website',
       event_source_url: body.event_source_url,

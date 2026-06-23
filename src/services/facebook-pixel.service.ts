@@ -240,6 +240,10 @@ const sendCapi = (
   eventId: string,
   customData?: Record<string, unknown>,
 ) => {
+  // Capture event_time NOW (browser moment) so the server mirror uses the
+  // same timestamp as the pixel — Meta requires close event_time alignment
+  // for reliable deduplication.
+  const eventTime = Math.floor(Date.now() / 1000);
   // Defer to idle time so CAPI never competes with the initial paint
   // or critical data fetches for HTTP connections.
   const run = async () => {
@@ -254,6 +258,7 @@ const sendCapi = (
         body: {
           event_name: eventName,
           event_id: eventId,
+          event_time: eventTime,
           event_source_url: typeof window !== 'undefined' ? window.location.href : undefined,
           user_data: userData,
           custom_data: customData,

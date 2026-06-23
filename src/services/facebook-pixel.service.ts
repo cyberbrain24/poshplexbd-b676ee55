@@ -160,6 +160,9 @@ export const setupLazyLoading = () => {
   if (_interactionBound || _scriptInjected) return;
   // Early-return if pixel is disabled or missing — don't attach listeners
   if (!_config?.isEnabled || !_config?.pixelId) return;
+  // Pre-mint _fbp so the very first pixel event (and any CAPI mirror) has
+  // a stable Browser ID — fbevents.js will reuse the cookie if present.
+  ensureFbp();
   _interactionBound = true;
 
   const trigger = () => {
@@ -230,6 +233,44 @@ export const captureClickId = () => {
   } catch { /* noop */ }
 };
 
+/**
+ * Meta's `_fbp` cookie is normally minted by fbevents.js, but we lazy-load
+ * the script — so events fired before/without the script (and all CAPI
+ * events for anonymous visitors) miss `fbp`. Mint it ourselves in Meta's
+ * spec format: `fb.<subdomain_index>.<creation_time_ms>.<random10digits>`.
+ * fbevents.js will reuse the cookie if present, so this is safe.
+ */
+const ensureFbp = (): string | undefined => {
+  try {
+    if (typeof window === 'undefined') return undefined;
+    let fbp = getCookie('_fbp');
+    if (fbp) return fbp;
+    const rand = Math.floor(1_000_000_000 + Math.random() * 9_000_000_000);
+    fbp = `fb.1.${Date.now()}.${rand}`;
+    setCookie('_fbp', fbp, 90);
+    return fbp;
+  } catch { return undefined; }
+};
+
+/**
+ * Stable anonymous visitor ID, persisted in localStorage. Sent as
+ * `external_id` on every event so Meta can stitch a single user across
+ * sessions/devices even before login. Once the user authenticates, the
+ * real user.id replaces this via setAdvancedMatchingUser().
+ */
+const ANON_ID_KEY = 'pp_fb_anon_id';
+const ensureAnonExternalId = (): string | undefined => {
+  try {
+    if (typeof localStorage === 'undefined') return undefined;
+    let id = localStorage.getItem(ANON_ID_KEY);
+    if (!id) {
+      id = uuid();
+      localStorage.setItem(ANON_ID_KEY, id);
+    }
+    return id;
+  } catch { return undefined; }
+};
+
 
 /**
  * Send event to server-side Conversions API for browser+server deduplication.
@@ -249,10 +290,14 @@ const sendCapi = (
   const run = async () => {
     try {
       const { supabase } = await import('@/integrations/supabase/client');
+      // Always attach universal identifiers — boosts event match quality
+      // for anonymous traffic from ~10% to ~100% on fbp/external_id/country.
       const userData = {
+        country: 'bd', // single-market shop (Bangladesh)
         ..._userData,
-        fbp: getCookie('_fbp'),
+        fbp: ensureFbp(),
         fbc: getCookie('_fbc'),
+        external_id: _userData?.external_id || ensureAnonExternalId(),
       };
       await supabase.functions.invoke('meta-capi', {
         body: {

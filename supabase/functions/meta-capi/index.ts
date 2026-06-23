@@ -72,8 +72,9 @@ async function hashUserData(u: UserData) {
   if (u.em && isValidEmail(u.em)) {
     out.em = await sha256Hex(u.em);
   }
-  if (u.ph && isValidPhone(u.ph)) {
-    out.ph = await sha256Hex(u.ph.replace(/\D/g, ''));
+  if (u.ph) {
+    const normalized = normalizePhoneE164(u.ph);
+    if (normalized) out.ph = await sha256Hex(normalized);
   }
   if (u.fn && u.fn.trim()) out.fn = await sha256Hex(u.fn);
   if (u.ln && u.ln.trim()) out.ln = await sha256Hex(u.ln);

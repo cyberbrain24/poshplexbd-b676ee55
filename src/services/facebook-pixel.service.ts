@@ -275,46 +275,68 @@ const ensureAnonExternalId = (): string | undefined => {
 /**
  * Send event to server-side Conversions API for browser+server deduplication.
  * Fired in parallel with fbq — Meta dedupes by (event_name, event_id).
+ *
+ * `immediate=true` skips the idle deferral and uses `navigator.sendBeacon`
+ * when available — required for high-intent events (AddToCart, Checkout,
+ * Purchase) where the user often navigates away within ~1s, killing any
+ * deferred fetch before it leaves the browser.
  */
 const sendCapi = (
   eventName: string,
   eventId: string,
   customData?: Record<string, unknown>,
+  immediate = false,
 ) => {
   // Capture event_time NOW (browser moment) so the server mirror uses the
   // same timestamp as the pixel — Meta requires close event_time alignment
   // for reliable deduplication.
   const eventTime = Math.floor(Date.now() / 1000);
-  // Defer to idle time so CAPI never competes with the initial paint
-  // or critical data fetches for HTTP connections.
+
+  const buildBody = () => ({
+    event_name: eventName,
+    event_id: eventId,
+    event_time: eventTime,
+    event_source_url: typeof window !== 'undefined' ? window.location.href : undefined,
+    user_data: {
+      country: 'bd',
+      ..._userData,
+      fbp: ensureFbp(),
+      fbc: getCookie('_fbc'),
+      external_id: _userData?.external_id || ensureAnonExternalId(),
+    },
+    custom_data: customData,
+    action_source: 'website' as const,
+  });
+
+  const fireBeacon = (): boolean => {
+    try {
+      if (typeof navigator === 'undefined' || !navigator.sendBeacon) return false;
+      const SUPABASE_URL = (import.meta as any).env?.VITE_SUPABASE_URL;
+      const SUPABASE_KEY = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY;
+      if (!SUPABASE_URL || !SUPABASE_KEY) return false;
+      // sendBeacon ignores custom headers, so embed apikey in URL — Supabase
+      // Edge Functions accept ?apikey= for unauthenticated function invokes.
+      const url = `${SUPABASE_URL}/functions/v1/meta-capi?apikey=${encodeURIComponent(SUPABASE_KEY)}`;
+      const blob = new Blob([JSON.stringify(buildBody())], { type: 'application/json' });
+      return navigator.sendBeacon(url, blob);
+    } catch { return false; }
+  };
+
   const run = async () => {
     try {
       const { supabase } = await import('@/integrations/supabase/client');
-      // Always attach universal identifiers — boosts event match quality
-      // for anonymous traffic from ~10% to ~100% on fbp/external_id/country.
-      const userData = {
-        country: 'bd', // single-market shop (Bangladesh)
-        ..._userData,
-        fbp: ensureFbp(),
-        fbc: getCookie('_fbc'),
-        external_id: _userData?.external_id || ensureAnonExternalId(),
-      };
-      await supabase.functions.invoke('meta-capi', {
-        body: {
-          event_name: eventName,
-          event_id: eventId,
-          event_time: eventTime,
-          event_source_url: typeof window !== 'undefined' ? window.location.href : undefined,
-          user_data: userData,
-          custom_data: customData,
-          action_source: 'website',
-        },
-      });
-    } catch {
-      // Silently fail — CAPI is enhancement, not critical
-    }
+      await supabase.functions.invoke('meta-capi', { body: buildBody() });
+    } catch { /* silently fail */ }
   };
+
   if (typeof window === 'undefined') return;
+
+  if (immediate) {
+    // Try beacon first — survives navigation/tab-close. Fall back to fetch.
+    if (!fireBeacon()) void run();
+    return;
+  }
+
   const ric = (window as any).requestIdleCallback as
     | ((cb: () => void, opts?: { timeout: number }) => number)
     | undefined;
@@ -340,6 +362,17 @@ const sanitizeParams = (params: Record<string, any>): Record<string, any> => {
   return out;
 };
 
+// High-intent events: user often navigates away within ~1s, so CAPI must
+// fire immediately (via sendBeacon) instead of waiting for requestIdleCallback.
+const IMMEDIATE_EVENTS = new Set([
+  'AddToCart',
+  'InitiateCheckout',
+  'Purchase',
+  'AddToWishlist',
+  'CompleteRegistration',
+  'Contact',
+]);
+
 /**
  * Dispatch a standard pixel event with Browser+CAPI dedup.
  * Generates one event_id used by both the fbq call and the CAPI mirror.
@@ -348,8 +381,7 @@ const dispatch = (eventName: string, params: Record<string, any>) => {
   const eventId = uuid();
   const clean = sanitizeParams(params);
   safeFbq('track', eventName, clean, { eventID: eventId });
-  // Fire CAPI in background (non-blocking)
-  void sendCapi(eventName, eventId, clean);
+  void sendCapi(eventName, eventId, clean, IMMEDIATE_EVENTS.has(eventName));
 };
 
 // ─── Standard Events ───────────────────────────────────────────

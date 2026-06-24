@@ -76,7 +76,7 @@ const FeaturedProducts = () => {
                 width={450}
                 height={600}
                 loading={index < 4 ? "eager" : "lazy"}
-                fetchPriority={index < 4 ? "high" : "auto"}
+                {...{ fetchpriority: index < 4 ? "high" : "auto" }}
                 decoding="async"
                 className="w-full h-full object-cover object-center md:transition-all md:duration-500 md:group-hover:scale-105"
               />

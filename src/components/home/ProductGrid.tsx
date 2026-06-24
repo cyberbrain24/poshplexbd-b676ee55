@@ -126,7 +126,7 @@ const ProductGrid = () => {
                 height={600}
                 sizes="(min-width: 768px) 450px, 300px"
                 loading={index < 4 ? "eager" : "lazy"}
-                fetchPriority={index < 4 ? "high" : "auto"}
+                {...{ fetchpriority: index < 4 ? "high" : "auto" }}
                 decoding="async"
                 className="w-full h-full object-cover object-center md:transition-all md:duration-500 md:group-hover:scale-105"
               />

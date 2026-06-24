@@ -93,7 +93,7 @@ const ProductGrid = ({ sortBy = "newest", filters }: ProductGridProps) => {
     <section className="w-full px-6 mb-16">
       {lcpHref && (
         <Helmet>
-          <link rel="preload" as="image" href={lcpHref} fetchPriority="high" />
+          <link rel="preload" as="image" href={lcpHref} {...{ fetchpriority: "high" }} />
         </Helmet>
       )}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">

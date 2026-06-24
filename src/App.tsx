@@ -124,6 +124,14 @@ const LoadingFallback = () => (
   </div>
 );
 
+// Desktop-only widgets — skip the chunk download entirely on mobile
+const DesktopOnlyWidgets = () => {
+  const isMobile = useIsMobile();
+  if (isMobile) return null;
+  return <FloatingMusicPlayer />;
+};
+
+
 const App = () => (
   <ErrorBoundary>
     <HelmetProvider>

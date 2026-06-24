@@ -4,8 +4,7 @@
  * to eliminate blank screens on first paint.
  */
 
-const shimmer =
-  "bg-[linear-gradient(90deg,#f0f0f0_0%,#e6e6e6_50%,#f0f0f0_100%)] bg-[length:200%_100%] motion-safe:animate-[bootshim_1.2s_ease-in-out_infinite] md:motion-safe:animate-pulse";
+const shimmer = "bg-[#ececec] md:animate-pulse";
 
 const ShellHeader = () => (
   <>

@@ -131,7 +131,7 @@ const ProductImageGallery = ({ product, isLoading, selectedColorId, selectedVari
                 height={PRESET_SIZES.detail.widths.desktop}
                 loading={index === 0 ? "eager" : "lazy"}
                 decoding="async"
-                fetchPriority={index === 0 ? "high" : "auto"}
+                {...{ fetchpriority: index === 0 ? "high" : "auto" }}
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
               />
             </div>
@@ -170,7 +170,7 @@ const ProductImageGallery = ({ product, isLoading, selectedColorId, selectedVari
               height={PRESET_SIZES.detail.widths.tablet}
               loading="eager"
               decoding="async"
-              fetchPriority="high"
+              {...{ fetchpriority: "high" }}
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 select-none"
             />
           </div>

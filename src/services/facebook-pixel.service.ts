@@ -305,7 +305,7 @@ export const trackPageView = () => {
   // the meta-capi edge function never competes with the homepage critical path.
   // Subsequent SPA navigations still fire CAPI for full coverage.
   const eventId = uuid();
-  safeFbq('track', 'PageView', undefined, { eventID: eventId });
+  safeFbq('track', 'PageView', {}, { eventID: eventId });
   if (_firstPageView) {
     _firstPageView = false;
     return;

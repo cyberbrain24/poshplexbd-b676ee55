@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import PoshplexHeader from "../components/header/PoshplexHeader";
 import PoshplexFooter from "../components/footer/PoshplexFooter";
@@ -30,9 +30,12 @@ const ProductDetail = () => {
   const categorySlug = categoryName.toLowerCase().replace(/\s+/g, '-');
 
   // Track ViewContent when product loads — deferred to idle so it does not
-  // compete with the LCP image fetch on mobile cold loads.
+  // compete with the LCP image fetch on mobile cold loads. Latched per
+  // product.id so StrictMode (dev) and re-renders never double-fire.
+  const firedFor = useRef<string | null>(null);
   useEffect(() => {
-    if (!product?.id) return;
+    if (!product?.id || firedFor.current === product.id) return;
+    firedFor.current = product.id;
     const fire = () => trackViewContent({
       contentName: product.name,
       contentIds: [product.id],

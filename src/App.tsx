@@ -268,7 +268,7 @@ const App = () => (
             </MusicPlayerProvider>
           </FavoritesProvider>
         </CartProvider>
-      </QueryClientProvider>
+      </PersistQueryClientProvider>
     </HelmetProvider>
   </ErrorBoundary>
 );

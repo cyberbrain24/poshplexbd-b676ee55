@@ -291,3 +291,15 @@
     will-change: auto !important;
   }
 }
+
+/* Mobile performance: use system fonts only — skips downloading custom display/body fonts.
+   Browsers only fetch @font-face files when a referenced font-family resolves to them,
+   so overriding everything to the system stack here prevents woff2/ttf downloads on phones. */
+@media (max-width: 767px) {
+  html,
+  body,
+  h1, h2, h3, h4, h5, h6,
+  p, span, li, a, label, button, input, textarea, select {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  }
+}

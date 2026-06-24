@@ -3,10 +3,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { Search, User, ShoppingBag as ShoppingBagIcon, Heart } from "lucide-react";
 import { lazy, Suspense } from "react";
 import AnnouncementBar from "./AnnouncementBar";
-import MegaMenu from "./MegaMenu";
 import ShoppingBag from "./ShoppingBag";
-import SearchOverlay from "./SearchOverlay";
 
+// Desktop-only: lazy-load to keep mobile bundle lean
+const MegaMenu = lazy(() => import("./MegaMenu"));
+const SearchOverlay = lazy(() => import("./SearchOverlay"));
 const MobileMenu = lazy(() => import("./MobileMenu"));
 import { useCategories } from "@/hooks/useMasterData";
 import { useCart } from "@/contexts/CartContext";

@@ -23,9 +23,9 @@ const FloatingMusicPlayer = lazy(() => import("./components/music/FloatingMusicP
 const FloatingPromotion = lazy(() => import("./components/promotions/FloatingPromotion"));
 
 
-// Storefront pages - eagerly loaded (critical path)
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
+// All storefront routes lazy — main bundle stays minimal so any first URL hit is fast
+const Index = lazy(() => import("./pages/Index"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Storefront pages - lazy loaded (non-critical)
 const Category = lazy(() => import("./pages/Category"));

@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Product, ProductVariant } from "@/types/product";
 import VariantSelector from "./VariantSelector";
 import ProductAttributesSelector from "./ProductAttributesSelector";
-import ComboConfigurator, { ComboChildSelection } from "./ComboConfigurator";
+
 import { useCart } from "@/contexts/CartContext";
 import { generateProductSlug } from "@/lib/slug";
 import { toast } from "sonner";
@@ -25,9 +25,6 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
   const [quantity, setQuantity] = useState(1);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [selectedAttributeValues, setSelectedAttributeValues] = useState<Record<string, string>>({});
-  const [comboSelections, setComboSelections] = useState<ComboChildSelection[]>([]);
-  const [comboReady, setComboReady] = useState(false);
-  const [comboItemsTotal, setComboItemsTotal] = useState(0);
   const { addToCart } = useCart();
   const incrementQuantity = () => setQuantity(prev => prev + 1);
   const decrementQuantity = () => setQuantity(prev => Math.max(1, prev - 1));
@@ -45,11 +42,6 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
     }
   }, [onColorChange, onVariantImageChange]);
 
-  const handleComboChange = useCallback((selections: ComboChildSelection[], allReady: boolean, itemsTotal: number) => {
-    setComboSelections(selections);
-    setComboReady(allReady);
-    setComboItemsTotal(itemsTotal);
-  }, []);
 
   // Fallback data for static display
   const productName = product?.name || "Product";
@@ -60,8 +52,7 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
   const shortDescription = product?.short_description || "Quality streetwear designed for comfort and style.";
   const hasVariants = product?.variants && product.variants.length > 0;
   const isVariableProduct = product?.product_type === 'variable';
-  const isComboProduct = product?.product_type === 'combo';
-  const canAddToCart = isComboProduct ? comboReady : (!isVariableProduct || selectedVariant !== null);
+  const canAddToCart = !isVariableProduct || selectedVariant !== null;
 
   const getCartItem = () => {
     const mainImage = product?.images?.find(img => img.is_main)?.image_url 

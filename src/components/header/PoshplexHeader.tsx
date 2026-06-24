@@ -225,17 +225,23 @@ const PoshplexHeader = () => {
         </div>
       </nav>
 
-      {/* Mega Menu */}
+      {/* Mega Menu (desktop hover) */}
       {activeDropdown && (
-        <MegaMenu 
-          activeItem={navItems.find(item => item.name === activeDropdown)!}
-          onMouseEnter={() => setActiveDropdown(activeDropdown)}
-          onMouseLeave={() => setActiveDropdown(null)}
-        />
+        <Suspense fallback={null}>
+          <MegaMenu 
+            activeItem={navItems.find(item => item.name === activeDropdown)!}
+            onMouseEnter={() => setActiveDropdown(activeDropdown)}
+            onMouseLeave={() => setActiveDropdown(null)}
+          />
+        </Suspense>
       )}
 
       {/* Search overlay */}
-      {isSearchOpen && <SearchOverlay onClose={() => setIsSearchOpen(false)} />}
+      {isSearchOpen && (
+        <Suspense fallback={null}>
+          <SearchOverlay onClose={() => setIsSearchOpen(false)} />
+        </Suspense>
+      )}
 
       {/* Mobile menu */}
       <Suspense fallback={null}>

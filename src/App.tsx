@@ -242,7 +242,7 @@ const App = () => (
                 <MobileFooterNav />
                 <DeferredMount delay={1500}>
                   <Suspense fallback={null}>
-                    <FloatingMusicPlayer />
+                    <div className="hidden md:block"><FloatingMusicPlayer /></div>
                     <FloatingPromotion />
                   </Suspense>
                 </DeferredMount>

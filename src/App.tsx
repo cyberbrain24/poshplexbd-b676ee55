@@ -251,7 +251,7 @@ const App = () => (
                 <MobileFooterNav />
                 <DeferredMount delay={1500}>
                   <Suspense fallback={null}>
-                    <div className="hidden md:block"><FloatingMusicPlayer /></div>
+                    <DesktopOnlyWidgets />
                     <FloatingPromotion />
                   </Suspense>
                 </DeferredMount>

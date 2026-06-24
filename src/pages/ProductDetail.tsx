@@ -29,16 +29,23 @@ const ProductDetail = () => {
   const categoryName = product?.category?.name || "Apparel";
   const categorySlug = categoryName.toLowerCase().replace(/\s+/g, '-');
 
-  // Track ViewContent when product loads
+  // Track ViewContent when product loads — deferred to idle so it does not
+  // compete with the LCP image fetch on mobile cold loads.
   useEffect(() => {
-    if (product?.id) {
-      trackViewContent({
-        contentName: product.name,
-        contentIds: [product.id],
-        value: product.base_price || 0,
-      });
-    }
-  }, [product?.id]);
+    if (!product?.id) return;
+    const fire = () => trackViewContent({
+      contentName: product.name,
+      contentIds: [product.id],
+      value: product.base_price || 0,
+    });
+    const ric = (window as any).requestIdleCallback;
+    const handle = ric ? ric(fire, { timeout: 2000 }) : window.setTimeout(fire, 1200);
+    return () => {
+      const cic = (window as any).cancelIdleCallback;
+      if (ric && cic) cic(handle);
+      else window.clearTimeout(handle as number);
+    };
+  }, [product?.id, product?.name, product?.base_price]);
 
   return (
     <div className="min-h-screen bg-background">

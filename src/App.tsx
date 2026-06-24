@@ -23,11 +23,16 @@ const FloatingMusicPlayer = lazy(() => import("./components/music/FloatingMusicP
 const FloatingPromotion = lazy(() => import("./components/promotions/FloatingPromotion"));
 
 
-// Storefront pages - eagerly loaded (critical path)
-import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
-// Storefront pages - lazy loaded (non-critical)
+// Route-level skeletons used as Suspense fallbacks (prevent CLS, no blank spinner)
+import HomeSkeleton from "./components/skeletons/HomeSkeleton";
+import CategorySkeleton from "./components/skeletons/CategorySkeleton";
+import ProductDetailSkeleton from "./components/skeletons/ProductDetailSkeleton";
+
+// Storefront pages - lazy loaded so landing on /category or /product
+// does not pull the Home-page chunk (and vice versa)
+const Index = lazy(() => import("./pages/Index"));
 const Category = lazy(() => import("./pages/Category"));
 const CategoryBrowser = lazy(() => import("./pages/CategoryBrowser"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
@@ -157,10 +162,10 @@ const App = () => (
                   </Suspense>
                 </DeferredMount>
                 <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/categories" element={<Suspense fallback={<LoadingFallback />}><CategoryBrowser /></Suspense>} />
-                  <Route path="/category/:category" element={<Suspense fallback={<LoadingFallback />}><Category /></Suspense>} />
-                  <Route path="/product/:productSlug" element={<Suspense fallback={<LoadingFallback />}><ProductDetail /></Suspense>} />
+                  <Route path="/" element={<Suspense fallback={<HomeSkeleton />}><Index /></Suspense>} />
+                  <Route path="/categories" element={<Suspense fallback={<CategorySkeleton />}><CategoryBrowser /></Suspense>} />
+                  <Route path="/category/:category" element={<Suspense fallback={<CategorySkeleton />}><Category /></Suspense>} />
+                  <Route path="/product/:productSlug" element={<Suspense fallback={<ProductDetailSkeleton />}><ProductDetail /></Suspense>} />
                   <Route path="/checkout" element={<Suspense fallback={<LoadingFallback />}><Checkout /></Suspense>} />
                   <Route path="/order-tracking" element={<Suspense fallback={<LoadingFallback />}><OrderTracking /></Suspense>} />
                   <Route path="/my-orders" element={<Suspense fallback={<LoadingFallback />}><MyOrders /></Suspense>} />

@@ -2,9 +2,7 @@ import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient } from "@tanstack/react-query";
-import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import ScrollToTop from "./components/ScrollToTop";
@@ -25,9 +23,9 @@ const FloatingMusicPlayer = lazy(() => import("./components/music/FloatingMusicP
 const FloatingPromotion = lazy(() => import("./components/promotions/FloatingPromotion"));
 
 
-// All storefront routes lazy — main bundle stays minimal so any first URL hit is fast
-const Index = lazy(() => import("./pages/Index"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+// Storefront pages - eagerly loaded (critical path)
+import Index from "./pages/Index";
+import NotFound from "./pages/NotFound";
 
 // Storefront pages - lazy loaded (non-critical)
 const Category = lazy(() => import("./pages/Category"));
@@ -110,18 +108,14 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5,
-      gcTime: 1000 * 60 * 60 * 24, // 24h — keep in memory long enough to persist
+      gcTime: 1000 * 60 * 30,
       refetchOnWindowFocus: false,
       retry: 1,
       throwOnError: false,
+      // placeholderData removed globally — apply per-query where needed
     },
   },
 });
-
-// Persist query cache to localStorage so repeat visits paint real data instantly
-const persister = typeof window !== "undefined"
-  ? createSyncStoragePersister({ storage: window.localStorage, key: "poshplex-rq-cache" })
-  : undefined;
 
 // Shared loading fallback for lazy admin routes
 const LoadingFallback = () => (
@@ -129,8 +123,6 @@ const LoadingFallback = () => (
     <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
   </div>
 );
-
-import { HomeSkeleton, CategorySkeleton, ProductDetailSkeleton, AccountSkeleton, GenericSkeleton } from "./components/skeletons";
 
 // Desktop-only widgets — skip the chunk download entirely on mobile
 const DesktopOnlyWidgets = () => {
@@ -143,7 +135,7 @@ const DesktopOnlyWidgets = () => {
 const App = () => (
   <ErrorBoundary>
     <HelmetProvider>
-      <PersistQueryClientProvider client={queryClient} persistOptions={{ persister: persister!, maxAge: 1000 * 60 * 60 * 24, buster: "v1" }}>
+      <QueryClientProvider client={queryClient}>
         <CartProvider>
           <FavoritesProvider>
             <MusicPlayerProvider>
@@ -165,30 +157,30 @@ const App = () => (
                   </Suspense>
                 </DeferredMount>
                 <Routes>
-                  <Route path="/" element={<Suspense fallback={<HomeSkeleton />}><Index /></Suspense>} />
-                  <Route path="/categories" element={<Suspense fallback={<CategorySkeleton />}><CategoryBrowser /></Suspense>} />
-                  <Route path="/category/:category" element={<Suspense fallback={<CategorySkeleton />}><Category /></Suspense>} />
-                  <Route path="/product/:productSlug" element={<Suspense fallback={<ProductDetailSkeleton />}><ProductDetail /></Suspense>} />
-                  <Route path="/checkout" element={<Suspense fallback={<GenericSkeleton />}><Checkout /></Suspense>} />
-                  <Route path="/order-tracking" element={<Suspense fallback={<GenericSkeleton />}><OrderTracking /></Suspense>} />
-                  <Route path="/my-orders" element={<Suspense fallback={<AccountSkeleton />}><MyOrders /></Suspense>} />
-                  <Route path="/account" element={<Suspense fallback={<AccountSkeleton />}><CustomerAccount /></Suspense>} />
-                  <Route path="/favorites" element={<Suspense fallback={<GenericSkeleton />}><Favorites /></Suspense>} />
-                  <Route path="/membership" element={<Suspense fallback={<GenericSkeleton />}><Membership /></Suspense>} />
-                  <Route path="/reviews" element={<Suspense fallback={<GenericSkeleton />}><CustomerReviews /></Suspense>} />
-                  <Route path="/pages/our-story" element={<Suspense fallback={<GenericSkeleton />}><OurStory /></Suspense>} />
-                  <Route path="/pages/store-locator" element={<Suspense fallback={<GenericSkeleton />}><StoreLocator /></Suspense>} />
-                  <Route path="/pages/privacy-policy" element={<Suspense fallback={<GenericSkeleton />}><PrivacyPolicy /></Suspense>} />
-                  <Route path="/pages/terms-conditions" element={<Suspense fallback={<GenericSkeleton />}><TermsConditions /></Suspense>} />
-                  <Route path="/pages/shipping-delivery" element={<Suspense fallback={<GenericSkeleton />}><ShippingDelivery /></Suspense>} />
-                  <Route path="/about/*" element={<Suspense fallback={<GenericSkeleton />}><OurStory /></Suspense>} />
-                  <Route path="/privacy-policy" element={<Suspense fallback={<GenericSkeleton />}><PrivacyPolicy /></Suspense>} />
-                  <Route path="/terms-of-service" element={<Suspense fallback={<GenericSkeleton />}><TermsConditions /></Suspense>} />
-                  <Route path="/shipping-delivery" element={<Suspense fallback={<GenericSkeleton />}><ShippingDelivery /></Suspense>} />
-                  <Route path="/auth" element={<Suspense fallback={<GenericSkeleton />}><Auth /></Suspense>} />
-                  <Route path="/login" element={<Suspense fallback={<GenericSkeleton />}><CustomerAuth /></Suspense>} />
-                  <Route path="/complete-profile" element={<Suspense fallback={<GenericSkeleton />}><CompleteProfile /></Suspense>} />
-                 <Route path="/email/unsubscribe" element={<Suspense fallback={<GenericSkeleton />}><EmailUnsubscribe /></Suspense>} />
+                  <Route path="/" element={<Index />} />
+                  <Route path="/categories" element={<Suspense fallback={<LoadingFallback />}><CategoryBrowser /></Suspense>} />
+                  <Route path="/category/:category" element={<Suspense fallback={<LoadingFallback />}><Category /></Suspense>} />
+                  <Route path="/product/:productSlug" element={<Suspense fallback={<LoadingFallback />}><ProductDetail /></Suspense>} />
+                  <Route path="/checkout" element={<Suspense fallback={<LoadingFallback />}><Checkout /></Suspense>} />
+                  <Route path="/order-tracking" element={<Suspense fallback={<LoadingFallback />}><OrderTracking /></Suspense>} />
+                  <Route path="/my-orders" element={<Suspense fallback={<LoadingFallback />}><MyOrders /></Suspense>} />
+                  <Route path="/account" element={<Suspense fallback={<LoadingFallback />}><CustomerAccount /></Suspense>} />
+                  <Route path="/favorites" element={<Suspense fallback={<LoadingFallback />}><Favorites /></Suspense>} />
+                  <Route path="/membership" element={<Suspense fallback={<LoadingFallback />}><Membership /></Suspense>} />
+                  <Route path="/reviews" element={<Suspense fallback={<LoadingFallback />}><CustomerReviews /></Suspense>} />
+                  <Route path="/pages/our-story" element={<Suspense fallback={<LoadingFallback />}><OurStory /></Suspense>} />
+                  <Route path="/pages/store-locator" element={<Suspense fallback={<LoadingFallback />}><StoreLocator /></Suspense>} />
+                  <Route path="/pages/privacy-policy" element={<Suspense fallback={<LoadingFallback />}><PrivacyPolicy /></Suspense>} />
+                  <Route path="/pages/terms-conditions" element={<Suspense fallback={<LoadingFallback />}><TermsConditions /></Suspense>} />
+                  <Route path="/pages/shipping-delivery" element={<Suspense fallback={<LoadingFallback />}><ShippingDelivery /></Suspense>} />
+                  <Route path="/about/*" element={<Suspense fallback={<LoadingFallback />}><OurStory /></Suspense>} />
+                  <Route path="/privacy-policy" element={<Suspense fallback={<LoadingFallback />}><PrivacyPolicy /></Suspense>} />
+                  <Route path="/terms-of-service" element={<Suspense fallback={<LoadingFallback />}><TermsConditions /></Suspense>} />
+                  <Route path="/shipping-delivery" element={<Suspense fallback={<LoadingFallback />}><ShippingDelivery /></Suspense>} />
+                  <Route path="/auth" element={<Suspense fallback={<LoadingFallback />}><Auth /></Suspense>} />
+                  <Route path="/login" element={<Suspense fallback={<LoadingFallback />}><CustomerAuth /></Suspense>} />
+                  <Route path="/complete-profile" element={<Suspense fallback={<LoadingFallback />}><CompleteProfile /></Suspense>} />
+                 <Route path="/email/unsubscribe" element={<Suspense fallback={<LoadingFallback />}><EmailUnsubscribe /></Suspense>} />
                   
                   
                   {/* Admin Routes - Lazy loaded */}
@@ -268,7 +260,7 @@ const App = () => (
             </MusicPlayerProvider>
           </FavoritesProvider>
         </CartProvider>
-      </PersistQueryClientProvider>
+      </QueryClientProvider>
     </HelmetProvider>
   </ErrorBoundary>
 );

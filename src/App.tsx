@@ -159,30 +159,30 @@ const App = () => (
                   </Suspense>
                 </DeferredMount>
                 <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/categories" element={<Suspense fallback={<LoadingFallback />}><CategoryBrowser /></Suspense>} />
-                  <Route path="/category/:category" element={<Suspense fallback={<LoadingFallback />}><Category /></Suspense>} />
-                  <Route path="/product/:productSlug" element={<Suspense fallback={<LoadingFallback />}><ProductDetail /></Suspense>} />
-                  <Route path="/checkout" element={<Suspense fallback={<LoadingFallback />}><Checkout /></Suspense>} />
-                  <Route path="/order-tracking" element={<Suspense fallback={<LoadingFallback />}><OrderTracking /></Suspense>} />
-                  <Route path="/my-orders" element={<Suspense fallback={<LoadingFallback />}><MyOrders /></Suspense>} />
-                  <Route path="/account" element={<Suspense fallback={<LoadingFallback />}><CustomerAccount /></Suspense>} />
-                  <Route path="/favorites" element={<Suspense fallback={<LoadingFallback />}><Favorites /></Suspense>} />
-                  <Route path="/membership" element={<Suspense fallback={<LoadingFallback />}><Membership /></Suspense>} />
-                  <Route path="/reviews" element={<Suspense fallback={<LoadingFallback />}><CustomerReviews /></Suspense>} />
-                  <Route path="/pages/our-story" element={<Suspense fallback={<LoadingFallback />}><OurStory /></Suspense>} />
-                  <Route path="/pages/store-locator" element={<Suspense fallback={<LoadingFallback />}><StoreLocator /></Suspense>} />
-                  <Route path="/pages/privacy-policy" element={<Suspense fallback={<LoadingFallback />}><PrivacyPolicy /></Suspense>} />
-                  <Route path="/pages/terms-conditions" element={<Suspense fallback={<LoadingFallback />}><TermsConditions /></Suspense>} />
-                  <Route path="/pages/shipping-delivery" element={<Suspense fallback={<LoadingFallback />}><ShippingDelivery /></Suspense>} />
-                  <Route path="/about/*" element={<Suspense fallback={<LoadingFallback />}><OurStory /></Suspense>} />
-                  <Route path="/privacy-policy" element={<Suspense fallback={<LoadingFallback />}><PrivacyPolicy /></Suspense>} />
-                  <Route path="/terms-of-service" element={<Suspense fallback={<LoadingFallback />}><TermsConditions /></Suspense>} />
-                  <Route path="/shipping-delivery" element={<Suspense fallback={<LoadingFallback />}><ShippingDelivery /></Suspense>} />
-                  <Route path="/auth" element={<Suspense fallback={<LoadingFallback />}><Auth /></Suspense>} />
-                  <Route path="/login" element={<Suspense fallback={<LoadingFallback />}><CustomerAuth /></Suspense>} />
-                  <Route path="/complete-profile" element={<Suspense fallback={<LoadingFallback />}><CompleteProfile /></Suspense>} />
-                 <Route path="/email/unsubscribe" element={<Suspense fallback={<LoadingFallback />}><EmailUnsubscribe /></Suspense>} />
+                  <Route path="/" element={<Suspense fallback={<HomeSkeleton />}><Index /></Suspense>} />
+                  <Route path="/categories" element={<Suspense fallback={<CategorySkeleton />}><CategoryBrowser /></Suspense>} />
+                  <Route path="/category/:category" element={<Suspense fallback={<CategorySkeleton />}><Category /></Suspense>} />
+                  <Route path="/product/:productSlug" element={<Suspense fallback={<ProductDetailSkeleton />}><ProductDetail /></Suspense>} />
+                  <Route path="/checkout" element={<Suspense fallback={<GenericSkeleton />}><Checkout /></Suspense>} />
+                  <Route path="/order-tracking" element={<Suspense fallback={<GenericSkeleton />}><OrderTracking /></Suspense>} />
+                  <Route path="/my-orders" element={<Suspense fallback={<AccountSkeleton />}><MyOrders /></Suspense>} />
+                  <Route path="/account" element={<Suspense fallback={<AccountSkeleton />}><CustomerAccount /></Suspense>} />
+                  <Route path="/favorites" element={<Suspense fallback={<GenericSkeleton />}><Favorites /></Suspense>} />
+                  <Route path="/membership" element={<Suspense fallback={<GenericSkeleton />}><Membership /></Suspense>} />
+                  <Route path="/reviews" element={<Suspense fallback={<GenericSkeleton />}><CustomerReviews /></Suspense>} />
+                  <Route path="/pages/our-story" element={<Suspense fallback={<GenericSkeleton />}><OurStory /></Suspense>} />
+                  <Route path="/pages/store-locator" element={<Suspense fallback={<GenericSkeleton />}><StoreLocator /></Suspense>} />
+                  <Route path="/pages/privacy-policy" element={<Suspense fallback={<GenericSkeleton />}><PrivacyPolicy /></Suspense>} />
+                  <Route path="/pages/terms-conditions" element={<Suspense fallback={<GenericSkeleton />}><TermsConditions /></Suspense>} />
+                  <Route path="/pages/shipping-delivery" element={<Suspense fallback={<GenericSkeleton />}><ShippingDelivery /></Suspense>} />
+                  <Route path="/about/*" element={<Suspense fallback={<GenericSkeleton />}><OurStory /></Suspense>} />
+                  <Route path="/privacy-policy" element={<Suspense fallback={<GenericSkeleton />}><PrivacyPolicy /></Suspense>} />
+                  <Route path="/terms-of-service" element={<Suspense fallback={<GenericSkeleton />}><TermsConditions /></Suspense>} />
+                  <Route path="/shipping-delivery" element={<Suspense fallback={<GenericSkeleton />}><ShippingDelivery /></Suspense>} />
+                  <Route path="/auth" element={<Suspense fallback={<GenericSkeleton />}><Auth /></Suspense>} />
+                  <Route path="/login" element={<Suspense fallback={<GenericSkeleton />}><CustomerAuth /></Suspense>} />
+                  <Route path="/complete-profile" element={<Suspense fallback={<GenericSkeleton />}><CompleteProfile /></Suspense>} />
+                 <Route path="/email/unsubscribe" element={<Suspense fallback={<GenericSkeleton />}><EmailUnsubscribe /></Suspense>} />
                   
                   
                   {/* Admin Routes - Lazy loaded */}

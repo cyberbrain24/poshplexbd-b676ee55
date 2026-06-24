@@ -124,6 +124,8 @@ const LoadingFallback = () => (
   </div>
 );
 
+import { HomeSkeleton, CategorySkeleton, ProductDetailSkeleton, AccountSkeleton, GenericSkeleton } from "./components/skeletons";
+
 // Desktop-only widgets — skip the chunk download entirely on mobile
 const DesktopOnlyWidgets = () => {
   const isMobile = useIsMobile();

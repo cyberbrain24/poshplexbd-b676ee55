@@ -14,6 +14,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import MobileFooterNav from "./components/navigation/MobileFooterNav";
 import TypographyProvider from "./components/TypographyProvider";
 import DeferredMount from "./components/perf/DeferredMount";
+import { useIsMobile } from "./hooks/use-mobile";
 
 // Non-critical: defer past first paint to lower LCP/TBT on landing pages
 const FacebookPixelTracker = lazy(() => import("./components/tracking/FacebookPixelTracker"));

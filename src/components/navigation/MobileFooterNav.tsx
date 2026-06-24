@@ -72,14 +72,29 @@ const MobileFooterNav = () => {
                     onClick={() => setMusicOpen((v) => !v)}
                     aria-label="Music player"
                     className={cn(
-                      "-mt-6 h-12 w-12 rounded-full bg-foreground text-background",
-                      "flex items-center justify-center shadow-[0_6px_20px_-4px_rgba(47,47,47,0.6)] ring-4 ring-background",
-                      isPlaying && "animate-pulse"
+                      "-mt-6 h-12 w-12 rounded-full bg-foreground text-background relative",
+                      "flex items-center justify-center shadow-[0_6px_20px_-4px_rgba(47,47,47,0.6)] ring-4 ring-background"
                     )}
                   >
-                    <Music className="h-5 w-5" strokeWidth={2} />
+                    {isPlaying && (
+                      <>
+                        <span className="music-ping absolute inset-0 rounded-full bg-foreground/40" />
+                        <span className="music-ping-2 absolute inset-0 rounded-full bg-foreground/30" />
+                      </>
+                    )}
+                    {isPlaying ? (
+                      <span className="music-eq relative flex items-end gap-[2px] h-4">
+                        <span className="music-bar music-bar-1 w-[2px] bg-background rounded-sm" />
+                        <span className="music-bar music-bar-2 w-[2px] bg-background rounded-sm" />
+                        <span className="music-bar music-bar-3 w-[2px] bg-background rounded-sm" />
+                        <span className="music-bar music-bar-4 w-[2px] bg-background rounded-sm" />
+                      </span>
+                    ) : (
+                      <Music className="h-5 w-5" strokeWidth={2} />
+                    )}
                   </button>
-                  <span className="text-[10px] mt-1 font-light">Music</span>
+                  <span className="text-[10px] mt-1 font-light">{isPlaying ? "Playing" : "Music"}</span>
+
 
                   {musicOpen && (
                     <div

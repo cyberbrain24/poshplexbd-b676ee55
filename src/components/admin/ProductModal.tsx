@@ -19,8 +19,8 @@ import ProductImagePickerModal from "@/components/admin/ProductImagePickerModal"
 import { useProductCategoryIds, useSyncProductCategories } from "@/hooks/useProductCategories";
 import { useProductAppliedAttributeIds, useSyncProductAttributes, useProductAttributes, useProductVariantAttributeValues, syncVariantAttributeValues } from "@/hooks/useProductAttributes";
 import { compressProductImage } from "@/lib/imageCompress";
-import ComboBuilder, { ComboChildState, toComboItemInputs } from "@/components/admin/ComboBuilder";
-import { useSyncComboItems } from "@/hooks/useComboItems";
+
+
 
 interface ProductModalProps {
   isOpen: boolean;
@@ -57,8 +57,8 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
   const [mediaPickerIndex, setMediaPickerIndex] = useState<number | null>(null);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [selectedAttributeIds, setSelectedAttributeIds] = useState<string[]>([]);
-  const [comboChildren, setComboChildren] = useState<ComboChildState[]>([]);
-  const syncCombo = useSyncComboItems();
+
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 

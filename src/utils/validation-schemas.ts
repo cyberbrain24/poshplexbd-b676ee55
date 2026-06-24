@@ -84,7 +84,7 @@ export const updatePaymentStatusSchema = z.object({
 export const productSchema = z.object({
   name: z.string().min(1, "Name is required").max(255),
   sku: z.string().max(100).optional(),
-  product_type: z.enum(["simple", "variable", "combo"]),
+  product_type: z.enum(["simple", "variable"]),
   category_id: uuidSchema.optional().nullable(),
   brand_id: uuidSchema.optional().nullable(),
   short_description: z.string().max(500).optional().nullable(),

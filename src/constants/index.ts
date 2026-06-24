@@ -160,7 +160,6 @@ export type TransactionTypeValue = typeof TRANSACTION_TYPES[keyof typeof TRANSAC
 export const PRODUCT_TYPES = {
   SIMPLE: 'simple',
   VARIABLE: 'variable',
-  COMBO: 'combo',
 } as const;
 
 export type ProductTypeValue = typeof PRODUCT_TYPES[keyof typeof PRODUCT_TYPES];

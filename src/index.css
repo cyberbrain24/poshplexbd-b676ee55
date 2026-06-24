@@ -277,3 +277,17 @@
     transform: translateX(calc(100vw - 100%));
   }
 }
+
+/* Mobile performance: disable all motion under 768px */
+@media (max-width: 767px) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+    will-change: auto !important;
+  }
+}

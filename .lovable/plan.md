@@ -1,52 +1,49 @@
-# Lazy Loading for Home, Category & Subcategory Pages
 
-Scope narrowed per your request: optimize **only** the pages users land on directly — Home (`/`), Category (`/category/:category`), and Category Browser / subcategories (`/categories`). Goal is instant first paint on those routes.
+## Goal
+Strip all CSS animations, transitions, and keyframe motion on mobile (viewport < 768px) so the storefront paints faster on phones. Desktop/tablet animations stay unchanged.
 
-## What changes
+## Approach
+Add a single global mobile-only CSS override in `src/index.css` that neutralizes:
+- All `animation` properties (including Tailwind's `animate-*`, accordion, fade-in, slide-in, scale-in, announcement-slide, etc.)
+- All CSS `transition` properties
+- `will-change` hints (no longer useful without motion)
 
-### 1. Defer below-the-fold homepage sections until scroll
-On `Index.tsx`, sections currently using `Suspense` still get scheduled to load right after first paint. Switch them to **scroll-triggered** loading using a small `IntersectionObserver` wrapper:
-- `FeaturedProducts`
-- `ProductGrid`
-- `CustomerReviewsSection`
-- `OurStorySection`
-- Middle/bottom `PromotionSlot`s
+This is a one-place change — far safer than editing every component. It uses `!important` with the universal selector inside a `@media (max-width: 767px)` block so it overrides Tailwind utilities and Radix component animations alike.
 
-The hero, header, features bar, and category strip stay eager so the first paint is instant. Each deferred section reserves height to prevent layout shift (CLS).
+## Specific changes
 
-### 2. Lazy-load images on Home / Category / Subcategory
-Add `loading="lazy"` + `decoding="async"` to product card images on these pages, **except** the first row (first 4 cards on desktop / first 2 on mobile) which become `loading="eager"` + `fetchpriority="high"` so above-the-fold imagery still loads immediately.
+**`src/index.css`** — append at the end:
 
-Files touched:
-- `src/components/home/ProductGrid.tsx`
-- `src/components/home/FeaturedProducts.tsx` (verify)
-- `src/components/home/CategorySection.tsx` (verify)
-- Category page product grid component(s)
-- `src/pages/CategoryBrowser.tsx`
+```css
+/* Mobile performance: disable all motion under 768px */
+@media (max-width: 767px) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+    will-change: auto !important;
+  }
+}
+```
 
-### 3. Defer non-critical global scripts on these pages
-`FacebookPixelTracker`, `GoogleAnalyticsTracker`, `FloatingMusicPlayer`, and `FloatingPromotion` currently mount in the initial bundle from `App.tsx`. Wrap them in a `DeferredMount` that mounts after `requestIdleCallback` (fallback `setTimeout`). Trackers still fire well within analytics tolerance but stop blocking LCP/TBT on the landing pages.
+The existing mobile rule that already disables `.announcement-text` animation stays (redundant but harmless).
 
-### 4. Split the Category page below-the-fold strip
-On `/category/:category`, only the filter bar + first product rows render eagerly. Filters' advanced panels, related-category strips, and the SEO/meta blocks load on scroll via the same `LazyOnVisible` wrapper.
+## What this affects on mobile
+- Announcement bar slide → static (already was)
+- Accordion open/close → instant
+- Sheet/Drawer/Dialog slide-in → instant
+- Hover/focus transitions → instant (mobile has no hover anyway)
+- Skeleton pulse, toast slide, mega menu fade → instant
+- Any Tailwind `transition-*`, `duration-*`, `animate-*` utility → no-op
 
-## Out of scope (untouched)
+## What stays
+- Desktop/tablet (≥768px): fully untouched
+- JS-driven layout, IntersectionObserver lazy mounts, prefetching: untouched
+- `prefers-reduced-motion` rules: untouched
 
-- Product detail, checkout, account, orders, admin — kept as-is.
-- Image format conversion (AVIF/WebP build pipeline) — separate effort.
-- Backend / data fetching changes.
-
-## Technical details
-
-- New `src/components/perf/LazyOnVisible.tsx` — renders a reserved-height placeholder until the wrapper enters viewport (`rootMargin: 300px`), then mounts children. CLS-safe via required `minHeight`.
-- New `src/components/perf/DeferredMount.tsx` — `requestIdleCallback` (fallback `setTimeout(0)`) mount; used in `App.tsx` for trackers + floating widgets.
-- `Index.tsx`: wrap below-fold `<Suspense>` blocks in `<LazyOnVisible>`.
-- Category pages: same wrapper around non-critical sections; image attribute pass on product cards.
-- App.tsx: convert trackers/floating widgets to `lazy()` + `<DeferredMount>`.
-
-## Expected impact on Home, Category, Subcategory
-
-- **LCP**: faster — fewer images and scripts compete with the hero.
-- **TBT / INP**: lower — tracker JS deferred past first paint.
-- **Initial JS bytes**: smaller — below-fold section chunks load only on scroll.
-- **CLS**: unchanged — placeholders reserve height.
+## Out of scope
+No component edits, no Tailwind config changes, no JS animation library removal.

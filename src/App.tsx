@@ -110,14 +110,18 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5,
-      gcTime: 1000 * 60 * 30,
+      gcTime: 1000 * 60 * 60 * 24, // 24h — keep in memory long enough to persist
       refetchOnWindowFocus: false,
       retry: 1,
       throwOnError: false,
-      // placeholderData removed globally — apply per-query where needed
     },
   },
 });
+
+// Persist query cache to localStorage so repeat visits paint real data instantly
+const persister = typeof window !== "undefined"
+  ? createSyncStoragePersister({ storage: window.localStorage, key: "poshplex-rq-cache" })
+  : undefined;
 
 // Shared loading fallback for lazy admin routes
 const LoadingFallback = () => (

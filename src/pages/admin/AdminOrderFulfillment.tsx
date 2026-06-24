@@ -170,15 +170,15 @@ const AdminOrderFulfillment = () => {
 
   const handleSyncAllSteadfast = async () => {
     try {
-      // Fetch candidate orders; filter client-side to avoid fragile PostgREST or/not combos.
+      // Only sync orders that still need an update — skip orders already in a final state.
       const { data: syncData, error } = await supabase
         .from("orders")
         .select("id, tracking_number, consignment_id, order_status")
-        .limit(2000);
+        .or("tracking_number.not.is.null,consignment_id.not.is.null")
+        .not("order_status", "in", "(delivered,cancelled,returned,refunded)");
       if (error) throw error;
-      const FINAL = new Set(["delivered", "cancelled", "returned", "refunded"]);
       const ids = (syncData || [])
-        .filter((o: any) => (o.tracking_number || o.consignment_id) && !FINAL.has(o.order_status))
+        .filter((o: any) => o.tracking_number || o.consignment_id)
         .map((o: any) => o.id);
       if (ids.length === 0) {
         toast.message("No active shipped orders to sync");

@@ -72,13 +72,8 @@ export const setAdvancedMatchingUser = (data: AdvancedMatchingUserData | null) =
       }
     }
     if (data.ph) {
-      // Normalize Bangladesh numbers to E.164 (without leading "+") per Meta spec.
-      // Examples: "01712345678" -> "8801712345678", "+8801712345678" -> "8801712345678".
-      let digits = String(data.ph).replace(/\D/g, '');
-      if (digits.startsWith('00')) digits = digits.slice(2);
-      if (digits.length === 11 && digits.startsWith('01')) digits = '880' + digits.slice(1);
-      else if (digits.length === 10 && digits.startsWith('1')) digits = '880' + digits;
-      if (digits.length >= 10 && digits.length <= 15) clean.ph = digits;
+      const digits = String(data.ph).replace(/\D/g, '');
+      if (digits.length >= 7 && digits.length <= 15) clean.ph = digits;
     }
     if (data.fn && String(data.fn).trim()) clean.fn = String(data.fn).trim();
     if (data.ln && String(data.ln).trim()) clean.ln = String(data.ln).trim();
@@ -160,9 +155,6 @@ export const setupLazyLoading = () => {
   if (_interactionBound || _scriptInjected) return;
   // Early-return if pixel is disabled or missing — don't attach listeners
   if (!_config?.isEnabled || !_config?.pixelId) return;
-  // Pre-mint _fbp so the very first pixel event (and any CAPI mirror) has
-  // a stable Browser ID — fbevents.js will reuse the cookie if present.
-  ensureFbp();
   _interactionBound = true;
 
   const trigger = () => {
@@ -233,110 +225,41 @@ export const captureClickId = () => {
   } catch { /* noop */ }
 };
 
-/**
- * Meta's `_fbp` cookie is normally minted by fbevents.js, but we lazy-load
- * the script — so events fired before/without the script (and all CAPI
- * events for anonymous visitors) miss `fbp`. Mint it ourselves in Meta's
- * spec format: `fb.<subdomain_index>.<creation_time_ms>.<random10digits>`.
- * fbevents.js will reuse the cookie if present, so this is safe.
- */
-const ensureFbp = (): string | undefined => {
-  try {
-    if (typeof window === 'undefined') return undefined;
-    let fbp = getCookie('_fbp');
-    if (fbp) return fbp;
-    const rand = Math.floor(1_000_000_000 + Math.random() * 9_000_000_000);
-    fbp = `fb.1.${Date.now()}.${rand}`;
-    setCookie('_fbp', fbp, 90);
-    return fbp;
-  } catch { return undefined; }
-};
-
-/**
- * Stable anonymous visitor ID, persisted in localStorage. Sent as
- * `external_id` on every event so Meta can stitch a single user across
- * sessions/devices even before login. Once the user authenticates, the
- * real user.id replaces this via setAdvancedMatchingUser().
- */
-const ANON_ID_KEY = 'pp_fb_anon_id';
-const ensureAnonExternalId = (): string | undefined => {
-  try {
-    if (typeof localStorage === 'undefined') return undefined;
-    let id = localStorage.getItem(ANON_ID_KEY);
-    if (!id) {
-      id = uuid();
-      localStorage.setItem(ANON_ID_KEY, id);
-    }
-    return id;
-  } catch { return undefined; }
-};
-
 
 /**
  * Send event to server-side Conversions API for browser+server deduplication.
  * Fired in parallel with fbq — Meta dedupes by (event_name, event_id).
- *
- * `immediate=true` skips the idle deferral and uses `navigator.sendBeacon`
- * when available — required for high-intent events (AddToCart, Checkout,
- * Purchase) where the user often navigates away within ~1s, killing any
- * deferred fetch before it leaves the browser.
  */
 const sendCapi = (
   eventName: string,
   eventId: string,
   customData?: Record<string, unknown>,
-  immediate = false,
 ) => {
-  // Capture event_time NOW (browser moment) so the server mirror uses the
-  // same timestamp as the pixel — Meta requires close event_time alignment
-  // for reliable deduplication.
-  const eventTime = Math.floor(Date.now() / 1000);
-
-  const buildBody = () => ({
-    event_name: eventName,
-    event_id: eventId,
-    event_time: eventTime,
-    event_source_url: typeof window !== 'undefined' ? window.location.href : undefined,
-    user_data: {
-      country: 'bd',
-      ..._userData,
-      fbp: ensureFbp(),
-      fbc: getCookie('_fbc'),
-      external_id: _userData?.external_id || ensureAnonExternalId(),
-    },
-    custom_data: customData,
-    action_source: 'website' as const,
-  });
-
-  const fireBeacon = (): boolean => {
-    try {
-      if (typeof navigator === 'undefined' || !navigator.sendBeacon) return false;
-      const SUPABASE_URL = (import.meta as any).env?.VITE_SUPABASE_URL;
-      const SUPABASE_KEY = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY;
-      if (!SUPABASE_URL || !SUPABASE_KEY) return false;
-      // sendBeacon ignores custom headers, so embed apikey in URL — Supabase
-      // Edge Functions accept ?apikey= for unauthenticated function invokes.
-      const url = `${SUPABASE_URL}/functions/v1/meta-capi?apikey=${encodeURIComponent(SUPABASE_KEY)}`;
-      const blob = new Blob([JSON.stringify(buildBody())], { type: 'application/json' });
-      return navigator.sendBeacon(url, blob);
-    } catch { return false; }
-  };
-
+  // Defer to idle time so CAPI never competes with the initial paint
+  // or critical data fetches for HTTP connections.
   const run = async () => {
     try {
       const { supabase } = await import('@/integrations/supabase/client');
-      await supabase.functions.invoke('meta-capi', { body: buildBody() });
-    } catch { /* silently fail */ }
+      const userData = {
+        ..._userData,
+        fbp: getCookie('_fbp'),
+        fbc: getCookie('_fbc'),
+      };
+      await supabase.functions.invoke('meta-capi', {
+        body: {
+          event_name: eventName,
+          event_id: eventId,
+          event_source_url: typeof window !== 'undefined' ? window.location.href : undefined,
+          user_data: userData,
+          custom_data: customData,
+          action_source: 'website',
+        },
+      });
+    } catch {
+      // Silently fail — CAPI is enhancement, not critical
+    }
   };
-
   if (typeof window === 'undefined') return;
-
-  if (immediate) {
-    // Try beacon first — survives navigation/tab-close. Fall back to fetch.
-    if (!fireBeacon()) void run();
-    return;
-  }
-
   const ric = (window as any).requestIdleCallback as
     | ((cb: () => void, opts?: { timeout: number }) => number)
     | undefined;
@@ -362,17 +285,6 @@ const sanitizeParams = (params: Record<string, any>): Record<string, any> => {
   return out;
 };
 
-// High-intent events: user often navigates away within ~1s, so CAPI must
-// fire immediately (via sendBeacon) instead of waiting for requestIdleCallback.
-const IMMEDIATE_EVENTS = new Set([
-  'AddToCart',
-  'InitiateCheckout',
-  'Purchase',
-  'AddToWishlist',
-  'CompleteRegistration',
-  'Contact',
-]);
-
 /**
  * Dispatch a standard pixel event with Browser+CAPI dedup.
  * Generates one event_id used by both the fbq call and the CAPI mirror.
@@ -381,17 +293,23 @@ const dispatch = (eventName: string, params: Record<string, any>) => {
   const eventId = uuid();
   const clean = sanitizeParams(params);
   safeFbq('track', eventName, clean, { eventID: eventId });
-  void sendCapi(eventName, eventId, clean, IMMEDIATE_EVENTS.has(eventName));
+  // Fire CAPI in background (non-blocking)
+  void sendCapi(eventName, eventId, clean);
 };
 
 // ─── Standard Events ───────────────────────────────────────────
 
+let _firstPageView = true;
 export const trackPageView = () => {
-  // Always mirror PageView to CAPI for full event coverage (≥75% target).
-  // sendCapi is already deferred via requestIdleCallback, so it never
-  // competes with the homepage critical path.
+  // PageView is high-volume; skip CAPI mirror on the very first page load so
+  // the meta-capi edge function never competes with the homepage critical path.
+  // Subsequent SPA navigations still fire CAPI for full coverage.
   const eventId = uuid();
   safeFbq('track', 'PageView', undefined, { eventID: eventId });
+  if (_firstPageView) {
+    _firstPageView = false;
+    return;
+  }
   void sendCapi('PageView', eventId);
 };
 

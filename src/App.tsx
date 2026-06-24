@@ -14,6 +14,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import MobileFooterNav from "./components/navigation/MobileFooterNav";
 import TypographyProvider from "./components/TypographyProvider";
 import DeferredMount from "./components/perf/DeferredMount";
+import { useIsMobile } from "./hooks/use-mobile";
 
 // Non-critical: defer past first paint to lower LCP/TBT on landing pages
 const FacebookPixelTracker = lazy(() => import("./components/tracking/FacebookPixelTracker"));
@@ -122,6 +123,14 @@ const LoadingFallback = () => (
     <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
   </div>
 );
+
+// Desktop-only widgets — skip the chunk download entirely on mobile
+const DesktopOnlyWidgets = () => {
+  const isMobile = useIsMobile();
+  if (isMobile) return null;
+  return <FloatingMusicPlayer />;
+};
+
 
 const App = () => (
   <ErrorBoundary>
@@ -242,7 +251,7 @@ const App = () => (
                 <MobileFooterNav />
                 <DeferredMount delay={1500}>
                   <Suspense fallback={null}>
-                    <FloatingMusicPlayer />
+                    <DesktopOnlyWidgets />
                     <FloatingPromotion />
                   </Suspense>
                 </DeferredMount>

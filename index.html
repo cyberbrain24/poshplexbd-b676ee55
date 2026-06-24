@@ -11,13 +11,13 @@
 
     <link rel="preconnect" href="https://zspmhkzosumopyfmlwvl.supabase.co" crossorigin>
 
-    <!-- Self-hosted Google Fonts (latin only) -->
-    <link rel="preload" href="/fonts/google/1Ptgg87LROyAm3Kz-C8.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/fonts/google/pxiEyp8kv8JHgFVrJJfecg.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="/fonts/google/fonts.css">
+    <!-- Self-hosted Google Fonts (latin only) — desktop/tablet only, mobile uses system fonts -->
+    <link rel="preload" href="/fonts/google/1Ptgg87LROyAm3Kz-C8.woff2" as="font" type="font/woff2" crossorigin media="(min-width: 768px)">
+    <link rel="preload" href="/fonts/google/pxiEyp8kv8JHgFVrJJfecg.woff2" as="font" type="font/woff2" crossorigin media="(min-width: 768px)">
+    <link rel="stylesheet" href="/fonts/google/fonts.css" media="(min-width: 768px)" onload="this.media='(min-width: 768px)'">
 
-    <link rel="preload" href="/fonts/This_is_Fire.ttf" as="font" type="font/ttf" crossorigin>
-    <link rel="preload" href="/fonts/NATOOR.ttf" as="font" type="font/ttf" crossorigin>
+    <link rel="preload" href="/fonts/This_is_Fire.ttf" as="font" type="font/ttf" crossorigin media="(min-width: 768px)">
+    <link rel="preload" href="/fonts/NATOOR.ttf" as="font" type="font/ttf" crossorigin media="(min-width: 768px)">
 
     <meta property="og:type" content="website" />
     

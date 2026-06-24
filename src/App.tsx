@@ -143,7 +143,7 @@ const DesktopOnlyWidgets = () => {
 const App = () => (
   <ErrorBoundary>
     <HelmetProvider>
-      <QueryClientProvider client={queryClient}>
+      <PersistQueryClientProvider client={queryClient} persistOptions={{ persister: persister!, maxAge: 1000 * 60 * 60 * 24, buster: "v1" }}>
         <CartProvider>
           <FavoritesProvider>
             <MusicPlayerProvider>

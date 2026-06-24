@@ -33,7 +33,7 @@ const FloatingMusicPlayer = () => {
   // Admin: bottom-right. Storefront: left-middle.
   const wrapperPos = isAdmin
     ? "fixed right-4 sm:right-6 bottom-24 sm:bottom-24 z-[71] flex flex-row-reverse items-center gap-2"
-    : "fixed left-3 sm:left-4 top-1/2 -translate-y-1/2 z-40 flex items-center gap-2";
+    : "hidden md:flex fixed left-3 sm:left-4 top-1/2 -translate-y-1/2 z-40 items-center gap-2";
 
   return (
     <div ref={wrapperRef} className={wrapperPos}>

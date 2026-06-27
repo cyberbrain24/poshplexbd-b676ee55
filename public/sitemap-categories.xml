@@ -13,6 +13,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://poshplexbd.com/category/combo</loc>
+    <lastmod>2026-06-24</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://poshplexbd.com/category/fifa-edition</loc>
     <lastmod>2026-06-20</lastmod>
     <changefreq>daily</changefreq>
@@ -20,12 +26,6 @@
   </url>
   <url>
     <loc>https://poshplexbd.com/category/accessories</loc>
-    <lastmod>2026-06-20</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://poshplexbd.com/category/combo</loc>
     <lastmod>2026-06-20</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -85,24 +85,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://poshplexbd.com/category/girls-crop-top-%26-baggy</loc>
-    <lastmod>2026-06-20</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://poshplexbd.com/category/tank-top-%26-baggy</loc>
-    <lastmod>2026-06-20</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://poshplexbd.com/category/drop-%26-baggy</loc>
-    <lastmod>2026-06-20</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://poshplexbd.com/category/solid-baggy-joggers</loc>
     <lastmod>2026-06-20</lastmod>
     <changefreq>daily</changefreq>
@@ -111,6 +93,18 @@
   <url>
     <loc>https://poshplexbd.com/category/bandana</loc>
     <lastmod>2026-06-20</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://poshplexbd.com/category/drop-%26-baggy</loc>
+    <lastmod>2026-06-24</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://poshplexbd.com/category/tank-top-%26-baggy</loc>
+    <lastmod>2026-06-24</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>

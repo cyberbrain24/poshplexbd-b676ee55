@@ -175,7 +175,7 @@ const AdminOrderFulfillment = () => {
         .from("orders")
         .select("id, tracking_number, consignment_id, order_status")
         .or("tracking_number.not.is.null,consignment_id.not.is.null")
-        .not("order_status", "in", "(delivered,cancelled,returned,refunded)");
+        .not("order_status", "in", "(delivered,cancelled,returned,rto)");
       if (error) throw error;
       const ids = (syncData || [])
         .filter((o: any) => o.tracking_number || o.consignment_id)

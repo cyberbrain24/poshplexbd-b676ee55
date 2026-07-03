@@ -1,0 +1,92 @@
+{
+  "version": 1,
+  "sdk_version": "0.20.0",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "none"
+  },
+  "mcp": {
+    "server": {
+      "name": "poshplex-mcp",
+      "version": "0.1.0",
+      "title": "POSHPLEX MCP"
+    },
+    "tools": [
+      {
+        "name": "list_products",
+        "title": "List products",
+        "description": "List active POSHPLEX products with images, variants, category, and brand. Supports pagination and optional category slug filter.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "description": "Max products (default 50)"
+            },
+            "offset": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Pagination offset (default 0)"
+            },
+            "category_slug": {
+              "type": "string",
+              "description": "Filter by category slug"
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_product",
+        "title": "Get product",
+        "description": "Get a single POSHPLEX product by its UUID, including all images and variants.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Product UUID"
+            }
+          },
+          "required": [
+            "id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_categories",
+        "title": "List categories",
+        "description": "List all active POSHPLEX product categories with their slugs.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}

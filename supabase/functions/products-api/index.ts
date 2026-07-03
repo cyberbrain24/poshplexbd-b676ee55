@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
           images:product_images(id, image_url, thumb_url, medium_url, large_url, is_main, sort_order),
           variants:product_variants(id, sku, selling_price, stock_quantity, image_url,
             color:colors(id, name, hex_code),
-            size:sizes(id, name),
+            size:sizes(id, label),
             material:materials(id, name))
         `)
         .eq("id", parts[1])
@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
           brand:brands(id, name),
           images:product_images(image_url, thumb_url, medium_url, large_url, is_main, sort_order),
           variants:product_variants(id, sku, selling_price, stock_quantity, image_url,
-            color:colors(name, hex_code), size:sizes(name), material:materials(name))
+            color:colors(name, hex_code), size:sizes(label), material:materials(name))
         `, { count: "exact" })
         .eq("is_active", true)
         .order("created_at", { ascending: false })

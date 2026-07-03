@@ -114,13 +114,283 @@ var list_categories_default = defineTool3({
   }
 });
 
+// src/lib/mcp/tools/db-select.ts
+import { defineTool as defineTool4 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z3 } from "npm:zod@^3.23.8";
+
+// src/lib/mcp/_helpers.ts
+import { createClient as createClient4 } from "npm:@supabase/supabase-js@^2.94.1";
+var cached = null;
+function getServiceClient() {
+  if (cached) return cached;
+  cached = createClient4(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    { auth: { persistSession: false, autoRefreshToken: false } }
+  );
+  return cached;
+}
+function requireAdminKey(api_key) {
+  const expected = process.env.MCP_ADMIN_KEY;
+  if (!expected) {
+    return { ok: false, error: { content: [{ type: "text", text: "Server misconfigured: MCP_ADMIN_KEY not set" }], isError: true } };
+  }
+  if (!api_key || api_key !== expected) {
+    return { ok: false, error: { content: [{ type: "text", text: "Unauthorized: invalid or missing api_key" }], isError: true } };
+  }
+  return { ok: true };
+}
+function applyFilters(query, filters) {
+  if (!filters) return query;
+  for (const [k, v] of Object.entries(filters)) {
+    if (Array.isArray(v)) query = query.in(k, v);
+    else if (v === null) query = query.is(k, null);
+    else query = query.eq(k, v);
+  }
+  return query;
+}
+
+// src/lib/mcp/tools/db-select.ts
+var db_select_default = defineTool4({
+  name: "db_select",
+  title: "Read rows from any table",
+  description: "Read rows from any table in the POSHPLEX database. Supports select columns, equality/IN filters, order, and range. No auth required for reads.",
+  inputSchema: {
+    table: z3.string().describe("Table name (e.g. 'products', 'orders', 'customers')."),
+    select: z3.string().optional().describe("PostgREST select string. Default '*'. Can include joins like '*,category:categories(name,slug)'."),
+    filters: z3.record(z3.any()).optional().describe("Object of column => value (equality) or column => array (IN). null matches IS NULL."),
+    order_by: z3.string().optional().describe("Column to order by."),
+    ascending: z3.boolean().optional().describe("Ascending order (default false)."),
+    limit: z3.number().int().min(1).max(500).optional().describe("Max rows (default 50)."),
+    offset: z3.number().int().min(0).optional().describe("Pagination offset (default 0).")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ table, select, filters, order_by, ascending, limit, offset }) => {
+    const supabase = getServiceClient();
+    const lim = limit ?? 50;
+    const off = offset ?? 0;
+    let query = supabase.from(table).select(select ?? "*", { count: "exact" }).range(off, off + lim - 1);
+    if (order_by) query = query.order(order_by, { ascending: ascending ?? false });
+    query = applyFilters(query, filters);
+    const { data, count, error } = await query;
+    if (error) return { content: [{ type: "text", text: `Error: ${error.message}` }], isError: true };
+    return {
+      content: [{ type: "text", text: `Returned ${data?.length ?? 0} of ${count ?? 0} rows from ${table}.` }],
+      structuredContent: { total: count ?? 0, limit: lim, offset: off, rows: data ?? [] }
+    };
+  }
+});
+
+// src/lib/mcp/tools/db-insert.ts
+import { defineTool as defineTool5 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z4 } from "npm:zod@^3.23.8";
+var db_insert_default = defineTool5({
+  name: "db_insert",
+  title: "Insert rows into any table",
+  description: "Insert one or many rows into any POSHPLEX table (products, categories, orders, inventory, etc). Returns inserted rows.",
+  inputSchema: {
+    api_key: z4.string().describe("MCP_ADMIN_KEY."),
+    table: z4.string().describe("Target table."),
+    rows: z4.union([z4.record(z4.any()), z4.array(z4.record(z4.any()))]).describe("Single row object or array of row objects."),
+    returning: z4.string().optional().describe("PostgREST select for returned rows (default '*').")
+  },
+  annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+  handler: async ({ api_key, table, rows, returning }) => {
+    const auth = requireAdminKey(api_key);
+    if (!auth.ok) return auth.error;
+    const supabase = getServiceClient();
+    const { data, error } = await supabase.from(table).insert(rows).select(returning ?? "*");
+    if (error) return { content: [{ type: "text", text: `Error: ${error.message}` }], isError: true };
+    return {
+      content: [{ type: "text", text: `Inserted ${data?.length ?? 0} row(s) into ${table}.` }],
+      structuredContent: { inserted: data ?? [] }
+    };
+  }
+});
+
+// src/lib/mcp/tools/db-update.ts
+import { defineTool as defineTool6 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z5 } from "npm:zod@^3.23.8";
+var db_update_default = defineTool6({
+  name: "db_update",
+  title: "Update rows in any table",
+  description: "Update rows matching filters in any POSHPLEX table. Requires filters \u2014 refuses to run without them to prevent full-table updates.",
+  inputSchema: {
+    api_key: z5.string().describe("MCP_ADMIN_KEY."),
+    table: z5.string().describe("Target table."),
+    values: z5.record(z5.any()).describe("Column => new value updates."),
+    filters: z5.record(z5.any()).describe("Filters (equality / IN) \u2014 REQUIRED. Prevents accidental full-table updates."),
+    returning: z5.string().optional().describe("PostgREST select for returned rows (default '*').")
+  },
+  annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
+  handler: async ({ api_key, table, values, filters, returning }) => {
+    const auth = requireAdminKey(api_key);
+    if (!auth.ok) return auth.error;
+    if (!filters || Object.keys(filters).length === 0) {
+      return { content: [{ type: "text", text: "Refusing to update: filters are required." }], isError: true };
+    }
+    const supabase = getServiceClient();
+    let query = supabase.from(table).update(values);
+    query = applyFilters(query, filters);
+    const { data, error } = await query.select(returning ?? "*");
+    if (error) return { content: [{ type: "text", text: `Error: ${error.message}` }], isError: true };
+    return {
+      content: [{ type: "text", text: `Updated ${data?.length ?? 0} row(s) in ${table}.` }],
+      structuredContent: { updated: data ?? [] }
+    };
+  }
+});
+
+// src/lib/mcp/tools/db-delete.ts
+import { defineTool as defineTool7 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z6 } from "npm:zod@^3.23.8";
+var db_delete_default = defineTool7({
+  name: "db_delete",
+  title: "Delete rows from any table",
+  description: "Delete rows matching filters in any POSHPLEX table. Requires filters \u2014 refuses to run without them to prevent full-table deletes.",
+  inputSchema: {
+    api_key: z6.string().describe("MCP_ADMIN_KEY."),
+    table: z6.string().describe("Target table."),
+    filters: z6.record(z6.any()).describe("Filters (equality / IN) \u2014 REQUIRED. Prevents accidental full-table deletes."),
+    returning: z6.string().optional().describe("PostgREST select for returned rows (default 'id').")
+  },
+  annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ api_key, table, filters, returning }) => {
+    const auth = requireAdminKey(api_key);
+    if (!auth.ok) return auth.error;
+    if (!filters || Object.keys(filters).length === 0) {
+      return { content: [{ type: "text", text: "Refusing to delete: filters are required." }], isError: true };
+    }
+    const supabase = getServiceClient();
+    let query = supabase.from(table).delete();
+    query = applyFilters(query, filters);
+    const { data, error } = await query.select(returning ?? "id");
+    if (error) return { content: [{ type: "text", text: `Error: ${error.message}` }], isError: true };
+    return {
+      content: [{ type: "text", text: `Deleted ${data?.length ?? 0} row(s) from ${table}.` }],
+      structuredContent: { deleted: data ?? [] }
+    };
+  }
+});
+
+// src/lib/mcp/tools/db-rpc.ts
+import { defineTool as defineTool8 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z7 } from "npm:zod@^3.23.8";
+var db_rpc_default = defineTool8({
+  name: "db_rpc",
+  title: "Call a database function",
+  description: "Invoke a Postgres function (RPC) in the public schema \u2014 e.g. create_order_atomic, record_order_payment_atomic, upsert_checkout_customer, track_orders_lookup.",
+  inputSchema: {
+    api_key: z7.string().describe("MCP_ADMIN_KEY."),
+    function: z7.string().describe("Function name."),
+    args: z7.record(z7.any()).optional().describe("Named arguments object.")
+  },
+  annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
+  handler: async ({ api_key, function: fn, args }) => {
+    const auth = requireAdminKey(api_key);
+    if (!auth.ok) return auth.error;
+    const supabase = getServiceClient();
+    const { data, error } = await supabase.rpc(fn, args ?? {});
+    if (error) return { content: [{ type: "text", text: `Error: ${error.message}` }], isError: true };
+    return {
+      content: [{ type: "text", text: `Called ${fn}.` }],
+      structuredContent: { result: data }
+    };
+  }
+});
+
+// src/lib/mcp/tools/storage-upload-from-url.ts
+import { defineTool as defineTool9 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z8 } from "npm:zod@^3.23.8";
+var storage_upload_from_url_default = defineTool9({
+  name: "storage_upload_from_url",
+  title: "Upload image from URL to storage",
+  description: "Download a remote file and upload it to a Supabase storage bucket. Returns the public URL. Typical use: upload product images by URL.",
+  inputSchema: {
+    api_key: z8.string().describe("MCP_ADMIN_KEY."),
+    bucket: z8.string().describe("Storage bucket (e.g. 'product-images', 'media', 'review-images')."),
+    source_url: z8.string().url().describe("Public URL to fetch bytes from."),
+    path: z8.string().describe("Destination path inside the bucket (e.g. 'imports/2026/shirt-red.jpg')."),
+    content_type: z8.string().optional().describe("Override MIME type (default: from Content-Type header)."),
+    upsert: z8.boolean().optional().describe("Overwrite if the path exists (default false).")
+  },
+  annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+  handler: async ({ api_key, bucket, source_url, path, content_type, upsert }) => {
+    const auth = requireAdminKey(api_key);
+    if (!auth.ok) return auth.error;
+    const res = await fetch(source_url);
+    if (!res.ok) {
+      return { content: [{ type: "text", text: `Fetch failed: ${res.status} ${res.statusText}` }], isError: true };
+    }
+    const buf = new Uint8Array(await res.arrayBuffer());
+    const mime = content_type || res.headers.get("content-type") || "application/octet-stream";
+    const supabase = getServiceClient();
+    const { error } = await supabase.storage.from(bucket).upload(path, buf, { contentType: mime, upsert: upsert ?? false });
+    if (error) return { content: [{ type: "text", text: `Upload error: ${error.message}` }], isError: true };
+    const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+    return {
+      content: [{ type: "text", text: `Uploaded to ${data.publicUrl}` }],
+      structuredContent: { bucket, path, public_url: data.publicUrl, content_type: mime, bytes: buf.length }
+    };
+  }
+});
+
+// src/lib/mcp/tools/schema-describe.ts
+import { defineTool as defineTool10 } from "npm:@lovable.dev/mcp-js@0.20.0";
+import { z as z9 } from "npm:zod@^3.23.8";
+var schema_describe_default = defineTool10({
+  name: "schema_describe",
+  title: "Describe database schema",
+  description: "List tables in the public schema, or return columns for a specific table (name, type, nullable, default). Use this to discover the shape of the database before calling db_insert/update.",
+  inputSchema: {
+    table: z9.string().optional().describe("Optional table name. Omit to list all tables.")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ table }) => {
+    const supabase = getServiceClient();
+    if (!table) {
+      const { data: data2, error: error2 } = await supabase.from("information_schema.tables").select("table_name").eq("table_schema", "public").order("table_name");
+      if (error2) return { content: [{ type: "text", text: `Error: ${error2.message}` }], isError: true };
+      const tables = (data2 ?? []).map((r) => r.table_name);
+      return {
+        content: [{ type: "text", text: `Found ${tables.length} tables.` }],
+        structuredContent: { tables }
+      };
+    }
+    const { data, error } = await supabase.from("information_schema.columns").select("column_name, data_type, is_nullable, column_default").eq("table_schema", "public").eq("table_name", table).order("ordinal_position");
+    if (error) return { content: [{ type: "text", text: `Error: ${error.message}` }], isError: true };
+    return {
+      content: [{ type: "text", text: `${data?.length ?? 0} columns in ${table}.` }],
+      structuredContent: { table, columns: data ?? [] }
+    };
+  }
+});
+
 // src/lib/mcp/index.ts
 var mcp_default = defineMcp({
   name: "poshplex-mcp",
-  title: "POSHPLEX MCP",
-  version: "0.1.0",
-  instructions: "Read-only access to the POSHPLEX product catalog. Use `list_categories` to discover categories, `list_products` to browse (optionally filtering by category slug), and `get_product` to fetch full details for a single product by UUID.",
-  tools: [list_products_default, get_product_default, list_categories_default]
+  title: "POSHPLEX MCP (Full Access)",
+  version: "0.2.0",
+  instructions: `Full read/write access to the POSHPLEX site (Lovable Cloud / Supabase).
+
+Reads (no api_key needed): list_products, get_product, list_categories, db_select, schema_describe.
+Writes (require api_key = MCP_ADMIN_KEY): db_insert, db_update, db_delete, db_rpc, storage_upload_from_url.
+
+Discover the schema with schema_describe before mutating unfamiliar tables. Use db_select to read anything (products, orders, customers, inventory, transactions, promotions, etc). Use db_insert/update/delete for CRUD. Use db_rpc to call business logic functions like create_order_atomic, record_order_payment_atomic, upsert_checkout_customer. Use storage_upload_from_url to import images (bucket 'product-images' for products).
+
+Currency is Bangladeshi Taka (\u09F3). Products use UUIDs. Prices are numeric.`,
+  tools: [
+    list_products_default,
+    get_product_default,
+    list_categories_default,
+    db_select_default,
+    db_insert_default,
+    db_update_default,
+    db_delete_default,
+    db_rpc_default,
+    storage_upload_from_url_default,
+    schema_describe_default
+  ]
 });
 
 // lovable-mcp-supabase-entry.ts

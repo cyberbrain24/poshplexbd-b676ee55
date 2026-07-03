@@ -14,8 +14,8 @@ export default defineTool({
   },
   annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ api_key, table, filters, returning }) => {
-    const auth = requireAdminKey(api_key);
-    if (!auth.ok) return auth.error;
+    const authError = requireAdminKey(api_key);
+    if (authError) return authError;
     if (!filters || Object.keys(filters).length === 0) {
       return { content: [{ type: "text", text: "Refusing to delete: filters are required." }], isError: true };
     }

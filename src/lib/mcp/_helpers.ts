@@ -12,15 +12,15 @@ export function getServiceClient(): SupabaseClient {
   return cached;
 }
 
-export function requireAdminKey(api_key: string | undefined): { ok: true } | { ok: false; error: any } {
+export function requireAdminKey(api_key: string | undefined): { content: { type: "text"; text: string }[]; isError: true } | null {
   const expected = process.env.MCP_ADMIN_KEY;
   if (!expected) {
-    return { ok: false, error: { content: [{ type: "text", text: "Server misconfigured: MCP_ADMIN_KEY not set" }], isError: true } };
+    return { content: [{ type: "text", text: "Server misconfigured: MCP_ADMIN_KEY not set" }], isError: true };
   }
   if (!api_key || api_key !== expected) {
-    return { ok: false, error: { content: [{ type: "text", text: "Unauthorized: invalid or missing api_key" }], isError: true } };
+    return { content: [{ type: "text", text: "Unauthorized: invalid or missing api_key" }], isError: true };
   }
-  return { ok: true };
+  return null;
 }
 
 export function applyFilters(query: any, filters?: Record<string, unknown>) {

@@ -17,8 +17,8 @@ export default defineTool({
   },
   annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
   handler: async ({ api_key, bucket, source_url, path, content_type, upsert }) => {
-    const auth = requireAdminKey(api_key);
-    if (!auth.ok) return auth.error;
+    const authError = requireAdminKey(api_key);
+    if (authError) return authError;
     const res = await fetch(source_url);
     if (!res.ok) {
       return { content: [{ type: "text", text: `Fetch failed: ${res.status} ${res.statusText}` }], isError: true };

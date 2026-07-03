@@ -15,8 +15,8 @@ export default defineTool({
   },
   annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
   handler: async ({ api_key, table, rows, returning }) => {
-    const auth = requireAdminKey(api_key);
-    if (!auth.ok) return auth.error;
+    const authError = requireAdminKey(api_key);
+    if (authError) return authError;
     const supabase = getServiceClient();
     const { data, error } = await supabase.from(table).insert(rows as any).select(returning ?? "*");
     if (error) return { content: [{ type: "text", text: `Error: ${error.message}` }], isError: true };

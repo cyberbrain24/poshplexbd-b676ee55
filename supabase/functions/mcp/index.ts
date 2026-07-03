@@ -133,12 +133,12 @@ function getServiceClient() {
 function requireAdminKey(api_key) {
   const expected = process.env.MCP_ADMIN_KEY;
   if (!expected) {
-    return { ok: false, error: { content: [{ type: "text", text: "Server misconfigured: MCP_ADMIN_KEY not set" }], isError: true } };
+    return { content: [{ type: "text", text: "Server misconfigured: MCP_ADMIN_KEY not set" }], isError: true };
   }
   if (!api_key || api_key !== expected) {
-    return { ok: false, error: { content: [{ type: "text", text: "Unauthorized: invalid or missing api_key" }], isError: true } };
+    return { content: [{ type: "text", text: "Unauthorized: invalid or missing api_key" }], isError: true };
   }
-  return { ok: true };
+  return null;
 }
 function applyFilters(query, filters) {
   if (!filters) return query;
@@ -196,8 +196,8 @@ var db_insert_default = defineTool5({
   },
   annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
   handler: async ({ api_key, table, rows, returning }) => {
-    const auth = requireAdminKey(api_key);
-    if (!auth.ok) return auth.error;
+    const authError = requireAdminKey(api_key);
+    if (authError) return authError;
     const supabase = getServiceClient();
     const { data, error } = await supabase.from(table).insert(rows).select(returning ?? "*");
     if (error) return { content: [{ type: "text", text: `Error: ${error.message}` }], isError: true };
@@ -224,8 +224,8 @@ var db_update_default = defineTool6({
   },
   annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
   handler: async ({ api_key, table, values, filters, returning }) => {
-    const auth = requireAdminKey(api_key);
-    if (!auth.ok) return auth.error;
+    const authError = requireAdminKey(api_key);
+    if (authError) return authError;
     if (!filters || Object.keys(filters).length === 0) {
       return { content: [{ type: "text", text: "Refusing to update: filters are required." }], isError: true };
     }
@@ -256,8 +256,8 @@ var db_delete_default = defineTool7({
   },
   annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ api_key, table, filters, returning }) => {
-    const auth = requireAdminKey(api_key);
-    if (!auth.ok) return auth.error;
+    const authError = requireAdminKey(api_key);
+    if (authError) return authError;
     if (!filters || Object.keys(filters).length === 0) {
       return { content: [{ type: "text", text: "Refusing to delete: filters are required." }], isError: true };
     }
@@ -287,8 +287,8 @@ var db_rpc_default = defineTool8({
   },
   annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
   handler: async ({ api_key, function: fn, args }) => {
-    const auth = requireAdminKey(api_key);
-    if (!auth.ok) return auth.error;
+    const authError = requireAdminKey(api_key);
+    if (authError) return authError;
     const supabase = getServiceClient();
     const { data, error } = await supabase.rpc(fn, args ?? {});
     if (error) return { content: [{ type: "text", text: `Error: ${error.message}` }], isError: true };
@@ -316,8 +316,8 @@ var storage_upload_from_url_default = defineTool9({
   },
   annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
   handler: async ({ api_key, bucket, source_url, path, content_type, upsert }) => {
-    const auth = requireAdminKey(api_key);
-    if (!auth.ok) return auth.error;
+    const authError = requireAdminKey(api_key);
+    if (authError) return authError;
     const res = await fetch(source_url);
     if (!res.ok) {
       return { content: [{ type: "text", text: `Fetch failed: ${res.status} ${res.statusText}` }], isError: true };

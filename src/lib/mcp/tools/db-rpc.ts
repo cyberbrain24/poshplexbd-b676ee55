@@ -14,8 +14,8 @@ export default defineTool({
   },
   annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
   handler: async ({ api_key, function: fn, args }) => {
-    const auth = requireAdminKey(api_key);
-    if (!auth.ok) return auth.error;
+    const authError = requireAdminKey(api_key);
+    if (authError) return authError;
     const supabase = getServiceClient();
     const { data, error } = await supabase.rpc(fn, args ?? {});
     if (error) return { content: [{ type: "text", text: `Error: ${error.message}` }], isError: true };

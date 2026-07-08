@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import ScrollToTop from "./components/ScrollToTop";
-import ProtectedRoute from "./components/ProtectedRoute";
 import { CartProvider } from "./contexts/CartContext";
 import { FavoritesProvider } from "./contexts/FavoritesContext";
 import { MusicPlayerProvider } from "./contexts/MusicPlayerContext";
@@ -52,50 +51,10 @@ const Membership = lazy(() => import("./pages/Membership"));
 const Favorites = lazy(() => import("./pages/Favorites"));
 const CustomerReviews = lazy(() => import("./pages/CustomerReviews"));
 
-// Admin pages - lazy loaded (separate chunk, never downloaded by storefront users)
-const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
-const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
-const AdminProducts = lazy(() => import("./pages/admin/AdminProducts"));
+// Admin panel — a single isolated module. Everything under /admin/* lives in
+// its own chunk and is never downloaded by storefront visitors.
+const AdminApp = lazy(() => import("./apps/admin/AdminApp"));
 
-const AdminColors = lazy(() => import("./pages/admin/AdminColors"));
-const AdminSizes = lazy(() => import("./pages/admin/AdminSizes"));
-const AdminMaterials = lazy(() => import("./pages/admin/AdminMaterials"));
-const AdminCustomVariants = lazy(() => import("./pages/admin/AdminCustomVariants"));
-const AdminProductAttributes = lazy(() => import("./pages/admin/AdminProductAttributes"));
-const AdminSizeGuides = lazy(() => import("./pages/admin/AdminSizeGuides"));
-const AdminCareInstructions = lazy(() => import("./pages/admin/AdminCareInstructions"));
-const AdminCategories = lazy(() => import("./pages/admin/AdminCategories"));
-const AdminBrands = lazy(() => import("./pages/admin/AdminBrands"));
-const AdminAccounts = lazy(() => import("./pages/admin/AdminAccounts"));
-const AdminAccountsList = lazy(() => import("./pages/admin/AdminAccountsList"));
-const AdminIncomeCategories = lazy(() => import("./pages/admin/AdminIncomeCategories"));
-const AdminExpenseCategories = lazy(() => import("./pages/admin/AdminExpenseCategories"));
-const AdminCustomers = lazy(() => import("./pages/admin/AdminCustomers"));
-const AdminDivisions = lazy(() => import("./pages/admin/AdminDivisions"));
-const AdminThanas = lazy(() => import("./pages/admin/AdminThanas"));
-const AdminCustomerTypes = lazy(() => import("./pages/admin/AdminCustomerTypes"));
-const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
-const AdminAddOrder = lazy(() => import("./pages/admin/AdminAddOrder"));
-const AdminOrderFulfillment = lazy(() => import("./pages/admin/AdminOrderFulfillment"));
-const AdminPaymentMethods = lazy(() => import("./pages/admin/AdminPaymentMethods"));
-const AdminReviews = lazy(() => import("./pages/admin/AdminReviews"));
-const AdminMedia = lazy(() => import("./pages/admin/AdminMedia"));
-const AdminPromoCodes = lazy(() => import("./pages/admin/AdminPromoCodes"));
-
-const AdminSiteSettings = lazy(() => import("./pages/admin/AdminSiteSettings"));
-const AdminBulkUpload = lazy(() => import("./pages/admin/AdminBulkUpload"));
-const AdminMusic = lazy(() => import("./pages/admin/AdminMusic"));
-
-
-
-const MarketingLayout = lazy(() => import("./pages/admin/marketing/MarketingLayout"));
-const MarketingOverview = lazy(() => import("./pages/admin/marketing/MarketingOverview"));
-const MetaPixelSettings = lazy(() => import("./pages/admin/marketing/MetaPixelSettings"));
-const MetaCapiSettings = lazy(() => import("./pages/admin/marketing/MetaCapiSettings"));
-const GA4Settings = lazy(() => import("./pages/admin/marketing/GA4Settings"));
-
-
-const SteadfastSettings = lazy(() => import("./pages/admin/marketing/SteadfastSettings"));
 
 
 const queryClient = new QueryClient({

@@ -37,7 +37,7 @@ const Index = () => {
       
       <main className="-mt-[1px]">
         <HeroSection />
-        <div className="px-4 md:px-8 mt-4"><PromotionSlot placement="home_top" /></div>
+        
         <Suspense fallback={<GalleryFallback />}>
           <CategorySection />
         </Suspense>

@@ -20,7 +20,7 @@ import { useIsMobile } from "./hooks/use-mobile";
 const FacebookPixelTracker = lazy(() => import("./components/tracking/FacebookPixelTracker"));
 const GoogleAnalyticsTracker = lazy(() => import("./components/tracking/GoogleAnalyticsTracker"));
 const FloatingMusicPlayer = lazy(() => import("./components/music/FloatingMusicPlayer"));
-const FloatingPromotion = lazy(() => import("./components/promotions/FloatingPromotion"));
+
 
 
 import NotFound from "./pages/NotFound";

@@ -89,7 +89,7 @@ const AdminSMS = lazy(() => import("./pages/admin/AdminSMS"));
 const AdminEmail = lazy(() => import("./pages/admin/AdminEmail"));
 const EmailUnsubscribe = lazy(() => import("./pages/EmailUnsubscribe"));
 
-const AdminNotes = lazy(() => import("./pages/admin/AdminNotes"));
+
 const MarketingLayout = lazy(() => import("./pages/admin/marketing/MarketingLayout"));
 const MarketingOverview = lazy(() => import("./pages/admin/marketing/MarketingOverview"));
 const MetaPixelSettings = lazy(() => import("./pages/admin/marketing/MetaPixelSettings"));

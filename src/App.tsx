@@ -227,7 +227,7 @@ const App = () => (
                     <Route path="music" element={<AdminMusic />} />
                     <Route path="sms" element={<AdminSMS />} />
                     <Route path="email" element={<AdminEmail />} />
-                    <Route path="notes" element={<AdminNotes />} />
+                    
                     <Route path="site-settings" element={<AdminSiteSettings />} />
                     <Route path="marketing" element={<MarketingLayout />}>
                       <Route index element={<MarketingOverview />} />

@@ -151,13 +151,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Fire-and-forget welcome SMS (won't block account creation if it fails)
-    try {
-      await sendByEvent(supabase, "account_created", phone, { name: name || "Customer", phone });
-    } catch (smsErr) {
-      console.error("Welcome SMS failed:", smsErr);
-    }
-
     return new Response(
       JSON.stringify({ 
         success: true, 

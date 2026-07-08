@@ -1,5 +1,5 @@
-# Backend lives on Lovable Cloud — don't ship it to Vercel
-supabase/
+# Backend lives on Lovable Cloud — don't ship the root backend folder to Vercel
+/supabase/
 .lovable/
 
 # Dev/tooling

@@ -36,15 +36,6 @@ export const adminRouteLoaders: Record<string, Loader> = {
   
   "/admin/marketing/steadfast": () => import("@/pages/admin/marketing/SteadfastSettings"),
   
-  "/admin/reports": () => import("@/pages/admin/reports/ReportsOverview"),
-  "/admin/reports/orders": () => import("@/pages/admin/reports/OrdersReport"),
-  "/admin/reports/financial": () => import("@/pages/admin/reports/FinancialReport"),
-  "/admin/reports/customers": () => import("@/pages/admin/reports/CustomersReport"),
-  "/admin/reports/products": () => import("@/pages/admin/reports/ProductsReport"),
-  "/admin/reports/inventory": () => import("@/pages/admin/reports/InventoryReport"),
-  "/admin/reports/promos": () => import("@/pages/admin/reports/PromosReport"),
-  "/admin/reports/reviews": () => import("@/pages/admin/reports/ReviewsReport"),
-  "/admin/email": () => import("@/pages/admin/AdminEmail"),
 };
 
 const prefetched = new Set<string>();

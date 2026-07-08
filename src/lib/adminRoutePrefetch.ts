@@ -35,7 +35,7 @@ export const adminRouteLoaders: Record<string, Loader> = {
   "/admin/marketing/ga4": () => import("@/pages/admin/marketing/GA4Settings"),
   
   "/admin/marketing/steadfast": () => import("@/pages/admin/marketing/SteadfastSettings"),
-  "/admin/docs": () => import("@/pages/admin/docs/DocsIndex"),
+  
   "/admin/reports": () => import("@/pages/admin/reports/ReportsOverview"),
   "/admin/reports/orders": () => import("@/pages/admin/reports/OrdersReport"),
   "/admin/reports/financial": () => import("@/pages/admin/reports/FinancialReport"),

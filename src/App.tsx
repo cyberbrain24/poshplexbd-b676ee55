@@ -89,7 +89,7 @@ const AdminSMS = lazy(() => import("./pages/admin/AdminSMS"));
 const AdminEmail = lazy(() => import("./pages/admin/AdminEmail"));
 const EmailUnsubscribe = lazy(() => import("./pages/EmailUnsubscribe"));
 
-const AdminNotes = lazy(() => import("./pages/admin/AdminNotes"));
+
 const MarketingLayout = lazy(() => import("./pages/admin/marketing/MarketingLayout"));
 const MarketingOverview = lazy(() => import("./pages/admin/marketing/MarketingOverview"));
 const MetaPixelSettings = lazy(() => import("./pages/admin/marketing/MetaPixelSettings"));
@@ -98,8 +98,7 @@ const GA4Settings = lazy(() => import("./pages/admin/marketing/GA4Settings"));
 
 
 const SteadfastSettings = lazy(() => import("./pages/admin/marketing/SteadfastSettings"));
-const DocsIndex = lazy(() => import("./pages/admin/docs/DocsIndex"));
-const DocPage = lazy(() => import("./pages/admin/docs/DocPage"));
+
 const ReportsOverview = lazy(() => import("./pages/admin/reports/ReportsOverview"));
 const OrdersReport = lazy(() => import("./pages/admin/reports/OrdersReport"));
 const FinancialReport = lazy(() => import("./pages/admin/reports/FinancialReport"));
@@ -228,7 +227,7 @@ const App = () => (
                     <Route path="music" element={<AdminMusic />} />
                     <Route path="sms" element={<AdminSMS />} />
                     <Route path="email" element={<AdminEmail />} />
-                    <Route path="notes" element={<AdminNotes />} />
+                    
                     <Route path="site-settings" element={<AdminSiteSettings />} />
                     <Route path="marketing" element={<MarketingLayout />}>
                       <Route index element={<MarketingOverview />} />
@@ -239,8 +238,6 @@ const App = () => (
 
                       <Route path="steadfast" element={<SteadfastSettings />} />
                     </Route>
-                    <Route path="docs" element={<DocsIndex />} />
-                    <Route path="docs/:slug" element={<DocPage />} />
                     <Route path="reports" element={<ReportsOverview />} />
                     <Route path="reports/orders" element={<OrdersReport />} />
                     <Route path="reports/financial" element={<FinancialReport />} />

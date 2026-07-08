@@ -6,8 +6,8 @@ import {
   LayoutDashboard, ArrowLeft, ChevronDown, Wallet, CreditCard, TrendingUp,
   TrendingDown, Users, MapPin, Map, Crown, ShoppingCart, ExternalLink,
   LucideIcon, RefreshCw, MessageSquare, Image, Tag, Settings, Send,
-  Upload, Menu, X, Music, StickyNote, Megaphone, Facebook, Server, BarChart3, LayoutGrid,
-  FileText, BarChart2, Mail, MessageCircle, Instagram, MessagesSquare, Truck, Plug, PackageCheck, PlusCircle,
+  Upload, Menu, X, Music, Megaphone, Facebook, Server, BarChart3, LayoutGrid,
+  BarChart2, Mail, MessageCircle, Instagram, MessagesSquare, Truck, Plug, PackageCheck, PlusCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -237,8 +237,6 @@ const AdminSidebar = () => {
         {renderCollapsible(Users, "Customer Management", customerManagementItems, openGroup === 'customer', () => toggleGroup('customer'), isCustomerMgmtActive)}
         {renderCollapsible(Wallet, "Account Management", accountManagementItems, openGroup === 'account', () => toggleGroup('account'), isAccountMgmtActive)}
         {renderCollapsible(BarChart2, "Reports", reportItems, openGroup === 'reports', () => toggleGroup('reports'), isReportsActive)}
-        {renderNavLink("/admin/docs", FileText, "Documentation")}
-        {renderNavLink("/admin/notes", StickyNote, "Notes")}
         {renderNavLink("/admin/media", Image, "Media")}
         {renderNavLink("/admin/music", Music, "Music Player")}
         {renderNavLink("/admin/site-settings", Settings, "Site Settings")}

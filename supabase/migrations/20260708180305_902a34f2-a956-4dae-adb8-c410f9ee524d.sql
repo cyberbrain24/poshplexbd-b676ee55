@@ -1,0 +1,10 @@
+DROP FUNCTION IF EXISTS public.public_unsubscribe_email(text, text) CASCADE;
+DROP TABLE IF EXISTS public.sms_messages CASCADE;
+DROP TABLE IF EXISTS public.sms_campaigns CASCADE;
+DROP TABLE IF EXISTS public.sms_templates CASCADE;
+DROP TABLE IF EXISTS public.sms_provider_settings CASCADE;
+DROP TABLE IF EXISTS public.email_messages CASCADE;
+DROP TABLE IF EXISTS public.email_campaigns CASCADE;
+DROP TABLE IF EXISTS public.email_templates CASCADE;
+DROP TABLE IF EXISTS public.email_provider_settings CASCADE;
+DROP TABLE IF EXISTS public.email_suppression CASCADE;

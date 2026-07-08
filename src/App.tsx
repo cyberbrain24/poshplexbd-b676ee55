@@ -228,14 +228,8 @@ const App = () => (
 
                       <Route path="steadfast" element={<SteadfastSettings />} />
                     </Route>
-                    <Route path="reports" element={<ReportsOverview />} />
-                    <Route path="reports/orders" element={<OrdersReport />} />
-                    <Route path="reports/financial" element={<FinancialReport />} />
-                    <Route path="reports/customers" element={<CustomersReport />} />
-                    <Route path="reports/products" element={<ProductsReport />} />
-                    <Route path="reports/inventory" element={<InventoryReport />} />
-                    <Route path="reports/promos" element={<PromosReport />} />
-                    <Route path="reports/reviews" element={<ReviewsReport />} />
+
+
                   </Route>
                   
                   <Route path="*" element={<NotFound />} />

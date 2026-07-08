@@ -98,7 +98,6 @@ const GA4Settings = lazy(() => import("./pages/admin/marketing/GA4Settings"));
 
 
 const SteadfastSettings = lazy(() => import("./pages/admin/marketing/SteadfastSettings"));
-const DocsIndex = lazy(() => import("./pages/admin/docs/DocsIndex"));
 const DocPage = lazy(() => import("./pages/admin/docs/DocPage"));
 const ReportsOverview = lazy(() => import("./pages/admin/reports/ReportsOverview"));
 const OrdersReport = lazy(() => import("./pages/admin/reports/OrdersReport"));

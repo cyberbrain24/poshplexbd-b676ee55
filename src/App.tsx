@@ -174,7 +174,7 @@ const App = () => (
                   <Route path="/auth" element={<Suspense fallback={<LoadingFallback />}><Auth /></Suspense>} />
                   <Route path="/login" element={<Suspense fallback={<LoadingFallback />}><CustomerAuth /></Suspense>} />
                   <Route path="/complete-profile" element={<Suspense fallback={<LoadingFallback />}><CompleteProfile /></Suspense>} />
-                 <Route path="/email/unsubscribe" element={<Suspense fallback={<LoadingFallback />}><EmailUnsubscribe /></Suspense>} />
+                 
                   
                   
                   {/* Admin Routes - Lazy loaded */}

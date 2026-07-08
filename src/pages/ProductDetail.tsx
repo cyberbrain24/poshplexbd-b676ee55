@@ -9,7 +9,7 @@ import RelatedProducts from "../components/product/RelatedProducts";
 import { useProduct } from "@/hooks/useProducts";
 import { ProductSEO } from "@/components/seo";
 import { trackViewContent } from "@/services/facebook-pixel.service";
-import PromotionSlot from "@/components/promotions/PromotionSlot";
+
 
 const ProductDetail = () => {
   const { productSlug } = useParams();

@@ -238,8 +238,6 @@ const App = () => (
 
                       <Route path="steadfast" element={<SteadfastSettings />} />
                     </Route>
-                    <Route path="docs" element={<DocsIndex />} />
-                    <Route path="docs/:slug" element={<DocPage />} />
                     <Route path="reports" element={<ReportsOverview />} />
                     <Route path="reports/orders" element={<OrdersReport />} />
                     <Route path="reports/financial" element={<FinancialReport />} />

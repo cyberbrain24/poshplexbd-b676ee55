@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import PromotionSlot from "@/components/promotions/PromotionSlot";
+
 import PoshplexHeader from "../components/header/PoshplexHeader";
 import PoshplexFooter from "../components/footer/PoshplexFooter";
 import HeroSection from "../components/home/HeroSection";

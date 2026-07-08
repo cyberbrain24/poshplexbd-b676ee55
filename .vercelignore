@@ -1,0 +1,13 @@
+# Backend lives on Lovable Cloud — don't ship it to Vercel
+supabase/
+.lovable/
+
+# Dev/tooling
+node_modules
+.env.local
+*.log
+tsconfig.*.tsbuildinfo
+
+# Docs
+README.md
+DEPLOY_VERCEL.md

@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import ScrollToTop from "./components/ScrollToTop";
 import { CartProvider } from "./contexts/CartContext";
@@ -22,38 +22,11 @@ const FloatingMusicPlayer = lazy(() => import("./components/music/FloatingMusicP
 
 
 
-import NotFound from "./pages/NotFound";
+// Storefront routes (all public /*, /category/*, /product/*, /account, etc.)
+// and the admin sub-app live inside this single entry so App.tsx only wires
+// providers. Makes it obvious what ships to the frontend host (Vercel).
+const StorefrontRoutes = lazy(() => import("./apps/storefront/StorefrontRoutes"));
 
-// Route-level skeletons used as Suspense fallbacks (prevent CLS, no blank spinner)
-import HomeSkeleton from "./components/skeletons/HomeSkeleton";
-import CategorySkeleton from "./components/skeletons/CategorySkeleton";
-import ProductDetailSkeleton from "./components/skeletons/ProductDetailSkeleton";
-
-// Storefront pages - lazy loaded so landing on /category or /product
-// does not pull the Home-page chunk (and vice versa)
-const Index = lazy(() => import("./pages/Index"));
-const Category = lazy(() => import("./pages/Category"));
-const CategoryBrowser = lazy(() => import("./pages/CategoryBrowser"));
-const ProductDetail = lazy(() => import("./pages/ProductDetail"));
-const Checkout = lazy(() => import("./pages/Checkout"));
-const OurStory = lazy(() => import("./pages/about/OurStory"));
-const StoreLocator = lazy(() => import("./pages/about/StoreLocator"));
-const PrivacyPolicy = lazy(() => import("./pages/about/PrivacyPolicy"));
-const TermsConditions = lazy(() => import("./pages/about/TermsConditions"));
-const ShippingDelivery = lazy(() => import("./pages/about/ShippingDelivery"));
-const Auth = lazy(() => import("./pages/Auth"));
-const CustomerAuth = lazy(() => import("./pages/CustomerAuth"));
-const CompleteProfile = lazy(() => import("./pages/CompleteProfile"));
-const CustomerAccount = lazy(() => import("./pages/CustomerAccount"));
-const OrderTracking = lazy(() => import("./pages/OrderTracking"));
-const MyOrders = lazy(() => import("./pages/MyOrders"));
-const Membership = lazy(() => import("./pages/Membership"));
-const Favorites = lazy(() => import("./pages/Favorites"));
-const CustomerReviews = lazy(() => import("./pages/CustomerReviews"));
-
-// Admin panel — a single isolated module. Everything under /admin/* lives in
-// its own chunk and is never downloaded by storefront visitors.
-const AdminApp = lazy(() => import("./apps/admin/AdminApp"));
 
 
 
@@ -109,46 +82,10 @@ const App = () => (
                     <GoogleAnalyticsTracker />
                   </Suspense>
                 </DeferredMount>
-                <Routes>
-                  <Route path="/" element={<Suspense fallback={<HomeSkeleton />}><Index /></Suspense>} />
-                  <Route path="/categories" element={<Suspense fallback={<CategorySkeleton />}><CategoryBrowser /></Suspense>} />
-                  <Route path="/category/:category" element={<Suspense fallback={<CategorySkeleton />}><Category /></Suspense>} />
-                  <Route path="/product/:productSlug" element={<Suspense fallback={<ProductDetailSkeleton />}><ProductDetail /></Suspense>} />
-                  <Route path="/checkout" element={<Suspense fallback={<LoadingFallback />}><Checkout /></Suspense>} />
-                  <Route path="/order-tracking" element={<Suspense fallback={<LoadingFallback />}><OrderTracking /></Suspense>} />
-                  <Route path="/my-orders" element={<Suspense fallback={<LoadingFallback />}><MyOrders /></Suspense>} />
-                  <Route path="/account" element={<Suspense fallback={<LoadingFallback />}><CustomerAccount /></Suspense>} />
-                  <Route path="/favorites" element={<Suspense fallback={<LoadingFallback />}><Favorites /></Suspense>} />
-                  <Route path="/membership" element={<Suspense fallback={<LoadingFallback />}><Membership /></Suspense>} />
-                  <Route path="/reviews" element={<Suspense fallback={<LoadingFallback />}><CustomerReviews /></Suspense>} />
-                  <Route path="/pages/our-story" element={<Suspense fallback={<LoadingFallback />}><OurStory /></Suspense>} />
-                  <Route path="/pages/store-locator" element={<Suspense fallback={<LoadingFallback />}><StoreLocator /></Suspense>} />
-                  <Route path="/pages/privacy-policy" element={<Suspense fallback={<LoadingFallback />}><PrivacyPolicy /></Suspense>} />
-                  <Route path="/pages/terms-conditions" element={<Suspense fallback={<LoadingFallback />}><TermsConditions /></Suspense>} />
-                  <Route path="/pages/shipping-delivery" element={<Suspense fallback={<LoadingFallback />}><ShippingDelivery /></Suspense>} />
-                  <Route path="/about/*" element={<Suspense fallback={<LoadingFallback />}><OurStory /></Suspense>} />
-                  <Route path="/privacy-policy" element={<Suspense fallback={<LoadingFallback />}><PrivacyPolicy /></Suspense>} />
-                  <Route path="/terms-of-service" element={<Suspense fallback={<LoadingFallback />}><TermsConditions /></Suspense>} />
-                  <Route path="/shipping-delivery" element={<Suspense fallback={<LoadingFallback />}><ShippingDelivery /></Suspense>} />
-                  <Route path="/auth" element={<Suspense fallback={<LoadingFallback />}><Auth /></Suspense>} />
-                  <Route path="/login" element={<Suspense fallback={<LoadingFallback />}><CustomerAuth /></Suspense>} />
-                  <Route path="/complete-profile" element={<Suspense fallback={<LoadingFallback />}><CompleteProfile /></Suspense>} />
-                 
-                  
-                  
-                  {/* Admin panel - fully isolated module (single lazy chunk) */}
-                  <Route
-                    path="/admin/*"
-                    element={
-                      <Suspense fallback={<LoadingFallback />}>
-                        <AdminApp />
-                      </Suspense>
-                    }
-                  />
+                <Suspense fallback={<LoadingFallback />}>
+                  <StorefrontRoutes />
+                </Suspense>
 
-                  
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
                 <MobileFooterNav />
                 <DeferredMount delay={1500}>
                   <Suspense fallback={null}>

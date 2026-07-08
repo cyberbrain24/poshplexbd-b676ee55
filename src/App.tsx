@@ -215,8 +215,8 @@ const App = () => (
                     <Route path="promotions" element={<AdminPromotions />} />
                     <Route path="bulk-upload" element={<AdminBulkUpload />} />
                     <Route path="music" element={<AdminMusic />} />
-                    <Route path="sms" element={<AdminSMS />} />
-                    <Route path="email" element={<AdminEmail />} />
+                    
+
                     
                     <Route path="site-settings" element={<AdminSiteSettings />} />
                     <Route path="marketing" element={<MarketingLayout />}>

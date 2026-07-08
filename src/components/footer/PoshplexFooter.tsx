@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import { useSiteBranding } from "@/hooks/useSiteBranding";
-import PromotionSlot from "@/components/promotions/PromotionSlot";
+
 
 const FOOTER_COLUMNS = [
   {

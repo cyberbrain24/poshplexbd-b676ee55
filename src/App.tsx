@@ -81,7 +81,7 @@ const AdminPaymentMethods = lazy(() => import("./pages/admin/AdminPaymentMethods
 const AdminReviews = lazy(() => import("./pages/admin/AdminReviews"));
 const AdminMedia = lazy(() => import("./pages/admin/AdminMedia"));
 const AdminPromoCodes = lazy(() => import("./pages/admin/AdminPromoCodes"));
-const AdminPromotions = lazy(() => import("./pages/admin/AdminPromotions"));
+
 const AdminSiteSettings = lazy(() => import("./pages/admin/AdminSiteSettings"));
 const AdminBulkUpload = lazy(() => import("./pages/admin/AdminBulkUpload"));
 const AdminMusic = lazy(() => import("./pages/admin/AdminMusic"));

@@ -63,11 +63,6 @@ const customerManagementItems: NavItem[] = [
   { icon: Crown, label: "Membership Types", path: "/admin/customer-types" },
 ];
 
-const marketingChannelItems: NavItem[] = [
-  { icon: Send, label: "SMS Marketing", path: "/admin/sms" },
-  { icon: Mail, label: "Email Marketing", path: "/admin/email" },
-];
-
 const marketingItems: NavItem[] = [
   { icon: LayoutGrid, label: "Overview", path: "/admin/marketing" },
   { icon: Facebook, label: "Meta Pixel", path: "/admin/marketing/meta-pixel" },
@@ -77,16 +72,6 @@ const marketingItems: NavItem[] = [
   { icon: Truck, label: "Steadfast API", path: "/admin/marketing/steadfast" },
 ];
 
-const reportItems: NavItem[] = [
-  { icon: LayoutGrid, label: "Overview", path: "/admin/reports" },
-  { icon: ShoppingCart, label: "Orders", path: "/admin/reports/orders" },
-  { icon: Wallet, label: "Financial", path: "/admin/reports/financial" },
-  { icon: Users, label: "Customers", path: "/admin/reports/customers" },
-  { icon: Package, label: "Products", path: "/admin/reports/products" },
-  { icon: Building2, label: "Inventory", path: "/admin/reports/inventory" },
-  { icon: Tag, label: "Promo Codes", path: "/admin/reports/promos" },
-  { icon: MessageSquare, label: "Reviews", path: "/admin/reports/reviews" },
-];
 
 const AdminSidebar = () => {
   const location = useLocation();

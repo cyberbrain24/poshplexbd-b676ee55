@@ -7,7 +7,7 @@ import FilterSortBar, { type SortOption, type ProductFilters } from "../componen
 import ProductGrid from "../components/category/ProductGrid";
 import { useOptimizedCategoryProducts } from "@/hooks/useOptimizedProducts";
 import { CategorySEO } from "@/components/seo";
-import PromotionSlot from "@/components/promotions/PromotionSlot";
+
 
 const DEFAULT_FILTERS: ProductFilters = {
   colorIds: [],

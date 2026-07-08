@@ -212,7 +212,7 @@ const App = () => (
                     <Route path="order-fulfillment" element={<AdminOrderFulfillment />} />
                     <Route path="payment-methods" element={<AdminPaymentMethods />} />
                     <Route path="promo-codes" element={<AdminPromoCodes />} />
-                    <Route path="promotions" element={<AdminPromotions />} />
+                    
                     <Route path="bulk-upload" element={<AdminBulkUpload />} />
                     <Route path="music" element={<AdminMusic />} />
                     

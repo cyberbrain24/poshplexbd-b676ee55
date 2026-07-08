@@ -44,7 +44,7 @@ const orderItems: NavItem[] = [
   { icon: PackageCheck, label: "Order Fulfillment", path: "/admin/order-fulfillment" },
   { icon: CreditCard, label: "Payment Methods", path: "/admin/payment-methods" },
   { icon: Tag, label: "Promo Codes", path: "/admin/promo-codes" },
-  { icon: Megaphone, label: "Promotions & Ads", path: "/admin/promotions" },
+  
 ];
 
 const accountManagementItems: NavItem[] = [

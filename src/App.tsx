@@ -20,7 +20,7 @@ import { useIsMobile } from "./hooks/use-mobile";
 const FacebookPixelTracker = lazy(() => import("./components/tracking/FacebookPixelTracker"));
 const GoogleAnalyticsTracker = lazy(() => import("./components/tracking/GoogleAnalyticsTracker"));
 const FloatingMusicPlayer = lazy(() => import("./components/music/FloatingMusicPlayer"));
-const FloatingPromotion = lazy(() => import("./components/promotions/FloatingPromotion"));
+
 
 
 import NotFound from "./pages/NotFound";
@@ -81,7 +81,7 @@ const AdminPaymentMethods = lazy(() => import("./pages/admin/AdminPaymentMethods
 const AdminReviews = lazy(() => import("./pages/admin/AdminReviews"));
 const AdminMedia = lazy(() => import("./pages/admin/AdminMedia"));
 const AdminPromoCodes = lazy(() => import("./pages/admin/AdminPromoCodes"));
-const AdminPromotions = lazy(() => import("./pages/admin/AdminPromotions"));
+
 const AdminSiteSettings = lazy(() => import("./pages/admin/AdminSiteSettings"));
 const AdminBulkUpload = lazy(() => import("./pages/admin/AdminBulkUpload"));
 const AdminMusic = lazy(() => import("./pages/admin/AdminMusic"));
@@ -212,7 +212,7 @@ const App = () => (
                     <Route path="order-fulfillment" element={<AdminOrderFulfillment />} />
                     <Route path="payment-methods" element={<AdminPaymentMethods />} />
                     <Route path="promo-codes" element={<AdminPromoCodes />} />
-                    <Route path="promotions" element={<AdminPromotions />} />
+                    
                     <Route path="bulk-upload" element={<AdminBulkUpload />} />
                     <Route path="music" element={<AdminMusic />} />
                     
@@ -238,7 +238,6 @@ const App = () => (
                 <DeferredMount delay={1500}>
                   <Suspense fallback={null}>
                     <DesktopOnlyWidgets />
-                    <FloatingPromotion />
                   </Suspense>
                 </DeferredMount>
               </BrowserRouter>

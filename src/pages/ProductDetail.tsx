@@ -56,7 +56,7 @@ const ProductDetail = () => {
       <PoshplexHeader />
       
       <main className="pt-1">
-        <div className="px-6 mb-3"><PromotionSlot placement="product_top" productId={product?.id} /></div>
+        
         <section className="w-full px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
             <ProductImageGallery 

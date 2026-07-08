@@ -63,11 +63,6 @@ const customerManagementItems: NavItem[] = [
   { icon: Crown, label: "Membership Types", path: "/admin/customer-types" },
 ];
 
-const marketingChannelItems: NavItem[] = [
-  { icon: Send, label: "SMS Marketing", path: "/admin/sms" },
-  { icon: Mail, label: "Email Marketing", path: "/admin/email" },
-];
-
 const marketingItems: NavItem[] = [
   { icon: LayoutGrid, label: "Overview", path: "/admin/marketing" },
   { icon: Facebook, label: "Meta Pixel", path: "/admin/marketing/meta-pixel" },
@@ -77,16 +72,6 @@ const marketingItems: NavItem[] = [
   { icon: Truck, label: "Steadfast API", path: "/admin/marketing/steadfast" },
 ];
 
-const reportItems: NavItem[] = [
-  { icon: LayoutGrid, label: "Overview", path: "/admin/reports" },
-  { icon: ShoppingCart, label: "Orders", path: "/admin/reports/orders" },
-  { icon: Wallet, label: "Financial", path: "/admin/reports/financial" },
-  { icon: Users, label: "Customers", path: "/admin/reports/customers" },
-  { icon: Package, label: "Products", path: "/admin/reports/products" },
-  { icon: Building2, label: "Inventory", path: "/admin/reports/inventory" },
-  { icon: Tag, label: "Promo Codes", path: "/admin/reports/promos" },
-  { icon: MessageSquare, label: "Reviews", path: "/admin/reports/reviews" },
-];
 
 const AdminSidebar = () => {
   const location = useLocation();
@@ -129,16 +114,12 @@ const AdminSidebar = () => {
   const isAccountMgmtActive = accountManagementItems.some(item => location.pathname === item.path);
   const isCustomerMgmtActive = customerManagementItems.some(item => location.pathname === item.path);
   const isMarketingActive = location.pathname.startsWith("/admin/marketing");
-  const isReportsActive = location.pathname.startsWith("/admin/reports");
-  const isChannelsActive = marketingChannelItems.some(item => location.pathname === item.path);
 
-  type GroupKey = 'product' | 'orders' | 'account' | 'customer' | 'marketing' | 'reports' | 'channels';
+  type GroupKey = 'product' | 'orders' | 'account' | 'customer' | 'marketing';
   const getInitialOpen = (): GroupKey | null => {
     if (isProductMgmtActive) return 'product';
     if (isOrdersActive) return 'orders';
-    if (isChannelsActive) return 'channels';
     if (isMarketingActive) return 'marketing';
-    if (isReportsActive) return 'reports';
     if (isCustomerMgmtActive) return 'customer';
     if (isAccountMgmtActive) return 'account';
     return null;
@@ -228,7 +209,6 @@ const AdminSidebar = () => {
       
       <nav className="flex-1 p-3 md:p-4 space-y-0.5 overflow-y-auto">
         {renderNavLink("/admin", LayoutDashboard, "Business Intelligence")}
-        {renderCollapsible(Megaphone, "Marketing Channels", marketingChannelItems, openGroup === 'channels', () => toggleGroup('channels'), isChannelsActive)}
         {renderCollapsible(Package, "Product Management", productManagementItems, openGroup === 'product', () => toggleGroup('product'), isProductMgmtActive)}
         {renderCollapsible(ShoppingCart, "Order Management", orderItems, openGroup === 'orders', () => toggleGroup('orders'), isOrdersActive)}
         {renderCollapsible(Plug, "Integration & Tracking", marketingItems, openGroup === 'marketing', () => toggleGroup('marketing'), isMarketingActive)}
@@ -236,7 +216,6 @@ const AdminSidebar = () => {
         
         {renderCollapsible(Users, "Customer Management", customerManagementItems, openGroup === 'customer', () => toggleGroup('customer'), isCustomerMgmtActive)}
         {renderCollapsible(Wallet, "Account Management", accountManagementItems, openGroup === 'account', () => toggleGroup('account'), isAccountMgmtActive)}
-        {renderCollapsible(BarChart2, "Reports", reportItems, openGroup === 'reports', () => toggleGroup('reports'), isReportsActive)}
         {renderNavLink("/admin/media", Image, "Media")}
         {renderNavLink("/admin/music", Music, "Music Player")}
         {renderNavLink("/admin/site-settings", Settings, "Site Settings")}

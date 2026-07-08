@@ -114,16 +114,12 @@ const AdminSidebar = () => {
   const isAccountMgmtActive = accountManagementItems.some(item => location.pathname === item.path);
   const isCustomerMgmtActive = customerManagementItems.some(item => location.pathname === item.path);
   const isMarketingActive = location.pathname.startsWith("/admin/marketing");
-  const isReportsActive = location.pathname.startsWith("/admin/reports");
-  const isChannelsActive = marketingChannelItems.some(item => location.pathname === item.path);
 
-  type GroupKey = 'product' | 'orders' | 'account' | 'customer' | 'marketing' | 'reports' | 'channels';
+  type GroupKey = 'product' | 'orders' | 'account' | 'customer' | 'marketing';
   const getInitialOpen = (): GroupKey | null => {
     if (isProductMgmtActive) return 'product';
     if (isOrdersActive) return 'orders';
-    if (isChannelsActive) return 'channels';
     if (isMarketingActive) return 'marketing';
-    if (isReportsActive) return 'reports';
     if (isCustomerMgmtActive) return 'customer';
     if (isAccountMgmtActive) return 'account';
     return null;

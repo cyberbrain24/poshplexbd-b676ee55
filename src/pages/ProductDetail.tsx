@@ -87,7 +87,7 @@ const ProductDetail = () => {
             title="You might also like"
           />
         </section>
-        <div className="px-6 my-6"><PromotionSlot placement="product_bottom" productId={product?.id} /></div>
+        
       </main>
       
       <PoshplexFooter />

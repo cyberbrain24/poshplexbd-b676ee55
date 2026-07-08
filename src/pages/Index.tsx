@@ -46,9 +46,6 @@ const Index = () => {
             <FeaturedProducts />
           </Suspense>
         </LazyOnVisible>
-        <LazyOnVisible minHeight={120}>
-          <div className="px-4 md:px-8 my-8"><PromotionSlot placement="home_middle" /></div>
-        </LazyOnVisible>
         <LazyOnVisible minHeight={600}>
           <Suspense fallback={<GridFallback />}>
             <ProductGrid />

@@ -136,60 +136,16 @@ const App = () => (
                  
                   
                   
-                  {/* Admin Routes - Lazy loaded */}
-                  <Route path="/admin" element={
-                    <ProtectedRoute>
+                  {/* Admin panel - fully isolated module (single lazy chunk) */}
+                  <Route
+                    path="/admin/*"
+                    element={
                       <Suspense fallback={<LoadingFallback />}>
-                        <AdminLayout />
+                        <AdminApp />
                       </Suspense>
-                    </ProtectedRoute>
-                  }>
-                    <Route index element={<AdminDashboard />} />
-                    <Route path="products" element={<AdminProducts />} />
-                    
-                    <Route path="reviews" element={<AdminReviews />} />
-                    <Route path="media" element={<AdminMedia />} />
-                    <Route path="colors" element={<AdminColors />} />
-                    <Route path="sizes" element={<AdminSizes />} />
-                    <Route path="materials" element={<AdminMaterials />} />
-                    <Route path="custom-variants" element={<AdminCustomVariants />} />
-                    <Route path="product-attributes" element={<AdminProductAttributes />} />
-                    <Route path="size-guides" element={<AdminSizeGuides />} />
-                    <Route path="care-instructions" element={<AdminCareInstructions />} />
-                    <Route path="categories" element={<AdminCategories />} />
-                    <Route path="brands" element={<AdminBrands />} />
-                    <Route path="accounts" element={<AdminAccounts />} />
-                    <Route path="accounts-list" element={<AdminAccountsList />} />
-                    <Route path="income-categories" element={<AdminIncomeCategories />} />
-                    <Route path="expense-categories" element={<AdminExpenseCategories />} />
-                    <Route path="customers" element={<AdminCustomers />} />
-                    <Route path="divisions" element={<AdminDivisions />} />
-                    <Route path="thanas" element={<AdminThanas />} />
-                    <Route path="customer-types" element={<AdminCustomerTypes />} />
-                    <Route path="add-order" element={<AdminAddOrder />} />
-                    <Route path="orders" element={<AdminOrders />} />
-                    <Route path="order-fulfillment" element={<AdminOrderFulfillment />} />
-                    <Route path="payment-methods" element={<AdminPaymentMethods />} />
-                    <Route path="promo-codes" element={<AdminPromoCodes />} />
-                    
-                    <Route path="bulk-upload" element={<AdminBulkUpload />} />
-                    <Route path="music" element={<AdminMusic />} />
-                    
+                    }
+                  />
 
-                    
-                    <Route path="site-settings" element={<AdminSiteSettings />} />
-                    <Route path="marketing" element={<MarketingLayout />}>
-                      <Route index element={<MarketingOverview />} />
-                      <Route path="meta-pixel" element={<MetaPixelSettings />} />
-                      <Route path="meta-capi" element={<MetaCapiSettings />} />
-                      <Route path="ga4" element={<GA4Settings />} />
-
-
-                      <Route path="steadfast" element={<SteadfastSettings />} />
-                    </Route>
-
-
-                  </Route>
                   
                   <Route path="*" element={<NotFound />} />
                 </Routes>

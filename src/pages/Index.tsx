@@ -61,9 +61,6 @@ const Index = () => {
             <OurStorySection />
           </Suspense>
         </LazyOnVisible>
-        <LazyOnVisible minHeight={120}>
-          <div className="px-4 md:px-8 my-8"><PromotionSlot placement="home_bottom" /></div>
-        </LazyOnVisible>
       </main>
       
       <PoshplexFooter />

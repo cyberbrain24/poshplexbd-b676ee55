@@ -238,7 +238,6 @@ const App = () => (
                 <DeferredMount delay={1500}>
                   <Suspense fallback={null}>
                     <DesktopOnlyWidgets />
-                    <FloatingPromotion />
                   </Suspense>
                 </DeferredMount>
               </BrowserRouter>

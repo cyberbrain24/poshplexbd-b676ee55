@@ -41,5 +41,22 @@ export default defineConfig(({ mode }) => ({
     minify: "esbuild",
     cssMinify: true,
     modulePreload: { polyfill: true },
+    rollupOptions: {
+      output: {
+        // Isolate the admin panel into its own chunk so storefront visitors
+        // never download admin code. Any module under src/pages/admin or
+        // src/components/admin (and the AdminApp shell) is grouped together.
+        manualChunks(id) {
+          if (
+            id.includes("/src/apps/admin/") ||
+            id.includes("/src/pages/admin/") ||
+            id.includes("/src/components/admin/")
+          ) {
+            return "admin";
+          }
+        },
+      },
+    },
   },
+
 }));

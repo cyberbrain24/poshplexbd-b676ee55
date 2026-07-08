@@ -85,9 +85,7 @@ const AdminPromotions = lazy(() => import("./pages/admin/AdminPromotions"));
 const AdminSiteSettings = lazy(() => import("./pages/admin/AdminSiteSettings"));
 const AdminBulkUpload = lazy(() => import("./pages/admin/AdminBulkUpload"));
 const AdminMusic = lazy(() => import("./pages/admin/AdminMusic"));
-const AdminSMS = lazy(() => import("./pages/admin/AdminSMS"));
-const AdminEmail = lazy(() => import("./pages/admin/AdminEmail"));
-const EmailUnsubscribe = lazy(() => import("./pages/EmailUnsubscribe"));
+
 
 
 const MarketingLayout = lazy(() => import("./pages/admin/marketing/MarketingLayout"));
@@ -99,14 +97,6 @@ const GA4Settings = lazy(() => import("./pages/admin/marketing/GA4Settings"));
 
 const SteadfastSettings = lazy(() => import("./pages/admin/marketing/SteadfastSettings"));
 
-const ReportsOverview = lazy(() => import("./pages/admin/reports/ReportsOverview"));
-const OrdersReport = lazy(() => import("./pages/admin/reports/OrdersReport"));
-const FinancialReport = lazy(() => import("./pages/admin/reports/FinancialReport"));
-const CustomersReport = lazy(() => import("./pages/admin/reports/CustomersReport"));
-const ProductsReport = lazy(() => import("./pages/admin/reports/ProductsReport"));
-const InventoryReport = lazy(() => import("./pages/admin/reports/InventoryReport"));
-const PromosReport = lazy(() => import("./pages/admin/reports/PromosReport"));
-const ReviewsReport = lazy(() => import("./pages/admin/reports/ReviewsReport"));
 
 const queryClient = new QueryClient({
   defaultOptions: {

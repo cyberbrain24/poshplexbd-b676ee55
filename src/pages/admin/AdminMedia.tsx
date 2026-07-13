@@ -360,6 +360,26 @@ const AdminMedia = () => {
     }
   };
 
+  const handleDownloadSingle = async (file: MediaFile) => {
+    try {
+      const res = await fetch(file.public_url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = file.name.split("/").pop() || file.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("Download started");
+    } catch (e) {
+      console.error("Download failed", e);
+      toast.error("Failed to download file");
+    }
+  };
+
   const openRenameDialog = (file: MediaFile) => {
     setSelectedFile(file);
     const nameWithoutPath = file.name.includes("/") ? file.name.split("/").pop()! : file.name;

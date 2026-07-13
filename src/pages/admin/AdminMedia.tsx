@@ -484,6 +484,21 @@ const AdminMedia = () => {
               )}
               {selectedIds.size > 0 && (
                 <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBulkDownload}
+                  disabled={isBulkDownloading}
+                >
+                  {isBulkDownloading ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4 mr-2" />
+                  )}
+                  Download {selectedIds.size}
+                </Button>
+              )}
+              {selectedIds.size > 0 && (
+                <Button
                   variant="destructive"
                   size="sm"
                   onClick={() => setIsBulkDeleteOpen(true)}

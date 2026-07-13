@@ -41,6 +41,17 @@ export async function exportProductsCSV(filename?: string): Promise<number> {
   const categoryMap = new Map((categoriesResult.data || []).map((c) => [c.id, c]));
   const allProducts = productsResult.data || [];
 
+  const extractFileName = (url: string | null | undefined): string => {
+    if (!url) return "";
+    try {
+      const clean = url.split("?")[0].split("#")[0];
+      const parts = clean.split("/");
+      return decodeURIComponent(parts[parts.length - 1] || "");
+    } catch {
+      return url;
+    }
+  };
+
   const rows = allProducts.map((product: any) => {
     const category = product.category_id ? categoryMap.get(product.category_id) : null;
     const parentCategory = category?.parent_id ? categoryMap.get(category.parent_id) : null;
@@ -61,10 +72,10 @@ export async function exportProductsCSV(filename?: string): Promise<number> {
       Category: categoryName,
       Subcategory: subcategoryName,
       Brand: product.brand?.name || "",
-      "image url": mainImage,
+      "image url": extractFileName(mainImage),
       "Variant SKU": product.variants?.map((v: any) => v.sku || "").filter(Boolean).join(", ") || "",
       "Variant Image Url":
-        product.variants?.map((v: any) => v.image_url || "").filter(Boolean).join(", ") || "",
+        product.variants?.map((v: any) => extractFileName(v.image_url)).filter(Boolean).join(", ") || "",
       "Variant Price": product.variants?.map((v: any) => v.selling_price).join(", ") || "",
       "Variant Size":
         product.variants?.map((v: any) => v.size?.label || "").filter(Boolean).join(", ") || "",
@@ -72,6 +83,7 @@ export async function exportProductsCSV(filename?: string): Promise<number> {
         product.variants?.map((v: any) => v.color?.name || "").filter(Boolean).join(", ") || "",
     };
   });
+
 
   downloadCSV(
     filename || `products-${new Date().toISOString().slice(0, 10)}.csv`,

@@ -121,6 +121,28 @@ const AdminMusic = () => {
               <input type="checkbox" checked={t.is_active} onChange={() => toggleActive(t)} />
               Active
             </label>
+            <button
+              onClick={async () => {
+                try {
+                  const res = await fetch(t.file_url);
+                  const blob = await res.blob();
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `${t.title}.${(t.file_path.split(".").pop() || "mp3")}`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                } catch {
+                  toast.error("Download failed");
+                }
+              }}
+              className="p-2 hover:bg-muted rounded"
+              title="Download"
+            >
+              <Download className="h-4 w-4" />
+            </button>
             <button onClick={() => handleDelete(t)} className="p-2 text-destructive hover:bg-muted rounded">
               <Trash2 className="h-4 w-4" />
             </button>

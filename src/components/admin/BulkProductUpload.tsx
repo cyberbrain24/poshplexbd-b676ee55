@@ -298,22 +298,33 @@ const BulkProductUpload = () => {
       setRows(parsedRows);
 
       // Auto-map columns by fuzzy match (label, key, or aliases)
+      // Exact matches (label/key/alias) take priority over partial matches.
       const autoMap: Record<string, SystemFieldKey | ""> = {};
       parsedHeaders.forEach((h) => {
         const norm = h.toLowerCase().replace(/[^a-z0-9]/g, "");
-        const match = SYSTEM_FIELDS.find((sf) => {
+        const getNorms = (sf: SystemField) => {
           const sfNorm = sf.label.toLowerCase().replace(/[^a-z0-9]/g, "");
           const keyNorm = sf.key.toLowerCase().replace(/[^a-z0-9]/g, "");
           const aliasNorms = sf.aliases.map((a) => a.toLowerCase().replace(/[^a-z0-9]/g, ""));
-          return (
-            sfNorm === norm ||
-            keyNorm === norm ||
-            norm.includes(sfNorm) ||
-            sfNorm.includes(norm) ||
-            aliasNorms.includes(norm)
-          );
+          return { sfNorm, keyNorm, aliasNorms };
+        };
+
+        // 1. Exact match
+        const exactMatch = SYSTEM_FIELDS.find((sf) => {
+          const { sfNorm, keyNorm, aliasNorms } = getNorms(sf);
+          return sfNorm === norm || keyNorm === norm || aliasNorms.includes(norm);
         });
-        autoMap[h] = match?.key || "";
+        if (exactMatch) {
+          autoMap[h] = exactMatch.key;
+          return;
+        }
+
+        // 2. Partial match
+        const partialMatch = SYSTEM_FIELDS.find((sf) => {
+          const { sfNorm } = getNorms(sf);
+          return norm.includes(sfNorm) || sfNorm.includes(norm);
+        });
+        autoMap[h] = partialMatch?.key || "";
       });
       setMapping(autoMap);
 

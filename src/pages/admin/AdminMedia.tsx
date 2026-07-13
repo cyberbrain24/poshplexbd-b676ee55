@@ -720,6 +720,17 @@ const AdminMedia = () => {
                         className="h-7 w-7 p-0"
                         onClick={(e) => {
                           e.stopPropagation();
+                          handleDownloadSingle(file);
+                        }}
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 w-7 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
                           handleCopyUrl(file.public_url);
                         }}
                       >

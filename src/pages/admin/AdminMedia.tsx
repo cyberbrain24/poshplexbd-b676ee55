@@ -360,6 +360,26 @@ const AdminMedia = () => {
     }
   };
 
+  const handleDownloadSingle = async (file: MediaFile) => {
+    try {
+      const res = await fetch(file.public_url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = file.name.split("/").pop() || file.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("Download started");
+    } catch (e) {
+      console.error("Download failed", e);
+      toast.error("Failed to download file");
+    }
+  };
+
   const openRenameDialog = (file: MediaFile) => {
     setSelectedFile(file);
     const nameWithoutPath = file.name.includes("/") ? file.name.split("/").pop()! : file.name;
@@ -700,6 +720,17 @@ const AdminMedia = () => {
                         className="h-7 w-7 p-0"
                         onClick={(e) => {
                           e.stopPropagation();
+                          handleDownloadSingle(file);
+                        }}
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 w-7 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
                           handleCopyUrl(file.public_url);
                         }}
                       >
@@ -798,6 +829,14 @@ const AdminMedia = () => {
               {renderReferences(getFileReferences(selectedFile))}
 
               <div className="flex flex-wrap gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDownloadSingle(selectedFile)}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"

@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import DebouncedSearchInput from "@/components/admin/DebouncedSearchInput";
 import { supabase } from "@/integrations/supabase/client";
 import { generateProductSlug } from "@/lib/slug";
-import { downloadCSV } from "@/lib/csvExport";
+import { exportProductsCSV } from "@/lib/productExport";
 import {
   AlertDialog,
   AlertDialogAction,

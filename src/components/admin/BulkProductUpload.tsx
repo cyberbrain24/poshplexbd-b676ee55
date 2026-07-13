@@ -4,6 +4,7 @@ import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { exportProductsCSV } from "@/lib/productExport";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -251,6 +252,17 @@ const BulkProductUpload = () => {
     a.download = "bulk_product_template.csv";
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  // ── Bulk product export ─────────────────────────────────────
+  const handleExportProducts = async () => {
+    try {
+      const count = await exportProductsCSV();
+      toast.success(`Exported ${count} products`);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to export products");
+    }
   };
 
   // ── Parse file ─────────────────────────────────────────────
@@ -776,6 +788,10 @@ const BulkProductUpload = () => {
             <Button variant="outline" size="sm" onClick={downloadTemplate}>
               <Download className="h-4 w-4 mr-2" />
               Download Template
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExportProducts}>
+              <Download className="h-4 w-4 mr-2" />
+              Export Products
             </Button>
           </div>
 

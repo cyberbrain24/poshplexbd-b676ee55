@@ -63,7 +63,9 @@ import {
   FileImage,
   CheckCircle2,
   Sparkles,
+  Download,
 } from "lucide-react";
+import JSZip from "jszip";
 import { toast } from "sonner";
 import { format } from "date-fns";
 

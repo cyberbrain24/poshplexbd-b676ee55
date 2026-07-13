@@ -360,6 +360,7 @@ const AdminMedia = () => {
     }
   };
 
+  const openRenameDialog = (file: MediaFile) => {
     setSelectedFile(file);
     const nameWithoutPath = file.name.includes("/") ? file.name.split("/").pop()! : file.name;
     setNewFileName(nameWithoutPath.split(".").slice(0, -1).join("."));

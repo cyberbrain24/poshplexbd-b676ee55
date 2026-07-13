@@ -112,6 +112,7 @@ const AdminMedia = () => {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [isBulkDownloading, setIsBulkDownloading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const getExt = (name: string) => {

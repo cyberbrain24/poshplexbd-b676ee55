@@ -137,10 +137,43 @@ const AdminCustomers = () => {
           <h1 className="text-2xl font-semibold tracking-tight">Customers</h1>
           <p className="text-muted-foreground">Manage your customer database</p>
         </div>
-        <Button onClick={() => { setSelectedCustomer(null); setModalOpen(true); }}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Customer
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              if (!customers || customers.length === 0) {
+                toast.error("No customers to export");
+                return;
+              }
+              downloadCSV(
+                `customers-${new Date().toISOString().slice(0, 10)}.csv`,
+                [
+                  { header: "Name", accessor: (c: Customer) => c.name },
+                  { header: "Phone", accessor: (c: Customer) => c.phone },
+                  { header: "Email", accessor: (c: Customer) => c.email || "" },
+                  { header: "Gender", accessor: (c: Customer) => c.gender },
+                  { header: "Birthdate", accessor: (c: Customer) => c.birthdate || "" },
+                  { header: "Membership Type", accessor: (c: Customer) => c.customer_type?.name || "" },
+                  { header: "District", accessor: (c: Customer) => c.division?.name || "" },
+                  { header: "Thana", accessor: (c: Customer) => c.thana?.name || "" },
+                  { header: "Address", accessor: (c: Customer) => c.address || "" },
+                  { header: "Active", accessor: (c: Customer) => (c.is_active ? "Yes" : "No") },
+                  { header: "Orders", accessor: (c: Customer) => c.order_count ?? 0 },
+                  { header: "Total Spent", accessor: (c: Customer) => c.total_spent ?? 0 },
+                ],
+                customers
+              );
+              toast.success(`Exported ${customers.length} customers`);
+            }}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
+          <Button onClick={() => { setSelectedCustomer(null); setModalOpen(true); }}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Customer
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}

@@ -35,31 +35,59 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+type SystemField = {
+  key: string;
+  label: string;
+  required: boolean;
+  aliases: string[];
+};
+
 // ── System fields ────────────────────────────────────────────
-const SYSTEM_FIELDS = [
-  { key: "name", label: "Product Name", required: true },
-  { key: "sku", label: "SKU", required: false },
-  { key: "category", label: "Category", required: false },
-  { key: "subcategory", label: "Subcategory", required: false },
-  { key: "brand", label: "Brand", required: false },
-  { key: "short_description", label: "Short Description", required: false },
-  { key: "full_description", label: "Full Description", required: false },
-  { key: "base_price", label: "Price", required: true },
-  { key: "product_type", label: "Product Type", required: false },
-  { key: "is_active", label: "Active", required: false },
-  { key: "is_featured", label: "Featured", required: false },
-  { key: "youtube_url", label: "YouTube Video", required: false },
-  { key: "size_guide", label: "Size Guide", required: false },
-  { key: "care_instruction", label: "Care & Cleaning", required: false },
-  { key: "image_urls", label: "Product Images", required: false },
-  { key: "variant_color", label: "Variant Color", required: false },
-  { key: "variant_size", label: "Variant Size", required: false },
-  { key: "variant_material", label: "Variant Material", required: false },
-  { key: "variant_sku", label: "Variant SKU", required: false },
-  
-] as const;
+const SYSTEM_FIELDS: SystemField[] = [
+  { key: "name", label: "Product Name", required: true, aliases: ["productname"] },
+  { key: "sku", label: "SKU", required: false, aliases: [] },
+  { key: "category", label: "Category", required: false, aliases: [] },
+  { key: "subcategory", label: "Subcategory", required: false, aliases: [] },
+  { key: "brand", label: "Brand", required: false, aliases: [] },
+  { key: "short_description", label: "Short Description", required: false, aliases: ["shortdescription"] },
+  { key: "full_description", label: "Description", required: false, aliases: ["description", "fulldescription"] },
+  { key: "base_price", label: "Base Price", required: true, aliases: ["price", "baseprice"] },
+  { key: "product_type", label: "Product Type", required: false, aliases: ["producttype", "type"] },
+  { key: "image_urls", label: "image url", required: false, aliases: ["imageurl", "imageurls", "productimages"] },
+  { key: "variant_sku", label: "Variant SKU", required: false, aliases: ["variantsku"] },
+  { key: "variant_image_url", label: "Variant Image Url", required: false, aliases: ["variantimageurl", "variantimageurls"] },
+  { key: "variant_price", label: "Variant Price", required: false, aliases: ["variantprice", "variantsellingprice"] },
+  { key: "variant_size", label: "Variant Size", required: false, aliases: ["variantsize"] },
+  { key: "variant_color", label: "Variant Color", required: false, aliases: ["variantcolor"] },
+  // Legacy / optional fields kept for backward-compatible uploads
+  { key: "is_active", label: "Active", required: false, aliases: [] },
+  { key: "is_featured", label: "Featured", required: false, aliases: [] },
+  { key: "youtube_url", label: "YouTube Video", required: false, aliases: [] },
+  { key: "size_guide", label: "Size Guide", required: false, aliases: [] },
+  { key: "care_instruction", label: "Care & Cleaning", required: false, aliases: [] },
+  { key: "variant_material", label: "Variant Material", required: false, aliases: [] },
+];
 
 type SystemFieldKey = (typeof SYSTEM_FIELDS)[number]["key"];
+
+// Refined template fields shown in the downloaded template
+const TEMPLATE_FIELDS: SystemFieldKey[] = [
+  "name",
+  "sku",
+  "product_type",
+  "short_description",
+  "full_description",
+  "base_price",
+  "category",
+  "subcategory",
+  "brand",
+  "image_urls",
+  "variant_sku",
+  "variant_image_url",
+  "variant_price",
+  "variant_size",
+  "variant_color",
+];
 
 // Fields where comma = multiple values (variants / images)
 const COMMA_FIELDS = new Set<string>([
@@ -68,6 +96,8 @@ const COMMA_FIELDS = new Set<string>([
   "variant_size",
   "variant_material",
   "variant_sku",
+  "variant_image_url",
+  "variant_price",
 ]);
 
 interface RowData {
@@ -145,101 +175,68 @@ const BulkProductUpload = () => {
 
   // ── Template download ──────────────────────────────────────
   const downloadTemplate = () => {
-    const templateHeaders = SYSTEM_FIELDS.map((f) => f.label);
+    const templateHeaders = TEMPLATE_FIELDS.map(
+      (k) => SYSTEM_FIELDS.find((f) => f.key === k)!.label
+    );
 
     // Row 1: Variable product with 4 variants (comma-separated)
     const row1 = [
       "Solid Drop Shoulder T-Shirt",             // Product Name
       "DRP-001",                                 // SKU
+      "variable",                                // Product Type
+      "Premium oversized drop shoulder tee",     // Short Description
+      "Made with 100% cotton fabric for ultimate comfort. Features a relaxed oversized fit with drop shoulder design.", // Description
+      "1290",                                    // Base Price
       "Upper Wear",                              // Category
       "Solid Drop",                              // Subcategory
       "Poshplex",                                // Brand
-      "Premium oversized drop shoulder tee",     // Short Description
-      "Made with 100% cotton fabric for ultimate comfort. Features a relaxed oversized fit with drop shoulder design.", // Full Description
-      "1290",                                    // Price (base)
-      "variable",                                // Product Type
-      "true",                                    // Active
-      "true",                                    // Featured
-      "",                                        // YouTube Video
-      "Drop Shoulder Size Chart",                // Size Guide
-      "Standard Wash",                           // Care & Cleaning
-      "https://example.com/drp-black.jpg, https://example.com/drp-white.jpg, https://example.com/drp-cream.jpg, https://example.com/drp-maroon.jpg", // Images (comma)
-      "Black, White, Cream, Maroon",             // Variant Color (comma)
-      "M, L, XL, XXL",                           // Variant Size (comma)
-      "100% Cotton, 100% Cotton, 100% Cotton, 100% Cotton", // Variant Material (comma)
-      "DRP-001-BK, DRP-001-WH, DRP-001-CR, DRP-001-MR", // Variant SKU (comma)
+      "https://example.com/drp-black.jpg, https://example.com/drp-white.jpg, https://example.com/drp-cream.jpg, https://example.com/drp-maroon.jpg", // image url
+      "DRP-001-BK, DRP-001-WH, DRP-001-CR, DRP-001-MR", // Variant SKU
+      "https://example.com/drp-black.jpg, https://example.com/drp-white.jpg, https://example.com/drp-cream.jpg, https://example.com/drp-maroon.jpg", // Variant Image Url
+      "1290, 1290, 1290, 1290",                  // Variant Price
+      "M, L, XL, XXL",                           // Variant Size
+      "Black, White, Cream, Maroon",             // Variant Color
     ];
 
     // Row 2: Another variable product with 3 variants
     const row2 = [
       "Printed Baggy Joggers",                   // Product Name
       "BGJ-001",                                 // SKU
-      "Bottom  Wear",                            // Category
+      "variable",                                // Product Type
+      "Streetwear baggy joggers with print",     // Short Description
+      "High-quality printed baggy joggers with elastic waistband and cuffed ankles. Perfect for street style.", // Description
+      "1490",                                    // Base Price
+      "Bottom Wear",                             // Category
       "Printed Baggy Joggers",                   // Subcategory
       "Poshplex",                                // Brand
-      "Streetwear baggy joggers with print",     // Short Description
-      "High-quality printed baggy joggers with elastic waistband and cuffed ankles. Perfect for street style.", // Full Description
-      "1490",                                    // Price
-      "variable",                                // Product Type
-      "true",                                    // Active
-      "false",                                   // Featured
-      "",                                        // YouTube Video
-      "",                                        // Size Guide
-      "Standard Wash",                           // Care & Cleaning
-      "https://example.com/bgj-black.jpg, https://example.com/bgj-coffee.jpg", // Images
-      "Black, Coffee, Bottle Green",             // Variant Color
-      "M, L, XL",                                // Variant Size
-      "French Terry, French Terry, French Terry", // Variant Material
+      "https://example.com/bgj-black.jpg, https://example.com/bgj-coffee.jpg", // image url
       "BGJ-001-BK, BGJ-001-CF, BGJ-001-BG",     // Variant SKU
+      "https://example.com/bgj-black.jpg, https://example.com/bgj-coffee.jpg, https://example.com/bgj-bottle.jpg", // Variant Image Url
+      "1490, 1490, 1490",                        // Variant Price
+      "M, L, XL",                                // Variant Size
+      "Black, Coffee, Bottle Green",             // Variant Color
     ];
 
     // Row 3: Simple product (no variants)
     const row3 = [
       "Premium Bandana",                         // Product Name
       "BND-001",                                 // SKU
+      "simple",                                  // Product Type
+      "Classic cotton bandana",                  // Short Description
+      "Versatile bandana made from soft cotton. Can be worn as headwear, neck accessory, or wrist wrap.", // Description
+      "390",                                     // Base Price
       "Accessories",                             // Category
       "Bandana",                                 // Subcategory
       "Poshplex",                                // Brand
-      "Classic cotton bandana",                  // Short Description
-      "Versatile bandana made from soft cotton. Can be worn as headwear, neck accessory, or wrist wrap.", // Full Description
-      "390",                                     // Price
-      "simple",                                  // Product Type
-      "true",                                    // Active
-      "false",                                   // Featured
-      "",                                        // YouTube Video
-      "",                                        // Size Guide
-      "Delicate Care",                           // Care & Cleaning
-      "https://example.com/bandana.jpg",         // Images
-      "",                                        // Variant Color (empty = simple)
-      "",                                        // Variant Size
-      "",                                        // Variant Material
+      "https://example.com/bandana.jpg",         // image url
       "",                                        // Variant SKU
+      "",                                        // Variant Image Url
+      "",                                        // Variant Price
+      "",                                        // Variant Size
+      "",                                        // Variant Color
     ];
 
-    // Row 4: Combo product
-    const row4 = [
-      "Drop & Baggy Combo Set",                  // Product Name
-      "CMB-001",                                 // SKU
-      "Combo",                                   // Category
-      "Drop & Baggy",                            // Subcategory (note: trailing space in DB)
-      "Poshplex",                                // Brand
-      "Drop shoulder tee + baggy jogger combo",  // Short Description
-      "Complete streetwear set featuring our signature drop shoulder t-shirt paired with matching baggy joggers.", // Full Description
-      "2490",                                    // Price
-      "variable",                                // Product Type
-      "true",                                    // Active
-      "true",                                    // Featured
-      "",                                        // YouTube Video
-      "",                                        // Size Guide
-      "Standard Wash",                           // Care & Cleaning
-      "https://example.com/combo-black.jpg, https://example.com/combo-white.jpg", // Images
-      "Black, White, Cream",                     // Variant Color
-      "M, L, XL",                                // Variant Size
-      "100% Cotton, 100% Cotton, 100% Cotton",   // Variant Material
-      "CMB-001-BK, CMB-001-WH, CMB-001-CR",     // Variant SKU
-    ];
-
-    const csvContent = [templateHeaders, row1, row2, row3, row4]
+    const csvContent = [templateHeaders, row1, row2, row3]
       .map((r) =>
         r.map((cell) => {
           if (cell.includes(",")) return `"${cell}"`;
@@ -247,7 +244,7 @@ const BulkProductUpload = () => {
         }).join(",")
       )
       .join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv" });
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -300,14 +297,21 @@ const BulkProductUpload = () => {
       setHeaders(parsedHeaders);
       setRows(parsedRows);
 
-      // Auto-map columns by fuzzy match
+      // Auto-map columns by fuzzy match (label, key, or aliases)
       const autoMap: Record<string, SystemFieldKey | ""> = {};
       parsedHeaders.forEach((h) => {
         const norm = h.toLowerCase().replace(/[^a-z0-9]/g, "");
         const match = SYSTEM_FIELDS.find((sf) => {
           const sfNorm = sf.label.toLowerCase().replace(/[^a-z0-9]/g, "");
           const keyNorm = sf.key.toLowerCase().replace(/[^a-z0-9]/g, "");
-          return sfNorm === norm || keyNorm === norm || norm.includes(sfNorm) || sfNorm.includes(norm);
+          const aliasNorms = sf.aliases.map((a) => a.toLowerCase().replace(/[^a-z0-9]/g, ""));
+          return (
+            sfNorm === norm ||
+            keyNorm === norm ||
+            norm.includes(sfNorm) ||
+            sfNorm.includes(norm) ||
+            aliasNorms.includes(norm)
+          );
         });
         autoMap[h] = match?.key || "";
       });
@@ -591,8 +595,16 @@ const BulkProductUpload = () => {
         const sizes = getCommaVal(row, ri, "variant_size");
         const materials = getCommaVal(row, ri, "variant_material");
         const variantSkus = getCommaVal(row, ri, "variant_sku");
-        
-        const hasVariants = colors.length > 0 || sizes.length > 0 || materials.length > 0;
+        const variantImageUrls = getCommaVal(row, ri, "variant_image_url");
+        const variantPrices = getCommaVal(row, ri, "variant_price");
+
+        const hasVariants =
+          colors.length > 0 ||
+          sizes.length > 0 ||
+          materials.length > 0 ||
+          variantSkus.length > 0 ||
+          variantImageUrls.length > 0 ||
+          variantPrices.length > 0;
 
         const explicitType = getVal(row, ri, "product_type");
         const productType = explicitType || (hasVariants ? "variable" : "simple");
@@ -643,9 +655,16 @@ const BulkProductUpload = () => {
         }
 
         // Insert variants by index
-        // The number of variants = max length among colors, sizes, materials
+        // The number of variants = max length among variant columns
         if (hasVariants) {
-          const variantCount = Math.max(colors.length, sizes.length, materials.length, variantSkus.length);
+          const variantCount = Math.max(
+            colors.length,
+            sizes.length,
+            materials.length,
+            variantSkus.length,
+            variantImageUrls.length,
+            variantPrices.length
+          );
           for (let vi = 0; vi < variantCount; vi++) {
             const colorName = colors[vi] || "";
             const sizeName = sizes[vi] || "";
@@ -662,7 +681,9 @@ const BulkProductUpload = () => {
               : null;
 
             const vSku = variantSkus[vi] || "";
-            const vPrice = Number(getVal(row, ri, "base_price")) || 0;
+            const vPriceRaw = variantPrices[vi] || "";
+            const vPrice = vPriceRaw ? Number(vPriceRaw) : Number(getVal(row, ri, "base_price")) || 0;
+            const vImageUrl = variantImageUrls[vi] || "";
 
             const { error: varErr } = await supabase.from("product_variants").insert({
               product_id: product.id,
@@ -672,6 +693,7 @@ const BulkProductUpload = () => {
               sku: vSku,
               selling_price: vPrice,
               purchase_price: 0,
+              image_url: vImageUrl || null,
               is_active: true,
             });
             if (varErr) {

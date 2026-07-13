@@ -789,6 +789,10 @@ const BulkProductUpload = () => {
               <Download className="h-4 w-4 mr-2" />
               Download Template
             </Button>
+            <Button variant="outline" size="sm" onClick={handleExportProducts}>
+              <Download className="h-4 w-4 mr-2" />
+              Export Products
+            </Button>
           </div>
 
           <div

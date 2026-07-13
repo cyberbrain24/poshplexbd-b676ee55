@@ -254,6 +254,17 @@ const BulkProductUpload = () => {
     URL.revokeObjectURL(url);
   };
 
+  // ── Bulk product export ─────────────────────────────────────
+  const handleExportProducts = async () => {
+    try {
+      const count = await exportProductsCSV();
+      toast.success(`Exported ${count} products`);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to export products");
+    }
+  };
+
   // ── Parse file ─────────────────────────────────────────────
   const handleFile = useCallback(
     async (file: File) => {

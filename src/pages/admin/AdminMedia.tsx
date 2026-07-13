@@ -63,7 +63,9 @@ import {
   FileImage,
   CheckCircle2,
   Sparkles,
+  Download,
 } from "lucide-react";
+import JSZip from "jszip";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -110,6 +112,7 @@ const AdminMedia = () => {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [isBulkDownloading, setIsBulkDownloading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const getExt = (name: string) => {
@@ -306,6 +309,57 @@ const AdminMedia = () => {
     exitSelectionMode();
   };
 
+  const handleBulkDownload = async () => {
+    const filesToDownload = files.filter((f) => selectedIds.has(fileKey(f)));
+    if (filesToDownload.length === 0) return;
+    setIsBulkDownloading(true);
+    const toastId = toast.loading(`Preparing ${filesToDownload.length} file(s)...`);
+    try {
+      const zip = new JSZip();
+      const usedNames = new Set<string>();
+      let ok = 0;
+      for (let i = 0; i < filesToDownload.length; i++) {
+        const file = filesToDownload[i];
+        try {
+          const res = await fetch(file.public_url);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const blob = await res.blob();
+          let base = file.name.split("/").pop() || file.name;
+          let name = base;
+          let n = 1;
+          while (usedNames.has(name)) {
+            const dot = base.lastIndexOf(".");
+            name = dot === -1 ? `${base} (${n})` : `${base.slice(0, dot)} (${n})${base.slice(dot)}`;
+            n++;
+          }
+          usedNames.add(name);
+          const folder = zip.folder(file.bucket_id) || zip;
+          folder.file(name, blob);
+          ok++;
+          toast.loading(`Preparing ${ok}/${filesToDownload.length}...`, { id: toastId });
+        } catch (err) {
+          console.error("Bulk download fetch failed for", file.name, err);
+        }
+      }
+      if (ok === 0) throw new Error("No files fetched");
+      const content = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(content);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `media-${new Date().toISOString().slice(0, 10)}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success(`Downloaded ${ok} file(s)`, { id: toastId });
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to build download", { id: toastId });
+    } finally {
+      setIsBulkDownloading(false);
+    }
+  };
+
   const openRenameDialog = (file: MediaFile) => {
     setSelectedFile(file);
     const nameWithoutPath = file.name.includes("/") ? file.name.split("/").pop()! : file.name;
@@ -426,6 +480,21 @@ const AdminMedia = () => {
                 >
                   <Sparkles className="h-4 w-4 mr-2" />
                   Generate thumbs ({selectedThumbTargets.length})
+                </Button>
+              )}
+              {selectedIds.size > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBulkDownload}
+                  disabled={isBulkDownloading}
+                >
+                  {isBulkDownloading ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4 mr-2" />
+                  )}
+                  Download {selectedIds.size}
                 </Button>
               )}
               {selectedIds.size > 0 && (

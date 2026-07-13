@@ -832,6 +832,14 @@ const AdminMedia = () => {
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={() => handleDownloadSingle(selectedFile)}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => handleCopyUrl(selectedFile.public_url)}
                 >
                   <Copy className="h-4 w-4 mr-2" />

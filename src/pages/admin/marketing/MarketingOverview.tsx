@@ -46,7 +46,7 @@ const MarketingOverview = () => {
         </div>
         <div className="flex-1">
           <p className="text-sm font-medium">
-            {liveCount} of 3 channels live
+            {liveCount} of 2 channels live
           </p>
           <p className="text-xs text-muted-foreground mt-0.5">
             Track conversions across Meta and Google to power your retargeting and attribution.

@@ -47,9 +47,8 @@ export interface Order {
   ip_address: string | null;
   customer_notes: string | null;
   internal_notes: string | null;
-  promo_code: string | null;
-  promo_code_id: string | null;
-  promo_discount: number | null;
+
+
 
   customer_called_at: string | null;
   call_center_notes: string | null;

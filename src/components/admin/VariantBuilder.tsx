@@ -79,27 +79,24 @@ const VariantBuilder = ({
   const previewCount = useMemo(() => {
     const c = selectedColorIds.length || 1;
     const s = selectedSizeIds.length || 1;
-    const cv = selectedCustomIds.length || 1;
     const m = selectedMaterialIds.length || 1;
     const attrFactor = appliedAttributes.reduce((acc, attr) => {
       const vals = selectedValueIdsByAttr[attr.id] || [];
       return acc * (vals.length || 1);
     }, 1);
-    return c * s * cv * m * attrFactor;
-  }, [selectedColorIds, selectedSizeIds, selectedCustomIds, selectedMaterialIds, appliedAttributes, selectedValueIdsByAttr]);
+    return c * s * m * attrFactor;
+  }, [selectedColorIds, selectedSizeIds, selectedMaterialIds, appliedAttributes, selectedValueIdsByAttr]);
 
   // Generate cartesian product
   const handleGenerate = useCallback(() => {
     const colorsToUse = selectedColorIds.length > 0 ? selectedColorIds : [null];
     const sizesToUse = selectedSizeIds.length > 0 ? selectedSizeIds : [null];
-    const customsToUse = selectedCustomIds.length > 0 ? selectedCustomIds : [null];
     const materialsToUse = selectedMaterialIds.length > 0
       ? selectedMaterialIds
       : useBulkMaterial && bulkMaterialId
         ? [bulkMaterialId]
         : [null];
 
-    // Per-attribute value lists (each entry: [attributeId, valueIds[]])
     const attrLists: Array<{ attributeId: string; valueIds: Array<string | null> }> = appliedAttributes.map((a) => {
       const vals = selectedValueIdsByAttr[a.id] || [];
       return { attributeId: a.id, valueIds: vals.length > 0 ? vals : [null] };
@@ -108,25 +105,23 @@ const VariantBuilder = ({
     const keyFor = (
       colorId: string | null,
       sizeId: string | null,
-      customId: string | null,
       materialId: string | null,
       attrPicks: Record<string, string | null>
     ) => {
       const attrPart = appliedAttributes
         .map((a) => `${a.id}:${attrPicks[a.id] || ""}`)
         .join("|");
-      return `${colorId || ""}|${sizeId || ""}|${customId || ""}|${materialId || ""}|${attrPart}`;
+      return `${colorId || ""}|${sizeId || ""}|${materialId || ""}|${attrPart}`;
     };
 
     const existingKeys = new Set(
       existingVariants.map((v) =>
-        keyFor(v.color_id, v.size_id, v.custom_variant_id || null, v.material_id, v.attribute_values || {})
+        keyFor(v.color_id, v.size_id, v.material_id, v.attribute_values || {})
       )
     );
 
     const newVariants: VariantFormData[] = [];
 
-    // Recursive cartesian across attribute lists
     const walkAttrs = (idx: number, acc: Record<string, string | null>, cb: (picks: Record<string, string | null>) => void) => {
       if (idx >= attrLists.length) {
         cb(acc);
@@ -140,25 +135,22 @@ const VariantBuilder = ({
 
     for (const colorId of colorsToUse) {
       for (const sizeId of sizesToUse) {
-        for (const customId of customsToUse) {
-          for (const materialId of materialsToUse) {
-            walkAttrs(0, {}, (attrPicks) => {
-              const key = keyFor(colorId, sizeId, customId, materialId, attrPicks);
-              if (existingKeys.has(key)) return;
-              newVariants.push({
-                color_id: colorId,
-                size_id: sizeId,
-                custom_variant_id: customId,
-                material_id: useBulkMaterial && bulkMaterialId ? bulkMaterialId : materialId,
-                sku: "",
-                purchase_price: useBulkPurchasePrice ? bulkPurchasePrice : 0,
-                selling_price: useBulkSellingPrice ? bulkSellingPrice : basePrice,
-                is_active: true,
-                image_url: null,
-                attribute_values: { ...attrPicks },
-              });
+        for (const materialId of materialsToUse) {
+          walkAttrs(0, {}, (attrPicks) => {
+            const key = keyFor(colorId, sizeId, materialId, attrPicks);
+            if (existingKeys.has(key)) return;
+            newVariants.push({
+              color_id: colorId,
+              size_id: sizeId,
+              material_id: useBulkMaterial && bulkMaterialId ? bulkMaterialId : materialId,
+              sku: "",
+              purchase_price: useBulkPurchasePrice ? bulkPurchasePrice : 0,
+              selling_price: useBulkSellingPrice ? bulkSellingPrice : basePrice,
+              is_active: true,
+              image_url: null,
+              attribute_values: { ...attrPicks },
             });
-          }
+          });
         }
       }
     }
@@ -171,11 +163,12 @@ const VariantBuilder = ({
     onGenerate(newVariants);
     toast.success(`Generated ${newVariants.length} new variant(s)`);
   }, [
-    selectedColorIds, selectedSizeIds, selectedCustomIds, selectedMaterialIds,
+    selectedColorIds, selectedSizeIds, selectedMaterialIds,
     useBulkMaterial, bulkMaterialId, useBulkPurchasePrice,
     bulkPurchasePrice, useBulkSellingPrice, bulkSellingPrice,
     basePrice, existingVariants, onGenerate, appliedAttributes, selectedValueIdsByAttr,
   ]);
+
 
   const noSelection =
     selectedColorIds.length === 0 &&

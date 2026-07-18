@@ -517,18 +517,6 @@ const AdminOrders = () => {
             )}
             {syncProgress ? `Syncing ${syncProgress.done}/${syncProgress.total}` : "Sync Steadfast"}
           </Button>
-          <Button onClick={handleDownloadPdf} disabled={downloadingPdf || ordersLoading} variant="outline">
-            {downloadingPdf ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-            Packing PDF{selectedOrdersMap.size > 0 ? ` (${selectedOrdersMap.size})` : ''}
-          </Button>
-          <Button onClick={handleDownloadCsv} disabled={ordersLoading} variant="outline">
-            <FileSpreadsheet className="h-4 w-4 mr-2" />
-            CSV Report{selectedOrdersMap.size > 0 ? ` (${selectedOrdersMap.size})` : ''}
-          </Button>
-          <Button onClick={handleDownloadReportPdf} disabled={downloadingReport || ordersLoading} variant="outline">
-            {downloadingReport ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileText className="h-4 w-4 mr-2" />}
-            PDF Report{selectedOrdersMap.size > 0 ? ` (${selectedOrdersMap.size})` : ''}
-          </Button>
         </div>
       </div>
 
@@ -954,18 +942,6 @@ const AdminOrders = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="flex flex-wrap gap-2 pb-2 border-b">
-            <Button size="sm" onClick={handleDownloadPdf} disabled={downloadingPdf || selectedOrdersMap.size === 0}>
-              {downloadingPdf ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> : <Download className="h-3.5 w-3.5 mr-2" />}
-              Packing PDF
-            </Button>
-            <Button size="sm" variant="outline" onClick={handleDownloadCsv} disabled={selectedOrdersMap.size === 0}>
-              <FileSpreadsheet className="h-3.5 w-3.5 mr-2" />
-              CSV Report
-            </Button>
-            <Button size="sm" variant="outline" onClick={handleDownloadReportPdf} disabled={downloadingReport || selectedOrdersMap.size === 0}>
-              {downloadingReport ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> : <FileText className="h-3.5 w-3.5 mr-2" />}
-              PDF Report
-            </Button>
             <Button size="sm" variant="ghost" onClick={clearSelection} className="ml-auto">
               Clear all
             </Button>

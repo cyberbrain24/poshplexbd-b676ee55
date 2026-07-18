@@ -174,13 +174,13 @@ const AdminAddOrder = () => {
   // Totals
   const subtotal = useMemo(() => items.reduce((s, i) => s + i.price * i.quantity, 0), [items]);
   const manualDiscountValue = Math.max(0, Number(manualDiscount) || 0);
-  const promoDiscountValue = appliedPromo?.discount || 0;
-  const totalDiscount = manualDiscountValue + promoDiscountValue;
+  const totalDiscount = manualDiscountValue;
 
   const selectedThana = useMemo(() => thanas?.find(t => t.id === customer.thanaId), [thanas, customer.thanaId]);
   const baseShipping = selectedThana?.shipping_cost !== undefined ? Number(selectedThana.shipping_cost) : 0;
-  const shippingCost = appliedPromo?.freeDelivery ? 0 : baseShipping;
+  const shippingCost = baseShipping;
   const total = Math.max(0, subtotal - totalDiscount + shippingCost);
+
 
   // ----- Customer phone lookup -----
   const handlePhoneBlur = async () => {

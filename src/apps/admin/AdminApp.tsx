@@ -65,7 +65,7 @@ const AdminApp = () => (
           <Route path="orders" element={<AdminOrders />} />
           <Route path="order-fulfillment" element={<AdminOrderFulfillment />} />
           <Route path="payment-methods" element={<AdminPaymentMethods />} />
-          <Route path="promo-codes" element={<AdminPromoCodes />} />
+          
           <Route path="bulk-upload" element={<AdminBulkUpload />} />
           <Route path="site-settings" element={<AdminSiteSettings />} />
           <Route path="marketing" element={<MarketingLayout />}>

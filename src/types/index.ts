@@ -31,18 +31,8 @@ export type {
   CustomerFormData,
 } from './customers';
 
-// Account types
-export type {
-  Account,
-  AccountFormData,
-  TransactionType,
-  TransactionCategory,
-  Transaction,
-  OrderPaymentLink,
-  TransactionFilters,
-  TransactionFormData,
-  OrderPayment,
-} from './accounts';
+
+
 
 // Product types (re-export from existing)
 export type {

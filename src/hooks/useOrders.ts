@@ -47,12 +47,10 @@ export interface Order {
   ip_address: string | null;
   customer_notes: string | null;
   internal_notes: string | null;
-  collected_amount: number | null;
   promo_code: string | null;
   promo_code_id: string | null;
   promo_discount: number | null;
-  amount_approved_at: string | null;
-  amount_approved_by: string | null;
+
   customer_called_at: string | null;
   call_center_notes: string | null;
   consignment_id?: string | null;
@@ -463,67 +461,41 @@ export const useUpdateOrder = () => {
   });
 };
 
-// Delete order with full cascade (including linked transactions)
+// Delete order with full cascade
 export const useDeleteOrder = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (orderId: string) => {
-      // 1. Get linked transaction IDs from order_payments before deleting them
-      const { data: orderPayments } = await supabase
-        .from("order_payments")
-        .select("transaction_id")
-        .eq("order_id", orderId);
-      
-      const transactionIds = orderPayments
-        ?.map(p => p.transaction_id)
-        .filter((id): id is string => id !== null) || [];
-
-      // 2. Delete order items
+      // 1. Delete order items
       const { error: itemsError } = await supabase
         .from("order_items")
         .delete()
         .eq("order_id", orderId);
       if (itemsError) throw itemsError;
 
-      // 3. Delete order status history
+      // 2. Delete order status history
       const { error: historyError } = await supabase
         .from("order_status_history")
         .delete()
         .eq("order_id", orderId);
       if (historyError) throw historyError;
 
-      // 4. Delete order payments (must be before transactions due to FK)
-      const { error: paymentsError } = await supabase
-        .from("order_payments")
-        .delete()
-        .eq("order_id", orderId);
-      if (paymentsError) throw paymentsError;
-
-      // 5. Delete linked transactions (triggers will update account balances)
-      if (transactionIds.length > 0) {
-        const { error: transactionsError } = await supabase
-          .from("transactions")
-          .delete()
-          .in("id", transactionIds);
-        if (transactionsError) throw transactionsError;
-      }
-
-      // 6. Delete return requests
+      // 3. Delete return requests
       const { error: returnsError } = await supabase
         .from("return_requests")
         .delete()
         .eq("order_id", orderId);
       if (returnsError) throw returnsError;
 
-      // 7. Delete promo_code_usages referencing this order
+      // 4. Delete promo_code_usages referencing this order
       const { error: promoUsagesError } = await supabase
         .from("promo_code_usages")
         .delete()
         .eq("order_id", orderId);
       if (promoUsagesError) throw promoUsagesError;
 
-      // 8. Finally delete the order
+      // 5. Finally delete the order
       const { error } = await supabase
         .from("orders")
         .delete()
@@ -533,9 +505,7 @@ export const useDeleteOrder = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       queryClient.invalidateQueries({ queryKey: ["order-stats"] });
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["accounts"] });
-      toast.success("Order and linked transactions deleted");
+      toast.success("Order deleted");
     },
     onError: (error) => {
       toast.error("Failed to delete order");
@@ -543,6 +513,7 @@ export const useDeleteOrder = () => {
     },
   });
 };
+
 
 
 // Mark customer as called by call center (toggle)
@@ -592,35 +563,20 @@ export const useOrderStats = () => {
       
       const { data: orders, error } = await supabase
         .from("orders")
-        .select("id, order_status, payment_status, total_amount, created_at");
-      
+        .select("id, order_status, payment_status, total_amount, paid_amount, created_at");
+
       if (error) throw error;
 
       const todayOrders = orders?.filter(o => new Date(o.created_at) >= today) || [];
       const pendingVerification = orders?.filter(o => o.payment_status === 'pending_verification') || [];
-      const pendingFulfillment = orders?.filter(o => 
+      const pendingFulfillment = orders?.filter(o =>
         o.order_status === 'confirmed' || o.order_status === 'processing'
       ) || [];
 
-      // Today's order grand total (sum of all today's order amounts)
       const todayOrderAmount = todayOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
+      const todayRevenue = todayOrders.reduce((sum, o) => sum + (o.paid_amount || 0), 0);
+      const totalRevenue = (orders || []).reduce((sum, o) => sum + (o.paid_amount || 0), 0);
 
-      // Today's revenue = actual payments received today (from order_payments)
-      const { data: todayPayments } = await supabase
-        .from("order_payments")
-        .select("amount")
-        .gte("recorded_at", today.toISOString());
-
-      const todayRevenue = (todayPayments || []).reduce((sum, p) => sum + (p.amount || 0), 0);
-
-      // Total revenue = all payments ever received
-      const { data: allPayments } = await supabase
-        .from("order_payments")
-        .select("amount");
-
-      const totalRevenue = (allPayments || []).reduce((sum, p) => sum + (p.amount || 0), 0);
-
-      // Per-status breakdown (count + total amount)
       const byStatus: Record<string, { count: number; amount: number }> = {};
       (orders || []).forEach((o) => {
         const k = o.order_status as string;
@@ -639,6 +595,7 @@ export const useOrderStats = () => {
         totalRevenue,
         byStatus,
       };
+
 
     },
     staleTime: 1000 * 60,

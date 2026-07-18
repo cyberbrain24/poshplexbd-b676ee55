@@ -14,39 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      accounts: {
-        Row: {
-          created_at: string
-          current_balance: number
-          description: string | null
-          id: string
-          initial_balance: number
-          is_active: boolean
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          current_balance?: number
-          description?: string | null
-          id?: string
-          initial_balance?: number
-          is_active?: boolean
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          current_balance?: number
-          description?: string | null
-          id?: string
-          initial_balance?: number
-          is_active?: boolean
-          name?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       brands: {
         Row: {
           created_at: string
@@ -517,74 +484,36 @@ export type Database = {
       }
       inventory_entries: {
         Row: {
-          account_id: string | null
-          category_id: string | null
           created_at: string
           created_by: string | null
           date: string
           id: string
           notes: string | null
-          subcategory_id: string | null
           transaction_id: string | null
           type: string
           updated_at: string
         }
         Insert: {
-          account_id?: string | null
-          category_id?: string | null
           created_at?: string
           created_by?: string | null
           date?: string
           id?: string
           notes?: string | null
-          subcategory_id?: string | null
           transaction_id?: string | null
           type: string
           updated_at?: string
         }
         Update: {
-          account_id?: string | null
-          category_id?: string | null
           created_at?: string
           created_by?: string | null
           date?: string
           id?: string
           notes?: string | null
-          subcategory_id?: string | null
           transaction_id?: string | null
           type?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "inventory_entries_account_id_fkey"
-            columns: ["account_id"]
-            isOneToOne: false
-            referencedRelation: "accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inventory_entries_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "transaction_categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inventory_entries_subcategory_id_fkey"
-            columns: ["subcategory_id"]
-            isOneToOne: false
-            referencedRelation: "transaction_categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inventory_entries_transaction_id_fkey"
-            columns: ["transaction_id"]
-            isOneToOne: false
-            referencedRelation: "transactions"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       inventory_entry_items: {
         Row: {
@@ -678,48 +607,6 @@ export type Database = {
         }
         Relationships: []
       }
-      media_metadata: {
-        Row: {
-          alt_text: string | null
-          bucket_id: string
-          created_at: string
-          display_name: string | null
-          file_path: string
-          id: string
-          keywords: string[] | null
-          meta_description: string | null
-          seo_slug: string | null
-          title_attribute: string | null
-          updated_at: string
-        }
-        Insert: {
-          alt_text?: string | null
-          bucket_id: string
-          created_at?: string
-          display_name?: string | null
-          file_path: string
-          id?: string
-          keywords?: string[] | null
-          meta_description?: string | null
-          seo_slug?: string | null
-          title_attribute?: string | null
-          updated_at?: string
-        }
-        Update: {
-          alt_text?: string | null
-          bucket_id?: string
-          created_at?: string
-          display_name?: string | null
-          file_path?: string
-          id?: string
-          keywords?: string[] | null
-          meta_description?: string | null
-          seo_slug?: string | null
-          title_attribute?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       meta_channels: {
         Row: {
           access_token: string | null
@@ -768,39 +655,6 @@ export type Database = {
           phone_number_id?: string | null
           updated_at?: string
           verify_token?: string
-        }
-        Relationships: []
-      }
-      music_tracks: {
-        Row: {
-          created_at: string
-          file_path: string
-          file_url: string
-          id: string
-          is_active: boolean
-          sort_order: number
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          file_path: string
-          file_url: string
-          id?: string
-          is_active?: boolean
-          sort_order?: number
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          file_path?: string
-          file_url?: string
-          id?: string
-          is_active?: boolean
-          sort_order?: number
-          title?: string
-          updated_at?: string
         }
         Relationships: []
       }
@@ -890,67 +744,6 @@ export type Database = {
           },
         ]
       }
-      order_payments: {
-        Row: {
-          account_id: string
-          amount: number
-          created_at: string
-          id: string
-          idempotency_key: string | null
-          order_id: string
-          payment_reference: string | null
-          recorded_at: string
-          recorded_by: string | null
-          transaction_id: string | null
-        }
-        Insert: {
-          account_id: string
-          amount: number
-          created_at?: string
-          id?: string
-          idempotency_key?: string | null
-          order_id: string
-          payment_reference?: string | null
-          recorded_at?: string
-          recorded_by?: string | null
-          transaction_id?: string | null
-        }
-        Update: {
-          account_id?: string
-          amount?: number
-          created_at?: string
-          id?: string
-          idempotency_key?: string | null
-          order_id?: string
-          payment_reference?: string | null
-          recorded_at?: string
-          recorded_by?: string | null
-          transaction_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "order_payments_account_id_fkey"
-            columns: ["account_id"]
-            isOneToOne: false
-            referencedRelation: "accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "order_payments_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "order_payments_transaction_id_fkey"
-            columns: ["transaction_id"]
-            isOneToOne: false
-            referencedRelation: "transactions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       order_status_history: {
         Row: {
           changed_by: string | null
@@ -1007,10 +800,7 @@ export type Database = {
       }
       orders: {
         Row: {
-          amount_approved_at: string | null
-          amount_approved_by: string | null
           call_center_notes: string | null
-          collected_amount: number | null
           consignment_id: string | null
           courier_name: string | null
           created_at: string
@@ -1064,10 +854,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          amount_approved_at?: string | null
-          amount_approved_by?: string | null
           call_center_notes?: string | null
-          collected_amount?: number | null
           consignment_id?: string | null
           courier_name?: string | null
           created_at?: string
@@ -1121,10 +908,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          amount_approved_at?: string | null
-          amount_approved_by?: string | null
           call_center_notes?: string | null
-          collected_amount?: number | null
           consignment_id?: string | null
           courier_name?: string | null
           created_at?: string
@@ -2228,105 +2012,6 @@ export type Database = {
           },
         ]
       }
-      transaction_categories: {
-        Row: {
-          created_at: string
-          id: string
-          is_active: boolean
-          name: string
-          parent_id: string | null
-          type: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          name: string
-          parent_id?: string | null
-          type: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          name?: string
-          parent_id?: string | null
-          type?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "transaction_categories_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "transaction_categories"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      transactions: {
-        Row: {
-          account_id: string
-          amount: number
-          category_id: string | null
-          created_at: string
-          date: string
-          id: string
-          notes: string | null
-          to_account_id: string | null
-          type: string
-          updated_at: string
-        }
-        Insert: {
-          account_id: string
-          amount: number
-          category_id?: string | null
-          created_at?: string
-          date?: string
-          id?: string
-          notes?: string | null
-          to_account_id?: string | null
-          type: string
-          updated_at?: string
-        }
-        Update: {
-          account_id?: string
-          amount?: number
-          category_id?: string | null
-          created_at?: string
-          date?: string
-          id?: string
-          notes?: string | null
-          to_account_id?: string | null
-          type?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "transactions_account_id_fkey"
-            columns: ["account_id"]
-            isOneToOne: false
-            referencedRelation: "accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transactions_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "transaction_categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transactions_to_account_id_fkey"
-            columns: ["to_account_id"]
-            isOneToOne: false
-            referencedRelation: "accounts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_roles: {
         Row: {
           created_at: string
@@ -2402,16 +2087,6 @@ export type Database = {
         Returns: undefined
       }
       is_admin: { Args: never; Returns: boolean }
-      record_order_payment_atomic: {
-        Args: {
-          p_account_id: string
-          p_amount: number
-          p_idempotency_key: string
-          p_order_id: string
-          p_payment_reference: string
-        }
-        Returns: Json
-      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       track_orders_lookup: {

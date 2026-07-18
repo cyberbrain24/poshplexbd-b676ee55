@@ -19,14 +19,12 @@ export const useCreateInventoryEntry = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ entry, items }: {
-      entry: { type: "in" | "out"; date: string; notes?: string; account_id?: string | null; category_id?: string | null; subcategory_id?: string | null };
+      entry: { type: "in" | "out"; date: string; notes?: string };
       items: InventoryItemInput[];
     }) => createInventoryEntry(entry, items),
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ["inventory-entries", vars.entry.type] });
       qc.invalidateQueries({ queryKey: ["products"] });
-      qc.invalidateQueries({ queryKey: ["transactions"] });
-      qc.invalidateQueries({ queryKey: ["accounts"] });
       toast.success(`Inventory ${vars.entry.type} recorded`);
     },
     onError: (err: Error) => toast.error(err.message),
@@ -38,14 +36,12 @@ export const useUpdateInventoryEntry = () => {
   return useMutation({
     mutationFn: ({ id, entry, items }: {
       id: string;
-      entry: { date: string; notes?: string; account_id?: string | null; category_id?: string | null; subcategory_id?: string | null };
+      entry: { date: string; notes?: string };
       items: InventoryItemInput[];
     }) => updateInventoryEntry(id, entry, items),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["inventory-entries"] });
       qc.invalidateQueries({ queryKey: ["products"] });
-      qc.invalidateQueries({ queryKey: ["transactions"] });
-      qc.invalidateQueries({ queryKey: ["accounts"] });
       toast.success("Inventory entry updated");
     },
     onError: (err: Error) => toast.error(err.message),
@@ -59,8 +55,6 @@ export const useDeleteInventoryEntry = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["inventory-entries"] });
       qc.invalidateQueries({ queryKey: ["products"] });
-      qc.invalidateQueries({ queryKey: ["transactions"] });
-      qc.invalidateQueries({ queryKey: ["accounts"] });
       toast.success("Inventory entry deleted");
     },
     onError: (err: Error) => toast.error(err.message),

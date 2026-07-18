@@ -42,7 +42,7 @@ import {
   CustomerFilters,
 } from "@/hooks/useCustomers";
 import CustomerModal from "@/components/admin/CustomerModal";
-import PromoUsageHistoryModal from "@/components/admin/PromoUsageHistoryModal";
+
 import CustomerDetailModal from "@/components/admin/CustomerDetailModal";
 
 const AdminCustomers = () => {
@@ -50,7 +50,7 @@ const AdminCustomers = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteCustomerName, setDeleteCustomerName] = useState<string>("");
-  const [promoHistoryCustomer, setPromoHistoryCustomer] = useState<Customer | null>(null);
+  
   const [viewCustomer, setViewCustomer] = useState<Customer | null>(null);
   const [impersonating, setImpersonating] = useState<string | null>(null);
 
@@ -121,14 +121,14 @@ const AdminCustomers = () => {
 
   // Calculate stats
   const stats = useMemo(() => {
-    if (!customers) return { total: 0, male: 0, female: 0, withPromo: 0 };
+    if (!customers) return { total: 0, male: 0, female: 0 };
     return {
       total: customers.length,
       male: customers.filter(c => c.gender === "male").length,
       female: customers.filter(c => c.gender === "female").length,
-      withPromo: customers.filter(c => (c.promo_usage_count || 0) > 0).length,
     };
   }, [customers]);
+
 
   return (
     <div className="p-6 space-y-6">

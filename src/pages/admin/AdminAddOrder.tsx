@@ -337,10 +337,8 @@ const AdminAddOrder = () => {
           discountAmount: totalDiscount,
           shippingCost,
           paidAmount: Number(paidAmount) || 0,
-          promoCodeId: appliedPromo?.id,
-          promoCode: appliedPromo?.code,
-          promoDiscount: promoDiscountValue || undefined,
           customerNotes: customer.notes || undefined,
+
         },
         cartItems,
       });

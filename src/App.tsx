@@ -12,14 +12,10 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import MobileFooterNav from "./components/navigation/MobileFooterNav";
 import TypographyProvider from "./components/TypographyProvider";
 import DeferredMount from "./components/perf/DeferredMount";
+import StorefrontRoutes from "./apps/storefront/StorefrontRoutes";
 
 // Non-critical: defer past first paint to lower LCP/TBT on landing pages
 const FacebookPixelTracker = lazy(() => import("./components/tracking/FacebookPixelTracker"));
-
-// Storefront routes (all public /*, /category/*, /product/*, /account, etc.)
-// and the admin sub-app live inside this single entry so App.tsx only wires
-// providers. Makes it obvious what ships to the frontend host (Vercel).
-const StorefrontRoutes = lazy(() => import("./apps/storefront/StorefrontRoutes"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -61,9 +57,7 @@ const App = () => (
                     <FacebookPixelTracker />
                   </Suspense>
                 </DeferredMount>
-                <Suspense fallback={<LoadingFallback />}>
-                  <StorefrontRoutes />
-                </Suspense>
+                <StorefrontRoutes />
 
                 <MobileFooterNav />
               </BrowserRouter>

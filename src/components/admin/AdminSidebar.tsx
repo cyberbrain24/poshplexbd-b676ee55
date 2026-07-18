@@ -28,13 +28,8 @@ const productManagementItems: NavItem[] = [
   { icon: Package, label: "Products", path: "/admin/products" },
   { icon: Palette, label: "Colors", path: "/admin/colors" },
   { icon: Ruler, label: "Sizes", path: "/admin/sizes" },
-  
-  { icon: Tag, label: "Product Attributes", path: "/admin/product-attributes" },
-  { icon: Shirt, label: "Materials", path: "/admin/materials" },
   { icon: BookOpen, label: "Size Guides", path: "/admin/size-guides" },
-  { icon: Sparkles, label: "Care & Cleaning", path: "/admin/care-instructions" },
   { icon: FolderTree, label: "Categories", path: "/admin/categories" },
-  { icon: Building2, label: "Brands", path: "/admin/brands" },
   { icon: Upload, label: "Bulk Upload", path: "/admin/bulk-upload" },
 ];
 

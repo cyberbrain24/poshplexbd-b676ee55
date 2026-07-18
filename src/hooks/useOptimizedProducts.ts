@@ -70,7 +70,6 @@ export const useOptimizedProducts = (
           is_featured,
           created_at,
           category:categories(id, name),
-          brand:brands(id, name),
           images:product_images(id, image_url, is_main, sort_order)
         `)
         .order("created_at", { ascending: false })

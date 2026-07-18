@@ -45,7 +45,7 @@ const ProductSEO = ({ product }: ProductSEOProps) => {
     sku: product.sku,
     price,
     image: mainImage,
-    brand: product.brand?.name,
+    brand: "Poshplex",
     category: categoryName,
     inStock,
     url: productUrl,

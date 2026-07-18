@@ -19,7 +19,6 @@ export interface DashboardProductSummary {
   totalProducts: number;
   activeProducts: number;
   totalCategories: number;
-  totalBrands: number;
 }
 
 export interface StatusTotal {
@@ -35,10 +34,9 @@ export interface LifetimeTotals {
 }
 
 export async function fetchDashboardProductSummary(): Promise<DashboardProductSummary> {
-  const [products, categories, brands] = await Promise.all([
+  const [products, categories] = await Promise.all([
     supabase.from("products").select("id, is_active").limit(5000),
     supabase.from("categories").select("id", { count: "exact", head: true }),
-    supabase.from("brands").select("id", { count: "exact", head: true }),
   ]);
 
   const list = products.data || [];
@@ -46,7 +44,6 @@ export async function fetchDashboardProductSummary(): Promise<DashboardProductSu
     totalProducts: list.length,
     activeProducts: list.filter((p: any) => p.is_active).length,
     totalCategories: categories.count || 0,
-    totalBrands: brands.count || 0,
   };
 }
 

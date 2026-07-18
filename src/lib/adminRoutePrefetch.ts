@@ -7,7 +7,7 @@ export const adminRouteLoaders: Record<string, Loader> = {
   "/admin/sizes": () => import("@/pages/admin/AdminSizes"),
   "/admin/size-guides": () => import("@/pages/admin/AdminSizeGuides"),
   "/admin/categories": () => import("@/pages/admin/AdminCategories"),
-  "/admin/bulk-upload": () => import("@/pages/admin/AdminBulkUpload"),
+  
   "/admin/orders": () => import("@/pages/admin/AdminOrders"),
   "/admin/payment-methods": () => import("@/pages/admin/AdminPaymentMethods"),
   "/admin/customers": () => import("@/pages/admin/AdminCustomers"),

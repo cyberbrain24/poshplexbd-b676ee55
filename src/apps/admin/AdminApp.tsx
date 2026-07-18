@@ -19,7 +19,7 @@ const AdminOrderFulfillment = lazy(() => import("@/pages/admin/AdminOrderFulfill
 const AdminPaymentMethods = lazy(() => import("@/pages/admin/AdminPaymentMethods"));
 const AdminReviews = lazy(() => import("@/pages/admin/AdminReviews"));
 const AdminSiteSettings = lazy(() => import("@/pages/admin/AdminSiteSettings"));
-const AdminBulkUpload = lazy(() => import("@/pages/admin/AdminBulkUpload"));
+
 
 const MarketingLayout = lazy(() => import("@/pages/admin/marketing/MarketingLayout"));
 const MarketingOverview = lazy(() => import("@/pages/admin/marketing/MarketingOverview"));
@@ -53,7 +53,7 @@ const AdminApp = () => (
           <Route path="orders" element={<AdminOrders />} />
           <Route path="order-fulfillment" element={<AdminOrderFulfillment />} />
           <Route path="payment-methods" element={<AdminPaymentMethods />} />
-          <Route path="bulk-upload" element={<AdminBulkUpload />} />
+          
           <Route path="site-settings" element={<AdminSiteSettings />} />
           <Route path="marketing" element={<MarketingLayout />}>
             <Route index element={<MarketingOverview />} />

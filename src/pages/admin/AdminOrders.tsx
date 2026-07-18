@@ -4,8 +4,6 @@ import { ORDER_STATUS_LABELS, ALLOWED_ORDER_STATUSES, PAYMENT_STATUS_LABELS } fr
 import MultiSelectFilter from "@/components/admin/MultiSelectFilter";
 import ProductMultiSelectFilter, { type PickedProduct } from "@/components/admin/ProductMultiSelectFilter";
 import { Checkbox } from "@/components/ui/checkbox";
-import { downloadOrdersCsv, generateOrdersReportPdf } from "@/lib/ordersReport";
-import { FileSpreadsheet, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -74,7 +72,7 @@ import { useCreateShipment, useResetShipping, useSyncSteadfastStatus } from "@/h
 import { formatCurrency } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { generatePackingListPdf } from "@/lib/orderPackingPdf";
+
 
 // Parcel ship cell - shows Ship button or Shipped: {consignment_id} in green
 const ParcelIdCell = ({ order }: { order: { id: string; consignment_id: string | null; tracking_number: string | null } }) => {
@@ -303,8 +301,6 @@ const AdminOrders = () => {
   const selectedOrderIds = useMemo(() => new Set(selectedOrdersMap.keys()), [selectedOrdersMap]);
   const [selectionMode, setSelectionMode] = useState(false);
   const [showSelectedDialog, setShowSelectedDialog] = useState(false);
-  const [downloadingPdf, setDownloadingPdf] = useState(false);
-  const [downloadingReport, setDownloadingReport] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null);
   const [deleteOrderNumber, setDeleteOrderNumber] = useState<string>("");
@@ -415,24 +411,6 @@ const AdminOrders = () => {
     return (orders as any[]) || [];
   };
 
-  const handleDownloadPdf = async () => {
-    const targets = getTargetOrders();
-    if (targets.length === 0) {
-      toast.error("No orders to download");
-      return;
-    }
-    setDownloadingPdf(true);
-    try {
-      await generatePackingListPdf(targets);
-      toast.success(`Packing list for ${targets.length} order(s) downloaded`);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to generate PDF");
-    } finally {
-      setDownloadingPdf(false);
-    }
-  };
-
   const toggleSelectOrder = (order: any) => {
     setSelectedOrdersMap((prev) => {
       const next = new Map(prev);
@@ -467,38 +445,6 @@ const AdminOrders = () => {
     });
   };
 
-  const handleDownloadCsv = () => {
-    const targets = getTargetOrders();
-    if (targets.length === 0) {
-      toast.error("No orders to export");
-      return;
-    }
-    try {
-      downloadOrdersCsv(targets);
-      toast.success(`CSV exported (${targets.length})`);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to export CSV");
-    }
-  };
-
-  const handleDownloadReportPdf = () => {
-    const targets = getTargetOrders();
-    if (targets.length === 0) {
-      toast.error("No orders to export");
-      return;
-    }
-    setDownloadingReport(true);
-    try {
-      generateOrdersReportPdf(targets);
-      toast.success(`Report PDF downloaded (${targets.length})`);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to generate report");
-    } finally {
-      setDownloadingReport(false);
-    }
-  };
 
 
   const handleDeleteClick = (orderId: string, orderNumber: string, _paidAmount: number, _paymentStatus: string, e: React.MouseEvent) => {
@@ -570,18 +516,6 @@ const AdminOrders = () => {
               <RefreshCw className="h-4 w-4 mr-2" />
             )}
             {syncProgress ? `Syncing ${syncProgress.done}/${syncProgress.total}` : "Sync Steadfast"}
-          </Button>
-          <Button onClick={handleDownloadPdf} disabled={downloadingPdf || ordersLoading} variant="outline">
-            {downloadingPdf ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-            Packing PDF{selectedOrdersMap.size > 0 ? ` (${selectedOrdersMap.size})` : ''}
-          </Button>
-          <Button onClick={handleDownloadCsv} disabled={ordersLoading} variant="outline">
-            <FileSpreadsheet className="h-4 w-4 mr-2" />
-            CSV Report{selectedOrdersMap.size > 0 ? ` (${selectedOrdersMap.size})` : ''}
-          </Button>
-          <Button onClick={handleDownloadReportPdf} disabled={downloadingReport || ordersLoading} variant="outline">
-            {downloadingReport ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileText className="h-4 w-4 mr-2" />}
-            PDF Report{selectedOrdersMap.size > 0 ? ` (${selectedOrdersMap.size})` : ''}
           </Button>
         </div>
       </div>
@@ -1008,18 +942,6 @@ const AdminOrders = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="flex flex-wrap gap-2 pb-2 border-b">
-            <Button size="sm" onClick={handleDownloadPdf} disabled={downloadingPdf || selectedOrdersMap.size === 0}>
-              {downloadingPdf ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> : <Download className="h-3.5 w-3.5 mr-2" />}
-              Packing PDF
-            </Button>
-            <Button size="sm" variant="outline" onClick={handleDownloadCsv} disabled={selectedOrdersMap.size === 0}>
-              <FileSpreadsheet className="h-3.5 w-3.5 mr-2" />
-              CSV Report
-            </Button>
-            <Button size="sm" variant="outline" onClick={handleDownloadReportPdf} disabled={downloadingReport || selectedOrdersMap.size === 0}>
-              {downloadingReport ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> : <FileText className="h-3.5 w-3.5 mr-2" />}
-              PDF Report
-            </Button>
             <Button size="sm" variant="ghost" onClick={clearSelection} className="ml-auto">
               Clear all
             </Button>

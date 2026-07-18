@@ -200,56 +200,13 @@ const Checkout = () => {
   }, [paymentMethods, selectedPaymentMethodId]);
 
   const subtotal = cartTotal;
-  const total = subtotal - promoDiscount + shippingCost;
-  
+  const total = subtotal + shippingCost;
+
   // Calculate amounts for display
   const partialAmount = usePartialPayment ? (Number(partialPaymentAmount) || 0) : 0;
   const remainingAmount = total - partialAmount;
   const displayTotal = usePartialPayment && partialAmount > 0 ? partialAmount : total;
 
-  // Handle promo code application using centralized validation
-  const handleApplyPromo = async () => {
-    if (!discountCode.trim()) return;
-    setIsApplyingPromo(true);
-    try {
-      const { validatePromoCode } = await import("@/lib/promo");
-      const result = await validatePromoCode(
-        discountCode,
-        subtotal,
-        shippingCost,
-        customerDetails.phone || undefined,
-      );
-
-      if (!result.valid || !result.promo) {
-        toast.error(result.error || "Invalid promo code");
-        return;
-      }
-
-      setPromoDiscount(result.discount);
-      setAppliedPromo({
-        id: result.promo.id,
-        code: result.promo.code,
-        discount_type: result.promo.discount_type,
-        discount_value: result.promo.discount_value,
-        max_discount_amount: result.promo.max_discount_amount,
-        reward_type: result.promo.reward_type,
-        freeDelivery: result.freeDelivery,
-        membershipReward: result.membershipReward,
-      });
-
-      if (result.freeDelivery) {
-        toast.success("Promo code applied! Free delivery!");
-      } else if (result.membershipReward && result.discount === 0) {
-        toast.success("Promo code applied! Membership will be awarded after payment success");
-      } else {
-        toast.success(`Promo code applied! You save ${formatCurrency(result.discount)}`);
-      }
-    } catch (err: any) {
-      toast.error(err.message || "Failed to apply promo code");
-    } finally {
-      setIsApplyingPromo(false);
-    }
-  };
 
   const getPaymentIcon = (type: PaymentMethodType) => {
     switch (type) {

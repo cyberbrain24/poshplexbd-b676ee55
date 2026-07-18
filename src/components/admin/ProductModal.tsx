@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { X, Plus, Trash2, Upload, GripVertical, Play, ChevronDown, ChevronUp, Image as ImageIcon, Check } from "lucide-react";
+import { X, Plus, Trash2, Upload, GripVertical, ChevronDown, ChevronUp, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -10,17 +9,14 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useCategories, useBrands, useSizeGuides, useCareInstructions, useColors, useSizes, useMaterials } from "@/hooks/useMasterData";
+import { useCategories, useSizeGuides, useColors, useSizes } from "@/hooks/useMasterData";
 import { useCreateProduct, useUpdateProduct, useAddProductImage, useDeleteProductImage, useUpdateProductImage, useAddProductVariant, useUpdateProductVariant, useDeleteProductVariant, uploadProductImage } from "@/hooks/useProducts";
 import { Product, ProductFormData, VariantFormData, ProductImage } from "@/types/product";
 import { toast } from "sonner";
 import VariantBuilder from "@/components/admin/VariantBuilder";
 import ProductImagePickerModal from "@/components/admin/ProductImagePickerModal";
 import { useProductCategoryIds, useSyncProductCategories } from "@/hooks/useProductCategories";
-import { useProductAppliedAttributeIds, useSyncProductAttributes, useProductAttributes, useProductVariantAttributeValues, syncVariantAttributeValues } from "@/hooks/useProductAttributes";
 import { compressProductImage } from "@/lib/imageCompress";
-
-
 
 interface ProductModalProps {
   isOpen: boolean;
@@ -33,7 +29,6 @@ const defaultFormData: ProductFormData = {
   sku: "",
   product_type: "simple",
   category_id: null,
-  brand_id: null,
   short_description: "",
   full_description: "",
   base_price: 0,
@@ -41,7 +36,6 @@ const defaultFormData: ProductFormData = {
   youtube_autoplay: false,
   youtube_mute: true,
   size_guide_id: null,
-  care_instruction_id: null,
   is_active: true,
   is_featured: false,
 };
@@ -56,50 +50,17 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
   const [showBuilder, setShowBuilder] = useState(false);
   const [mediaPickerIndex, setMediaPickerIndex] = useState<number | null>(null);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
-  const [selectedAttributeIds, setSelectedAttributeIds] = useState<string[]>([]);
-
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const queryClient = useQueryClient();
-
-  // When opening modal for an existing product, force-refetch attribute-value
-  // mappings (cache may be stale from an earlier edit session).
-  useEffect(() => {
-    if (product?.id) {
-      queryClient.invalidateQueries({ queryKey: ["productVariantAttributeValues", product.id] });
-      queryClient.invalidateQueries({ queryKey: ["productAppliedAttributes", product.id] });
-    }
-  }, [product?.id, queryClient]);
 
   const { data: categories = [] } = useCategories();
   const { data: productCategoryIds = [] } = useProductCategoryIds(product?.id);
   const syncCategories = useSyncProductCategories();
-  const { data: appliedAttributeIds } = useProductAppliedAttributeIds(product?.id);
-  const syncAttributes = useSyncProductAttributes();
-  const { data: allAttributes = [] } = useProductAttributes();
-  const { data: variantAttrValuesMap = {} } = useProductVariantAttributeValues(product?.id);
-
-  // Derived: attributes applied to this product (full objects with values)
-  const appliedAttributes = useMemo(
-    () => allAttributes.filter((a) => selectedAttributeIds.includes(a.id)),
-    [allAttributes, selectedAttributeIds]
-  );
-
-  const toggleAppliedAttribute = useCallback((attributeId: string) => {
-    setSelectedAttributeIds((prev) =>
-      prev.includes(attributeId) ? prev.filter((id) => id !== attributeId) : [...prev, attributeId]
-    );
-  }, []);
-
-  // Derived: parent categories and their subcategories (for display grouping)
-  const parentCategories = useMemo(() => categories.filter(c => !c.parent_id), [categories]);
-  const { data: brands = [] } = useBrands();
   const { data: sizeGuides = [] } = useSizeGuides();
-  const { data: careInstructions = [] } = useCareInstructions();
   const { data: colors = [] } = useColors();
   const { data: sizes = [] } = useSizes();
-  const { data: materials = [] } = useMaterials();
-  
+
+  const parentCategories = useMemo(() => categories.filter((c) => !c.parent_id), [categories]);
 
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
@@ -117,7 +78,6 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
         sku: product.sku,
         product_type: product.product_type,
         category_id: product.category_id,
-        brand_id: product.brand_id,
         short_description: product.short_description || "",
         full_description: product.full_description || "",
         base_price: product.base_price,
@@ -125,58 +85,40 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
         youtube_autoplay: product.youtube_autoplay,
         youtube_mute: product.youtube_mute,
         size_guide_id: product.size_guide_id,
-        care_instruction_id: product.care_instruction_id,
         is_active: product.is_active,
         is_featured: product.is_featured ?? false,
       });
       setImages(product.images || []);
       setVariants([]);
-      
     } else {
       setFormData(defaultFormData);
       setImages([]);
       setVariants([]);
       setSelectedCategoryIds([]);
-      setSelectedAttributeIds([]);
-      
     }
   }, [product]);
 
-  // Load multi-category selections when editing
   useEffect(() => {
-    if (productCategoryIds.length > 0) {
-      setSelectedCategoryIds(productCategoryIds);
-    } else if (product?.category_id) {
-      // Fallback: use legacy category_id if no junction data
-      setSelectedCategoryIds([product.category_id]);
-    }
+    if (productCategoryIds.length > 0) setSelectedCategoryIds(productCategoryIds);
+    else if (product?.category_id) setSelectedCategoryIds([product.category_id]);
   }, [productCategoryIds, product?.category_id]);
 
-  // Load applied attributes when editing
-  useEffect(() => {
-    if (product?.id && appliedAttributeIds) {
-      setSelectedAttributeIds(appliedAttributeIds);
-    }
-  }, [product?.id, appliedAttributeIds]);
-
-  // Load existing variants when editing
   useEffect(() => {
     if (product?.variants && product.variants.length > 0) {
-      setVariants(product.variants.map(v => ({
-        id: v.id,
-        color_id: v.color_id,
-        size_id: v.size_id,
-        material_id: v.material_id,
-        
-        sku: v.sku,
-        purchase_price: v.purchase_price,
-        selling_price: v.selling_price,
-        is_active: v.is_active,
-        image_url: v.image_url || null,
-        attribute_values: variantAttrValuesMap[v.id] || {},
-      })));
+      setVariants(
+        product.variants.map((v) => ({
+          id: v.id,
+          color_id: v.color_id,
+          size_id: v.size_id,
+          sku: v.sku,
+          purchase_price: v.purchase_price,
+          selling_price: v.selling_price,
+          is_active: v.is_active,
+          image_url: v.image_url || null,
+        }))
+      );
     }
-  }, [product, variantAttrValuesMap]);
+  }, [product]);
 
   const getYouTubeVideoId = (url: string) => {
     const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
@@ -186,35 +128,22 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
   const handleSubmit = async () => {
     try {
       if (product) {
-        // 1. Update product info (set category_id to first selected for backward compat)
         const updatedFormData = { ...formData, category_id: selectedCategoryIds[0] || null };
         await updateProduct.mutateAsync({ id: product.id, data: updatedFormData });
-
-        // 2. Sync multi-category junction table
         await syncCategories.mutateAsync({ productId: product.id, categoryIds: selectedCategoryIds });
-        await syncAttributes.mutateAsync({ productId: product.id, attributeIds: selectedAttributeIds });
-        // 2. Sync variants for existing product
-        const existingVariantIds = (product.variants || []).map(v => v.id);
-        const currentVariantIds = variants.filter(v => v.id).map(v => v.id!);
 
-        // Delete removed variants
-        const deletedIds = existingVariantIds.filter(id => !currentVariantIds.includes(id));
-        for (const id of deletedIds) {
-          await deleteVariant.mutateAsync(id);
-        }
+        const existingVariantIds = (product.variants || []).map((v) => v.id);
+        const currentVariantIds = variants.filter((v) => v.id).map((v) => v.id!);
+        const deletedIds = existingVariantIds.filter((id) => !currentVariantIds.includes(id));
+        for (const id of deletedIds) await deleteVariant.mutateAsync(id);
 
-        // Update existing variants & add new ones — capture variant id for attribute sync
-        const variantIdsWithAttrValues: Array<{ id: string; attribute_values: Record<string, string | null> }> = [];
         for (const variant of variants) {
           if (variant.id && existingVariantIds.includes(variant.id)) {
-            // Update existing
             await updateVariant.mutateAsync({
               id: variant.id,
               data: {
                 color_id: variant.color_id,
                 size_id: variant.size_id,
-                material_id: variant.material_id,
-                
                 sku: variant.sku,
                 purchase_price: variant.purchase_price,
                 selling_price: variant.selling_price,
@@ -222,58 +151,36 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                 image_url: variant.image_url,
               },
             });
-            variantIdsWithAttrValues.push({ id: variant.id, attribute_values: variant.attribute_values || {} });
           } else {
-            // Add new variant
-            const inserted = await addVariant.mutateAsync({
-              productId: product.id,
-              variantData: variant,
-            });
-            if (inserted?.id) {
-              variantIdsWithAttrValues.push({ id: inserted.id, attribute_values: variant.attribute_values || {} });
-            }
+            await addVariant.mutateAsync({ productId: product.id, variantData: variant });
           }
         }
 
-        // Sync per-variant attribute value picks
-        for (const v of variantIdsWithAttrValues) {
-          await syncVariantAttributeValues(v.id, v.attribute_values, selectedAttributeIds);
-        }
-
-        // Sync image sort_order and is_main for existing images
         for (const img of images) {
           if (!img.id.startsWith("temp-")) {
             await updateImage.mutateAsync({ id: img.id, sortOrder: img.sort_order, isMain: img.is_main });
           }
         }
 
-
         toast.success("Product updated successfully");
       } else {
         const createFormData = { ...formData, category_id: selectedCategoryIds[0] || null };
         const newProduct = await createProduct.mutateAsync(createFormData);
 
-        // Sync multi-category junction table
         if (selectedCategoryIds.length > 0) {
           await syncCategories.mutateAsync({ productId: newProduct.id, categoryIds: selectedCategoryIds });
         }
-        if (selectedAttributeIds.length > 0) {
-          await syncAttributes.mutateAsync({ productId: newProduct.id, attributeIds: selectedAttributeIds });
-        }
-        
-        
-        // Upload images for new product
+
         for (const img of images) {
           let imageUrl = img.image_url;
           let thumbUrl: string | null = (img as any).thumb_url ?? null;
           let mediumUrl: string | null = (img as any).medium_url ?? null;
           let largeUrl: string | null = (img as any).large_url ?? null;
 
-          // Upload blob files to storage first
           if (imageUrl.startsWith("blob:")) {
             const response = await fetch(imageUrl);
             const blob = await response.blob();
-            const file = new File([blob], `image-${Date.now()}.${blob.type.split('/')[1] || 'jpg'}`, { type: blob.type });
+            const file = new File([blob], `image-${Date.now()}.${blob.type.split("/")[1] || "jpg"}`, { type: blob.type });
             const uploaded = await uploadProductImage(file, newProduct.id);
             imageUrl = uploaded.url;
             thumbUrl = uploaded.thumb_url;
@@ -283,10 +190,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
 
           await addImage.mutateAsync({
             productId: newProduct.id,
-            imageUrl,
-            thumbUrl,
-            mediumUrl,
-            largeUrl,
+            imageUrl, thumbUrl, mediumUrl, largeUrl,
             altText: img.alt_text || undefined,
             sortOrder: img.sort_order,
             isMain: img.is_main,
@@ -294,27 +198,11 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
           });
         }
 
-        // Add variants for new product and sync per-variant attribute values
         for (const variant of variants) {
-          const inserted = await addVariant.mutateAsync({
-            productId: newProduct.id,
-            variantData: variant,
-          });
-          if (inserted?.id) {
-            await syncVariantAttributeValues(inserted.id, variant.attribute_values, selectedAttributeIds);
-          }
+          await addVariant.mutateAsync({ productId: newProduct.id, variantData: variant });
         }
 
-
         toast.success("Product created successfully");
-      }
-      // Invalidate attribute caches so re-opening the modal shows fresh picks
-      const pid = product?.id;
-      queryClient.invalidateQueries({ queryKey: ["productVariantAttributeValues"] });
-      queryClient.invalidateQueries({ queryKey: ["productAppliedAttributes"] });
-      if (pid) {
-        queryClient.invalidateQueries({ queryKey: ["productVariantAttributeValues", pid] });
-        queryClient.invalidateQueries({ queryKey: ["productAppliedAttributes", pid] });
       }
       onClose();
     } catch (error) {
@@ -326,30 +214,18 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-
-    // Capture files into array BEFORE resetting input (resetting clears the FileList)
     const fileArray = Array.from(files);
-
-    // Reset input so the same files can be re-selected later
     if (fileInputRef.current) fileInputRef.current.value = "";
 
-    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    const MAX_FILE_SIZE = 5 * 1024 * 1024;
     const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
 
-    // Validate and filter files
     const validFiles: File[] = [];
     for (const file of fileArray) {
-      if (!ALLOWED_TYPES.includes(file.type)) {
-        toast.error(`"${file.name}" skipped — only JPEG, PNG, WebP, GIF allowed`);
-        continue;
-      }
-      if (file.size > MAX_FILE_SIZE) {
-        toast.error(`"${file.name}" skipped — exceeds 5MB limit`);
-        continue;
-      }
+      if (!ALLOWED_TYPES.includes(file.type)) { toast.error(`"${file.name}" skipped`); continue; }
+      if (file.size > MAX_FILE_SIZE) { toast.error(`"${file.name}" exceeds 5MB`); continue; }
       validFiles.push(file);
     }
-
     if (validFiles.length === 0) return;
 
     setIsUploading(true);
@@ -357,251 +233,146 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
 
     try {
       if (product) {
-        // Existing product: compress, then upload sequentially (more reliable than parallel for storage 520s)
-        const existingUrls = new Set(images.map(i => i.image_url));
+        const existingUrls = new Set(images.map((i) => i.image_url));
         const baseSort = images.length;
 
-        // Compress in parallel (CPU-bound, safe)
-        const compressed = await Promise.all(
-          validFiles.map(async (f) => {
-            try { return await compressProductImage(f); } catch { return f; }
-          })
-        );
+        const compressed = await Promise.all(validFiles.map(async (f) => { try { return await compressProductImage(f); } catch { return f; } }));
 
         const newRows: ProductImage[] = [];
         for (let i = 0; i < compressed.length; i++) {
           const file = compressed[i];
-          let imageUrl: string;
-          let thumbUrl: string | null = null;
-          let mediumUrl: string | null = null;
-          let largeUrl: string | null = null;
           try {
             const uploaded = await uploadProductImage(file, product.id);
-            imageUrl = uploaded.url;
-            thumbUrl = uploaded.thumb_url;
-            mediumUrl = uploaded.medium_url;
-            largeUrl = uploaded.large_url;
-          } catch (err: any) {
-            console.error("Upload failed:", err);
-            toast.error(`"${validFiles[i].name}" upload failed: ${err?.message || "Unknown error"}`);
-            continue;
-          }
-          if (existingUrls.has(imageUrl)) continue;
-          existingUrls.add(imageUrl);
-
-          try {
+            if (existingUrls.has(uploaded.url)) continue;
+            existingUrls.add(uploaded.url);
             const inserted = await addImage.mutateAsync({
               productId: product.id,
-              imageUrl,
-              thumbUrl,
-              mediumUrl,
-              largeUrl,
+              imageUrl: uploaded.url,
+              thumbUrl: uploaded.thumb_url,
+              mediumUrl: uploaded.medium_url,
+              largeUrl: uploaded.large_url,
               sortOrder: baseSort + i,
               isMain: false,
             });
             if (inserted) {
               newRows.push({
-                id: inserted.id,
-                product_id: product.id,
-                image_url: imageUrl,
-                alt_text: null,
-                sort_order: baseSort + i,
-                is_main: false,
-                color_id: null,
+                id: inserted.id, product_id: product.id,
+                image_url: uploaded.url, alt_text: null,
+                sort_order: baseSort + i, is_main: false, color_id: null,
                 created_at: new Date().toISOString(),
               });
               uploadedCount++;
             }
           } catch (err: any) {
-            console.error("DB insert failed:", err);
-            toast.error(`Save failed: ${err?.message || "Unknown error"}`);
+            toast.error(`Upload failed: ${err?.message || "Unknown"}`);
           }
         }
-
-        if (newRows.length > 0) {
-          setImages((prev) => [...newRows, ...prev].map((img, idx) => ({ ...img, sort_order: idx })));
-        }
+        if (newRows.length > 0) setImages((prev) => [...newRows, ...prev].map((img, idx) => ({ ...img, sort_order: idx })));
       } else {
-        // New product: store as blobs locally; prepend new images so latest uploads appear first
-        const newImages: ProductImage[] = validFiles.map((file, idx) => {
-          const localUrl = URL.createObjectURL(file);
-          return {
-            id: `temp-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 9)}`,
-            product_id: "",
-            image_url: localUrl,
-            alt_text: null,
-            sort_order: idx,
-            is_main: false,
-            color_id: null,
-            created_at: new Date().toISOString(),
-          };
-        });
-        setImages(prev => {
+        const newImages: ProductImage[] = validFiles.map((file, idx) => ({
+          id: `temp-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 9)}`,
+          product_id: "", image_url: URL.createObjectURL(file), alt_text: null,
+          sort_order: idx, is_main: false, color_id: null,
+          created_at: new Date().toISOString(),
+        }));
+        setImages((prev) => {
           const combined = [...newImages, ...prev];
-          // Re-assign sort_order and ensure first image is main if none set
-          const hasMain = combined.some(i => i.is_main);
-          return combined.map((img, i) => ({
-            ...img,
-            sort_order: i,
-            is_main: !hasMain && i === 0 ? true : img.is_main,
-          }));
+          const hasMain = combined.some((i) => i.is_main);
+          return combined.map((img, i) => ({ ...img, sort_order: i, is_main: !hasMain && i === 0 ? true : img.is_main }));
         });
         uploadedCount = newImages.length;
       }
 
-      if (uploadedCount > 0) {
-        toast.success(`${uploadedCount} image${uploadedCount > 1 ? "s" : ""} uploaded`);
-      }
-    } catch (error: any) {
-      console.error("Image upload error:", error);
-      toast.error(`Failed to upload images: ${error?.message || "Unknown error"}`);
+      if (uploadedCount > 0) toast.success(`${uploadedCount} image${uploadedCount > 1 ? "s" : ""} uploaded`);
     } finally {
       setIsUploading(false);
     }
   };
 
-  // Get set of image URLs assigned to variants for deletion protection
-  const variantAssignedUrls = useMemo(
-    () => new Set(variants.map(v => v.image_url).filter(Boolean) as string[]),
-    [variants]
-  );
+  const variantAssignedUrls = useMemo(() => new Set(variants.map((v) => v.image_url).filter(Boolean) as string[]), [variants]);
 
   const handleDeleteImage = async (imageId: string) => {
-    const img = images.find(i => i.id === imageId);
+    const img = images.find((i) => i.id === imageId);
     if (img && variantAssignedUrls.has(img.image_url)) {
-      toast.error("This image is currently assigned to a variant. Please remove it from the variant before deleting.");
+      toast.error("Image is assigned to a variant.");
       return;
     }
     if (product && !imageId.startsWith("temp-")) {
       await deleteImage.mutateAsync(imageId);
-      setImages(prev => prev.filter(i => i.id !== imageId));
-    } else {
-      setImages(prev => prev.filter(i => i.id !== imageId));
     }
+    setImages((prev) => prev.filter((i) => i.id !== imageId));
   };
 
   const setMainImage = (imageId: string) => {
-    setImages(prev => prev.map(img => ({
-      ...img,
-      is_main: img.id === imageId,
-    })));
+    setImages((prev) => prev.map((img) => ({ ...img, is_main: img.id === imageId })));
   };
 
   const handleDragEnd = useCallback((fromIndex: number, toIndex: number) => {
     if (fromIndex === toIndex) return;
-    setImages(prev => {
+    setImages((prev) => {
       const reordered = [...prev];
       const [moved] = reordered.splice(fromIndex, 1);
       reordered.splice(toIndex, 0, moved);
       return reordered.map((img, i) => ({ ...img, sort_order: i }));
     });
-    setDragIndex(null);
-    setDragOverIndex(null);
+    setDragIndex(null); setDragOverIndex(null);
   }, []);
 
   const addNewVariant = () => {
-    setVariants(prev => [...prev, {
-      color_id: null,
-      size_id: null,
-      material_id: null,
-      
-      sku: "",
-      purchase_price: 0,
-      selling_price: formData.base_price,
-      is_active: true,
-      image_url: null,
-      attribute_values: {},
+    setVariants((prev) => [...prev, {
+      color_id: null, size_id: null, sku: "",
+      purchase_price: 0, selling_price: formData.base_price,
+      is_active: true, image_url: null,
     }]);
   };
 
   const updateVariantField = (index: number, field: keyof VariantFormData, value: any) => {
-    setVariants(prev => prev.map((v, i) => i === index ? { ...v, [field]: value } : v));
+    setVariants((prev) => prev.map((v, i) => (i === index ? { ...v, [field]: value } : v)));
   };
 
-  const updateVariantAttribute = (index: number, attributeId: string, valueId: string | null) => {
-    setVariants(prev => prev.map((v, i) => {
-      if (i !== index) return v;
-      const next = { ...(v.attribute_values || {}) };
-      if (valueId) next[attributeId] = valueId;
-      else delete next[attributeId];
-      return { ...v, attribute_values: next };
-    }));
-  };
-
-  const removeVariant = (index: number) => {
-    setVariants(prev => prev.filter((_, i) => i !== index));
-  };
+  const removeVariant = (index: number) => setVariants((prev) => prev.filter((_, i) => i !== index));
 
   const handleBuilderGenerate = useCallback((newVariants: VariantFormData[]) => {
     setVariants((prev) => [...prev, ...newVariants]);
   }, []);
 
   if (!isOpen) return null;
-
   const videoId = formData.youtube_url ? getYouTubeVideoId(formData.youtube_url) : null;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex items-start justify-end">
       <div className="w-full max-w-4xl h-full bg-background overflow-y-auto animate-in slide-in-from-right">
         <div className="sticky top-0 z-10 bg-background border-b border-border p-6 flex items-center justify-between">
-          <h2 className="text-lg font-medium">
-            {product ? "Edit Product" : "Add New Product"}
-          </h2>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
+          <h2 className="text-lg font-medium">{product ? "Edit Product" : "Add New Product"}</h2>
+          <Button variant="ghost" size="icon" onClick={onClose}><X className="h-4 w-4" /></Button>
         </div>
 
         <div className="p-6">
           <Tabs defaultValue="info" className="w-full">
             <TabsList className="w-full justify-start border-b border-border bg-transparent p-0 h-auto">
-              <TabsTrigger value="info" className="data-[state=active]:bg-foreground data-[state=active]:text-background px-4 py-2">
-                Product Info
-              </TabsTrigger>
-              <TabsTrigger value="media" className="data-[state=active]:bg-foreground data-[state=active]:text-background px-4 py-2">
-                Media
-              </TabsTrigger>
-              <TabsTrigger value="variants" className="data-[state=active]:bg-foreground data-[state=active]:text-background px-4 py-2">
-                Variants
-              </TabsTrigger>
-              <TabsTrigger value="guides" className="data-[state=active]:bg-foreground data-[state=active]:text-background px-4 py-2">
-                Guides & Care
-              </TabsTrigger>
+              <TabsTrigger value="info" className="px-4 py-2">Product Info</TabsTrigger>
+              <TabsTrigger value="media" className="px-4 py-2">Media</TabsTrigger>
+              <TabsTrigger value="variants" className="px-4 py-2">Variants</TabsTrigger>
+              <TabsTrigger value="guides" className="px-4 py-2">Size Guide</TabsTrigger>
             </TabsList>
 
             <TabsContent value="info" className="mt-6 space-y-6">
-              {/* Basic Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Product Name *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Enter product name"
-                  />
+                  <Label>Product Name *</Label>
+                  <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="sku">SKU (Auto-generated if empty)</Label>
-                  <Input
-                    id="sku"
-                    value={formData.sku}
-                    onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                    placeholder="SKU-XXXXXXXX"
-                  />
+                  <Label>SKU</Label>
+                  <Input value={formData.sku} onChange={(e) => setFormData({ ...formData, sku: e.target.value })} placeholder="Auto" />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Product Type</Label>
-                  <Select
-                    value={formData.product_type}
-                    onValueChange={(value: 'simple' | 'variable') => setFormData({ ...formData, product_type: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
+                  <Select value={formData.product_type} onValueChange={(value: "simple" | "variable") => setFormData({ ...formData, product_type: value })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="simple">Simple</SelectItem>
                       <SelectItem value="variable">Variable</SelectItem>
@@ -609,294 +380,137 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="base_price">Base Price *</Label>
-                  <Input
-                    id="base_price"
-                    type="number"
-                    step="0.01"
-                    value={formData.base_price}
-                    onChange={(e) => setFormData({ ...formData, base_price: parseFloat(e.target.value) || 0 })}
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Categories & Subcategories</Label>
-                  <div className="border border-border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
-                    {parentCategories.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No categories available</p>
-                    ) : (
-                      parentCategories.map((parent) => {
-                        const children = categories.filter(c => c.parent_id === parent.id);
-                        const isParentChecked = selectedCategoryIds.includes(parent.id);
-                        return (
-                          <div key={parent.id} className="space-y-1">
-                            <label className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5">
-                              <Checkbox
-                                checked={isParentChecked}
-                                onCheckedChange={(checked) => {
-                                  setSelectedCategoryIds(prev =>
-                                    checked
-                                      ? [...prev, parent.id]
-                                      : prev.filter(id => id !== parent.id)
-                                  );
-                                }}
-                              />
-                              <span className="text-sm font-medium">{parent.name}</span>
-                            </label>
-                            {children.length > 0 && (
-                              <div className="ml-6 space-y-0.5">
-                                {children.map((child) => {
-                                  const isChecked = selectedCategoryIds.includes(child.id);
-                                  return (
-                                    <label key={child.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5">
-                                      <Checkbox
-                                        checked={isChecked}
-                                        onCheckedChange={(checked) => {
-                                          setSelectedCategoryIds(prev =>
-                                            checked
-                                              ? [...prev, child.id]
-                                              : prev.filter(id => id !== child.id)
-                                          );
-                                        }}
-                                      />
-                                      <span className="text-sm text-muted-foreground">{child.name}</span>
-                                    </label>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-                  {selectedCategoryIds.length > 0 && (
-                    <p className="text-xs text-muted-foreground">{selectedCategoryIds.length} selected</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label>Brand / Collection</Label>
-                  <Select
-                    value={formData.brand_id || "none"}
-                    onValueChange={(value) => setFormData({ ...formData, brand_id: value === "none" ? null : value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select brand" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No Brand</SelectItem>
-                      {brands.map((brand) => (
-                        <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Base Price *</Label>
+                  <Input type="number" step="0.01" value={formData.base_price}
+                    onChange={(e) => setFormData({ ...formData, base_price: parseFloat(e.target.value) || 0 })} />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="short_description">Short Description</Label>
-                <Textarea
-                  id="short_description"
-                  value={formData.short_description}
-                  onChange={(e) => setFormData({ ...formData, short_description: e.target.value })}
-                  placeholder="Brief product description"
-                  rows={2}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="full_description">Full Description</Label>
-                <Textarea
-                  id="full_description"
-                  value={formData.full_description}
-                  onChange={(e) => setFormData({ ...formData, full_description: e.target.value })}
-                  placeholder="Detailed product description"
-                  rows={4}
-                />
-              </div>
-
-              <div className="flex items-center gap-3">
-                <Switch
-                  id="is_active"
-                  checked={formData.is_active}
-                  onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-                />
-                <Label htmlFor="is_active">Active (visible on store)</Label>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <Switch
-                  id="is_featured"
-                  checked={formData.is_featured}
-                  onCheckedChange={(checked) => setFormData({ ...formData, is_featured: checked })}
-                />
-                <Label htmlFor="is_featured">Featured (show on homepage)</Label>
-              </div>
-
-            </TabsContent>
-
-            <TabsContent value="media" className="mt-6 space-y-6">
-              {/* Product Images */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label>Product Images</Label>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading}
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    {isUploading ? "Uploading..." : "Upload Images"}
-                  </Button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                    onChange={handleImageUpload}
-                  />
-                </div>
-
-                {images.length > 0 ? (
-                  <div className="grid grid-cols-4 gap-4">
-                    {images.map((image, idx) => (
-                      <div
-                        key={image.id}
-                        draggable
-                        onDragStart={() => setDragIndex(idx)}
-                        onDragOver={(e) => { e.preventDefault(); setDragOverIndex(idx); }}
-                        onDragEnd={() => { if (dragIndex !== null && dragOverIndex !== null) handleDragEnd(dragIndex, dragOverIndex); setDragIndex(null); setDragOverIndex(null); }}
-                        onDrop={(e) => { e.preventDefault(); if (dragIndex !== null) handleDragEnd(dragIndex, idx); }}
-                        className={`relative group border ${image.is_main ? 'border-foreground' : 'border-border'} p-2 cursor-grab active:cursor-grabbing transition-opacity ${dragIndex === idx ? 'opacity-50' : ''} ${dragOverIndex === idx && dragIndex !== idx ? 'ring-2 ring-primary' : ''}`}
-                      >
-                        <div className="absolute top-1 left-1 z-10 bg-background/80 rounded p-0.5">
-                          <GripVertical className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <div className="absolute top-1 right-1 z-10 bg-background/80 rounded px-1 text-xs text-muted-foreground">
-                          {idx + 1}
-                        </div>
-                        <img
-                          src={image.image_url}
-                          alt={image.alt_text || "Product"}
-                          className="w-full aspect-square object-cover pointer-events-none"
-                        />
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => setMainImage(image.id)}
-                            disabled={image.is_main}
-                          >
-                            {image.is_main ? "Main" : "Set Main"}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDeleteImage(image.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        {image.is_main && (
-                          <div className="absolute top-0 left-0 bg-foreground text-background text-xs px-2 py-1 mt-6">
-                            Main
+                <Label>Categories</Label>
+                <div className="border border-border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
+                  {parentCategories.map((parent) => {
+                    const children = categories.filter((c) => c.parent_id === parent.id);
+                    return (
+                      <div key={parent.id} className="space-y-1">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <Checkbox
+                            checked={selectedCategoryIds.includes(parent.id)}
+                            onCheckedChange={(checked) => setSelectedCategoryIds((prev) => checked ? [...prev, parent.id] : prev.filter((id) => id !== parent.id))}
+                          />
+                          <span className="text-sm font-medium">{parent.name}</span>
+                        </label>
+                        {children.length > 0 && (
+                          <div className="ml-6 space-y-0.5">
+                            {children.map((child) => (
+                              <label key={child.id} className="flex items-center gap-2 cursor-pointer">
+                                <Checkbox
+                                  checked={selectedCategoryIds.includes(child.id)}
+                                  onCheckedChange={(checked) => setSelectedCategoryIds((prev) => checked ? [...prev, child.id] : prev.filter((id) => id !== child.id))}
+                                />
+                                <span className="text-sm text-muted-foreground">{child.name}</span>
+                              </label>
+                            ))}
                           </div>
                         )}
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="border border-dashed border-border p-8 text-center text-muted-foreground">
-                    <Upload className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p>No images uploaded yet</p>
-                    <p className="text-sm">Click upload to add product images</p>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Short Description</Label>
+                <Textarea value={formData.short_description} onChange={(e) => setFormData({ ...formData, short_description: e.target.value })} rows={2} />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Full Description</Label>
+                <Textarea value={formData.full_description} onChange={(e) => setFormData({ ...formData, full_description: e.target.value })} rows={4} />
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Switch checked={formData.is_active} onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })} />
+                <Label>Active</Label>
+              </div>
+              <div className="flex items-center gap-3">
+                <Switch checked={formData.is_featured} onCheckedChange={(checked) => setFormData({ ...formData, is_featured: checked })} />
+                <Label>Featured</Label>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="media" className="mt-6 space-y-6">
+              <div className="flex items-center justify-between">
+                <Label>Product Images</Label>
+                <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  {isUploading ? "Uploading..." : "Upload"}
+                </Button>
+                <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageUpload} />
+              </div>
+
+              {images.length > 0 ? (
+                <div className="grid grid-cols-4 gap-4">
+                  {images.map((image, idx) => (
+                    <div key={image.id}
+                      draggable
+                      onDragStart={() => setDragIndex(idx)}
+                      onDragOver={(e) => { e.preventDefault(); setDragOverIndex(idx); }}
+                      onDrop={(e) => { e.preventDefault(); if (dragIndex !== null) handleDragEnd(dragIndex, idx); }}
+                      className={`relative group border ${image.is_main ? "border-foreground" : "border-border"} p-2 cursor-grab`}>
+                      <div className="absolute top-1 left-1 z-10 bg-background/80 rounded p-0.5">
+                        <GripVertical className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <img src={image.image_url} alt="" className="w-full aspect-square object-cover pointer-events-none" />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2">
+                        <Button size="sm" variant="secondary" onClick={() => setMainImage(image.id)} disabled={image.is_main}>
+                          {image.is_main ? "Main" : "Set Main"}
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleDeleteImage(image.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="border border-dashed border-border p-8 text-center text-muted-foreground">
+                  <Upload className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>No images uploaded yet</p>
+                </div>
+              )}
+
+              <div className="space-y-4 pt-6 border-t border-border">
+                <Label>YouTube Video</Label>
+                <Input value={formData.youtube_url} onChange={(e) => setFormData({ ...formData, youtube_url: e.target.value })} placeholder="https://youtube.com/..." />
+                {videoId && (
+                  <div className="aspect-video w-full max-w-md bg-muted">
+                    <iframe src={`https://www.youtube.com/embed/${videoId}`} className="w-full h-full" />
                   </div>
                 )}
               </div>
-
-              {/* YouTube Video */}
-              <div className="space-y-4 pt-6 border-t border-border">
-                <Label>YouTube Video</Label>
-                <div className="space-y-2">
-                  <Input
-                    value={formData.youtube_url}
-                    onChange={(e) => setFormData({ ...formData, youtube_url: e.target.value })}
-                    placeholder="https://www.youtube.com/watch?v=..."
-                  />
-                  {videoId && (
-                    <div className="aspect-video w-full max-w-md bg-muted">
-                      <iframe
-                        src={`https://www.youtube.com/embed/${videoId}`}
-                        className="w-full h-full"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-6">
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      id="youtube_autoplay"
-                      checked={formData.youtube_autoplay}
-                      onCheckedChange={(checked) => setFormData({ ...formData, youtube_autoplay: checked })}
-                    />
-                    <Label htmlFor="youtube_autoplay">Autoplay</Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      id="youtube_mute"
-                      checked={formData.youtube_mute}
-                      onCheckedChange={(checked) => setFormData({ ...formData, youtube_mute: checked })}
-                    />
-                    <Label htmlFor="youtube_mute">Muted</Label>
-                  </div>
-                </div>
-              </div>
-
             </TabsContent>
 
             <TabsContent value="variants" className="mt-6 space-y-6">
-
               {formData.product_type === "variable" ? (
                 <>
                   <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium">Product Variants</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Manage color, size, and material combinations
-                      </p>
-                    </div>
+                    <h3 className="font-medium">Product Variants</h3>
                     <div className="flex gap-2">
                       <Button variant="outline" size="sm" onClick={() => setShowBuilder(!showBuilder)}>
                         {showBuilder ? <ChevronUp className="h-4 w-4 mr-2" /> : <ChevronDown className="h-4 w-4 mr-2" />}
                         {showBuilder ? "Hide Builder" : "Auto-Generate"}
                       </Button>
                       <Button variant="outline" size="sm" onClick={addNewVariant}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Variant
+                        <Plus className="h-4 w-4 mr-2" />Add Variant
                       </Button>
                     </div>
                   </div>
 
                   {showBuilder && (
-                    <VariantBuilder
-                      colors={colors}
-                      sizes={sizes}
-                      materials={materials}
-                      
-                      existingVariants={variants}
-                      basePrice={formData.base_price}
-                      onGenerate={handleBuilderGenerate}
-                      attributes={allAttributes}
-                      selectedAttributeIds={selectedAttributeIds}
-                      onToggleAttribute={toggleAppliedAttribute}
-                    />
+                    <VariantBuilder colors={colors} sizes={sizes}
+                      existingVariants={variants} basePrice={formData.base_price}
+                      onGenerate={handleBuilderGenerate} />
                   )}
 
                   {variants.length > 0 ? (
@@ -907,12 +521,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                             <TableHead className="w-20">Image</TableHead>
                             <TableHead>Color</TableHead>
                             <TableHead>Size</TableHead>
-                            <TableHead>Material</TableHead>
-                            
-                            {appliedAttributes.map((attr) => (
-                              <TableHead key={attr.id}>{attr.name}</TableHead>
-                            ))}
-                             <TableHead>Price</TableHead>
+                            <TableHead>Price</TableHead>
                             <TableHead>SKU</TableHead>
                             <TableHead className="w-16"></TableHead>
                           </TableRow>
@@ -921,118 +530,39 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                           {variants.map((variant, index) => (
                             <TableRow key={index}>
                               <TableCell>
-                                <button
-                                  type="button"
-                                  onClick={() => setMediaPickerIndex(index)}
-                                  className="w-14 h-14 border border-border flex items-center justify-center overflow-hidden hover:border-foreground/50 transition-colors"
-                                >
-                                  {variant.image_url ? (
-                                    <img src={variant.image_url} alt="" className="w-full h-full object-cover" />
-                                  ) : (
-                                    <ImageIcon className="h-5 w-5 text-muted-foreground" />
-                                  )}
+                                <button type="button" onClick={() => setMediaPickerIndex(index)}
+                                  className="w-14 h-14 border border-border flex items-center justify-center overflow-hidden">
+                                  {variant.image_url ? <img src={variant.image_url} alt="" className="w-full h-full object-cover" /> : <ImageIcon className="h-5 w-5 text-muted-foreground" />}
                                 </button>
-                                {variant.image_url && (
-                                  <button
-                                    type="button"
-                                    onClick={() => updateVariantField(index, "image_url", null)}
-                                    className="text-xs text-destructive hover:underline mt-1"
-                                  >
-                                    Remove
-                                  </button>
-                                )}
                               </TableCell>
                               <TableCell>
-                                <Select
-                                  value={variant.color_id || "none"}
-                                  onValueChange={(value) => updateVariantField(index, "color_id", value === "none" ? null : value)}
-                                >
-                                  <SelectTrigger className="w-28">
-                                    <SelectValue placeholder="Color" />
-                                  </SelectTrigger>
+                                <Select value={variant.color_id || "none"} onValueChange={(v) => updateVariantField(index, "color_id", v === "none" ? null : v)}>
+                                  <SelectTrigger className="w-28"><SelectValue placeholder="Color" /></SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="none">-</SelectItem>
-                                    {colors.map((c) => (
-                                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                                    ))}
+                                    {colors.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                                   </SelectContent>
                                 </Select>
                               </TableCell>
                               <TableCell>
-                                <Select
-                                  value={variant.size_id || "none"}
-                                  onValueChange={(value) => updateVariantField(index, "size_id", value === "none" ? null : value)}
-                                >
-                                  <SelectTrigger className="w-24">
-                                    <SelectValue placeholder="Size" />
-                                  </SelectTrigger>
+                                <Select value={variant.size_id || "none"} onValueChange={(v) => updateVariantField(index, "size_id", v === "none" ? null : v)}>
+                                  <SelectTrigger className="w-24"><SelectValue placeholder="Size" /></SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="none">-</SelectItem>
-                                    {sizes.map((s) => (
-                                      <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>
-                                    ))}
+                                    {sizes.map((s) => <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>)}
                                   </SelectContent>
                                 </Select>
                               </TableCell>
                               <TableCell>
-                                <Select
-                                  value={variant.material_id || "none"}
-                                  onValueChange={(value) => updateVariantField(index, "material_id", value === "none" ? null : value)}
-                                >
-                                  <SelectTrigger className="w-32">
-                                    <SelectValue placeholder="Material" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="none">-</SelectItem>
-                                    {materials.map((m) => (
-                                      <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </TableCell>
-
-
-                              {appliedAttributes.map((attr) => (
-                                <TableCell key={attr.id}>
-                                  <Select
-                                    value={(variant.attribute_values || {})[attr.id] || "none"}
-                                    onValueChange={(value) => updateVariantAttribute(index, attr.id, value === "none" ? null : value)}
-                                  >
-                                    <SelectTrigger className="w-32">
-                                      <SelectValue placeholder={attr.name} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="none">-</SelectItem>
-                                      {(attr.values || []).map((v) => (
-                                        <SelectItem key={v.id} value={v.id}>{v.value}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </TableCell>
-                              ))}
-                              <TableCell>
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  value={variant.selling_price}
+                                <Input type="number" step="0.01" value={variant.selling_price}
                                   onChange={(e) => updateVariantField(index, "selling_price", parseFloat(e.target.value) || 0)}
-                                  className="w-24"
-                                />
+                                  className="w-24" />
                               </TableCell>
                               <TableCell>
-                                <Input
-                                  value={variant.sku}
-                                  onChange={(e) => updateVariantField(index, "sku", e.target.value)}
-                                  placeholder="Auto"
-                                  className="w-28"
-                                />
+                                <Input value={variant.sku} onChange={(e) => updateVariantField(index, "sku", e.target.value)} placeholder="Auto" className="w-28" />
                               </TableCell>
                               <TableCell>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => removeVariant(index)}
-                                >
+                                <Button variant="ghost" size="icon" onClick={() => removeVariant(index)}>
                                   <Trash2 className="h-4 w-4 text-destructive" />
                                 </Button>
                               </TableCell>
@@ -1043,8 +573,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
                     </div>
                   ) : (
                     <div className="border border-dashed border-border p-8 text-center text-muted-foreground">
-                      <p>No variants added yet</p>
-                      <p className="text-sm">Click "Add Variant" or "Auto-Generate" to create combinations</p>
+                      <p>No variants added</p>
                     </div>
                   )}
                 </>
@@ -1058,72 +587,30 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
             <TabsContent value="guides" className="mt-6 space-y-6">
               <div className="space-y-2">
                 <Label>Size Guide</Label>
-                <Select
-                  value={formData.size_guide_id || "none"}
-                  onValueChange={(value) => setFormData({ ...formData, size_guide_id: value === "none" ? null : value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select size guide" />
-                  </SelectTrigger>
+                <Select value={formData.size_guide_id || "none"} onValueChange={(v) => setFormData({ ...formData, size_guide_id: v === "none" ? null : v })}>
+                  <SelectTrigger><SelectValue placeholder="Select size guide" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">No Size Guide</SelectItem>
-                    {sizeGuides.map((guide) => (
-                      <SelectItem key={guide.id} value={guide.id}>{guide.name}</SelectItem>
-                    ))}
+                    {sizeGuides.map((g) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
-                {formData.size_guide_id && sizeGuides.find(g => g.id === formData.size_guide_id) && (
-                  <div className="mt-2 p-4 bg-muted text-sm whitespace-pre-wrap">
-                    {sizeGuides.find(g => g.id === formData.size_guide_id)?.content}
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label>Care & Cleaning Instructions</Label>
-                <Select
-                  value={formData.care_instruction_id || "none"}
-                  onValueChange={(value) => setFormData({ ...formData, care_instruction_id: value === "none" ? null : value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select care instructions" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No Care Instructions</SelectItem>
-                    {careInstructions.map((care) => (
-                      <SelectItem key={care.id} value={care.id}>{care.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {formData.care_instruction_id && careInstructions.find(c => c.id === formData.care_instruction_id) && (
-                  <div className="mt-2 p-4 bg-muted text-sm whitespace-pre-wrap">
-                    {careInstructions.find(c => c.id === formData.care_instruction_id)?.content}
-                  </div>
-                )}
               </div>
             </TabsContent>
           </Tabs>
         </div>
 
         <div className="sticky bottom-0 bg-background border-t border-border p-6 flex justify-end gap-3">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={handleSubmit} disabled={!formData.name || createProduct.isPending || updateProduct.isPending}>
             {product ? "Update Product" : "Create Product"}
           </Button>
         </div>
       </div>
 
-      {/* Product Image Picker for Variant Images */}
       <ProductImagePickerModal
         isOpen={mediaPickerIndex !== null}
         onClose={() => setMediaPickerIndex(null)}
-        onSelect={(url) => {
-          if (mediaPickerIndex !== null) {
-            updateVariantField(mediaPickerIndex, "image_url", url);
-          }
-        }}
+        onSelect={(url) => { if (mediaPickerIndex !== null) updateVariantField(mediaPickerIndex, "image_url", url); }}
         images={images}
       />
     </div>

@@ -31,7 +31,7 @@ const MarketingLayout = lazy(() => import("@/pages/admin/marketing/MarketingLayo
 const MarketingOverview = lazy(() => import("@/pages/admin/marketing/MarketingOverview"));
 const MetaPixelSettings = lazy(() => import("@/pages/admin/marketing/MetaPixelSettings"));
 const MetaCapiSettings = lazy(() => import("@/pages/admin/marketing/MetaCapiSettings"));
-const GA4Settings = lazy(() => import("@/pages/admin/marketing/GA4Settings"));
+
 const SteadfastSettings = lazy(() => import("@/pages/admin/marketing/SteadfastSettings"));
 
 const AdminLoadingFallback = () => (

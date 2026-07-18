@@ -411,24 +411,6 @@ const AdminOrders = () => {
     return (orders as any[]) || [];
   };
 
-  const handleDownloadPdf = async () => {
-    const targets = getTargetOrders();
-    if (targets.length === 0) {
-      toast.error("No orders to download");
-      return;
-    }
-    setDownloadingPdf(true);
-    try {
-      await generatePackingListPdf(targets);
-      toast.success(`Packing list for ${targets.length} order(s) downloaded`);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to generate PDF");
-    } finally {
-      setDownloadingPdf(false);
-    }
-  };
-
   const toggleSelectOrder = (order: any) => {
     setSelectedOrdersMap((prev) => {
       const next = new Map(prev);
@@ -463,38 +445,6 @@ const AdminOrders = () => {
     });
   };
 
-  const handleDownloadCsv = () => {
-    const targets = getTargetOrders();
-    if (targets.length === 0) {
-      toast.error("No orders to export");
-      return;
-    }
-    try {
-      downloadOrdersCsv(targets);
-      toast.success(`CSV exported (${targets.length})`);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to export CSV");
-    }
-  };
-
-  const handleDownloadReportPdf = () => {
-    const targets = getTargetOrders();
-    if (targets.length === 0) {
-      toast.error("No orders to export");
-      return;
-    }
-    setDownloadingReport(true);
-    try {
-      generateOrdersReportPdf(targets);
-      toast.success(`Report PDF downloaded (${targets.length})`);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to generate report");
-    } finally {
-      setDownloadingReport(false);
-    }
-  };
 
 
   const handleDeleteClick = (orderId: string, orderNumber: string, _paidAmount: number, _paymentStatus: string, e: React.MouseEvent) => {

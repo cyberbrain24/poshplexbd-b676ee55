@@ -47,12 +47,10 @@ export interface Order {
   ip_address: string | null;
   customer_notes: string | null;
   internal_notes: string | null;
-  collected_amount: number | null;
   promo_code: string | null;
   promo_code_id: string | null;
   promo_discount: number | null;
-  amount_approved_at: string | null;
-  amount_approved_by: string | null;
+
   customer_called_at: string | null;
   call_center_notes: string | null;
   consignment_id?: string | null;

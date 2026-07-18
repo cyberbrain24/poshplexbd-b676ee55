@@ -107,19 +107,19 @@ const AdminSidebar = () => {
   const isProductMgmtActive = productManagementItems.some(item => location.pathname === item.path);
   const isOrdersActive = orderItems.some(item => location.pathname === item.path);
   
-  const isAccountMgmtActive = accountManagementItems.some(item => location.pathname === item.path);
+  
   const isCustomerMgmtActive = customerManagementItems.some(item => location.pathname === item.path);
   const isMarketingActive = location.pathname.startsWith("/admin/marketing");
 
-  type GroupKey = 'product' | 'orders' | 'account' | 'customer' | 'marketing';
+  type GroupKey = 'product' | 'orders' | 'customer' | 'marketing';
   const getInitialOpen = (): GroupKey | null => {
     if (isProductMgmtActive) return 'product';
     if (isOrdersActive) return 'orders';
     if (isMarketingActive) return 'marketing';
     if (isCustomerMgmtActive) return 'customer';
-    if (isAccountMgmtActive) return 'account';
     return null;
   };
+
   const [openGroup, setOpenGroup] = useState<GroupKey | null>(getInitialOpen);
   const toggleGroup = (key: GroupKey) => setOpenGroup(prev => prev === key ? null : key);
 
@@ -211,9 +211,7 @@ const AdminSidebar = () => {
         
         
         {renderCollapsible(Users, "Customer Management", customerManagementItems, openGroup === 'customer', () => toggleGroup('customer'), isCustomerMgmtActive)}
-        {renderCollapsible(Wallet, "Account Management", accountManagementItems, openGroup === 'account', () => toggleGroup('account'), isAccountMgmtActive)}
-        {renderNavLink("/admin/media", Image, "Media")}
-        {renderNavLink("/admin/music", Music, "Music Player")}
+
         {renderNavLink("/admin/site-settings", Settings, "Site Settings")}
       </nav>
 

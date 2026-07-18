@@ -82,51 +82,6 @@ export type Database = {
         }
         Relationships: []
       }
-      combo_items: {
-        Row: {
-          child_product_id: string
-          combo_product_id: string
-          created_at: string
-          id: string
-          quantity: number
-          sort_order: number
-          updated_at: string
-        }
-        Insert: {
-          child_product_id: string
-          combo_product_id: string
-          created_at?: string
-          id?: string
-          quantity?: number
-          sort_order?: number
-          updated_at?: string
-        }
-        Update: {
-          child_product_id?: string
-          combo_product_id?: string
-          created_at?: string
-          id?: string
-          quantity?: number
-          sort_order?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "combo_items_child_product_id_fkey"
-            columns: ["child_product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "combo_items_combo_product_id_fkey"
-            columns: ["combo_product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       customer_accounts: {
         Row: {
           auth_user_id: string
@@ -507,57 +462,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      meta_channels: {
-        Row: {
-          access_token: string | null
-          app_id: string | null
-          app_secret: string | null
-          business_account_id: string | null
-          channel: string
-          created_at: string
-          display_name: string
-          id: string
-          is_active: boolean
-          notes: string | null
-          page_id: string | null
-          phone_number_id: string | null
-          updated_at: string
-          verify_token: string
-        }
-        Insert: {
-          access_token?: string | null
-          app_id?: string | null
-          app_secret?: string | null
-          business_account_id?: string | null
-          channel: string
-          created_at?: string
-          display_name: string
-          id?: string
-          is_active?: boolean
-          notes?: string | null
-          page_id?: string | null
-          phone_number_id?: string | null
-          updated_at?: string
-          verify_token: string
-        }
-        Update: {
-          access_token?: string | null
-          app_id?: string | null
-          app_secret?: string | null
-          business_account_id?: string | null
-          channel?: string
-          created_at?: string
-          display_name?: string
-          id?: string
-          is_active?: boolean
-          notes?: string | null
-          page_id?: string | null
-          phone_number_id?: string | null
-          updated_at?: string
-          verify_token?: string
-        }
-        Relationships: []
       }
       order_items: {
         Row: {

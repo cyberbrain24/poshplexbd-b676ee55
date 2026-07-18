@@ -22,14 +22,12 @@ export { default as AdminLayout } from "./AdminLayout";
 export { default as AdminSidebar } from "./AdminSidebar";
 
 // Table utilities
-export { VirtualizedTable } from "./VirtualizedTable";
 export { default as PaginationControls } from "./PaginationControls";
 
 // Form components
 export { default as DebouncedSearchInput } from "./DebouncedSearchInput";
 export { DebouncedLink } from "./DebouncedLink";
 export { ImageGrid } from "./ImageGrid";
-export { VariantTable } from "./VariantTable";
 
 // Modal components (default exports)
 export { default as CustomerModal } from "./CustomerModal";

@@ -501,8 +501,7 @@ export const useDeleteCustomer = () => {
       const authUserIds = (accountData || []).map((a) => a.auth_user_id).filter(Boolean);
 
       // 2. Cascade-delete all child records in correct order
-      // promo_code_usages
-      await supabase.from("promo_code_usages").delete().eq("customer_id", id);
+
       // reviews
       await supabase.from("reviews").delete().eq("customer_id", id);
       // customer_risk_profiles

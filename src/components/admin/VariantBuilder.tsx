@@ -173,7 +173,7 @@ const VariantBuilder = ({
   const noSelection =
     selectedColorIds.length === 0 &&
     selectedSizeIds.length === 0 &&
-    selectedCustomIds.length === 0 &&
+    
     selectedMaterialIds.length === 0 &&
     appliedAttributes.every((a) => (selectedValueIdsByAttr[a.id] || []).length === 0);
 
@@ -245,32 +245,7 @@ const VariantBuilder = ({
         </div>
       </div>
 
-      {/* Multi-select: Custom Variants */}
-      {customVariants.length > 0 && (
-        <div className="space-y-2">
-          <Label className="text-xs">Custom Variants</Label>
-          <div className="flex flex-wrap gap-1.5">
-            {customVariants.map((cv) => {
-              const selected = selectedCustomIds.includes(cv.id);
-              return (
-                <button
-                  key={cv.id}
-                  type="button"
-                  onClick={() => toggleSelection(cv.id, selectedCustomIds, setSelectedCustomIds)}
-                  className={`px-2.5 py-1 text-xs rounded-md border transition-colors ${
-                    selected
-                      ? "bg-foreground text-background border-foreground"
-                      : "bg-background text-foreground border-border hover:border-foreground/50"
-                  }`}
-                >
-                  {cv.label}
-                  {selected && " ✕"}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+
 
       {/* Multi-select: Materials */}
       <div className="space-y-2">

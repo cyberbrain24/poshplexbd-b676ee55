@@ -466,7 +466,7 @@ export const useUpdateCustomer = () => {
   return useMutation({
     mutationFn: async ({ id, ...customer }: Partial<Customer> & { id: string }) => {
       // Strip computed/relational fields but KEEP postal_code and profile_image_url as they are real DB columns
-      const { division, thana, customer_type, promo_usage_count, has_account, order_count, total_spent, ...customerData } = customer as any;
+      const { division, thana, customer_type, has_account, order_count, total_spent, ...customerData } = customer as any;
       const { data, error } = await supabase
         .from("customers")
         .update(customerData)

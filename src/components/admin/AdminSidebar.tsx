@@ -47,12 +47,8 @@ const orderItems: NavItem[] = [
   
 ];
 
-const accountManagementItems: NavItem[] = [
-  { icon: Wallet, label: "Accounts", path: "/admin/accounts" },
-  { icon: CreditCard, label: "Accounts List", path: "/admin/accounts-list" },
-  { icon: TrendingUp, label: "Income Categories", path: "/admin/income-categories" },
-  { icon: TrendingDown, label: "Expense Categories", path: "/admin/expense-categories" },
-];
+
+
 
 
 const customerManagementItems: NavItem[] = [

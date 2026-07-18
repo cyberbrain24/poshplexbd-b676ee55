@@ -59,7 +59,6 @@ const App = () => (
                 <DeferredMount>
                   <Suspense fallback={null}>
                     <FacebookPixelTracker />
-                    <GoogleAnalyticsTracker />
                   </Suspense>
                 </DeferredMount>
                 <Suspense fallback={<LoadingFallback />}>

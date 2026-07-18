@@ -111,22 +111,8 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
   } | null>(null);
   const [showAddItemModal, setShowAddItemModal] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
-  const [promoInput, setPromoInput] = useState("");
-  const [applyingPromo, setApplyingPromo] = useState(false);
 
 
-  // Fetch promo codes for lookup
-  const { data: promoCodes } = useQuery({
-    queryKey: ["promo-codes-all"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("promo_codes")
-        .select("*")
-        .eq("is_active", true);
-      if (error) throw error;
-      return data;
-    },
-  });
 
   // Fetch product images for order items
   const productIds = order?.items?.map(i => i.product_id).filter((id): id is string => !!id) || [];

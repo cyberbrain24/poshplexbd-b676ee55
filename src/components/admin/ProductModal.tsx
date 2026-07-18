@@ -504,7 +504,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
       color_id: null,
       size_id: null,
       material_id: null,
-      custom_variant_id: null,
+      
       sku: "",
       purchase_price: 0,
       selling_price: formData.base_price,

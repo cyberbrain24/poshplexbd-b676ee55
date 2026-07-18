@@ -35,13 +35,7 @@ const MarketingOverview = () => {
     ? "live"
     : "configured";
 
-  const ga4Status: ChannelStatus = !data.ga4_measurement_id
-    ? "missing"
-    : data.ga4_enabled
-    ? "live"
-    : "disabled";
-
-  const liveCount = [pixelStatus, capiStatus, ga4Status].filter((s) => s === "live").length;
+  const liveCount = [pixelStatus, capiStatus].filter((s) => s === "live").length;
 
   return (
     <div className="space-y-6">

@@ -100,25 +100,8 @@ const AdminDashboard = () => {
         </div>
       </section>
 
-      {/* Catalog */}
-      <section className="space-y-3">
-        <SectionTitle icon="📦">Catalog</SectionTitle>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-          <KPICard label="Products" value={product.totalProducts} />
-          <KPICard label="Active" value={product.activeProducts} />
-          <KPICard label="Categories" value={product.totalCategories} />
-          <KPICard label="Brands" value={product.totalBrands} />
-        </div>
-      </section>
-
-      {/* Trend */}
-      <section className="space-y-3">
-        <SectionTitle icon="📉">Trend</SectionTitle>
-        <div className="grid grid-cols-1 gap-3">
-          <RevenueLast7DaysChart data={revenueLast7Days} />
-        </div>
-      </section>
     </div>
+
   );
 };
 

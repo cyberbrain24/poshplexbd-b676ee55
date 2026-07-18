@@ -92,8 +92,8 @@ const Checkout = () => {
     return getShippingForLocation(selectedDivision?.name, selectedThana?.name);
   }, [selectedDivision, selectedThana]);
 
-  // If free delivery promo is applied, shipping is 0
-  const shippingCost = appliedPromo?.freeDelivery ? 0 : shippingConfig.cost;
+  const shippingCost = shippingConfig.cost;
+
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoadingCustomer, setIsLoadingCustomer] = useState(true);

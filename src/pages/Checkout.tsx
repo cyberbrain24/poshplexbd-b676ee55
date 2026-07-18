@@ -385,13 +385,11 @@ const Checkout = () => {
           senderNumber: paymentInfo.senderNumber || undefined,
           paymentProofUrl: paymentInfo.paymentProofUrl || undefined,
           subtotal: subtotal,
-          discountAmount: promoDiscount,
+          discountAmount: 0,
           shippingCost: shippingCost,
           paidAmount: orderPaidAmount,
-          promoCodeId: appliedPromo?.id || undefined,
-          promoCode: appliedPromo?.code || undefined,
-          promoDiscount: promoDiscount || undefined,
           customerNotes: customerDetails.notes || undefined,
+
         },
         cartItems,
       });

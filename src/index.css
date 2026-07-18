@@ -5,7 +5,7 @@
 
 @font-face {
   font-family: 'Street Culture';
-  src: url('/fonts/Street_Culture.ttf') format('truetype');
+  src: url('/fonts/Street_Culture.woff2') format('woff2');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -13,7 +13,7 @@
 
 @font-face {
   font-family: 'Wood Chaos';
-  src: url('/fonts/Wood_Chaos.otf') format('opentype');
+  src: url('/fonts/Wood_Chaos.woff2') format('woff2');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -21,7 +21,7 @@
 
 @font-face {
   font-family: 'This is Fire';
-  src: url('/fonts/This_is_Fire.ttf') format('truetype');
+  src: url('/fonts/This_is_Fire.woff2') format('woff2');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -29,11 +29,12 @@
 
 @font-face {
   font-family: 'Natoor';
-  src: url('/fonts/NATOOR.ttf') format('truetype');
+  src: url('/fonts/NATOOR.woff2') format('woff2');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
 }
+
 
 /* Poshplex Design System - Industrial Minimalist Streetwear */
 

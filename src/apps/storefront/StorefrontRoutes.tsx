@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect, useState, type ComponentType } from "react";
 import { Route, Routes } from "react-router-dom";
 
 import NotFound from "@/pages/NotFound";
@@ -36,15 +36,27 @@ const LoadingFallback = () => (
   </div>
 );
 
+const AdminRouteLoader = () => {
+  const [AdminApp, setAdminApp] = useState<ComponentType | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    import("@/apps/admin/AdminApp").then((module) => {
+      if (mounted) setAdminApp(() => module.default);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (!AdminApp) return <LoadingFallback />;
+
+  return <AdminApp />;
+};
+
 const StorefrontRoutes = () => {
   if (isAdminPath()) {
-    const AdminApp = lazy(() => import("@/apps/admin/AdminApp"));
-
-    return (
-      <Suspense fallback={<LoadingFallback />}>
-        <AdminApp />
-      </Suspense>
-    );
+    return <AdminRouteLoader />;
   }
 
   return (

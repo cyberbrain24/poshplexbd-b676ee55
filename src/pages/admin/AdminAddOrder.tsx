@@ -562,7 +562,7 @@ const AdminAddOrder = () => {
         <Row label="Subtotal" value={formatCurrency(subtotal)} />
         {manualDiscountValue > 0 && <Row label="Manual Discount" value={`-${formatCurrency(manualDiscountValue)}`} />}
 
-        {promoDiscountValue > 0 && <Row label={`Promo (${appliedPromo?.code})`} value={`-${formatCurrency(promoDiscountValue)}`} />}
+
         <Row label="Shipping" value={formatCurrency(shippingCost)} />
         <div className="h-px bg-border my-1" />
         <Row label="Total" value={formatCurrency(total)} bold />

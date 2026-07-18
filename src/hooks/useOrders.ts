@@ -487,12 +487,7 @@ export const useDeleteOrder = () => {
         .eq("order_id", orderId);
       if (returnsError) throw returnsError;
 
-      // 4. Delete promo_code_usages referencing this order
-      const { error: promoUsagesError } = await supabase
-        .from("promo_code_usages")
-        .delete()
-        .eq("order_id", orderId);
-      if (promoUsagesError) throw promoUsagesError;
+
 
       // 5. Finally delete the order
       const { error } = await supabase

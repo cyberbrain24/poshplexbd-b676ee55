@@ -6,7 +6,6 @@ import FavoriteButton from "./FavoriteButton";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Product, ProductVariant } from "@/types/product";
 import VariantSelector from "./VariantSelector";
-import ProductAttributesSelector from "./ProductAttributesSelector";
 
 import { useCart } from "@/contexts/CartContext";
 import { generateProductSlug } from "@/lib/slug";
@@ -24,7 +23,6 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
   const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
-  const [selectedAttributeValues, setSelectedAttributeValues] = useState<Record<string, string>>({});
   const { addToCart } = useCart();
   const incrementQuantity = () => setQuantity(prev => prev + 1);
   const decrementQuantity = () => setQuantity(prev => Math.max(1, prev - 1));
@@ -168,23 +166,8 @@ const ProductInfo = ({ product, isLoading, onColorChange, onVariantImageChange }
         </div>
       )}
 
-      {/* Product Attributes (Style, Edition, Pack, etc.) */}
-      {product?.id && (
-        <div className="py-2 lg:py-4 lg:border-b lg:border-border">
-          <ProductAttributesSelector
-            productId={product.id}
-            selectedValueIds={selectedAttributeValues}
-            onChange={(attributeId, valueId) =>
-              setSelectedAttributeValues((prev) => {
-                const next = { ...prev };
-                if (valueId) next[attributeId] = valueId;
-                else delete next[attributeId];
-                return next;
-              })
-            }
-          />
-        </div>
-      )}
+
+
 
       {/* Quantity - desktop only */}
       <div className="hidden lg:block space-y-4 pt-2">

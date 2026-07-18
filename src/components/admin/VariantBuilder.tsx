@@ -15,15 +15,11 @@ interface VariantBuilderProps {
   colors: Array<{ id: string; name: string; hex_code: string }>;
   sizes: Array<{ id: string; label: string }>;
   materials: Array<{ id: string; name: string }>;
-  customVariants: Array<{ id: string; label: string }>;
   existingVariants: VariantFormData[];
   basePrice: number;
   onGenerate: (newVariants: VariantFormData[]) => void;
-  // Global attribute catalog
   attributes?: ProductAttribute[];
-  // Which attributes are applied to this product
   selectedAttributeIds?: string[];
-  // Toggle an attribute's applied state from inside the builder
   onToggleAttribute?: (attributeId: string) => void;
 }
 
@@ -31,7 +27,6 @@ const VariantBuilder = ({
   colors,
   sizes,
   materials,
-  customVariants,
   existingVariants,
   basePrice,
   onGenerate,
@@ -42,8 +37,8 @@ const VariantBuilder = ({
   // Multi-select state
   const [selectedColorIds, setSelectedColorIds] = useState<string[]>([]);
   const [selectedSizeIds, setSelectedSizeIds] = useState<string[]>([]);
-  const [selectedCustomIds, setSelectedCustomIds] = useState<string[]>([]);
   const [selectedMaterialIds, setSelectedMaterialIds] = useState<string[]>([]);
+
   // attributeId -> selected value ids
   const [selectedValueIdsByAttr, setSelectedValueIdsByAttr] = useState<Record<string, string[]>>({});
 

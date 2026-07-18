@@ -58,7 +58,7 @@ export interface Customer {
   division?: Division;
   thana?: Thana;
   customer_type?: CustomerType;
-  promo_usage_count?: number;
+  
   customer_account?: CustomerAccount | null;
   has_account?: boolean;
 }
@@ -69,8 +69,8 @@ export interface CustomerFilters {
   customer_type_id?: string;
   division_id?: string;
   thana_id?: string;
-  min_promo_usage?: number;
-  max_promo_usage?: number;
+
+
 }
 
 export interface CustomerFormData {

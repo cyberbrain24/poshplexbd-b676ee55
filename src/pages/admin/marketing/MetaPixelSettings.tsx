@@ -127,11 +127,12 @@ const MetaPixelSettings = () => {
             onChange={setEnabled}
           />
           <ToggleRow
-            title="Test Mode"
-            description="Log events to console for debugging"
+            title="Debug Logging"
+            description="Log pixel events to browser console (safe for production)"
             checked={testMode}
             onChange={setTestMode}
           />
+
           <ToggleRow
             title="Advanced Matching"
             description="Send hashed user data for better attribution"

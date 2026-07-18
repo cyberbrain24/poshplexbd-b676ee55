@@ -308,20 +308,8 @@ const AdminOrders = () => {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null);
   const [deleteOrderNumber, setDeleteOrderNumber] = useState<string>("");
-  const [blockedTransactions, setBlockedTransactions] = useState<{
-    orderNumber: string;
-    payments: Array<{
-      id: string;
-      amount: number;
-      payment_reference: string | null;
-      recorded_at: string;
-      transaction_id: string | null;
-      account?: { name: string } | null;
-    }>;
-    paidAmount: number;
-    paymentStatus: string;
-  } | null>(null);
-  const [checkingPayments, setCheckingPayments] = useState(false);
+
+
 
   const hasActiveFilters = Boolean(
     search ||
@@ -513,40 +501,12 @@ const AdminOrders = () => {
   };
 
 
-  const handleDeleteClick = async (orderId: string, orderNumber: string, paidAmount: number, paymentStatus: string, e: React.MouseEvent) => {
+  const handleDeleteClick = (orderId: string, orderNumber: string, _paidAmount: number, _paymentStatus: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setCheckingPayments(true);
-
-    try {
-      // Check if order has linked payment transactions
-      const { data: payments, error } = await supabase
-        .from("order_payments")
-        .select("id, amount, payment_reference, recorded_at, transaction_id, account:accounts(name)")
-        .eq("order_id", orderId);
-
-      if (error) throw error;
-
-      const linkedPayments = (payments || []).filter(p => p.transaction_id);
-
-      if (linkedPayments.length > 0) {
-        // Block deletion - show transaction info
-        setBlockedTransactions({
-          orderNumber,
-          payments: linkedPayments as any,
-          paidAmount,
-          paymentStatus,
-        });
-      } else {
-        // Allow deletion
-        setDeleteOrderId(orderId);
-        setDeleteOrderNumber(orderNumber);
-      }
-    } catch {
-      toast.error("Failed to check payment records");
-    } finally {
-      setCheckingPayments(false);
-    }
+    setDeleteOrderId(orderId);
+    setDeleteOrderNumber(orderNumber);
   };
+
 
   const confirmDelete = () => {
     if (deleteOrderId) {
@@ -969,16 +929,12 @@ const AdminOrders = () => {
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                      disabled={checkingPayments}
                       onClick={(e) => handleDeleteClick(order.id, order.order_number, paidAmount, order.payment_status, e)}
                       title="Delete"
                     >
-                      {checkingPayments ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-3.5 w-3.5" />
-                      )}
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
+
                   </div>
                 </div>
               </div>
@@ -1039,78 +995,8 @@ const AdminOrders = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Blocked Deletion - Transaction History Notification */}
-      <Dialog open={!!blockedTransactions} onOpenChange={() => setBlockedTransactions(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
-              <ShieldAlert className="h-5 w-5" />
-              Deletion Blocked
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Order <strong>{blockedTransactions?.orderNumber}</strong> cannot be deleted because it has recorded transactions linked to the accounts system.
-            </p>
 
-            <div className="border border-border rounded-md p-3 space-y-2 bg-muted/30">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Total Paid Amount:</span>
-                <span className="font-medium text-green-600">{formatCurrency(blockedTransactions?.paidAmount ?? 0)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Payment Status:</span>
-                <Badge variant="outline" className="capitalize">{blockedTransactions?.paymentStatus?.replace('_', ' ')}</Badge>
-              </div>
-            </div>
 
-            <Separator />
-
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium flex items-center gap-2">
-                <Banknote className="h-4 w-4" /> Linked Transactions
-              </h4>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {blockedTransactions?.payments.map((payment) => (
-                  <div key={payment.id} className="border border-border rounded-md p-3 text-sm space-y-1">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Transaction ID:</span>
-                      <span className="font-mono text-xs">{payment.transaction_id?.slice(0, 8)}...</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Amount:</span>
-                      <span className="font-medium">{formatCurrency(payment.amount)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Account:</span>
-                      <span>{(payment.account as any)?.name || '—'}</span>
-                    </div>
-                    {payment.payment_reference && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Reference:</span>
-                        <span>{payment.payment_reference}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Date:</span>
-                      <span>{format(new Date(payment.recorded_at), 'MMM d, yyyy h:mm a')}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <p className="text-xs text-muted-foreground italic">
-              To delete this order, first remove the associated payment records and transactions from the Accounts module.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setBlockedTransactions(null)}>
-              Understood
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Selected Orders Review Dialog */}
       <Dialog open={showSelectedDialog} onOpenChange={setShowSelectedDialog}>

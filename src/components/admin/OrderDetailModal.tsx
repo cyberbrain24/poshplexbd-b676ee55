@@ -28,10 +28,8 @@ import {
   PaymentStatus,
   ItemFulfillmentStatus 
 } from "@/hooks/useOrders";
-import { useOrderPayments } from "@/hooks/useOrderPayments";
 import { useCreateShipment, useTrackShipment, STEADFAST_STATUS_MAP } from "@/hooks/useSteadfast";
-import { useApproveCODAmount } from "@/hooks/useCODApproval";
-import { useAccounts } from "@/hooks/useAccounts";
+
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/currency";
@@ -60,7 +58,7 @@ import {
 } from "lucide-react";
 import OrderItemEditModal from "./OrderItemEditModal";
 import OrderItemAddModal from "./OrderItemAddModal";
-import PaymentRecordModal from "./PaymentRecordModal";
+
 import ImageLightbox from "@/components/ui/image-lightbox";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
@@ -89,13 +87,11 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
   const queryClient = useQueryClient();
   const { data: order, isLoading } = useOrder(orderId);
   const { data: history } = useOrderHistory(orderId);
-  const { data: orderPayments } = useOrderPayments(orderId);
-  const { data: accounts } = useAccounts();
   const updateOrderStatus = useUpdateOrderStatus();
   const updatePaymentStatus = useUpdatePaymentStatus();
   const updateItemFulfillment = useUpdateItemFulfillment();
   const createShipment = useCreateShipment();
-  const approveCOD = useApproveCODAmount();
+
   const { data: trackingData, isLoading: trackingLoading, refetch: refetchTracking, isFetching: trackingFetching } = useTrackShipment(
     order?.tracking_number || undefined
   );
@@ -113,14 +109,11 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
     unit_price: number;
     line_total: number;
   } | null>(null);
-  const [selectedAccountId, setSelectedAccountId] = useState<string>("");
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showAddItemModal, setShowAddItemModal] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [promoInput, setPromoInput] = useState("");
   const [applyingPromo, setApplyingPromo] = useState(false);
-  const [approvalAccountId, setApprovalAccountId] = useState<string>("");
-  const [approvingPayment, setApprovingPayment] = useState(false);
+
 
   // Fetch promo codes for lookup
   const { data: promoCodes } = useQuery({
@@ -200,65 +193,8 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
   const paidAmount = (order as any)?.paid_amount ?? 0;
   const remainingBalance = (order?.total_amount ?? 0) - paidAmount;
 
-  // Calculate unreconciled payment (paid_amount on order but not in order_payments)
-  const reconciledAmount = (orderPayments || []).reduce((sum, p) => sum + Number(p.amount), 0);
-  const unreconciledAmount = paidAmount - reconciledAmount;
 
-  // Handle approving a pending customer payment
-  const handleApprovePayment = async () => {
-    if (!order || !approvalAccountId || unreconciledAmount <= 0) return;
-    setApprovingPayment(true);
-    try {
-      // 1. Create income transaction
-      const { data: transaction, error: txError } = await supabase
-        .from("transactions")
-        .insert({
-          account_id: approvalAccountId,
-          type: "income",
-          amount: unreconciledAmount,
-          notes: `Approved customer payment for order ${order.order_number}`,
-          date: new Date().toISOString().split('T')[0],
-        })
-        .select()
-        .single();
-      if (txError) throw txError;
 
-      // 2. Create order_payment record
-      const { error: payError } = await supabase
-        .from("order_payments")
-        .insert({
-          order_id: order.id,
-          amount: unreconciledAmount,
-          account_id: approvalAccountId,
-          transaction_id: transaction.id,
-          payment_reference: "Customer partial payment (approved by admin)",
-        });
-      if (payError) throw payError;
-
-      // 3. Add status history
-      await supabase.from("order_status_history").insert({
-        order_id: order.id,
-        previous_status: order.payment_status,
-        new_status: order.payment_status,
-        status_type: "payment",
-        notes: `Admin approved customer payment of ${formatCurrency(unreconciledAmount)}`,
-        metadata: { amount: unreconciledAmount, account_id: approvalAccountId, transaction_id: transaction.id },
-      });
-
-      queryClient.invalidateQueries({ queryKey: ["order", orderId] });
-      queryClient.invalidateQueries({ queryKey: ["order-payments", orderId] });
-      queryClient.invalidateQueries({ queryKey: ["orders"] });
-      queryClient.invalidateQueries({ queryKey: ["accounts"] });
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["order-history", orderId] });
-      setApprovalAccountId("");
-      toast.success(`Payment of ${formatCurrency(unreconciledAmount)} approved and recorded to accounts`);
-    } catch (err: any) {
-      toast.error("Failed to approve payment: " + (err.message || "Unknown error"));
-    } finally {
-      setApprovingPayment(false);
-    }
-  };
 
   const handleUpdateOrderStatus = () => {
     if (!selectedStatus || !order) return;
@@ -591,76 +527,8 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
                   </span>
                 </div>
               </div>
-              {remainingBalance > 0 && order.order_status !== 'cancelled' && order.order_status !== 'returned' && (
-                <Button
-                  size="sm"
-                  className="w-full"
-                  onClick={() => setShowPaymentModal(true)}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Record Payment
-                </Button>
-              )}
-
-              {/* Pending Payment Approval - shows when paid_amount > recorded payments */}
-              {unreconciledAmount > 0 && (
-                <div className="border border-yellow-300 bg-yellow-50 dark:bg-yellow-950/20 dark:border-yellow-800 rounded-md p-3 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                    <span className="text-sm font-medium text-yellow-800 dark:text-yellow-400">
-                      Pending Payment Approval
-                    </span>
-                  </div>
-                  <p className="text-xs text-yellow-700 dark:text-yellow-500">
-                    Customer declared <strong>{formatCurrency(unreconciledAmount)}</strong> payment during checkout that hasn't been recorded to accounts yet.
-                  </p>
-                  <div className="space-y-2">
-                    <Select value={approvalAccountId} onValueChange={setApprovalAccountId}>
-                      <SelectTrigger className="h-8 text-xs">
-                        <SelectValue placeholder="Select account to credit" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {accounts?.filter(a => a.is_active).map((account) => (
-                          <SelectItem key={account.id} value={account.id}>
-                            {account.name} ({formatCurrency(account.current_balance)})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      size="sm"
-                      className="w-full"
-                      disabled={!approvalAccountId || approvingPayment}
-                      onClick={handleApprovePayment}
-                    >
-                      {approvingPayment ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      ) : (
-                        <BadgeCheck className="h-4 w-4 mr-2" />
-                      )}
-                      Approve {formatCurrency(unreconciledAmount)} Payment
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {orderPayments && orderPayments.length > 0 && (
-                <div className="pt-2 border-t space-y-2">
-                  <span className="text-xs font-medium text-muted-foreground">Payment History:</span>
-                  {orderPayments.map((payment) => (
-                    <div key={payment.id} className="text-xs flex justify-between items-center bg-muted/50 p-2 rounded">
-                      <div>
-                        <span className="font-medium">{formatCurrency(payment.amount)}</span>
-                        <span className="text-muted-foreground ml-2">→ {payment.account?.name}</span>
-                      </div>
-                      <span className="text-muted-foreground">
-                        {format(new Date(payment.recorded_at), 'MMM d, h:mm a')}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
+
 
             {/* Risk Flags */}
             {order.risk_flags && order.risk_flags.length > 0 && (
@@ -944,69 +812,8 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
           </div>
         )}
 
-        {/* COD Approval Section - Show after delivery */}
-        {order.payment_method_type === "cod" && 
-         order.tracking_number && 
-         deliveryStatus === "delivered" && 
-         !order.amount_approved_at && (
-          <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded space-y-3">
-            <h4 className="font-medium flex items-center gap-2 text-green-800">
-              <BadgeCheck className="h-4 w-4" /> Approve COD Collection
-            </h4>
-            <p className="text-sm text-green-700">
-              Steadfast reports collected amount: <span className="font-bold">৳{(trackingData?.cod_amount || order.total_amount).toLocaleString()}</span>
-            </p>
-            <div className="flex gap-2 items-center">
-              <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select account to credit" />
-                </SelectTrigger>
-                <SelectContent>
-                  {accounts?.filter(a => a.is_active).map(account => (
-                    <SelectItem key={account.id} value={account.id}>
-                      {account.name} (৳{account.current_balance.toLocaleString()})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button
-                onClick={() => {
-                  if (!selectedAccountId) {
-                    toast.error("Please select an account to credit");
-                    return;
-                  }
-                  approveCOD.mutate({
-                    orderId: order.id,
-                    collectedAmount: trackingData?.cod_amount || order.total_amount,
-                    accountId: selectedAccountId,
-                  });
-                }}
-                disabled={approveCOD.isPending || !selectedAccountId}
-                className="whitespace-nowrap"
-              >
-                {approveCOD.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                )}
-                Approve Amount
-              </Button>
-            </div>
-          </div>
-        )}
 
-        {/* Already Approved */}
-        {order.amount_approved_at && (
-          <div className="mt-4 p-4 bg-green-100 border border-green-300 rounded">
-            <div className="flex items-center gap-2 text-green-800">
-              <CheckCircle className="h-4 w-4" />
-              <span className="font-medium">Amount Approved</span>
-            </div>
-            <p className="text-sm text-green-700 mt-1">
-              Collected ৳{(order.collected_amount || order.total_amount).toLocaleString()} on {format(new Date(order.amount_approved_at), 'MMM d, yyyy h:mm a')}
-            </p>
-          </div>
-        )}
+
 
         <div className="flex justify-end gap-2 mt-6">
           <Button variant="outline" onClick={onClose}>Close</Button>
@@ -1020,14 +827,8 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
           onClose={() => setEditingItem(null)}
         />
 
-        {/* Payment Record Modal */}
-        <PaymentRecordModal
-          open={showPaymentModal}
-          onClose={() => setShowPaymentModal(false)}
-          orderId={orderId}
-          totalAmount={order.total_amount}
-          paidAmount={paidAmount}
-        />
+
+
 
         {/* Order Item Add Modal */}
         <OrderItemAddModal

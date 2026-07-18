@@ -2,8 +2,6 @@ import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
-// All admin code is imported here so bundlers can isolate it into a single
-// "admin" chunk that storefront visitors never download.
 const AdminLayout = lazy(() => import("@/components/admin/AdminLayout"));
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
 const AdminProducts = lazy(() => import("@/pages/admin/AdminProducts"));
@@ -16,10 +14,6 @@ const AdminSizeGuides = lazy(() => import("@/pages/admin/AdminSizeGuides"));
 const AdminCareInstructions = lazy(() => import("@/pages/admin/AdminCareInstructions"));
 const AdminCategories = lazy(() => import("@/pages/admin/AdminCategories"));
 const AdminBrands = lazy(() => import("@/pages/admin/AdminBrands"));
-const AdminAccounts = lazy(() => import("@/pages/admin/AdminAccounts"));
-const AdminAccountsList = lazy(() => import("@/pages/admin/AdminAccountsList"));
-const AdminIncomeCategories = lazy(() => import("@/pages/admin/AdminIncomeCategories"));
-const AdminExpenseCategories = lazy(() => import("@/pages/admin/AdminExpenseCategories"));
 const AdminCustomers = lazy(() => import("@/pages/admin/AdminCustomers"));
 const AdminDivisions = lazy(() => import("@/pages/admin/AdminDivisions"));
 const AdminThanas = lazy(() => import("@/pages/admin/AdminThanas"));
@@ -29,11 +23,9 @@ const AdminAddOrder = lazy(() => import("@/pages/admin/AdminAddOrder"));
 const AdminOrderFulfillment = lazy(() => import("@/pages/admin/AdminOrderFulfillment"));
 const AdminPaymentMethods = lazy(() => import("@/pages/admin/AdminPaymentMethods"));
 const AdminReviews = lazy(() => import("@/pages/admin/AdminReviews"));
-const AdminMedia = lazy(() => import("@/pages/admin/AdminMedia"));
 const AdminPromoCodes = lazy(() => import("@/pages/admin/AdminPromoCodes"));
 const AdminSiteSettings = lazy(() => import("@/pages/admin/AdminSiteSettings"));
 const AdminBulkUpload = lazy(() => import("@/pages/admin/AdminBulkUpload"));
-const AdminMusic = lazy(() => import("@/pages/admin/AdminMusic"));
 
 const MarketingLayout = lazy(() => import("@/pages/admin/marketing/MarketingLayout"));
 const MarketingOverview = lazy(() => import("@/pages/admin/marketing/MarketingOverview"));
@@ -56,7 +48,6 @@ const AdminApp = () => (
           <Route index element={<AdminDashboard />} />
           <Route path="products" element={<AdminProducts />} />
           <Route path="reviews" element={<AdminReviews />} />
-          <Route path="media" element={<AdminMedia />} />
           <Route path="colors" element={<AdminColors />} />
           <Route path="sizes" element={<AdminSizes />} />
           <Route path="materials" element={<AdminMaterials />} />
@@ -66,10 +57,6 @@ const AdminApp = () => (
           <Route path="care-instructions" element={<AdminCareInstructions />} />
           <Route path="categories" element={<AdminCategories />} />
           <Route path="brands" element={<AdminBrands />} />
-          <Route path="accounts" element={<AdminAccounts />} />
-          <Route path="accounts-list" element={<AdminAccountsList />} />
-          <Route path="income-categories" element={<AdminIncomeCategories />} />
-          <Route path="expense-categories" element={<AdminExpenseCategories />} />
           <Route path="customers" element={<AdminCustomers />} />
           <Route path="divisions" element={<AdminDivisions />} />
           <Route path="thanas" element={<AdminThanas />} />
@@ -80,7 +67,6 @@ const AdminApp = () => (
           <Route path="payment-methods" element={<AdminPaymentMethods />} />
           <Route path="promo-codes" element={<AdminPromoCodes />} />
           <Route path="bulk-upload" element={<AdminBulkUpload />} />
-          <Route path="music" element={<AdminMusic />} />
           <Route path="site-settings" element={<AdminSiteSettings />} />
           <Route path="marketing" element={<MarketingLayout />}>
             <Route index element={<MarketingOverview />} />

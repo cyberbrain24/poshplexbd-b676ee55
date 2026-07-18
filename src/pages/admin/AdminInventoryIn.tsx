@@ -64,25 +64,21 @@ const AdminInventoryIn = () => {
               <TableHead>Items</TableHead>
               <TableHead>Total Qty</TableHead>
               <TableHead>Total Price</TableHead>
-              <TableHead>Account</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Subcategory</TableHead>
               <TableHead>Notes</TableHead>
+
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {!entries?.length ? (
-              <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">No entries yet</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No entries yet</TableCell></TableRow>
+
             ) : entries.map((e) => (
               <TableRow key={e.id}>
                 <TableCell>{format(new Date(e.date), "dd MMM yyyy")}</TableCell>
                 <TableCell>{e.items?.length || 0} item(s)</TableCell>
                 <TableCell className="font-medium">{getTotalQty(e)}</TableCell>
                 <TableCell className="font-medium">{formatCurrency(getTotalPrice(e))}</TableCell>
-                <TableCell>{e.account?.name || "—"}</TableCell>
-                <TableCell>{e.category?.name || "—"}</TableCell>
-                <TableCell>{(e as any).subcategory?.name || "—"}</TableCell>
                 <TableCell className="max-w-[200px] truncate">{e.notes || "—"}</TableCell>
                 <TableCell className="text-right space-x-1">
                   <Button variant="ghost" size="icon" onClick={() => setViewEntry(e)}><Eye className="h-4 w-4" /></Button>
@@ -114,9 +110,6 @@ const AdminInventoryIn = () => {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div><span className="text-muted-foreground">Date:</span> {format(new Date(viewEntry.date), "dd MMM yyyy")}</div>
-                <div><span className="text-muted-foreground">Account:</span> {viewEntry.account?.name || "—"}</div>
-                <div><span className="text-muted-foreground">Category:</span> {viewEntry.category?.name || "—"}</div>
-                <div><span className="text-muted-foreground">Subcategory:</span> {(viewEntry as any).subcategory?.name || "—"}</div>
                 <div><span className="text-muted-foreground">Notes:</span> {viewEntry.notes || "—"}</div>
               </div>
               <Table>

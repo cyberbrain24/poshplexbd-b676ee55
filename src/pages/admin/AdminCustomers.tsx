@@ -303,7 +303,7 @@ const AdminCustomers = () => {
                   <TableHead>Customer Type</TableHead>
                   <TableHead>Orders</TableHead>
                   <TableHead>Total Spent</TableHead>
-                  <TableHead>Promo Usage</TableHead>
+                  
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>

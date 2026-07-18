@@ -448,13 +448,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "inventory_entry_items_shared_variant_id_fkey"
-            columns: ["shared_variant_id"]
-            isOneToOne: false
-            referencedRelation: "shared_variants"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "inventory_entry_items_variant_id_fkey"
             columns: ["variant_id"]
             isOneToOne: false
@@ -995,13 +988,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "product_variants_shared_variant_id_fkey"
-            columns: ["shared_variant_id"]
-            isOneToOne: false
-            referencedRelation: "shared_variants"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "product_variants_size_id_fkey"
             columns: ["size_id"]
             isOneToOne: false
@@ -1217,83 +1203,6 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      shared_variants: {
-        Row: {
-          category_id: string | null
-          color_id: string | null
-          created_at: string
-          id: string
-          image_url: string | null
-          is_active: boolean
-          low_stock_threshold: number
-          purchase_price: number
-          size_id: string | null
-          sku: string
-          stock_quantity: number
-          subcategory_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          category_id?: string | null
-          color_id?: string | null
-          created_at?: string
-          id?: string
-          image_url?: string | null
-          is_active?: boolean
-          low_stock_threshold?: number
-          purchase_price?: number
-          size_id?: string | null
-          sku?: string
-          stock_quantity?: number
-          subcategory_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          category_id?: string | null
-          color_id?: string | null
-          created_at?: string
-          id?: string
-          image_url?: string | null
-          is_active?: boolean
-          low_stock_threshold?: number
-          purchase_price?: number
-          size_id?: string | null
-          sku?: string
-          stock_quantity?: number
-          subcategory_id?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "shared_variants_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "shared_variants_color_id_fkey"
-            columns: ["color_id"]
-            isOneToOne: false
-            referencedRelation: "colors"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "shared_variants_size_id_fkey"
-            columns: ["size_id"]
-            isOneToOne: false
-            referencedRelation: "sizes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "shared_variants_subcategory_id_fkey"
-            columns: ["subcategory_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
             referencedColumns: ["id"]
           },
         ]

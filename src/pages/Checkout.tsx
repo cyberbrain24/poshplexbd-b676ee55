@@ -29,19 +29,8 @@ const Checkout = () => {
   const { data: divisions } = useDivisions();
   const createOrderMutation = useCreateOrder();
 
-  const [discountCode, setDiscountCode] = useState("");
-  const [appliedPromo, setAppliedPromo] = useState<{
-    id: string;
-    code: string;
-    discount_type: string;
-    discount_value: number;
-    max_discount_amount: number | null;
-    reward_type: string;
-    freeDelivery: boolean;
-    membershipReward?: { typeId: string; trigger: 'paid' | 'delivered' };
-  } | null>(null);
-  const [promoDiscount, setPromoDiscount] = useState(0);
-  const [isApplyingPromo, setIsApplyingPromo] = useState(false);
+
+
   
   // Customer & Shipping Details
   const [customerDetails, setCustomerDetails] = useState({

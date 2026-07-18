@@ -1,6 +1,6 @@
 import { usePixelSettings } from "@/hooks/usePixelSettings";
 import ChannelStatusCard, { ChannelStatus } from "@/components/admin/marketing/ChannelStatusCard";
-import { Facebook, Server, BarChart3, Activity } from "lucide-react";
+import { Facebook, Server, Activity } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const mask = (s: string | null | undefined, keep = 4) => {

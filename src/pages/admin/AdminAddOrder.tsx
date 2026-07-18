@@ -248,30 +248,8 @@ const AdminAddOrder = () => {
   };
   const removeItem = (id: string) => setItems(prev => prev.filter(i => i.id !== id));
 
-  // ----- Promo -----
-  const handleApplyPromo = async () => {
-    if (!promoCodeInput.trim()) return;
-    setApplyingPromo(true);
-    try {
-      const { validatePromoCode } = await import("@/lib/promo");
-      const result = await validatePromoCode(promoCodeInput, subtotal, baseShipping, customer.phone || undefined);
-      if (!result.valid || !result.promo) {
-        toast.error(result.error || "Invalid promo code");
-        return;
-      }
-      setAppliedPromo({
-        id: result.promo.id,
-        code: result.promo.code,
-        discount: result.discount,
-        freeDelivery: result.freeDelivery,
-      });
-      toast.success(result.freeDelivery ? "Free delivery applied" : `Saved ${formatCurrency(result.discount)}`);
-    } catch (e: any) {
-      toast.error(e.message || "Failed to apply promo");
-    } finally {
-      setApplyingPromo(false);
-    }
-  };
+
+
 
   // ----- Place order -----
   const validate = () => {

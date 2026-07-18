@@ -205,15 +205,8 @@ const AdminCustomers = () => {
             <div className="text-2xl font-bold">{stats.female}</div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">With Promo Usage</CardTitle>
-            <Gift className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.withPromo}</div>
-          </CardContent>
-        </Card>
+
+
       </div>
 
       {/* Search and Filters */}
@@ -280,20 +273,8 @@ const AdminCustomers = () => {
                 </SelectContent>
               </Select>
 
-              <Select
-                value={filters.min_promo_usage?.toString() || "all"}
-                onValueChange={(v) => setFilters(prev => ({ ...prev, min_promo_usage: v === "all" ? undefined : parseInt(v) }))}
-              >
-                <SelectTrigger className="w-[160px]">
-                  <SelectValue placeholder="Promo Usage" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="1">1+ usages</SelectItem>
-                  <SelectItem value="5">5+ usages</SelectItem>
-                  <SelectItem value="10">10+ usages</SelectItem>
-                </SelectContent>
-              </Select>
+
+
 
               {hasActiveFilters && (
                 <Button variant="ghost" size="sm" onClick={clearFilters}>

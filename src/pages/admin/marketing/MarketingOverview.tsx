@@ -80,16 +80,6 @@ const MarketingOverview = () => {
           ]}
         />
 
-        <ChannelStatusCard
-          title="Google Analytics 4"
-          description="Site analytics, audiences, and conversion reports"
-          icon={BarChart3}
-          status={ga4Status}
-          href="/admin/marketing/ga4"
-          details={[
-            { label: "Measurement ID", value: data.ga4_measurement_id || "Not set" },
-          ]}
-        />
 
         <div className="border border-dashed border-border p-5 flex flex-col items-start justify-center gap-2 bg-muted/20">
           <span className="text-[10px] font-medium uppercase px-2 py-1 border border-border rounded-sm text-muted-foreground">

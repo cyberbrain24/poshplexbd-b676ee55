@@ -513,70 +513,17 @@ const Checkout = () => {
                   ))}
                 </div>
 
-                {/* Promo Code Section */}
-                <div className="mt-6 pt-4 border-t border-muted-foreground/20">
-                  <div className="flex gap-2">
-                    <Input
-                      value={discountCode}
-                      onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
-                      placeholder="Write Promo Code"
-                      className="flex-1 rounded-none text-sm font-mono"
-                    />
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="rounded-none whitespace-nowrap"
-                      onClick={handleApplyPromo}
-                      disabled={!discountCode.trim() || isApplyingPromo}
-                    >
-                      {isApplyingPromo ? "Applying..." : "Apply Promo"}
-                    </Button>
-                  </div>
-                  {appliedPromo && (
-                    <div className="mt-2 space-y-1">
-                      <div className="flex items-center justify-between bg-green-50 dark:bg-green-950/30 p-2 border border-green-200 dark:border-green-800 rounded-none text-sm">
-                        <span className="text-green-700 dark:text-green-400">
-                          {appliedPromo.code}: {appliedPromo.freeDelivery ? 'Free Delivery!' : 
-                            `-${appliedPromo.discount_type === 'percentage' ? `${appliedPromo.discount_value}%` : formatCurrency(appliedPromo.discount_value)}`}
-                        </span>
-                        <button onClick={() => { setAppliedPromo(null); setPromoDiscount(0); setDiscountCode(""); }} className="text-red-500 text-xs hover:underline">Remove</button>
-                      </div>
-                      {appliedPromo.membershipReward && (
-                        <div className="text-xs text-purple-600 dark:text-purple-400 p-2 bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-none">
-                          🎖 Membership will be awarded after {appliedPromo.membershipReward.trigger === 'paid' ? 'payment confirmation' : 'delivery'}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
                 {/* Totals */}
                 <div className="border-t border-muted-foreground/20 mt-4 pt-4 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Subtotal</span>
                     <span className="text-foreground">{formatCurrency(subtotal)}</span>
                   </div>
-                  {promoDiscount > 0 && (
-                    <div className="flex justify-between text-sm text-green-600">
-                      <span>Promo Discount</span>
-                      <span>-{formatCurrency(promoDiscount)}</span>
-                    </div>
-                  )}
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">
-                      Shipping ({shippingConfig.label})
-                      {appliedPromo?.freeDelivery && <span className="text-green-600 ml-1">(Free!)</span>}
-                    </span>
-                    <span className={`text-foreground ${appliedPromo?.freeDelivery ? 'line-through text-muted-foreground' : ''}`}>
-                      {formatCurrency(shippingConfig.cost)}
-                    </span>
+                    <span className="text-muted-foreground">Shipping ({shippingConfig.label})</span>
+                    <span className="text-foreground">{formatCurrency(shippingConfig.cost)}</span>
                   </div>
-                  {appliedPromo?.freeDelivery && (
-                    <div className="flex justify-between text-sm text-green-600">
-                      <span>Free Delivery Discount</span>
-                      <span>-{formatCurrency(shippingConfig.cost)}</span>
-                    </div>
-                  )}
+
                   <div className="flex justify-between text-lg font-medium border-t border-muted-foreground/20 pt-2">
                     <span className="text-foreground">Total</span>
                     <span className="text-foreground">{formatCurrency(total)}</span>

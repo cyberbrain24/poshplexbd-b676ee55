@@ -126,13 +126,16 @@ const injectScript = () => {
   fbq.queue = [];
   f.fbq = fbq;
 
-  // Inject the script tag
+  // Inject the script tag. Silence the console error emitted when the
+  // request is blocked by ad blockers / privacy extensions (ERR_BLOCKED_BY_CLIENT).
   const script = document.createElement('script');
   script.async = true;
   script.defer = true;
   script.src = 'https://connect.facebook.net/en_US/fbevents.js';
+  script.onerror = () => { /* blocked by extension — expected, ignore */ };
   const firstScript = document.getElementsByTagName('script')[0];
   firstScript?.parentNode?.insertBefore(script, firstScript);
+
 
   // Initialize pixel (with Advanced Matching user data when available)
   if (_config.advancedMatching) {

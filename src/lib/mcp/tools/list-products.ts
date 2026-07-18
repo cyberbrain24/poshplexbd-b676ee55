@@ -15,8 +15,8 @@ export default defineTool({
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ limit, offset, category_slug }) => {
     const supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      import.meta.env.VITE_SUPABASE_URL!,
+      import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY!,
     );
     const lim = Math.min(limit ?? 50, 200);
     const off = offset ?? 0;

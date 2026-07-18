@@ -2,6 +2,9 @@
 // To take ownership, delete this banner line; the plugin then leaves the file alone.
 // supabase function: mcp
 // Bundled from src/lib/mcp/index.ts by @lovable.dev/mcp-js.
+// <define:import.meta.env>
+var define_import_meta_env_default = { VITE_SUPABASE_PROJECT_ID: "zspmhkzosumopyfmlwvl", VITE_SUPABASE_PUBLISHABLE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpzcG1oa3pvc3Vtb3B5Zm1sd3ZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzOTQ4NzQsImV4cCI6MjA4NTk3MDg3NH0.IJ8LtX2iLYCN_z110Upf6rz1hal1pjKM-12v5X82sow", VITE_SUPABASE_URL: "https://zspmhkzosumopyfmlwvl.supabase.co", VITE_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpzcG1oa3pvc3Vtb3B5Zm1sd3ZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzOTQ4NzQsImV4cCI6MjA4NTk3MDg3NH0.IJ8LtX2iLYCN_z110Upf6rz1hal1pjKM-12v5X82sow", MODE: "production", BASE_URL: "/", DEV: false, PROD: true, SSR: false };
+
 // src/lib/mcp/index.ts
 import { defineMcp } from "npm:@lovable.dev/mcp-js@0.20.0";
 
@@ -21,8 +24,8 @@ var list_products_default = defineTool({
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ limit, offset, category_slug }) => {
     const supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
+      "https://zspmhkzosumopyfmlwvl.supabase.co",
+      define_import_meta_env_default.VITE_SUPABASE_SERVICE_ROLE_KEY
     );
     const lim = Math.min(limit ?? 50, 200);
     const off = offset ?? 0;
@@ -62,8 +65,8 @@ var get_product_default = defineTool2({
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ id }) => {
     const supabase = createClient2(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
+      "https://zspmhkzosumopyfmlwvl.supabase.co",
+      define_import_meta_env_default.VITE_SUPABASE_SERVICE_ROLE_KEY
     );
     const { data, error } = await supabase.from("products").select(
       `id, name, sku, base_price, product_type, is_active, is_featured,
@@ -100,8 +103,8 @@ var list_categories_default = defineTool3({
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async () => {
     const supabase = createClient3(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
+      "https://zspmhkzosumopyfmlwvl.supabase.co",
+      define_import_meta_env_default.VITE_SUPABASE_SERVICE_ROLE_KEY
     );
     const { data, error } = await supabase.from("categories").select("id, name, slug, description, image_url, sort_order").eq("is_active", true).order("sort_order", { ascending: true });
     if (error) {
@@ -124,14 +127,14 @@ var cached = null;
 function getServiceClient() {
   if (cached) return cached;
   cached = createClient4(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    "https://zspmhkzosumopyfmlwvl.supabase.co",
+    define_import_meta_env_default.VITE_SUPABASE_SERVICE_ROLE_KEY,
     { auth: { persistSession: false, autoRefreshToken: false } }
   );
   return cached;
 }
 function requireAdminKey(api_key) {
-  const expected = process.env.MCP_ADMIN_KEY;
+  const expected = define_import_meta_env_default.VITE_MCP_ADMIN_KEY;
   if (!expected) {
     return { content: [{ type: "text", text: "Server misconfigured: MCP_ADMIN_KEY not set" }], isError: true };
   }

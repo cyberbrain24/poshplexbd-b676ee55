@@ -52,7 +52,7 @@ export class AdminErrorBoundary extends Component<Props, State> {
             <RefreshCw className="h-4 w-4" />
             Try Again
           </Button>
-          {process.env.NODE_ENV === "development" && this.state.error && (
+          {import.meta.env.DEV && this.state.error && (
             <pre className="mt-6 p-4 bg-muted text-left text-sm overflow-auto max-w-full rounded">
               {this.state.error.message}
             </pre>

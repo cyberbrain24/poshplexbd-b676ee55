@@ -22,7 +22,7 @@ export function useDebouncedNavigation(options: UseDebounceNavigationOptions = {
   const navigate = useNavigate();
   const location = useLocation();
   const lastNavigationRef = useRef<number>(0);
-  const pendingNavigationRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingNavigationRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isNavigating, setIsNavigating] = useState(false);
 
   const debouncedNavigate = useCallback((to: string) => {

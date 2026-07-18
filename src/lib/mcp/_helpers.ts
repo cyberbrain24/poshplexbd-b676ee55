@@ -5,15 +5,15 @@ let cached: SupabaseClient | null = null;
 export function getServiceClient(): SupabaseClient {
   if (cached) return cached;
   cached = createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    import.meta.env.VITE_SUPABASE_URL!,
+    import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { persistSession: false, autoRefreshToken: false } },
   );
   return cached;
 }
 
 export function requireAdminKey(api_key: string | undefined): { content: { type: "text"; text: string }[]; isError: true } | null {
-  const expected = process.env.MCP_ADMIN_KEY;
+  const expected = import.meta.env.VITE_MCP_ADMIN_KEY;
   if (!expected) {
     return { content: [{ type: "text", text: "Server misconfigured: MCP_ADMIN_KEY not set" }], isError: true };
   }

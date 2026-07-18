@@ -112,7 +112,7 @@ export function useAdminNavigationReset(resetFn?: () => void) {
  */
 export function useSmoothedLoading(isLoading: boolean, minDisplayTime = 300) {
   const loadingStartRef = useRef<number | null>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (isLoading && !loadingStartRef.current) {

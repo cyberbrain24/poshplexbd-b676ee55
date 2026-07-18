@@ -380,7 +380,7 @@ export const useCustomers = (filters?: CustomerFilters) => {
       const { data, error } = await query;
       if (error) throw error;
 
-      // Fetch promo usage counts for each customer (from promo_code_usages)
+      // Fetch related data for each customer
       const customerIds = data.map(c => c.id);
 
       // Guard against empty list — Supabase .in() with empty array returns an error
@@ -389,8 +389,7 @@ export const useCustomers = (filters?: CustomerFilters) => {
       }
 
       // Run secondary lookups in parallel for faster load
-      const [promoRes, accountsRes, orderRes] = await Promise.all([
-        supabase.from("promo_code_usages").select("customer_id").in("customer_id", customerIds),
+      const [accountsRes, orderRes] = await Promise.all([
         supabase.from("customer_accounts").select("customer_id, auth_user_id").in("customer_id", customerIds),
         supabase
           .from("orders")
@@ -399,9 +398,7 @@ export const useCustomers = (filters?: CustomerFilters) => {
           .not("order_status", "in", '("cancelled","failed","returned")'),
       ]);
 
-      if (promoRes.error) throw promoRes.error;
       if (accountsRes.error) throw accountsRes.error;
-      const promoData = promoRes.data || [];
       const accountsData = accountsRes.data || [];
       const orderStats = orderRes.data;
       const orderError = orderRes.error;
@@ -414,14 +411,6 @@ export const useCustomers = (filters?: CustomerFilters) => {
         }
       });
 
-      // Count promo usages per customer
-      const promoCountMap: Record<string, number> = {};
-      promoData.forEach(p => {
-        promoCountMap[p.customer_id] = (promoCountMap[p.customer_id] || 0) + 1;
-      });
-
-      // Order stats fetched in parallel above
-
       const orderCountMap: Record<string, number> = {};
       const totalSpentMap: Record<string, number> = {};
       if (!orderError && orderStats) {
@@ -433,24 +422,15 @@ export const useCustomers = (filters?: CustomerFilters) => {
         });
       }
 
-      const customersWithPromo = data.map(customer => ({
+      const enrichedCustomers = data.map(customer => ({
         ...customer,
-        promo_usage_count: promoCountMap[customer.id] || 0,
         has_account: accountMap[customer.id] || false,
         order_count: orderCountMap[customer.id] || 0,
         total_spent: totalSpentMap[customer.id] || 0,
       }));
 
-      // Filter by promo usage if specified
-      let filteredCustomers = customersWithPromo;
-      if (filters?.min_promo_usage !== undefined) {
-        filteredCustomers = filteredCustomers.filter(c => c.promo_usage_count >= filters.min_promo_usage!);
-      }
-      if (filters?.max_promo_usage !== undefined) {
-        filteredCustomers = filteredCustomers.filter(c => c.promo_usage_count <= filters.max_promo_usage!);
-      }
+      return enrichedCustomers as Customer[];
 
-      return filteredCustomers as Customer[];
     },
   });
 };

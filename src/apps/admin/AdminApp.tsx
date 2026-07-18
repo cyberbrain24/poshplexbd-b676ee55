@@ -44,7 +44,7 @@ const AdminApp = () => (
   <ProtectedRoute>
     <Suspense fallback={<AdminLoadingFallback />}>
       <Routes>
-        <Route element={<AdminLayout />}>
+        <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
           <Route path="products" element={<AdminProducts />} />
           <Route path="reviews" element={<AdminReviews />} />

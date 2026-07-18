@@ -40,43 +40,6 @@ export default defineConfig(({ mode }) => ({
     target: "esnext",
     minify: "esbuild",
     cssMinify: true,
-    modulePreload: { polyfill: false },
-    rollupOptions: {
-      output: {
-        // Isolate the admin panel into its own chunk so storefront visitors
-        // never download admin code. Any module under src/pages/admin or
-        // src/components/admin (and the AdminApp shell) is grouped together.
-        // Also split heavy vendor libs so the storefront initial bundle stays lean.
-        manualChunks(id) {
-          if (
-            id.includes("/src/apps/admin/") ||
-            id.includes("/src/pages/admin/") ||
-            id.includes("/src/components/admin/")
-          ) {
-            return "admin";
-          }
-          if (id.includes("/node_modules/")) {
-            if (id.includes("@supabase")) return "vendor-supabase";
-            if (id.includes("@radix-ui")) return "vendor-radix";
-            // Keep React, React-DOM, scheduler, react-router and @tanstack
-            // together in a single vendor chunk. Splitting them caused a
-            // load-order race where react-router evaluated before React was
-            // initialised, throwing "Cannot read properties of undefined
-            // (reading 'createContext')".
-            if (
-              id.includes("/react-dom/") ||
-              id.includes("/react/") ||
-              id.includes("scheduler") ||
-              id.includes("react-router") ||
-              id.includes("@tanstack")
-            ) {
-              return "vendor-react";
-            }
-          }
-        },
-      },
-    },
-
   },
 
 }));

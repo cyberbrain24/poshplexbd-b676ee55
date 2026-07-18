@@ -1,5 +1,5 @@
-import { lazy, Suspense } from "react";
-import { Route, Routes } from "react-router-dom";
+import { lazy, Suspense, useEffect, useState, type ComponentType } from "react";
+import { Route, Routes, useLocation } from "react-router-dom";
 
 import NotFound from "@/pages/NotFound";
 import HomeSkeleton from "@/components/skeletons/HomeSkeleton";
@@ -28,18 +28,39 @@ const Membership = lazy(() => import("@/pages/Membership"));
 const Favorites = lazy(() => import("@/pages/Favorites"));
 const CustomerReviews = lazy(() => import("@/pages/CustomerReviews"));
 
-// Admin panel — a single isolated module. Everything under /admin/* lives in
-// its own chunk and is never downloaded by storefront visitors.
-const AdminApp = lazy(() => import("@/apps/admin/AdminApp"));
-
 const LoadingFallback = () => (
   <div className="flex min-h-screen items-center justify-center bg-background">
     <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
   </div>
 );
 
-const StorefrontRoutes = () => (
-  <Routes>
+const AdminRouteLoader = () => {
+  const [AdminApp, setAdminApp] = useState<ComponentType | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    import("@/apps/admin/AdminApp").then((module) => {
+      if (mounted) setAdminApp(() => module.default);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (!AdminApp) return <LoadingFallback />;
+
+  return <AdminApp />;
+};
+
+const StorefrontRoutes = () => {
+  const location = useLocation();
+
+  if (location.pathname.startsWith("/admin")) {
+    return <AdminRouteLoader />;
+  }
+
+  return (
+    <Routes>
     <Route path="/" element={<Suspense fallback={<HomeSkeleton />}><Index /></Suspense>} />
     <Route path="/categories" element={<Suspense fallback={<CategorySkeleton />}><CategoryBrowser /></Suspense>} />
     <Route path="/category/:category" element={<Suspense fallback={<CategorySkeleton />}><Category /></Suspense>} />
@@ -64,18 +85,9 @@ const StorefrontRoutes = () => (
     <Route path="/login" element={<Suspense fallback={<LoadingFallback />}><CustomerAuth /></Suspense>} />
     <Route path="/complete-profile" element={<Suspense fallback={<LoadingFallback />}><CompleteProfile /></Suspense>} />
 
-    {/* Admin panel - fully isolated module (single lazy chunk) */}
-    <Route
-      path="/admin/*"
-      element={
-        <Suspense fallback={<LoadingFallback />}>
-          <AdminApp />
-        </Suspense>
-      }
-    />
-
-    <Route path="*" element={<NotFound />} />
-  </Routes>
-);
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
 
 export default StorefrontRoutes;

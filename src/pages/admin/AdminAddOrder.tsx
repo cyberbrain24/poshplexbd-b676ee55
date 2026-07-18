@@ -153,11 +153,9 @@ const AdminAddOrder = () => {
     fetchDetail();
   }, [variantPick?.product?.id]);
 
-  // Discount & Promo
+  // Discount
   const [manualDiscount, setManualDiscount] = useState("");
-  const [promoCodeInput, setPromoCodeInput] = useState("");
-  const [appliedPromo, setAppliedPromo] = useState<{ id: string; code: string; discount: number; freeDelivery: boolean } | null>(null);
-  const [applyingPromo, setApplyingPromo] = useState(false);
+
 
   // Payment
   const [paymentMethodId, setPaymentMethodId] = useState("");

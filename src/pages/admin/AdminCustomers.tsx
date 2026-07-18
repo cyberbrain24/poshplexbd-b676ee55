@@ -346,17 +346,8 @@ const AdminCustomers = () => {
                     <TableCell className="font-medium">
                       {formatCurrency(customer.total_spent ?? 0)}
                     </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setPromoHistoryCustomer(customer)}
-                        className="text-blue-600 hover:text-blue-700"
-                      >
-                        <Gift className="h-4 w-4 mr-1" />
-                        {customer.promo_usage_count || 0}
-                      </Button>
-                    </TableCell>
+
+
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
                         <Button
@@ -409,13 +400,8 @@ const AdminCustomers = () => {
         customer={viewCustomer}
       />
 
-      {promoHistoryCustomer && (
-        <PromoUsageHistoryModal
-          open={!!promoHistoryCustomer}
-          onOpenChange={(open) => !open && setPromoHistoryCustomer(null)}
-          customer={promoHistoryCustomer}
-        />
-      )}
+
+
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => { if (!open) { setDeleteId(null); setDeleteCustomerName(""); } }}>
         <AlertDialogContent>

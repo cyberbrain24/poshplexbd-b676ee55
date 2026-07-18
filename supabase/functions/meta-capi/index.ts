@@ -182,16 +182,18 @@ Deno.serve(async (req) => {
       data: [eventPayload],
       access_token: ACCESS_TOKEN,
     };
-    if (settings.meta_test_mode) {
-      fbBody.test_event_code = 'TEST12345';
-    }
+    // NOTE: We intentionally do NOT set `test_event_code` from `meta_test_mode`.
+    // Historically this sent 'TEST12345' for every event when admin Test Mode
+    // was on, which caused Meta to treat production traffic as test events and
+    // exclude it from ad attribution. Test Mode is now console-logging only.
 
-    const fbUrl = `https://graph.facebook.com/v18.0/${settings.meta_pixel_id}/events`;
+    const fbUrl = `https://graph.facebook.com/v21.0/${settings.meta_pixel_id}/events`;
     const fbRes = await fetch(fbUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(fbBody),
     });
+
 
     const fbData = await fbRes.json();
 

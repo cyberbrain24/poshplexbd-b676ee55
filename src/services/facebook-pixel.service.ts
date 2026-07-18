@@ -237,38 +237,58 @@ const sendCapi = (
   eventName: string,
   eventId: string,
   customData?: Record<string, unknown>,
+  opts?: { immediate?: boolean },
 ) => {
-  // Defer to idle time so CAPI never competes with the initial paint
-  // or critical data fetches for HTTP connections.
   const run = async () => {
     try {
-      const { supabase } = await import('@/integrations/supabase/client');
       const userData = {
         ..._userData,
         fbp: getCookie('_fbp'),
         fbc: getCookie('_fbc'),
       };
-      await supabase.functions.invoke('meta-capi', {
-        body: {
-          event_name: eventName,
-          event_id: eventId,
-          event_source_url: typeof window !== 'undefined' ? window.location.href : undefined,
-          user_data: userData,
-          custom_data: customData,
-          action_source: 'website',
-        },
-      });
+      const payload = {
+        event_name: eventName,
+        event_id: eventId,
+        event_source_url: typeof window !== 'undefined' ? window.location.href : undefined,
+        user_data: userData,
+        custom_data: customData,
+        action_source: 'website',
+      };
+
+      // For critical/immediate events (Purchase) — use direct fetch with keepalive
+      // so the request survives page navigation. supabase.functions.invoke does
+      // not support keepalive.
+      if (opts?.immediate) {
+        const url = `${(import.meta as any).env.VITE_SUPABASE_URL}/functions/v1/meta-capi`;
+        const anonKey = (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: anonKey,
+            Authorization: `Bearer ${anonKey}`,
+          },
+          body: JSON.stringify(payload),
+          keepalive: true,
+        });
+        return;
+      }
+
+      const { supabase } = await import('@/integrations/supabase/client');
+      await supabase.functions.invoke('meta-capi', { body: payload });
     } catch {
       // Silently fail — CAPI is enhancement, not critical
     }
   };
   if (typeof window === 'undefined') return;
+  if (opts?.immediate) { void run(); return; }
   const ric = (window as any).requestIdleCallback as
     | ((cb: () => void, opts?: { timeout: number }) => number)
     | undefined;
   if (ric) ric(run, { timeout: 3000 });
   else setTimeout(run, 1500);
 };
+
 
 /**
  * Sanitize params before sending: Meta requires `value` to be a positive number.

@@ -1,12 +1,10 @@
 import { lazy, Suspense, useEffect, useState, type ComponentType } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 
 import NotFound from "@/pages/NotFound";
 import HomeSkeleton from "@/components/skeletons/HomeSkeleton";
 import CategorySkeleton from "@/components/skeletons/CategorySkeleton";
 import ProductDetailSkeleton from "@/components/skeletons/ProductDetailSkeleton";
-
-const isAdminPath = () => window.location.pathname.startsWith("/admin");
 
 // Storefront pages - lazy loaded so landing on /category or /product
 // does not pull the Home-page chunk (and vice versa)
@@ -55,7 +53,9 @@ const AdminRouteLoader = () => {
 };
 
 const StorefrontRoutes = () => {
-  if (isAdminPath()) {
+  const location = useLocation();
+
+  if (location.pathname.startsWith("/admin")) {
     return <AdminRouteLoader />;
   }
 

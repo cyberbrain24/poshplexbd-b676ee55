@@ -24,7 +24,7 @@ export const adminRouteLoaders: Record<string, Loader> = {
   "/admin/marketing": () => import("@/pages/admin/marketing/MarketingOverview"),
   "/admin/marketing/meta-pixel": () => import("@/pages/admin/marketing/MetaPixelSettings"),
   "/admin/marketing/meta-capi": () => import("@/pages/admin/marketing/MetaCapiSettings"),
-  "/admin/marketing/ga4": () => import("@/pages/admin/marketing/GA4Settings"),
+  
   "/admin/marketing/steadfast": () => import("@/pages/admin/marketing/SteadfastSettings"),
 };
 

@@ -11,12 +11,10 @@ export interface PixelSettings {
   meta_ecommerce_events_enabled: boolean;
   meta_capi_enabled: boolean;
   meta_capi_access_token: string | null;
-  ga4_enabled: boolean;
-  ga4_measurement_id: string | null;
 }
 
 const SELECT_COLS =
-  "id, meta_pixel_id, meta_pixel_enabled, meta_test_mode, meta_advanced_matching, meta_ecommerce_events_enabled, meta_capi_enabled, meta_capi_access_token, ga4_enabled, ga4_measurement_id";
+  "id, meta_pixel_id, meta_pixel_enabled, meta_test_mode, meta_advanced_matching, meta_ecommerce_events_enabled, meta_capi_enabled, meta_capi_access_token";
 
 export const usePixelSettings = () => {
   return useQuery({

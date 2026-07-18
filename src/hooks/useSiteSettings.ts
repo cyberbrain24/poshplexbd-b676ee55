@@ -16,12 +16,10 @@ export interface PublicSiteSettings {
   meta_advanced_matching: boolean | null;
   meta_ecommerce_events_enabled: boolean | null;
   meta_capi_enabled: boolean | null;
-  ga4_enabled: boolean | null;
-  ga4_measurement_id: string | null;
 }
 
 const SELECT_COLS =
-  "id, typography, meta_pixel_id, meta_pixel_enabled, meta_test_mode, meta_advanced_matching, meta_ecommerce_events_enabled, meta_capi_enabled, ga4_enabled, ga4_measurement_id";
+  "id, typography, meta_pixel_id, meta_pixel_enabled, meta_test_mode, meta_advanced_matching, meta_ecommerce_events_enabled, meta_capi_enabled";
 
 const CACHE_KEY = "pp_site_settings_v1";
 const CACHE_TTL = 60 * 60 * 1000; // 60 min

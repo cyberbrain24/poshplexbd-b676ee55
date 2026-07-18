@@ -31,7 +31,7 @@ const MarketingLayout = lazy(() => import("@/pages/admin/marketing/MarketingLayo
 const MarketingOverview = lazy(() => import("@/pages/admin/marketing/MarketingOverview"));
 const MetaPixelSettings = lazy(() => import("@/pages/admin/marketing/MetaPixelSettings"));
 const MetaCapiSettings = lazy(() => import("@/pages/admin/marketing/MetaCapiSettings"));
-const GA4Settings = lazy(() => import("@/pages/admin/marketing/GA4Settings"));
+
 const SteadfastSettings = lazy(() => import("@/pages/admin/marketing/SteadfastSettings"));
 
 const AdminLoadingFallback = () => (
@@ -72,7 +72,7 @@ const AdminApp = () => (
             <Route index element={<MarketingOverview />} />
             <Route path="meta-pixel" element={<MetaPixelSettings />} />
             <Route path="meta-capi" element={<MetaCapiSettings />} />
-            <Route path="ga4" element={<GA4Settings />} />
+            
             <Route path="steadfast" element={<SteadfastSettings />} />
           </Route>
         </Route>

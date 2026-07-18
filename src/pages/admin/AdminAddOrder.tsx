@@ -507,9 +507,10 @@ const AdminAddOrder = () => {
         )}
       </Card>
 
-      {/* Discount & Promo */}
+      {/* Discount */}
       <Card className="p-4 space-y-3">
-        <div className="flex items-center gap-2 font-semibold"><TagIcon className="h-4 w-4" /> Discount & Promo</div>
+        <div className="flex items-center gap-2 font-semibold"><TagIcon className="h-4 w-4" /> Discount</div>
+
         <div>
           <Label className="text-xs">Manual Discount (৳)</Label>
           <Input className="h-11" type="number" min={0} value={manualDiscount} onChange={(e) => setManualDiscount(e.target.value)} placeholder="0" />

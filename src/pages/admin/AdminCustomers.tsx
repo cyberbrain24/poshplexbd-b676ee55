@@ -422,7 +422,7 @@ const AdminCustomers = () => {
                     <li>Login account &amp; authentication access</li>
                     <li>Saved addresses</li>
                     <li>Reviews submitted by this customer</li>
-                    <li>Promo code usage history</li>
+                    
                     <li>Risk profile data</li>
                     <li>Orders will be anonymised (order history preserved)</li>
                   </ul>

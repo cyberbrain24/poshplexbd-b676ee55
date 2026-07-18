@@ -30,7 +30,7 @@ const productManagementItems: NavItem[] = [
   { icon: Ruler, label: "Sizes", path: "/admin/sizes" },
   { icon: BookOpen, label: "Size Guides", path: "/admin/size-guides" },
   { icon: FolderTree, label: "Categories", path: "/admin/categories" },
-  { icon: Upload, label: "Bulk Upload", path: "/admin/bulk-upload" },
+  
 ];
 
 const orderItems: NavItem[] = [

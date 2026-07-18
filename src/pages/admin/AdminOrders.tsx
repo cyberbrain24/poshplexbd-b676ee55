@@ -4,8 +4,6 @@ import { ORDER_STATUS_LABELS, ALLOWED_ORDER_STATUSES, PAYMENT_STATUS_LABELS } fr
 import MultiSelectFilter from "@/components/admin/MultiSelectFilter";
 import ProductMultiSelectFilter, { type PickedProduct } from "@/components/admin/ProductMultiSelectFilter";
 import { Checkbox } from "@/components/ui/checkbox";
-import { downloadOrdersCsv, generateOrdersReportPdf } from "@/lib/ordersReport";
-import { FileSpreadsheet, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -74,7 +72,7 @@ import { useCreateShipment, useResetShipping, useSyncSteadfastStatus } from "@/h
 import { formatCurrency } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { generatePackingListPdf } from "@/lib/orderPackingPdf";
+
 
 // Parcel ship cell - shows Ship button or Shipped: {consignment_id} in green
 const ParcelIdCell = ({ order }: { order: { id: string; consignment_id: string | null; tracking_number: string | null } }) => {
@@ -303,8 +301,6 @@ const AdminOrders = () => {
   const selectedOrderIds = useMemo(() => new Set(selectedOrdersMap.keys()), [selectedOrdersMap]);
   const [selectionMode, setSelectionMode] = useState(false);
   const [showSelectedDialog, setShowSelectedDialog] = useState(false);
-  const [downloadingPdf, setDownloadingPdf] = useState(false);
-  const [downloadingReport, setDownloadingReport] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null);
   const [deleteOrderNumber, setDeleteOrderNumber] = useState<string>("");

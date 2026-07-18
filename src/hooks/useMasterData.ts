@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Color, Size, Material, SizeGuide, CareInstruction, Category, Brand, CustomVariant } from "@/types/product";
+import { Color, Size, Material, SizeGuide, CareInstruction, Category, Brand } from "@/types/product";
 
 // Cache configuration for master data - these rarely change
 const MASTER_DATA_STALE_TIME = 1000 * 60 * 5; // 5 minutes
@@ -130,66 +130,8 @@ export const useDeleteSize = () => {
   });
 };
 
-// Custom Variants
-export const useCustomVariants = () => {
-  return useQuery({
-    queryKey: ["customVariants"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("custom_variants" as any)
-        .select("*")
-        .order("sort_order");
-      if (error) throw error;
-      return (data || []) as unknown as CustomVariant[];
-    },
-    staleTime: MASTER_DATA_STALE_TIME,
-    gcTime: MASTER_DATA_GC_TIME,
-  });
-};
 
-export const useCreateCustomVariant = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: { label: string; sort_order?: number; is_active?: boolean }) => {
-      const { data: result, error } = await supabase
-        .from("custom_variants" as any)
-        .insert(data)
-        .select()
-        .single();
-      if (error) throw error;
-      return result;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["customVariants"] }),
-  });
-};
 
-export const useUpdateCustomVariant = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: { label?: string; sort_order?: number; is_active?: boolean } }) => {
-      const { data: result, error } = await supabase
-        .from("custom_variants" as any)
-        .update(data)
-        .eq("id", id)
-        .select()
-        .single();
-      if (error) throw error;
-      return result;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["customVariants"] }),
-  });
-};
-
-export const useDeleteCustomVariant = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("custom_variants" as any).delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["customVariants"] }),
-  });
-};
 
 // Materials
 export const useMaterials = () => {

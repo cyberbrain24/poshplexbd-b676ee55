@@ -28,7 +28,7 @@ const productManagementItems: NavItem[] = [
   { icon: Package, label: "Products", path: "/admin/products" },
   { icon: Palette, label: "Colors", path: "/admin/colors" },
   { icon: Ruler, label: "Sizes", path: "/admin/sizes" },
-  { icon: LayoutGrid, label: "Custom Variants", path: "/admin/custom-variants" },
+  
   { icon: Tag, label: "Product Attributes", path: "/admin/product-attributes" },
   { icon: Shirt, label: "Materials", path: "/admin/materials" },
   { icon: BookOpen, label: "Size Guides", path: "/admin/size-guides" },

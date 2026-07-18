@@ -15,15 +15,11 @@ interface VariantBuilderProps {
   colors: Array<{ id: string; name: string; hex_code: string }>;
   sizes: Array<{ id: string; label: string }>;
   materials: Array<{ id: string; name: string }>;
-  customVariants: Array<{ id: string; label: string }>;
   existingVariants: VariantFormData[];
   basePrice: number;
   onGenerate: (newVariants: VariantFormData[]) => void;
-  // Global attribute catalog
   attributes?: ProductAttribute[];
-  // Which attributes are applied to this product
   selectedAttributeIds?: string[];
-  // Toggle an attribute's applied state from inside the builder
   onToggleAttribute?: (attributeId: string) => void;
 }
 
@@ -31,7 +27,6 @@ const VariantBuilder = ({
   colors,
   sizes,
   materials,
-  customVariants,
   existingVariants,
   basePrice,
   onGenerate,
@@ -42,8 +37,8 @@ const VariantBuilder = ({
   // Multi-select state
   const [selectedColorIds, setSelectedColorIds] = useState<string[]>([]);
   const [selectedSizeIds, setSelectedSizeIds] = useState<string[]>([]);
-  const [selectedCustomIds, setSelectedCustomIds] = useState<string[]>([]);
   const [selectedMaterialIds, setSelectedMaterialIds] = useState<string[]>([]);
+
   // attributeId -> selected value ids
   const [selectedValueIdsByAttr, setSelectedValueIdsByAttr] = useState<Record<string, string[]>>({});
 
@@ -84,27 +79,24 @@ const VariantBuilder = ({
   const previewCount = useMemo(() => {
     const c = selectedColorIds.length || 1;
     const s = selectedSizeIds.length || 1;
-    const cv = selectedCustomIds.length || 1;
     const m = selectedMaterialIds.length || 1;
     const attrFactor = appliedAttributes.reduce((acc, attr) => {
       const vals = selectedValueIdsByAttr[attr.id] || [];
       return acc * (vals.length || 1);
     }, 1);
-    return c * s * cv * m * attrFactor;
-  }, [selectedColorIds, selectedSizeIds, selectedCustomIds, selectedMaterialIds, appliedAttributes, selectedValueIdsByAttr]);
+    return c * s * m * attrFactor;
+  }, [selectedColorIds, selectedSizeIds, selectedMaterialIds, appliedAttributes, selectedValueIdsByAttr]);
 
   // Generate cartesian product
   const handleGenerate = useCallback(() => {
     const colorsToUse = selectedColorIds.length > 0 ? selectedColorIds : [null];
     const sizesToUse = selectedSizeIds.length > 0 ? selectedSizeIds : [null];
-    const customsToUse = selectedCustomIds.length > 0 ? selectedCustomIds : [null];
     const materialsToUse = selectedMaterialIds.length > 0
       ? selectedMaterialIds
       : useBulkMaterial && bulkMaterialId
         ? [bulkMaterialId]
         : [null];
 
-    // Per-attribute value lists (each entry: [attributeId, valueIds[]])
     const attrLists: Array<{ attributeId: string; valueIds: Array<string | null> }> = appliedAttributes.map((a) => {
       const vals = selectedValueIdsByAttr[a.id] || [];
       return { attributeId: a.id, valueIds: vals.length > 0 ? vals : [null] };
@@ -113,25 +105,23 @@ const VariantBuilder = ({
     const keyFor = (
       colorId: string | null,
       sizeId: string | null,
-      customId: string | null,
       materialId: string | null,
       attrPicks: Record<string, string | null>
     ) => {
       const attrPart = appliedAttributes
         .map((a) => `${a.id}:${attrPicks[a.id] || ""}`)
         .join("|");
-      return `${colorId || ""}|${sizeId || ""}|${customId || ""}|${materialId || ""}|${attrPart}`;
+      return `${colorId || ""}|${sizeId || ""}|${materialId || ""}|${attrPart}`;
     };
 
     const existingKeys = new Set(
       existingVariants.map((v) =>
-        keyFor(v.color_id, v.size_id, v.custom_variant_id || null, v.material_id, v.attribute_values || {})
+        keyFor(v.color_id, v.size_id, v.material_id, v.attribute_values || {})
       )
     );
 
     const newVariants: VariantFormData[] = [];
 
-    // Recursive cartesian across attribute lists
     const walkAttrs = (idx: number, acc: Record<string, string | null>, cb: (picks: Record<string, string | null>) => void) => {
       if (idx >= attrLists.length) {
         cb(acc);
@@ -145,25 +135,22 @@ const VariantBuilder = ({
 
     for (const colorId of colorsToUse) {
       for (const sizeId of sizesToUse) {
-        for (const customId of customsToUse) {
-          for (const materialId of materialsToUse) {
-            walkAttrs(0, {}, (attrPicks) => {
-              const key = keyFor(colorId, sizeId, customId, materialId, attrPicks);
-              if (existingKeys.has(key)) return;
-              newVariants.push({
-                color_id: colorId,
-                size_id: sizeId,
-                custom_variant_id: customId,
-                material_id: useBulkMaterial && bulkMaterialId ? bulkMaterialId : materialId,
-                sku: "",
-                purchase_price: useBulkPurchasePrice ? bulkPurchasePrice : 0,
-                selling_price: useBulkSellingPrice ? bulkSellingPrice : basePrice,
-                is_active: true,
-                image_url: null,
-                attribute_values: { ...attrPicks },
-              });
+        for (const materialId of materialsToUse) {
+          walkAttrs(0, {}, (attrPicks) => {
+            const key = keyFor(colorId, sizeId, materialId, attrPicks);
+            if (existingKeys.has(key)) return;
+            newVariants.push({
+              color_id: colorId,
+              size_id: sizeId,
+              material_id: useBulkMaterial && bulkMaterialId ? bulkMaterialId : materialId,
+              sku: "",
+              purchase_price: useBulkPurchasePrice ? bulkPurchasePrice : 0,
+              selling_price: useBulkSellingPrice ? bulkSellingPrice : basePrice,
+              is_active: true,
+              image_url: null,
+              attribute_values: { ...attrPicks },
             });
-          }
+          });
         }
       }
     }
@@ -176,16 +163,17 @@ const VariantBuilder = ({
     onGenerate(newVariants);
     toast.success(`Generated ${newVariants.length} new variant(s)`);
   }, [
-    selectedColorIds, selectedSizeIds, selectedCustomIds, selectedMaterialIds,
+    selectedColorIds, selectedSizeIds, selectedMaterialIds,
     useBulkMaterial, bulkMaterialId, useBulkPurchasePrice,
     bulkPurchasePrice, useBulkSellingPrice, bulkSellingPrice,
     basePrice, existingVariants, onGenerate, appliedAttributes, selectedValueIdsByAttr,
   ]);
 
+
   const noSelection =
     selectedColorIds.length === 0 &&
     selectedSizeIds.length === 0 &&
-    selectedCustomIds.length === 0 &&
+    
     selectedMaterialIds.length === 0 &&
     appliedAttributes.every((a) => (selectedValueIdsByAttr[a.id] || []).length === 0);
 
@@ -257,32 +245,7 @@ const VariantBuilder = ({
         </div>
       </div>
 
-      {/* Multi-select: Custom Variants */}
-      {customVariants.length > 0 && (
-        <div className="space-y-2">
-          <Label className="text-xs">Custom Variants</Label>
-          <div className="flex flex-wrap gap-1.5">
-            {customVariants.map((cv) => {
-              const selected = selectedCustomIds.includes(cv.id);
-              return (
-                <button
-                  key={cv.id}
-                  type="button"
-                  onClick={() => toggleSelection(cv.id, selectedCustomIds, setSelectedCustomIds)}
-                  className={`px-2.5 py-1 text-xs rounded-md border transition-colors ${
-                    selected
-                      ? "bg-foreground text-background border-foreground"
-                      : "bg-background text-foreground border-border hover:border-foreground/50"
-                  }`}
-                >
-                  {cv.label}
-                  {selected && " ✕"}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+
 
       {/* Multi-select: Materials */}
       <div className="space-y-2">

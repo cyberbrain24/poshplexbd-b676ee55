@@ -48,7 +48,7 @@ export async function fetchProducts(
         id, sku, purchase_price, selling_price, is_active, image_url, stock_quantity, low_stock_threshold,
         color:colors(id, name, hex_code),
         size:sizes(id, label),
-        material:materials(id, name),
+        material:materials(id, name)
 
 
       )
@@ -97,7 +97,7 @@ export async function fetchProductById(productId: string): Promise<Product | nul
         id, sku, purchase_price, selling_price, is_active, image_url, stock_quantity, low_stock_threshold,
         color:colors(id, name, hex_code),
         size:sizes(id, label),
-        material:materials(id, name),
+        material:materials(id, name)
 
 
       )
@@ -299,7 +299,7 @@ export async function addProductVariant(
       *,
       color:colors(id, name, hex_code),
       size:sizes(id, label),
-      material:materials(id, name),
+      material:materials(id, name)
       
     `)
     .single();

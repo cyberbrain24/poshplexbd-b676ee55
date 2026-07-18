@@ -75,7 +75,7 @@ export const useProducts = () => {
             *,
             color:colors(*),
             size:sizes(*),
-            material:materials(*),
+            material:materials(*)
 
 
           )
@@ -116,7 +116,7 @@ export const useProduct = (slugOrId: string | undefined) => {
           *,
           color:colors(*),
           size:sizes(*),
-          material:materials(*),
+          material:materials(*)
           
         )
       `;

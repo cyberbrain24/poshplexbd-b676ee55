@@ -15,7 +15,6 @@ import DeferredMount from "./components/perf/DeferredMount";
 
 // Non-critical: defer past first paint to lower LCP/TBT on landing pages
 const FacebookPixelTracker = lazy(() => import("./components/tracking/FacebookPixelTracker"));
-const GoogleAnalyticsTracker = lazy(() => import("./components/tracking/GoogleAnalyticsTracker"));
 
 // Storefront routes (all public /*, /category/*, /product/*, /account, etc.)
 // and the admin sub-app live inside this single entry so App.tsx only wires

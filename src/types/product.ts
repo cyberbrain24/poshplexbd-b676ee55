@@ -24,14 +24,8 @@ export interface Material {
   updated_at: string;
 }
 
-export interface CustomVariant {
-  id: string;
-  label: string;
-  sort_order: number;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
+
+
 
 
 
@@ -118,7 +112,7 @@ export interface ProductVariant {
   color_id: string | null;
   size_id: string | null;
   material_id: string | null;
-  custom_variant_id: string | null;
+  
   sku: string;
   purchase_price: number;
   selling_price: number;
@@ -132,7 +126,7 @@ export interface ProductVariant {
   color?: Color | null;
   size?: Size | null;
   material?: Material | null;
-  custom_variant?: CustomVariant | null;
+  
 }
 
 export interface ProductFormData {
@@ -158,7 +152,7 @@ export interface VariantFormData {
   color_id: string | null;
   size_id: string | null;
   material_id: string | null;
-  custom_variant_id?: string | null;
+  
   sku: string;
   purchase_price: number;
   selling_price: number;

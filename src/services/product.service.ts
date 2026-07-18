@@ -49,7 +49,8 @@ export async function fetchProducts(
         color:colors(id, name, hex_code),
         size:sizes(id, label),
         material:materials(id, name),
-        custom_variant:custom_variants(id, label)
+
+
       )
     `, { count: "exact" })
     .order("created_at", { ascending: false })
@@ -97,7 +98,8 @@ export async function fetchProductById(productId: string): Promise<Product | nul
         color:colors(id, name, hex_code),
         size:sizes(id, label),
         material:materials(id, name),
-        custom_variant:custom_variants(id, label)
+
+
       )
     `)
     .eq("id", productId)
@@ -298,7 +300,7 @@ export async function addProductVariant(
       color:colors(id, name, hex_code),
       size:sizes(id, label),
       material:materials(id, name),
-      custom_variant:custom_variants(id, label)
+      
     `)
     .single();
 

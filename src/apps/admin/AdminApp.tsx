@@ -8,7 +8,7 @@ const AdminProducts = lazy(() => import("@/pages/admin/AdminProducts"));
 const AdminColors = lazy(() => import("@/pages/admin/AdminColors"));
 const AdminSizes = lazy(() => import("@/pages/admin/AdminSizes"));
 const AdminMaterials = lazy(() => import("@/pages/admin/AdminMaterials"));
-const AdminCustomVariants = lazy(() => import("@/pages/admin/AdminCustomVariants"));
+
 const AdminProductAttributes = lazy(() => import("@/pages/admin/AdminProductAttributes"));
 const AdminSizeGuides = lazy(() => import("@/pages/admin/AdminSizeGuides"));
 const AdminCareInstructions = lazy(() => import("@/pages/admin/AdminCareInstructions"));
@@ -51,7 +51,7 @@ const AdminApp = () => (
           <Route path="colors" element={<AdminColors />} />
           <Route path="sizes" element={<AdminSizes />} />
           <Route path="materials" element={<AdminMaterials />} />
-          <Route path="custom-variants" element={<AdminCustomVariants />} />
+          
           <Route path="product-attributes" element={<AdminProductAttributes />} />
           <Route path="size-guides" element={<AdminSizeGuides />} />
           <Route path="care-instructions" element={<AdminCareInstructions />} />

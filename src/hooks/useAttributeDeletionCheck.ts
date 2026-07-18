@@ -6,7 +6,7 @@ interface DeletionCheckResult {
   names: string[];
 }
 
-type VariantColumn = "color_id" | "size_id" | "material_id" | "custom_variant_id";
+type VariantColumn = "color_id" | "size_id" | "material_id";
 type ProductColumn = "brand_id" | "size_guide_id" | "care_instruction_id";
 
 interface CheckConfig {
@@ -18,7 +18,7 @@ const CONFIGS: Record<string, CheckConfig> = {
   color: { table: "product_variants", column: "color_id" },
   size: { table: "product_variants", column: "size_id" },
   material: { table: "product_variants", column: "material_id" },
-  "custom-variant": { table: "product_variants", column: "custom_variant_id" },
+  
   brand: { table: "products", column: "brand_id" },
   "size-guide": { table: "products", column: "size_guide_id" },
   "care-instruction": { table: "products", column: "care_instruction_id" },

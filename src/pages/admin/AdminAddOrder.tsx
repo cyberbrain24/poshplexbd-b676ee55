@@ -144,7 +144,7 @@ const AdminAddOrder = () => {
         .select(`
           id, name, base_price, sku,
           images:product_images(id, image_url, is_main, sort_order),
-          variants:product_variants(id, sku, selling_price, stock_quantity, is_active, image_url, color:colors(id, name, hex_code), size:sizes(id, label, sort_order), custom_variant:custom_variants(id, label, sort_order))
+          variants:product_variants(id, sku, selling_price, stock_quantity, is_active, image_url, color:colors(id, name, hex_code), size:sizes(id, label, sort_order))
         `)
         .eq("id", variantPick.product.id)
         .single();

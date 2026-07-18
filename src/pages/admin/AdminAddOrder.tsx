@@ -514,29 +514,8 @@ const AdminAddOrder = () => {
           <Label className="text-xs">Manual Discount (৳)</Label>
           <Input className="h-11" type="number" min={0} value={manualDiscount} onChange={(e) => setManualDiscount(e.target.value)} placeholder="0" />
         </div>
-        <div>
-          <Label className="text-xs">Promo Code</Label>
-          {appliedPromo ? (
-            <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-950/30 border rounded">
-              <div className="text-sm">
-                <span className="font-semibold">{appliedPromo.code}</span>
-                <span className="text-xs text-muted-foreground ml-2">
-                  {appliedPromo.freeDelivery ? "Free delivery" : `-${formatCurrency(appliedPromo.discount)}`}
-                </span>
-              </div>
-              <button onClick={() => { setAppliedPromo(null); setPromoCodeInput(""); }} className="text-destructive">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ) : (
-            <div className="flex gap-2">
-              <Input className="h-11" value={promoCodeInput} onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())} placeholder="Enter code" />
-              <Button onClick={handleApplyPromo} disabled={applyingPromo || !promoCodeInput.trim()}>
-                {applyingPromo ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
-              </Button>
-            </div>
-          )}
-        </div>
+
+
       </Card>
 
       {/* Payment */}
@@ -582,6 +561,7 @@ const AdminAddOrder = () => {
         <div className="font-semibold mb-2">Summary</div>
         <Row label="Subtotal" value={formatCurrency(subtotal)} />
         {manualDiscountValue > 0 && <Row label="Manual Discount" value={`-${formatCurrency(manualDiscountValue)}`} />}
+
         {promoDiscountValue > 0 && <Row label={`Promo (${appliedPromo?.code})`} value={`-${formatCurrency(promoDiscountValue)}`} />}
         <Row label="Shipping" value={formatCurrency(shippingCost)} />
         <div className="h-px bg-border my-1" />

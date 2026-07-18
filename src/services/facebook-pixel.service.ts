@@ -391,14 +391,23 @@ export const trackPurchase = (data: {
   numItems: number;
   orderId?: string;
 }) => {
-  dispatch('Purchase', {
+  // Use orderId as the event_id so browser Pixel + CAPI dedupe reliably
+  // (even across refreshes / retries). Falls back to random UUID for safety.
+  const eventId = data.orderId ? `order_${data.orderId}` : uuid();
+  const clean = sanitizeParams({
     content_ids: data.contentIds,
     value: data.value,
     currency: data.currency || 'BDT',
     num_items: data.numItems,
     order_id: data.orderId,
+    content_type: 'product',
   });
+  safeFbq('track', 'Purchase', clean, { eventID: eventId });
+  // Fire CAPI immediately with keepalive — Purchase is often followed by
+  // a navigation, and we can't afford to lose the highest-value event.
+  void sendCapi('Purchase', eventId, clean, { immediate: true });
 };
+
 
 export const trackSearch = (searchString: string) => {
   dispatch('Search', { search_string: searchString });

@@ -440,7 +440,7 @@ export const useCreateCustomer = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (customer: Omit<Customer, "id" | "created_at" | "updated_at" | "division" | "thana" | "customer_type" | "promo_usage_count" | "profile_image_url" | "postal_code">) => {
+    mutationFn: async (customer: Omit<Customer, "id" | "created_at" | "updated_at" | "division" | "thana" | "customer_type" | "profile_image_url" | "postal_code">) => {
       const { data, error } = await supabase
         .from("customers")
         .insert(customer)

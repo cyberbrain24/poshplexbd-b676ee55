@@ -14,51 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      brands: {
-        Row: {
-          created_at: string
-          id: string
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          name?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      care_instructions: {
-        Row: {
-          content: string
-          created_at: string
-          id: string
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          content: string
-          created_at?: string
-          id?: string
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          id?: string
-          name?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       categories: {
         Row: {
           created_at: string
@@ -553,33 +508,6 @@ export type Database = {
           },
         ]
       }
-      materials: {
-        Row: {
-          created_at: string
-          gsm: string | null
-          id: string
-          name: string
-          season: string | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          gsm?: string | null
-          id?: string
-          name: string
-          season?: string | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          gsm?: string | null
-          id?: string
-          name?: string
-          season?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       meta_channels: {
         Row: {
           access_token: string | null
@@ -992,110 +920,6 @@ export type Database = {
         }
         Relationships: []
       }
-      product_applied_attributes: {
-        Row: {
-          attribute_id: string
-          created_at: string
-          id: string
-          product_id: string
-          sort_order: number
-        }
-        Insert: {
-          attribute_id: string
-          created_at?: string
-          id?: string
-          product_id: string
-          sort_order?: number
-        }
-        Update: {
-          attribute_id?: string
-          created_at?: string
-          id?: string
-          product_id?: string
-          sort_order?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "product_applied_attributes_attribute_id_fkey"
-            columns: ["attribute_id"]
-            isOneToOne: false
-            referencedRelation: "product_attributes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "product_applied_attributes_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      product_attribute_values: {
-        Row: {
-          attribute_id: string
-          created_at: string
-          id: string
-          is_active: boolean
-          sort_order: number
-          updated_at: string
-          value: string
-        }
-        Insert: {
-          attribute_id: string
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          sort_order?: number
-          updated_at?: string
-          value: string
-        }
-        Update: {
-          attribute_id?: string
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          sort_order?: number
-          updated_at?: string
-          value?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "product_attribute_values_attribute_id_fkey"
-            columns: ["attribute_id"]
-            isOneToOne: false
-            referencedRelation: "product_attributes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      product_attributes: {
-        Row: {
-          created_at: string
-          id: string
-          is_active: boolean
-          name: string
-          sort_order: number
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          name: string
-          sort_order?: number
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          name?: string
-          sort_order?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
       product_categories: {
         Row: {
           category_id: string
@@ -1187,13 +1011,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "product_images_material_id_fkey"
-            columns: ["material_id"]
-            isOneToOne: false
-            referencedRelation: "materials"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "product_images_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
@@ -1209,52 +1026,6 @@ export type Database = {
           },
         ]
       }
-      product_variant_attribute_values: {
-        Row: {
-          attribute_id: string
-          attribute_value_id: string
-          created_at: string
-          id: string
-          variant_id: string
-        }
-        Insert: {
-          attribute_id: string
-          attribute_value_id: string
-          created_at?: string
-          id?: string
-          variant_id: string
-        }
-        Update: {
-          attribute_id?: string
-          attribute_value_id?: string
-          created_at?: string
-          id?: string
-          variant_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "product_variant_attribute_values_attribute_id_fkey"
-            columns: ["attribute_id"]
-            isOneToOne: false
-            referencedRelation: "product_attributes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "product_variant_attribute_values_attribute_value_id_fkey"
-            columns: ["attribute_value_id"]
-            isOneToOne: false
-            referencedRelation: "product_attribute_values"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "product_variant_attribute_values_variant_id_fkey"
-            columns: ["variant_id"]
-            isOneToOne: false
-            referencedRelation: "product_variants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       product_variants: {
         Row: {
           color_id: string | null
@@ -1263,7 +1034,6 @@ export type Database = {
           image_url: string | null
           is_active: boolean
           low_stock_threshold: number
-          material_id: string | null
           product_id: string
           purchase_price: number
           selling_price: number
@@ -1280,7 +1050,6 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean
           low_stock_threshold?: number
-          material_id?: string | null
           product_id: string
           purchase_price?: number
           selling_price?: number
@@ -1297,7 +1066,6 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean
           low_stock_threshold?: number
-          material_id?: string | null
           product_id?: string
           purchase_price?: number
           selling_price?: number
@@ -1313,13 +1081,6 @@ export type Database = {
             columns: ["color_id"]
             isOneToOne: false
             referencedRelation: "colors"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "product_variants_material_id_fkey"
-            columns: ["material_id"]
-            isOneToOne: false
-            referencedRelation: "materials"
             referencedColumns: ["id"]
           },
           {
@@ -1348,8 +1109,6 @@ export type Database = {
       products: {
         Row: {
           base_price: number
-          brand_id: string | null
-          care_instruction_id: string | null
           category_id: string | null
           created_at: string
           full_description: string | null
@@ -1368,8 +1127,6 @@ export type Database = {
         }
         Insert: {
           base_price?: number
-          brand_id?: string | null
-          care_instruction_id?: string | null
           category_id?: string | null
           created_at?: string
           full_description?: string | null
@@ -1388,8 +1145,6 @@ export type Database = {
         }
         Update: {
           base_price?: number
-          brand_id?: string | null
-          care_instruction_id?: string | null
           category_id?: string | null
           created_at?: string
           full_description?: string | null
@@ -1407,20 +1162,6 @@ export type Database = {
           youtube_url?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "products_brand_id_fkey"
-            columns: ["brand_id"]
-            isOneToOne: false
-            referencedRelation: "brands"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "products_care_instruction_id_fkey"
-            columns: ["care_instruction_id"]
-            isOneToOne: false
-            referencedRelation: "care_instructions"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "products_category_id_fkey"
             columns: ["category_id"]
@@ -1585,7 +1326,6 @@ export type Database = {
           image_url: string | null
           is_active: boolean
           low_stock_threshold: number
-          material_id: string | null
           purchase_price: number
           size_id: string | null
           sku: string
@@ -1601,7 +1341,6 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean
           low_stock_threshold?: number
-          material_id?: string | null
           purchase_price?: number
           size_id?: string | null
           sku?: string
@@ -1617,7 +1356,6 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean
           low_stock_threshold?: number
-          material_id?: string | null
           purchase_price?: number
           size_id?: string | null
           sku?: string
@@ -1638,13 +1376,6 @@ export type Database = {
             columns: ["color_id"]
             isOneToOne: false
             referencedRelation: "colors"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "shared_variants_material_id_fkey"
-            columns: ["material_id"]
-            isOneToOne: false
-            referencedRelation: "materials"
             referencedColumns: ["id"]
           },
           {

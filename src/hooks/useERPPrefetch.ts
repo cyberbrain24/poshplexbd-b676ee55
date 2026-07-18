@@ -59,24 +59,6 @@ export function useERPDataPrefetch(enabled = true) {
     const prefetchMasterData = async () => {
       await Promise.allSettled([
         queryClient.prefetchQuery({
-          queryKey: ["brands"],
-          queryFn: async () => {
-            const { data, error } = await supabase.from("brands").select("*").order("name");
-            if (error) throw error;
-            return data;
-          },
-          ...CACHE_CONFIG.reference,
-        }),
-        queryClient.prefetchQuery({
-          queryKey: ["materials"],
-          queryFn: async () => {
-            const { data, error } = await supabase.from("materials").select("*").order("name");
-            if (error) throw error;
-            return data;
-          },
-          ...CACHE_CONFIG.reference,
-        }),
-        queryClient.prefetchQuery({
           queryKey: ["divisions"],
           queryFn: async () => {
             const { data, error } = await supabase.from("divisions").select("*").order("name");

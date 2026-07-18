@@ -94,7 +94,7 @@ M: Chest 38-40"
 L: Chest 40-42"
 XL: Chest 42-44"`;
 
-  const careContent = product?.care_instruction?.content || `• Machine wash cold with like colors
+  const careContent = `• Machine wash cold with like colors
 • Tumble dry low or hang to dry
 • Do not bleach
 • Iron on low heat if needed`;

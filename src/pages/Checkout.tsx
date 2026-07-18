@@ -29,19 +29,8 @@ const Checkout = () => {
   const { data: divisions } = useDivisions();
   const createOrderMutation = useCreateOrder();
 
-  const [discountCode, setDiscountCode] = useState("");
-  const [appliedPromo, setAppliedPromo] = useState<{
-    id: string;
-    code: string;
-    discount_type: string;
-    discount_value: number;
-    max_discount_amount: number | null;
-    reward_type: string;
-    freeDelivery: boolean;
-    membershipReward?: { typeId: string; trigger: 'paid' | 'delivered' };
-  } | null>(null);
-  const [promoDiscount, setPromoDiscount] = useState(0);
-  const [isApplyingPromo, setIsApplyingPromo] = useState(false);
+
+
   
   // Customer & Shipping Details
   const [customerDetails, setCustomerDetails] = useState({
@@ -103,8 +92,8 @@ const Checkout = () => {
     return getShippingForLocation(selectedDivision?.name, selectedThana?.name);
   }, [selectedDivision, selectedThana]);
 
-  // If free delivery promo is applied, shipping is 0
-  const shippingCost = appliedPromo?.freeDelivery ? 0 : shippingConfig.cost;
+  const shippingCost = shippingConfig.cost;
+
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoadingCustomer, setIsLoadingCustomer] = useState(true);
@@ -211,56 +200,13 @@ const Checkout = () => {
   }, [paymentMethods, selectedPaymentMethodId]);
 
   const subtotal = cartTotal;
-  const total = subtotal - promoDiscount + shippingCost;
-  
+  const total = subtotal + shippingCost;
+
   // Calculate amounts for display
   const partialAmount = usePartialPayment ? (Number(partialPaymentAmount) || 0) : 0;
   const remainingAmount = total - partialAmount;
   const displayTotal = usePartialPayment && partialAmount > 0 ? partialAmount : total;
 
-  // Handle promo code application using centralized validation
-  const handleApplyPromo = async () => {
-    if (!discountCode.trim()) return;
-    setIsApplyingPromo(true);
-    try {
-      const { validatePromoCode } = await import("@/lib/promo");
-      const result = await validatePromoCode(
-        discountCode,
-        subtotal,
-        shippingCost,
-        customerDetails.phone || undefined,
-      );
-
-      if (!result.valid || !result.promo) {
-        toast.error(result.error || "Invalid promo code");
-        return;
-      }
-
-      setPromoDiscount(result.discount);
-      setAppliedPromo({
-        id: result.promo.id,
-        code: result.promo.code,
-        discount_type: result.promo.discount_type,
-        discount_value: result.promo.discount_value,
-        max_discount_amount: result.promo.max_discount_amount,
-        reward_type: result.promo.reward_type,
-        freeDelivery: result.freeDelivery,
-        membershipReward: result.membershipReward,
-      });
-
-      if (result.freeDelivery) {
-        toast.success("Promo code applied! Free delivery!");
-      } else if (result.membershipReward && result.discount === 0) {
-        toast.success("Promo code applied! Membership will be awarded after payment success");
-      } else {
-        toast.success(`Promo code applied! You save ${formatCurrency(result.discount)}`);
-      }
-    } catch (err: any) {
-      toast.error(err.message || "Failed to apply promo code");
-    } finally {
-      setIsApplyingPromo(false);
-    }
-  };
 
   const getPaymentIcon = (type: PaymentMethodType) => {
     switch (type) {
@@ -439,13 +385,11 @@ const Checkout = () => {
           senderNumber: paymentInfo.senderNumber || undefined,
           paymentProofUrl: paymentInfo.paymentProofUrl || undefined,
           subtotal: subtotal,
-          discountAmount: promoDiscount,
+          discountAmount: 0,
           shippingCost: shippingCost,
           paidAmount: orderPaidAmount,
-          promoCodeId: appliedPromo?.id || undefined,
-          promoCode: appliedPromo?.code || undefined,
-          promoDiscount: promoDiscount || undefined,
           customerNotes: customerDetails.notes || undefined,
+
         },
         cartItems,
       });
@@ -569,70 +513,17 @@ const Checkout = () => {
                   ))}
                 </div>
 
-                {/* Promo Code Section */}
-                <div className="mt-6 pt-4 border-t border-muted-foreground/20">
-                  <div className="flex gap-2">
-                    <Input
-                      value={discountCode}
-                      onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
-                      placeholder="Write Promo Code"
-                      className="flex-1 rounded-none text-sm font-mono"
-                    />
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="rounded-none whitespace-nowrap"
-                      onClick={handleApplyPromo}
-                      disabled={!discountCode.trim() || isApplyingPromo}
-                    >
-                      {isApplyingPromo ? "Applying..." : "Apply Promo"}
-                    </Button>
-                  </div>
-                  {appliedPromo && (
-                    <div className="mt-2 space-y-1">
-                      <div className="flex items-center justify-between bg-green-50 dark:bg-green-950/30 p-2 border border-green-200 dark:border-green-800 rounded-none text-sm">
-                        <span className="text-green-700 dark:text-green-400">
-                          {appliedPromo.code}: {appliedPromo.freeDelivery ? 'Free Delivery!' : 
-                            `-${appliedPromo.discount_type === 'percentage' ? `${appliedPromo.discount_value}%` : formatCurrency(appliedPromo.discount_value)}`}
-                        </span>
-                        <button onClick={() => { setAppliedPromo(null); setPromoDiscount(0); setDiscountCode(""); }} className="text-red-500 text-xs hover:underline">Remove</button>
-                      </div>
-                      {appliedPromo.membershipReward && (
-                        <div className="text-xs text-purple-600 dark:text-purple-400 p-2 bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-none">
-                          🎖 Membership will be awarded after {appliedPromo.membershipReward.trigger === 'paid' ? 'payment confirmation' : 'delivery'}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
                 {/* Totals */}
                 <div className="border-t border-muted-foreground/20 mt-4 pt-4 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Subtotal</span>
                     <span className="text-foreground">{formatCurrency(subtotal)}</span>
                   </div>
-                  {promoDiscount > 0 && (
-                    <div className="flex justify-between text-sm text-green-600">
-                      <span>Promo Discount</span>
-                      <span>-{formatCurrency(promoDiscount)}</span>
-                    </div>
-                  )}
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">
-                      Shipping ({shippingConfig.label})
-                      {appliedPromo?.freeDelivery && <span className="text-green-600 ml-1">(Free!)</span>}
-                    </span>
-                    <span className={`text-foreground ${appliedPromo?.freeDelivery ? 'line-through text-muted-foreground' : ''}`}>
-                      {formatCurrency(shippingConfig.cost)}
-                    </span>
+                    <span className="text-muted-foreground">Shipping ({shippingConfig.label})</span>
+                    <span className="text-foreground">{formatCurrency(shippingConfig.cost)}</span>
                   </div>
-                  {appliedPromo?.freeDelivery && (
-                    <div className="flex justify-between text-sm text-green-600">
-                      <span>Free Delivery Discount</span>
-                      <span>-{formatCurrency(shippingConfig.cost)}</span>
-                    </div>
-                  )}
+
                   <div className="flex justify-between text-lg font-medium border-t border-muted-foreground/20 pt-2">
                     <span className="text-foreground">Total</span>
                     <span className="text-foreground">{formatCurrency(total)}</span>

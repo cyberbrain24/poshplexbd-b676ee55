@@ -830,9 +830,6 @@ export type Database = {
           payment_status: Database["public"]["Enums"]["payment_status"]
           payment_verified_at: string | null
           payment_verified_by: string | null
-          promo_code: string | null
-          promo_code_id: string | null
-          promo_discount: number | null
           risk_flags: Json | null
           risk_level: Database["public"]["Enums"]["risk_level"] | null
           sender_number: string | null
@@ -884,9 +881,6 @@ export type Database = {
           payment_status?: Database["public"]["Enums"]["payment_status"]
           payment_verified_at?: string | null
           payment_verified_by?: string | null
-          promo_code?: string | null
-          promo_code_id?: string | null
-          promo_discount?: number | null
           risk_flags?: Json | null
           risk_level?: Database["public"]["Enums"]["risk_level"] | null
           sender_number?: string | null
@@ -938,9 +932,6 @@ export type Database = {
           payment_status?: Database["public"]["Enums"]["payment_status"]
           payment_verified_at?: string | null
           payment_verified_by?: string | null
-          promo_code?: string | null
-          promo_code_id?: string | null
-          promo_discount?: number | null
           risk_flags?: Json | null
           risk_level?: Database["public"]["Enums"]["risk_level"] | null
           sender_number?: string | null
@@ -974,13 +965,6 @@ export type Database = {
             columns: ["payment_method_id"]
             isOneToOne: false
             referencedRelation: "payment_methods"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "orders_promo_code_id_fkey"
-            columns: ["promo_code_id"]
-            isOneToOne: false
-            referencedRelation: "promo_codes"
             referencedColumns: ["id"]
           },
           {
@@ -1490,129 +1474,6 @@ export type Database = {
           },
         ]
       }
-      promo_code_usages: {
-        Row: {
-          created_at: string
-          customer_id: string | null
-          discount_amount: number
-          id: string
-          order_id: string | null
-          promo_code_id: string
-          used_at: string
-        }
-        Insert: {
-          created_at?: string
-          customer_id?: string | null
-          discount_amount?: number
-          id?: string
-          order_id?: string | null
-          promo_code_id: string
-          used_at?: string
-        }
-        Update: {
-          created_at?: string
-          customer_id?: string | null
-          discount_amount?: number
-          id?: string
-          order_id?: string | null
-          promo_code_id?: string
-          used_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "promo_code_usages_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "promo_code_usages_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "promo_code_usages_promo_code_id_fkey"
-            columns: ["promo_code_id"]
-            isOneToOne: false
-            referencedRelation: "promo_codes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      promo_codes: {
-        Row: {
-          code: string
-          created_at: string
-          description: string | null
-          discount_type: string
-          discount_value: number
-          expires_at: string | null
-          id: string
-          is_active: boolean
-          max_discount_amount: number | null
-          min_order_amount: number | null
-          per_customer_limit: number | null
-          reward_membership_type_id: string | null
-          reward_trigger: string
-          reward_type: string
-          starts_at: string | null
-          updated_at: string
-          usage_count: number
-          usage_limit: number | null
-        }
-        Insert: {
-          code: string
-          created_at?: string
-          description?: string | null
-          discount_type: string
-          discount_value: number
-          expires_at?: string | null
-          id?: string
-          is_active?: boolean
-          max_discount_amount?: number | null
-          min_order_amount?: number | null
-          per_customer_limit?: number | null
-          reward_membership_type_id?: string | null
-          reward_trigger?: string
-          reward_type?: string
-          starts_at?: string | null
-          updated_at?: string
-          usage_count?: number
-          usage_limit?: number | null
-        }
-        Update: {
-          code?: string
-          created_at?: string
-          description?: string | null
-          discount_type?: string
-          discount_value?: number
-          expires_at?: string | null
-          id?: string
-          is_active?: boolean
-          max_discount_amount?: number | null
-          min_order_amount?: number | null
-          per_customer_limit?: number | null
-          reward_membership_type_id?: string | null
-          reward_trigger?: string
-          reward_type?: string
-          starts_at?: string | null
-          updated_at?: string
-          usage_count?: number
-          usage_limit?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "promo_codes_reward_membership_type_id_fkey"
-            columns: ["reward_membership_type_id"]
-            isOneToOne: false
-            referencedRelation: "customer_types"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       return_requests: {
         Row: {
           admin_notes: string | null
@@ -2081,10 +1942,6 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
-      }
-      increment_promo_usage: {
-        Args: { p_promo_code_id: string }
-        Returns: undefined
       }
       is_admin: { Args: never; Returns: boolean }
       show_limit: { Args: never; Returns: number }

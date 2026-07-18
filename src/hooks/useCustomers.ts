@@ -65,7 +65,7 @@ export interface Customer {
   division?: Division;
   thana?: Thana;
   customer_type?: CustomerType;
-  promo_usage_count?: number;
+  
   customer_account?: CustomerAccount | null;
   has_account?: boolean;
   order_count?: number;
@@ -78,8 +78,8 @@ export interface CustomerFilters {
   customer_type_id?: string;
   division_id?: string;
   thana_id?: string;
-  min_promo_usage?: number;
-  max_promo_usage?: number;
+
+
 }
 
 // Divisions hooks
@@ -380,7 +380,7 @@ export const useCustomers = (filters?: CustomerFilters) => {
       const { data, error } = await query;
       if (error) throw error;
 
-      // Fetch promo usage counts for each customer (from promo_code_usages)
+      // Fetch related data for each customer
       const customerIds = data.map(c => c.id);
 
       // Guard against empty list — Supabase .in() with empty array returns an error
@@ -389,8 +389,7 @@ export const useCustomers = (filters?: CustomerFilters) => {
       }
 
       // Run secondary lookups in parallel for faster load
-      const [promoRes, accountsRes, orderRes] = await Promise.all([
-        supabase.from("promo_code_usages").select("customer_id").in("customer_id", customerIds),
+      const [accountsRes, orderRes] = await Promise.all([
         supabase.from("customer_accounts").select("customer_id, auth_user_id").in("customer_id", customerIds),
         supabase
           .from("orders")
@@ -399,9 +398,7 @@ export const useCustomers = (filters?: CustomerFilters) => {
           .not("order_status", "in", '("cancelled","failed","returned")'),
       ]);
 
-      if (promoRes.error) throw promoRes.error;
       if (accountsRes.error) throw accountsRes.error;
-      const promoData = promoRes.data || [];
       const accountsData = accountsRes.data || [];
       const orderStats = orderRes.data;
       const orderError = orderRes.error;
@@ -414,14 +411,6 @@ export const useCustomers = (filters?: CustomerFilters) => {
         }
       });
 
-      // Count promo usages per customer
-      const promoCountMap: Record<string, number> = {};
-      promoData.forEach(p => {
-        promoCountMap[p.customer_id] = (promoCountMap[p.customer_id] || 0) + 1;
-      });
-
-      // Order stats fetched in parallel above
-
       const orderCountMap: Record<string, number> = {};
       const totalSpentMap: Record<string, number> = {};
       if (!orderError && orderStats) {
@@ -433,24 +422,15 @@ export const useCustomers = (filters?: CustomerFilters) => {
         });
       }
 
-      const customersWithPromo = data.map(customer => ({
+      const enrichedCustomers = data.map(customer => ({
         ...customer,
-        promo_usage_count: promoCountMap[customer.id] || 0,
         has_account: accountMap[customer.id] || false,
         order_count: orderCountMap[customer.id] || 0,
         total_spent: totalSpentMap[customer.id] || 0,
       }));
 
-      // Filter by promo usage if specified
-      let filteredCustomers = customersWithPromo;
-      if (filters?.min_promo_usage !== undefined) {
-        filteredCustomers = filteredCustomers.filter(c => c.promo_usage_count >= filters.min_promo_usage!);
-      }
-      if (filters?.max_promo_usage !== undefined) {
-        filteredCustomers = filteredCustomers.filter(c => c.promo_usage_count <= filters.max_promo_usage!);
-      }
+      return enrichedCustomers as Customer[];
 
-      return filteredCustomers as Customer[];
     },
   });
 };
@@ -460,7 +440,7 @@ export const useCreateCustomer = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (customer: Omit<Customer, "id" | "created_at" | "updated_at" | "division" | "thana" | "customer_type" | "promo_usage_count" | "profile_image_url" | "postal_code">) => {
+    mutationFn: async (customer: Omit<Customer, "id" | "created_at" | "updated_at" | "division" | "thana" | "customer_type" | "profile_image_url" | "postal_code">) => {
       const { data, error } = await supabase
         .from("customers")
         .insert(customer)
@@ -486,7 +466,7 @@ export const useUpdateCustomer = () => {
   return useMutation({
     mutationFn: async ({ id, ...customer }: Partial<Customer> & { id: string }) => {
       // Strip computed/relational fields but KEEP postal_code and profile_image_url as they are real DB columns
-      const { division, thana, customer_type, promo_usage_count, has_account, order_count, total_spent, ...customerData } = customer as any;
+      const { division, thana, customer_type, has_account, order_count, total_spent, ...customerData } = customer as any;
       const { data, error } = await supabase
         .from("customers")
         .update(customerData)
@@ -521,8 +501,7 @@ export const useDeleteCustomer = () => {
       const authUserIds = (accountData || []).map((a) => a.auth_user_id).filter(Boolean);
 
       // 2. Cascade-delete all child records in correct order
-      // promo_code_usages
-      await supabase.from("promo_code_usages").delete().eq("customer_id", id);
+
       // reviews
       await supabase.from("reviews").delete().eq("customer_id", id);
       // customer_risk_profiles

@@ -63,10 +63,8 @@ const CustomerDetailModal = ({ open, onOpenChange, customer }: Props) => {
             <div className="flex items-center gap-2 text-xs text-muted-foreground"><Wallet className="h-3.5 w-3.5" />Total Spent</div>
             <div className="text-xl font-bold mt-1">{formatCurrency(customer.total_spent ?? 0)}</div>
           </CardContent></Card>
-          <Card><CardContent className="p-3">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground"><Gift className="h-3.5 w-3.5" />Promos Used</div>
-            <div className="text-xl font-bold mt-1">{customer.promo_usage_count ?? 0}</div>
-          </CardContent></Card>
+
+
         </div>
 
         <div className="space-y-1">

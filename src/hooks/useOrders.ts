@@ -47,9 +47,8 @@ export interface Order {
   ip_address: string | null;
   customer_notes: string | null;
   internal_notes: string | null;
-  promo_code: string | null;
-  promo_code_id: string | null;
-  promo_discount: number | null;
+
+
 
   customer_called_at: string | null;
   call_center_notes: string | null;
@@ -488,12 +487,7 @@ export const useDeleteOrder = () => {
         .eq("order_id", orderId);
       if (returnsError) throw returnsError;
 
-      // 4. Delete promo_code_usages referencing this order
-      const { error: promoUsagesError } = await supabase
-        .from("promo_code_usages")
-        .delete()
-        .eq("order_id", orderId);
-      if (promoUsagesError) throw promoUsagesError;
+
 
       // 5. Finally delete the order
       const { error } = await supabase

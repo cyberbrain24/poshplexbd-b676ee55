@@ -23,7 +23,7 @@ const AdminAddOrder = lazy(() => import("@/pages/admin/AdminAddOrder"));
 const AdminOrderFulfillment = lazy(() => import("@/pages/admin/AdminOrderFulfillment"));
 const AdminPaymentMethods = lazy(() => import("@/pages/admin/AdminPaymentMethods"));
 const AdminReviews = lazy(() => import("@/pages/admin/AdminReviews"));
-const AdminPromoCodes = lazy(() => import("@/pages/admin/AdminPromoCodes"));
+
 const AdminSiteSettings = lazy(() => import("@/pages/admin/AdminSiteSettings"));
 const AdminBulkUpload = lazy(() => import("@/pages/admin/AdminBulkUpload"));
 
@@ -65,7 +65,7 @@ const AdminApp = () => (
           <Route path="orders" element={<AdminOrders />} />
           <Route path="order-fulfillment" element={<AdminOrderFulfillment />} />
           <Route path="payment-methods" element={<AdminPaymentMethods />} />
-          <Route path="promo-codes" element={<AdminPromoCodes />} />
+          
           <Route path="bulk-upload" element={<AdminBulkUpload />} />
           <Route path="site-settings" element={<AdminSiteSettings />} />
           <Route path="marketing" element={<MarketingLayout />}>

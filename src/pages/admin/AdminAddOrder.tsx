@@ -153,11 +153,9 @@ const AdminAddOrder = () => {
     fetchDetail();
   }, [variantPick?.product?.id]);
 
-  // Discount & Promo
+  // Discount
   const [manualDiscount, setManualDiscount] = useState("");
-  const [promoCodeInput, setPromoCodeInput] = useState("");
-  const [appliedPromo, setAppliedPromo] = useState<{ id: string; code: string; discount: number; freeDelivery: boolean } | null>(null);
-  const [applyingPromo, setApplyingPromo] = useState(false);
+
 
   // Payment
   const [paymentMethodId, setPaymentMethodId] = useState("");
@@ -176,13 +174,13 @@ const AdminAddOrder = () => {
   // Totals
   const subtotal = useMemo(() => items.reduce((s, i) => s + i.price * i.quantity, 0), [items]);
   const manualDiscountValue = Math.max(0, Number(manualDiscount) || 0);
-  const promoDiscountValue = appliedPromo?.discount || 0;
-  const totalDiscount = manualDiscountValue + promoDiscountValue;
+  const totalDiscount = manualDiscountValue;
 
   const selectedThana = useMemo(() => thanas?.find(t => t.id === customer.thanaId), [thanas, customer.thanaId]);
   const baseShipping = selectedThana?.shipping_cost !== undefined ? Number(selectedThana.shipping_cost) : 0;
-  const shippingCost = appliedPromo?.freeDelivery ? 0 : baseShipping;
+  const shippingCost = baseShipping;
   const total = Math.max(0, subtotal - totalDiscount + shippingCost);
+
 
   // ----- Customer phone lookup -----
   const handlePhoneBlur = async () => {
@@ -250,30 +248,8 @@ const AdminAddOrder = () => {
   };
   const removeItem = (id: string) => setItems(prev => prev.filter(i => i.id !== id));
 
-  // ----- Promo -----
-  const handleApplyPromo = async () => {
-    if (!promoCodeInput.trim()) return;
-    setApplyingPromo(true);
-    try {
-      const { validatePromoCode } = await import("@/lib/promo");
-      const result = await validatePromoCode(promoCodeInput, subtotal, baseShipping, customer.phone || undefined);
-      if (!result.valid || !result.promo) {
-        toast.error(result.error || "Invalid promo code");
-        return;
-      }
-      setAppliedPromo({
-        id: result.promo.id,
-        code: result.promo.code,
-        discount: result.discount,
-        freeDelivery: result.freeDelivery,
-      });
-      toast.success(result.freeDelivery ? "Free delivery applied" : `Saved ${formatCurrency(result.discount)}`);
-    } catch (e: any) {
-      toast.error(e.message || "Failed to apply promo");
-    } finally {
-      setApplyingPromo(false);
-    }
-  };
+
+
 
   // ----- Place order -----
   const validate = () => {
@@ -361,10 +337,8 @@ const AdminAddOrder = () => {
           discountAmount: totalDiscount,
           shippingCost,
           paidAmount: Number(paidAmount) || 0,
-          promoCodeId: appliedPromo?.id,
-          promoCode: appliedPromo?.code,
-          promoDiscount: promoDiscountValue || undefined,
           customerNotes: customer.notes || undefined,
+
         },
         cartItems,
       });
@@ -533,36 +507,16 @@ const AdminAddOrder = () => {
         )}
       </Card>
 
-      {/* Discount & Promo */}
+      {/* Discount */}
       <Card className="p-4 space-y-3">
-        <div className="flex items-center gap-2 font-semibold"><TagIcon className="h-4 w-4" /> Discount & Promo</div>
+        <div className="flex items-center gap-2 font-semibold"><TagIcon className="h-4 w-4" /> Discount</div>
+
         <div>
           <Label className="text-xs">Manual Discount (৳)</Label>
           <Input className="h-11" type="number" min={0} value={manualDiscount} onChange={(e) => setManualDiscount(e.target.value)} placeholder="0" />
         </div>
-        <div>
-          <Label className="text-xs">Promo Code</Label>
-          {appliedPromo ? (
-            <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-950/30 border rounded">
-              <div className="text-sm">
-                <span className="font-semibold">{appliedPromo.code}</span>
-                <span className="text-xs text-muted-foreground ml-2">
-                  {appliedPromo.freeDelivery ? "Free delivery" : `-${formatCurrency(appliedPromo.discount)}`}
-                </span>
-              </div>
-              <button onClick={() => { setAppliedPromo(null); setPromoCodeInput(""); }} className="text-destructive">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ) : (
-            <div className="flex gap-2">
-              <Input className="h-11" value={promoCodeInput} onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())} placeholder="Enter code" />
-              <Button onClick={handleApplyPromo} disabled={applyingPromo || !promoCodeInput.trim()}>
-                {applyingPromo ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
-              </Button>
-            </div>
-          )}
-        </div>
+
+
       </Card>
 
       {/* Payment */}
@@ -608,7 +562,8 @@ const AdminAddOrder = () => {
         <div className="font-semibold mb-2">Summary</div>
         <Row label="Subtotal" value={formatCurrency(subtotal)} />
         {manualDiscountValue > 0 && <Row label="Manual Discount" value={`-${formatCurrency(manualDiscountValue)}`} />}
-        {promoDiscountValue > 0 && <Row label={`Promo (${appliedPromo?.code})`} value={`-${formatCurrency(promoDiscountValue)}`} />}
+
+
         <Row label="Shipping" value={formatCurrency(shippingCost)} />
         <div className="h-px bg-border my-1" />
         <Row label="Total" value={formatCurrency(total)} bold />

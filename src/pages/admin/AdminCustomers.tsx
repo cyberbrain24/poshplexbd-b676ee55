@@ -42,7 +42,7 @@ import {
   CustomerFilters,
 } from "@/hooks/useCustomers";
 import CustomerModal from "@/components/admin/CustomerModal";
-import PromoUsageHistoryModal from "@/components/admin/PromoUsageHistoryModal";
+
 import CustomerDetailModal from "@/components/admin/CustomerDetailModal";
 
 const AdminCustomers = () => {
@@ -50,7 +50,7 @@ const AdminCustomers = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteCustomerName, setDeleteCustomerName] = useState<string>("");
-  const [promoHistoryCustomer, setPromoHistoryCustomer] = useState<Customer | null>(null);
+  
   const [viewCustomer, setViewCustomer] = useState<Customer | null>(null);
   const [impersonating, setImpersonating] = useState<string | null>(null);
 
@@ -121,14 +121,14 @@ const AdminCustomers = () => {
 
   // Calculate stats
   const stats = useMemo(() => {
-    if (!customers) return { total: 0, male: 0, female: 0, withPromo: 0 };
+    if (!customers) return { total: 0, male: 0, female: 0 };
     return {
       total: customers.length,
       male: customers.filter(c => c.gender === "male").length,
       female: customers.filter(c => c.gender === "female").length,
-      withPromo: customers.filter(c => (c.promo_usage_count || 0) > 0).length,
     };
   }, [customers]);
+
 
   return (
     <div className="p-6 space-y-6">
@@ -205,15 +205,8 @@ const AdminCustomers = () => {
             <div className="text-2xl font-bold">{stats.female}</div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">With Promo Usage</CardTitle>
-            <Gift className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.withPromo}</div>
-          </CardContent>
-        </Card>
+
+
       </div>
 
       {/* Search and Filters */}
@@ -280,20 +273,8 @@ const AdminCustomers = () => {
                 </SelectContent>
               </Select>
 
-              <Select
-                value={filters.min_promo_usage?.toString() || "all"}
-                onValueChange={(v) => setFilters(prev => ({ ...prev, min_promo_usage: v === "all" ? undefined : parseInt(v) }))}
-              >
-                <SelectTrigger className="w-[160px]">
-                  <SelectValue placeholder="Promo Usage" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="1">1+ usages</SelectItem>
-                  <SelectItem value="5">5+ usages</SelectItem>
-                  <SelectItem value="10">10+ usages</SelectItem>
-                </SelectContent>
-              </Select>
+
+
 
               {hasActiveFilters && (
                 <Button variant="ghost" size="sm" onClick={clearFilters}>
@@ -322,7 +303,7 @@ const AdminCustomers = () => {
                   <TableHead>Customer Type</TableHead>
                   <TableHead>Orders</TableHead>
                   <TableHead>Total Spent</TableHead>
-                  <TableHead>Promo Usage</TableHead>
+                  
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -365,17 +346,8 @@ const AdminCustomers = () => {
                     <TableCell className="font-medium">
                       {formatCurrency(customer.total_spent ?? 0)}
                     </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setPromoHistoryCustomer(customer)}
-                        className="text-blue-600 hover:text-blue-700"
-                      >
-                        <Gift className="h-4 w-4 mr-1" />
-                        {customer.promo_usage_count || 0}
-                      </Button>
-                    </TableCell>
+
+
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
                         <Button
@@ -428,13 +400,8 @@ const AdminCustomers = () => {
         customer={viewCustomer}
       />
 
-      {promoHistoryCustomer && (
-        <PromoUsageHistoryModal
-          open={!!promoHistoryCustomer}
-          onOpenChange={(open) => !open && setPromoHistoryCustomer(null)}
-          customer={promoHistoryCustomer}
-        />
-      )}
+
+
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => { if (!open) { setDeleteId(null); setDeleteCustomerName(""); } }}>
         <AlertDialogContent>
@@ -455,7 +422,7 @@ const AdminCustomers = () => {
                     <li>Login account &amp; authentication access</li>
                     <li>Saved addresses</li>
                     <li>Reviews submitted by this customer</li>
-                    <li>Promo code usage history</li>
+                    
                     <li>Risk profile data</li>
                     <li>Orders will be anonymised (order history preserved)</li>
                   </ul>

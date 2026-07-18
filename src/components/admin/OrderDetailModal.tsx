@@ -111,22 +111,8 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
   } | null>(null);
   const [showAddItemModal, setShowAddItemModal] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
-  const [promoInput, setPromoInput] = useState("");
-  const [applyingPromo, setApplyingPromo] = useState(false);
 
 
-  // Fetch promo codes for lookup
-  const { data: promoCodes } = useQuery({
-    queryKey: ["promo-codes-all"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("promo_codes")
-        .select("*")
-        .eq("is_active", true);
-      if (error) throw error;
-      return data;
-    },
-  });
 
   // Fetch product images for order items
   const productIds = order?.items?.map(i => i.product_id).filter((id): id is string => !!id) || [];
@@ -404,34 +390,10 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
                   <span>Subtotal:</span>
                   <span>{formatCurrency(order.subtotal)}</span>
                 </div>
-                {(order.discount_amount > 0 || order.promo_code) && (
+                {order.discount_amount > 0 && (
                   <div className="flex justify-between text-sm text-green-600">
-                    <span>Discount{order.promo_code ? ` (${order.promo_code})` : ''}:</span>
-                    <div className="flex items-center gap-1">
-                      <span>-{formatCurrency(order.discount_amount)}</span>
-                      {order.promo_code && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-5 w-5 text-destructive"
-                          onClick={async () => {
-                            if (!confirm("Remove promo code from this order?")) return;
-                            const newTotal = order.subtotal + order.shipping_cost + order.tax_amount;
-                            await supabase.from("orders").update({
-                              promo_code: null,
-                              promo_code_id: null,
-                              promo_discount: 0,
-                              discount_amount: 0,
-                              total_amount: newTotal,
-                            }).eq("id", orderId);
-                            queryClient.invalidateQueries({ queryKey: ["order", orderId] });
-                            toast.success("Promo code removed");
-                          }}
-                        >
-                          <XCircle className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
+                    <span>Discount:</span>
+                    <span>-{formatCurrency(order.discount_amount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
@@ -443,68 +405,8 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
                   <span>{formatCurrency(order.total_amount)}</span>
                 </div>
               </div>
-
-              {/* Promo Code Management */}
-              {!order.promo_code && (
-                <div className="pt-2 border-t">
-                  <span className="text-xs font-medium text-muted-foreground">Apply Promo Code</span>
-                  <div className="flex gap-2 mt-1">
-                    <Input
-                      placeholder="Enter code"
-                      value={promoInput}
-                      onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
-                      className="h-8 text-sm"
-                    />
-                    <Button
-                      size="sm"
-                      className="h-8"
-                      disabled={!promoInput || applyingPromo}
-                      onClick={async () => {
-                        setApplyingPromo(true);
-                        try {
-                          const promo = promoCodes?.find(p => p.code.toUpperCase() === promoInput);
-                          if (!promo) {
-                            toast.error("Invalid promo code");
-                            return;
-                          }
-                          let discount = 0;
-                          if (promo.discount_type === "percentage") {
-                            discount = (order.subtotal * promo.discount_value) / 100;
-                            if (promo.max_discount_amount) discount = Math.min(discount, promo.max_discount_amount);
-                          } else {
-                            discount = promo.discount_value;
-                          }
-                          const newTotal = order.subtotal - discount + order.shipping_cost + order.tax_amount;
-                          await supabase.from("orders").update({
-                            promo_code: promo.code,
-                            promo_code_id: promo.id,
-                            promo_discount: discount,
-                            discount_amount: discount,
-                            total_amount: Math.max(0, newTotal),
-                          }).eq("id", orderId);
-                          // Record usage
-                          await supabase.from("promo_code_usages").insert({
-                            promo_code_id: promo.id,
-                            customer_id: order.customer_id,
-                            order_id: orderId,
-                            discount_amount: discount,
-                          });
-                          queryClient.invalidateQueries({ queryKey: ["order", orderId] });
-                          setPromoInput("");
-                          toast.success(`Promo "${promo.code}" applied — ${formatCurrency(discount)} off`);
-                        } catch (err: any) {
-                          toast.error("Failed to apply promo: " + err.message);
-                        } finally {
-                          setApplyingPromo(false);
-                        }
-                      }}
-                    >
-                      Apply
-                    </Button>
-                  </div>
-                </div>
-              )}
             </div>
+
 
             {/* Payment Summary - Manual Payment Recording */}
             <div className="border border-border p-4 space-y-3">

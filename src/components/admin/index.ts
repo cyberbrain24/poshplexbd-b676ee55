@@ -40,6 +40,6 @@ export { default as OrderDetailModal } from "./OrderDetailModal";
 export { default as OrderItemEditModal } from "./OrderItemEditModal";
 export { PaymentMethodModal } from "./PaymentMethodModal";
 export { default as ProductModal } from "./ProductModal";
-export { default as PromoUsageHistoryModal } from "./PromoUsageHistoryModal";
+
 
 export { default as ThanaModal } from "./ThanaModal";

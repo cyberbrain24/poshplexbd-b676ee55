@@ -36,10 +36,8 @@ interface CheckoutData {
   // Partial Payment - amount customer is paying upfront
   paidAmount?: number;
   
-  // Promo code info
-  promoCodeId?: string;
-  promoCode?: string;
-  promoDiscount?: number;
+
+
   
   // Notes
   customerNotes?: string;
@@ -212,10 +210,8 @@ export const useCreateOrder = () => {
         customer_notes: checkoutData.customerNotes || null,
         risk_level: riskLevel,
         risk_flags: flags,
-        promo_code: checkoutData.promoCode || null,
-        promo_code_id: checkoutData.promoCodeId || null,
-        promo_discount: checkoutData.promoDiscount || 0,
       };
+
 
       let orderId: string;
       let orderNumber: string;
@@ -269,10 +265,8 @@ export const useCreateOrder = () => {
             customer_notes: orderPayload.customer_notes,
             risk_level: orderPayload.risk_level as any,
             risk_flags: orderPayload.risk_flags,
-            promo_code: orderPayload.promo_code,
-            promo_code_id: orderPayload.promo_code_id,
-            promo_discount: orderPayload.promo_discount,
           }])
+
           .select()
           .single();
 
@@ -303,16 +297,8 @@ export const useCreateOrder = () => {
         orderNumber = order.order_number;
       }
 
-      // Record promo code usage if applied
-      if (checkoutData.promoCodeId) {
-        const { recordPromoUsage } = await import("@/lib/promo");
-        await recordPromoUsage(
-          checkoutData.promoCodeId,
-          checkoutData.customerId || null,
-          orderId,
-          checkoutData.promoDiscount || 0,
-        );
-      }
+
+
 
       return { orderId, orderNumber };
     },

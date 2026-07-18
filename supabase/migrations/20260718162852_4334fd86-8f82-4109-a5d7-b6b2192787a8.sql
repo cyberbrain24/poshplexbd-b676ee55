@@ -1,0 +1,1 @@
+ALTER TABLE public.site_settings DROP COLUMN IF EXISTS ga4_enabled; ALTER TABLE public.site_settings DROP COLUMN IF EXISTS ga4_measurement_id;

@@ -78,14 +78,11 @@ const RelatedProducts = ({
                   />
                 </div>
                 <div className="space-y-0.5">
-                  <p className="text-xs font-light text-muted-foreground truncate">
-                    {product.category?.name || categoryName || "Product"}
-                  </p>
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-0.5">
-                    <h3 className="text-xs sm:text-sm font-medium text-foreground truncate">
+                    <h3 className="text-[10px] sm:text-sm font-medium text-foreground truncate">
                       {product.name}
                     </h3>
-                    <p className="text-xs sm:text-sm font-light text-foreground whitespace-nowrap">
+                    <p className="text-[10px] sm:text-sm font-light text-foreground whitespace-nowrap">
                       ৳{getProductPrice(product).toLocaleString()}
                     </p>
                   </div>

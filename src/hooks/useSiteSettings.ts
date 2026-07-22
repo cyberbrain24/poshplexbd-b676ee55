@@ -48,6 +48,12 @@ export const useSiteSettings = () => {
   return useQuery<PublicSiteSettings | null>({
     queryKey: SITE_SETTINGS_QUERY_KEY,
     queryFn: async () => {
+      const pre = (typeof window !== "undefined" && (window as any).__ppPreload?.settings) as Promise<any> | undefined;
+      if (pre) {
+        const arr = await pre;
+        const row = Array.isArray(arr) ? arr[0] : arr;
+        if (row) { writeCache(row); return row as PublicSiteSettings; }
+      }
       const { data, error } = await supabase
         .from("site_settings")
         .select(SELECT_COLS)

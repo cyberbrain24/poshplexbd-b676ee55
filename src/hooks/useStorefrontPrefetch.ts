@@ -21,6 +21,12 @@ export function useStorefrontPrefetch() {
     queryClient.prefetchQuery({
       queryKey: ["site-branding"],
       queryFn: async () => {
+        const pre = (window as any).__ppPreload?.branding as Promise<any> | undefined;
+        if (pre) {
+          const arr = await pre;
+          const row = Array.isArray(arr) ? arr[0] : arr;
+          if (row) return row;
+        }
         const { data, error } = await supabase
           .from("site_branding")
           .select("*")
@@ -36,6 +42,11 @@ export function useStorefrontPrefetch() {
     queryClient.prefetchQuery({
       queryKey: ["categories"],
       queryFn: async () => {
+        const pre = (window as any).__ppPreload?.categories as Promise<any> | undefined;
+        if (pre) {
+          const arr = await pre;
+          if (arr) return arr;
+        }
         const { data, error } = await supabase
           .from("categories")
           .select("id, name, image_url, parent_id")

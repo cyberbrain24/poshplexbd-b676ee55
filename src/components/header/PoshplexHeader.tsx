@@ -138,7 +138,7 @@ const PoshplexHeader = () => {
   };
 
   return (
-    <header className={`w-full sticky top-0 ${isCartOpen ? "z-[70]" : "z-50"} bg-background md:w-screen md:-ml-[10vw] md:-mr-[10vw]`}>
+    <header className={`w-full sticky top-0 ${isCartOpen ? "z-[70]" : "z-50"} bg-background md:w-screen md:relative md:left-1/2 md:right-1/2 md:-ml-[50vw] md:-mr-[50vw]`}>
       <AnnouncementBar />
       <nav className="flex items-center justify-between h-14 px-6 border-b border-border">
         {/* Mobile hamburger */}

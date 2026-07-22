@@ -10,6 +10,28 @@
     <meta property="og:url" content="https://poshplexbd.com/" />
 
     <link rel="preconnect" href="https://zspmhkzosumopyfmlwvl.supabase.co" crossorigin>
+    <link rel="dns-prefetch" href="https://zspmhkzosumopyfmlwvl.supabase.co">
+
+    <!-- Early data preload: fires critical Supabase requests in parallel with JS bundle
+         to eliminate the JS→data chain that dominates LCP. Results are stashed on
+         window.__ppPreload and consumed by React Query hooks. -->
+    <script>
+      (function () {
+        var base = "https://zspmhkzosumopyfmlwvl.supabase.co/rest/v1/";
+        var key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpzcG1oa3pvc3Vtb3B5Zm1sd3ZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzOTQ4NzQsImV4cCI6MjA4NTk3MDg3NH0.IJ8LtX2iLYCN_z110Upf6rz1hal1pjKM-12v5X82sow";
+        var h = { apikey: key, authorization: "Bearer " + key, "accept-profile": "public" };
+        function get(url) {
+          return fetch(base + url, { headers: h, credentials: "omit" })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .catch(function () { return null; });
+        }
+        window.__ppPreload = {
+          branding: get("site_branding?select=*"),
+          categories: get("categories?select=id,name,image_url,parent_id&order=name"),
+          settings: get("site_settings?select=id,typography,meta_pixel_id,meta_pixel_enabled,meta_test_mode,meta_advanced_matching,meta_ecommerce_events_enabled,meta_capi_enabled&limit=1"),
+        };
+      })();
+    </script>
 
     <!-- Self-hosted Google Fonts (latin only) — desktop/tablet only, mobile uses system fonts -->
     <link rel="preload" href="/fonts/google/1Ptgg87LROyAm3Kz-C8.woff2" as="font" type="font/woff2" crossorigin media="(min-width: 768px)">

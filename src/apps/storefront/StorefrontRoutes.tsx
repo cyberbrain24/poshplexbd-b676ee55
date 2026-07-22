@@ -60,7 +60,7 @@ const StorefrontRoutes = () => {
   }
 
   return (
-    <div className="w-full md:w-[80%] md:mx-auto">
+    <div className="w-full md:w-[90%] md:mx-auto">
       <Routes>
         <Route path="/" element={<Suspense fallback={<HomeSkeleton />}><Index /></Suspense>} />
         

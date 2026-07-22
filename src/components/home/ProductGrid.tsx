@@ -162,9 +162,6 @@ const ProductGrid = () => {
             </Link>
 
             <div className="space-y-1">
-              <p className="text-[10px] text-muted-foreground tracking-[0.1em] uppercase">
-                {product.category?.name || 'Streetwear'}
-              </p>
               <Link 
                 to={`/product/${generateProductSlug(product.name, product.id)}`}
                 className="block text-xs font-medium text-foreground tracking-wide leading-tight hover:underline underline-offset-2 line-clamp-2"

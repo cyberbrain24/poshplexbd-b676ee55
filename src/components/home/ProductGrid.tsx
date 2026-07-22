@@ -162,15 +162,17 @@ const ProductGrid = () => {
             </Link>
 
             <div className="space-y-1">
-              <Link 
-                to={`/product/${generateProductSlug(product.name, product.id)}`}
-                className="block text-xs font-medium text-foreground tracking-wide leading-tight hover:underline underline-offset-2 line-clamp-2"
-              >
-                {product.name}
-              </Link>
-              <p className="text-sm font-bold text-foreground tracking-tight">
-                {formatPrice(product.base_price)}
-              </p>
+              <div className="flex items-start justify-between gap-2">
+                <Link 
+                  to={`/product/${generateProductSlug(product.name, product.id)}`}
+                  className="block text-xs font-medium text-foreground tracking-wide leading-tight hover:underline underline-offset-2 line-clamp-2"
+                >
+                  {product.name}
+                </Link>
+                <p className="text-xs font-bold text-foreground tracking-tight whitespace-nowrap">
+                  {formatPrice(product.base_price)}
+                </p>
+              </div>
               <ProductRatingBadge
                 count={ratings?.[product.id]?.count ?? 0}
                 average={ratings?.[product.id]?.average ?? 0}

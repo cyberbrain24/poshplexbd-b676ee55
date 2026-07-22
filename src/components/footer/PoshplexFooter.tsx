@@ -40,7 +40,7 @@ const PoshplexFooter = () => {
   };
 
   return (
-    <footer className="w-full mt-20 md:w-screen md:-ml-[10vw] md:-mr-[10vw]" style={{ background: "linear-gradient(180deg, #3a3a3a 0%, #2f2f2f 100%)" }}>
+    <footer className="w-full mt-20 md:w-screen md:relative md:left-1/2 md:right-1/2 md:-ml-[50vw] md:-mr-[50vw]" style={{ background: "linear-gradient(180deg, #3a3a3a 0%, #2f2f2f 100%)" }}>
       
       {/* Main Content */}
       <div className="px-6 lg:px-12 py-12 lg:py-16">

@@ -327,44 +327,6 @@ export type Database = {
         }
         Relationships: []
       }
-      inventory_categories: {
-        Row: {
-          created_at: string
-          id: string
-          is_active: boolean
-          name: string
-          parent_id: string | null
-          sort_order: number
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          name: string
-          parent_id?: string | null
-          sort_order?: number
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          name?: string
-          parent_id?: string | null
-          sort_order?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "inventory_categories_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "inventory_categories"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       inventory_entries: {
         Row: {
           created_at: string
@@ -1405,10 +1367,6 @@ export type Database = {
         Returns: Json
       }
       find_customer_id_by_phone: { Args: { p_phone: string }; Returns: string }
-      find_customer_ids_by_phone: {
-        Args: { p_phone: string }
-        Returns: string[]
-      }
       find_product_by_short_id: { Args: { short_id: string }; Returns: string }
       get_my_customer_id: { Args: never; Returns: string }
       get_public_members: {

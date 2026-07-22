@@ -57,6 +57,13 @@ const PoshplexHeader = () => {
     return () => window.removeEventListener('open-shopping-bag', handler);
   }, []);
 
+  // Listen for open-mobile-menu event from mobile footer Category button
+  useEffect(() => {
+    const handler = () => setIsMobileMenuOpen(true);
+    window.addEventListener('open-mobile-menu', handler);
+    return () => window.removeEventListener('open-mobile-menu', handler);
+  }, []);
+
   // Check customer auth state
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
@@ -193,7 +200,7 @@ const PoshplexHeader = () => {
           </button>
           <Link
             to="/favorites"
-            className="p-2 text-foreground hover:text-nav-hover transition-colors relative"
+            className="hidden lg:block p-2 text-foreground hover:text-nav-hover transition-colors relative"
             aria-label="Favorites"
           >
             <Heart size={20} strokeWidth={1.5} />

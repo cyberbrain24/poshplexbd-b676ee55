@@ -165,7 +165,7 @@ const ReviewProduct = ({ productId }: ReviewProductProps) => {
       <DialogTrigger asChild>
         <Button 
           variant="outline" 
-          className="w-full h-12 font-light rounded-none bg-[#2f2f2f] text-white border-[#2f2f2f] hover:bg-[#1f1f1f] hover:text-white"
+          className="w-full h-12 font-light rounded-none bg-muted text-foreground border-border hover:bg-muted/80 hover:text-foreground"
         >
           {existingReviewId ? "Edit your review" : "Review product"}
         </Button>

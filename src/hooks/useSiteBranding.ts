@@ -18,6 +18,12 @@ export const useSiteBranding = () => {
   return useQuery({
     queryKey: ["site-branding"],
     queryFn: async (): Promise<SiteBranding> => {
+      const pre = (typeof window !== "undefined" && (window as any).__ppPreload?.branding) as Promise<any> | undefined;
+      if (pre) {
+        const arr = await pre;
+        const row = Array.isArray(arr) ? arr[0] : arr;
+        if (row) return row as SiteBranding;
+      }
       const { data, error } = await (supabase as any)
         .from("site_branding")
         .select("*")

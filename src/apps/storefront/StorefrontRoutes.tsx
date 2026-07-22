@@ -10,7 +10,7 @@ import ProductDetailSkeleton from "@/components/skeletons/ProductDetailSkeleton"
 // does not pull the Home-page chunk (and vice versa)
 const Index = lazy(() => import("@/pages/Index"));
 const Category = lazy(() => import("@/pages/Category"));
-const CategoryBrowser = lazy(() => import("@/pages/CategoryBrowser"));
+
 const ProductDetail = lazy(() => import("@/pages/ProductDetail"));
 const Checkout = lazy(() => import("@/pages/Checkout"));
 const OurStory = lazy(() => import("@/pages/about/OurStory"));
@@ -62,7 +62,7 @@ const StorefrontRoutes = () => {
   return (
     <Routes>
     <Route path="/" element={<Suspense fallback={<HomeSkeleton />}><Index /></Suspense>} />
-    <Route path="/categories" element={<Suspense fallback={<CategorySkeleton />}><CategoryBrowser /></Suspense>} />
+    
     <Route path="/category/:category" element={<Suspense fallback={<CategorySkeleton />}><Category /></Suspense>} />
     <Route path="/product/:productSlug" element={<Suspense fallback={<ProductDetailSkeleton />}><ProductDetail /></Suspense>} />
     <Route path="/checkout" element={<Suspense fallback={<LoadingFallback />}><Checkout /></Suspense>} />

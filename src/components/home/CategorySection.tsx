@@ -52,8 +52,8 @@ const CategorySection = () => {
           <span className="text-5xl font-normal text-muted-foreground/30">01</span>
           <h2 className="text-xl font-normal tracking-tight text-foreground uppercase">Shop by Category</h2>
         </div>
-        <Carousel opts={{ align: "start", loop: false }} setApi={setApi} className="w-full">
-          <CarouselContent className="-ml-2">
+        <Carousel opts={{ align: "center", loop: false }} setApi={setApi} className="w-full">
+          <CarouselContent className="-ml-2 justify-center">
             {mainCategories.map((category) => {
               const slug = category.name.toLowerCase().replace(/\s+/g, "-");
               return (

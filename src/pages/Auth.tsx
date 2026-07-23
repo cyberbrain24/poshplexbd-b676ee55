@@ -80,16 +80,17 @@ const Auth = () => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email or Username</Label>
               <Input
                 id="email"
-                type="email"
+                type="text"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@example.com"
+                placeholder="admin@example.com or username"
                 required
               />
             </div>
+
 
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>

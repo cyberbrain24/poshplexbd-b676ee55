@@ -199,16 +199,30 @@ export const useOptimizedCategoryProducts = (
       if (categorySlug && categorySlug !== "all") {
         // Look up the parent category
         if (!categoryIdRef.current) {
-          const { data: categoryData } = await supabase
+          // Match by slug (URL param IS the slug). Fall back to name for legacy links.
+          let { data: categoryData } = await supabase
             .from("categories")
             .select("id, is_active")
-            .ilike("name", categorySlug.replace(/-/g, " "))
-            .single();
+            .eq("slug", categorySlug)
+            .maybeSingle();
+          if (!categoryData) {
+            const { data: byName } = await supabase
+              .from("categories")
+              .select("id, is_active")
+              .ilike("name", categorySlug.replace(/-/g, " "))
+              .limit(1)
+              .maybeSingle();
+            categoryData = byName;
+          }
           // If category is inactive, hide entirely
           if (categoryData && categoryData.is_active === false) {
             return { products: [], totalCount: 0, nextPage: pageParam + 1 };
           }
           categoryIdRef.current = categoryData?.id || null;
+          // If slug is unknown, don't fall through to "show everything"
+          if (!categoryIdRef.current) {
+            return { products: [], totalCount: 0, nextPage: pageParam + 1 };
+          }
         }
 
         if (categoryIdRef.current) {

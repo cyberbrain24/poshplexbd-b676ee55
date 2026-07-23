@@ -188,7 +188,7 @@ const AdminAddOrder = () => {
     try {
       const { data } = await supabase
         .from("customers")
-        .select("id, name, phone, email, gender, birthdate, address, division_id, thana_id")
+        .select("id, name, phone, email, address, division_id, thana_id")
         .eq("phone", phone)
         .maybeSingle();
       if (data) {

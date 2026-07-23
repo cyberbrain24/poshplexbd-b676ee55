@@ -409,6 +409,9 @@ const Checkout = () => {
         em: customerDetails.email || undefined,
         fn: fn || undefined,
         ln: rest.join(" ") || undefined,
+        ct: selectedThana?.name || undefined,
+        st: selectedDivision?.name || undefined,
+        zp: (customerDetails.postalCode || "").trim() || undefined,
         country: "bd",
       });
 

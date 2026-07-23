@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_permissions: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          modules: string[]
+          updated_at: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          modules?: string[]
+          updated_at?: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          modules?: string[]
+          updated_at?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string
@@ -1368,6 +1398,7 @@ export type Database = {
       }
       find_customer_id_by_phone: { Args: { p_phone: string }; Returns: string }
       find_product_by_short_id: { Args: { short_id: string }; Returns: string }
+      get_my_allowed_modules: { Args: never; Returns: string[] }
       get_my_customer_id: { Args: never; Returns: string }
       get_public_members: {
         Args: { p_customer_type_id?: string }
@@ -1403,6 +1434,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      is_super_admin: { Args: never; Returns: boolean }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       track_orders_lookup: {

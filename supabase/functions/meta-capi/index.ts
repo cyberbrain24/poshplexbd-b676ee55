@@ -73,7 +73,9 @@ async function hashUserData(u: UserData) {
   }
   if (u.fn && u.fn.trim()) out.fn = await sha256Hex(u.fn);
   if (u.ln && u.ln.trim()) out.ln = await sha256Hex(u.ln);
-  if (u.ct && u.ct.trim()) out.ct = await sha256Hex(u.ct);
+  if (u.ct && u.ct.trim()) out.ct = await sha256Hex(u.ct.replace(/\s+/g, ''));
+  if (u.st && u.st.trim()) out.st = await sha256Hex(u.st.replace(/\s+/g, ''));
+  if (u.zp && u.zp.trim()) out.zp = await sha256Hex(u.zp.replace(/\s+/g, ''));
   if (u.country && u.country.trim()) out.country = await sha256Hex(u.country);
   if (u.external_id && u.external_id.trim()) out.external_id = await sha256Hex(u.external_id);
 

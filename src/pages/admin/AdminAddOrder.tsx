@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BirthDatePicker } from "@/components/ui/birth-date-picker";
+
 import { useDivisions, useThanas } from "@/hooks/useLocationData";
 import { usePaymentMethods, PaymentMethodType } from "@/hooks/useOrders";
 import { useCreateOrder } from "@/hooks/useCheckout";

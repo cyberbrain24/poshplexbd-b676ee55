@@ -150,7 +150,7 @@ export const useUpdateProduct = () => {
     mutationFn: async ({ id, data: p }: { id: string; data: Partial<ProductFormData> }) => {
       const { data, error } = await supabase.from("products").update({
         name: p.name,
-        sku: p.sku || undefined,
+        sku: p.sku?.trim() || undefined,
         product_type: p.product_type,
         category_id: p.category_id || null,
         short_description: p.short_description || null,

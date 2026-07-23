@@ -14,6 +14,8 @@ interface UserData {
   fn?: string;       // first name
   ln?: string;       // last name
   ct?: string;       // city
+  st?: string;       // state / region
+  zp?: string;       // postal code
   country?: string;
   external_id?: string;
   client_ip_address?: string;

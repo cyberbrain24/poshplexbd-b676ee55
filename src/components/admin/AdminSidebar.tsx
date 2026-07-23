@@ -39,10 +39,10 @@ const productManagementItems: NavItem[] = [
 ];
 
 const orderItems: NavItem[] = [
-  { icon: PlusCircle, label: "Add Order", path: "/admin/add-order" },
-  { icon: ShoppingCart, label: "All Orders", path: "/admin/orders" },
-  { icon: PackageCheck, label: "Order Fulfillment", path: "/admin/order-fulfillment" },
-  { icon: CreditCard, label: "Payment Methods", path: "/admin/payment-methods" },
+  { icon: PlusCircle, label: "Add Order", path: "/admin/add-order", module: "add-order" },
+  { icon: ShoppingCart, label: "All Orders", path: "/admin/orders", module: "orders" },
+  { icon: PackageCheck, label: "Order Fulfillment", path: "/admin/order-fulfillment", module: "order-fulfillment" },
+  { icon: CreditCard, label: "Payment Methods", path: "/admin/payment-methods", module: "payment-methods" },
   
   
 ];

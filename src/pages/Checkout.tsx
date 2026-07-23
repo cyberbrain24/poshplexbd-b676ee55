@@ -171,11 +171,14 @@ const Checkout = () => {
         em: email || undefined,
         fn: fn || undefined,
         ln: rest.join(" ") || undefined,
+        ct: selectedThana?.name || undefined,
+        st: selectedDivision?.name || undefined,
+        zp: (customerDetails.postalCode || "").trim() || undefined,
         country: "bd",
       });
     }, 600);
     return () => clearTimeout(timer);
-  }, [customerDetails.name, customerDetails.phone, customerDetails.email]);
+  }, [customerDetails.name, customerDetails.phone, customerDetails.email, customerDetails.postalCode, selectedThana?.name, selectedDivision?.name]);
 
   // Fire InitiateCheckout pixel event — wait for customer auto-fill so Advanced
   // Matching identifiers (phone/email) are attached for logged-in customers.

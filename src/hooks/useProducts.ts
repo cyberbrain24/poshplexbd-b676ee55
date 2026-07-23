@@ -288,11 +288,12 @@ export const useAddProductVariant = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ productId, variantData }: { productId: string; variantData: VariantFormData }) => {
+      const generatedVariantSku = `SKU-${Math.random().toString(16).slice(2, 8).toUpperCase()}`;
       const { data, error } = await supabase.from("product_variants").insert({
         product_id: productId,
         color_id: variantData.color_id || null,
         size_id: variantData.size_id || null,
-        sku: variantData.sku || undefined,
+        sku: variantData.sku?.trim() || generatedVariantSku,
         purchase_price: variantData.purchase_price,
         selling_price: variantData.selling_price,
         is_active: variantData.is_active,

@@ -52,11 +52,11 @@ const orderItems: NavItem[] = [
 
 
 const customerManagementItems: NavItem[] = [
-  { icon: Users, label: "Customers", path: "/admin/customers" },
-  { icon: MessageSquare, label: "Reviews", path: "/admin/reviews" },
-  { icon: MapPin, label: "Districts", path: "/admin/divisions" },
-  { icon: Map, label: "Thanas", path: "/admin/thanas" },
-  { icon: Crown, label: "Membership Types", path: "/admin/customer-types" },
+  { icon: Users, label: "Customers", path: "/admin/customers", module: "customers" },
+  { icon: MessageSquare, label: "Reviews", path: "/admin/reviews", module: "reviews" },
+  { icon: MapPin, label: "Districts", path: "/admin/divisions", module: "divisions" },
+  { icon: Map, label: "Thanas", path: "/admin/thanas", module: "thanas" },
+  { icon: Crown, label: "Membership Types", path: "/admin/customer-types", module: "customer-types" },
 ];
 
 const marketingItems: NavItem[] = [

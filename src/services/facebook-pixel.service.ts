@@ -38,6 +38,9 @@ let _initialized = false;
 let _interactionBound = false;
 
 const USER_DATA_STORAGE_KEY = 'pp_fb_user_data';
+const ANON_ID_STORAGE_KEY = 'pp_anon_id';
+const FBC_STORAGE_KEY = 'pp_fbc';
+const FBP_STORAGE_KEY = 'pp_fbp';
 
 // Restore persisted user data immediately so the very first events on a
 // returning visitor already include em/ph/fn/ln/country/external_id.
@@ -61,25 +64,9 @@ export const setPixelConfig = (config: PixelConfig) => {
   // Mint a stable anonymous external_id per browser so EVERY event (including
   // anonymous PageViews) carries an identifier — lifts Meta's "External ID"
   // coverage from single digits to ~100%. Persisted for 2 years.
-  try {
-    if (typeof localStorage !== 'undefined' && (!_userData || !_userData.external_id)) {
-      let anon = localStorage.getItem('pp_anon_id');
-      if (!anon) {
-        anon = uuid();
-        localStorage.setItem('pp_anon_id', anon);
-      }
-      setAdvancedMatchingUser({ external_id: anon });
-    }
-  } catch { /* noop */ }
-  // Seed _fbp cookie ourselves so it exists on the very first event even
-  // though fbevents.js is lazy-loaded. Format matches Meta's SDK:
-  // fb.<subdomain_index>.<creation_time>.<random_10_digits>
-  try {
-    if (typeof document !== 'undefined' && !getCookie('_fbp')) {
-      const rand = Math.floor(1e9 + Math.random() * 9e9).toString();
-      setCookie('_fbp', `fb.1.${Date.now()}.${rand}`, 90);
-    }
-  } catch { /* noop */ }
+  ensureAnonymousExternalId();
+  ensureBrowserId();
+  captureClickId();
 };
 
 export const getPixelConfig = () => _config;
@@ -244,6 +231,60 @@ const setCookie = (name: string, value: string, days = 90) => {
   document.cookie = `${name}=${value}; expires=${expires}; path=/; SameSite=Lax`;
 };
 
+const getSearchParam = (name: string): string | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    return new URLSearchParams(window.location.search).get(name);
+  } catch {
+    return null;
+  }
+};
+
+const remember = (key: string, value: string) => {
+  try {
+    if (typeof localStorage !== 'undefined') localStorage.setItem(key, value);
+  } catch { /* noop */ }
+};
+
+const recall = (key: string): string | undefined => {
+  try {
+    if (typeof localStorage !== 'undefined') return localStorage.getItem(key) || undefined;
+  } catch { /* noop */ }
+  return undefined;
+};
+
+const ensureAnonymousExternalId = () => {
+  try {
+    if (typeof localStorage === 'undefined' || _userData?.external_id) return;
+    let anon = localStorage.getItem(ANON_ID_STORAGE_KEY);
+    if (!anon) {
+      anon = uuid();
+      localStorage.setItem(ANON_ID_STORAGE_KEY, anon);
+    }
+    setAdvancedMatchingUser({ external_id: anon });
+  } catch { /* noop */ }
+};
+
+const ensureBrowserId = (): string | undefined => {
+  try {
+    const existing = getCookie('_fbp') || recall(FBP_STORAGE_KEY);
+    if (existing) {
+      if (!getCookie('_fbp')) setCookie('_fbp', existing, 90);
+      return existing;
+    }
+    // Seed _fbp cookie ourselves so it exists on the first CAPI event even
+    // though fbevents.js is lazy-loaded. Format matches Meta's SDK:
+    // fb.<subdomain_index>.<creation_time>.<random_10_digits>
+    const rand = Math.floor(1e9 + Math.random() * 9e9).toString();
+    const fbp = `fb.1.${Date.now()}.${rand}`;
+    setCookie('_fbp', fbp, 90);
+    remember(FBP_STORAGE_KEY, fbp);
+    return fbp;
+  } catch {
+    return undefined;
+  }
+};
+
 /**
  * Meta auto-creates `_fbc` only when fbevents.js is on the landing page,
  * which we lazy-load — meaning fast bounces from FB ads can lose Click ID.
@@ -253,14 +294,36 @@ const setCookie = (name: string, value: string, days = 90) => {
 export const captureClickId = () => {
   try {
     if (typeof window === 'undefined') return;
-    if (getCookie('_fbc')) return; // already set
-    const params = new URLSearchParams(window.location.search);
-    const fbclid = params.get('fbclid');
-    if (!fbclid) return;
+    const fbclid = getSearchParam('fbclid');
+    if (!fbclid) {
+      const remembered = recall(FBC_STORAGE_KEY);
+      if (remembered && !getCookie('_fbc')) setCookie('_fbc', remembered, 90);
+      return;
+    }
+    const existing = getCookie('_fbc') || recall(FBC_STORAGE_KEY);
+    if (existing && existing.endsWith(`.${fbclid}`)) {
+      if (!getCookie('_fbc')) setCookie('_fbc', existing, 90);
+      return;
+    }
     const fbc = `fb.1.${Date.now()}.${fbclid}`;
     setCookie('_fbc', fbc, 90);
+    remember(FBC_STORAGE_KEY, fbc);
   } catch { /* noop */ }
 };
+
+const getFbc = (): string | undefined => {
+  captureClickId();
+  return getCookie('_fbc') || recall(FBC_STORAGE_KEY);
+};
+
+const getFbp = (): string | undefined => ensureBrowserId() || getCookie('_fbp') || recall(FBP_STORAGE_KEY);
+
+// Run immediately when this service module is imported. This is important for
+// Meta ads landings because `fbclid` can be lost before the lazily-loaded Pixel
+// tracker initializes. Keeping `_fbc` early fixes the CAPI fbc diagnostic.
+captureClickId();
+ensureBrowserId();
+ensureAnonymousExternalId();
 
 
 /**
@@ -277,8 +340,8 @@ const sendCapi = (
     try {
       const userData = {
         ..._userData,
-        fbp: getCookie('_fbp'),
-        fbc: getCookie('_fbc'),
+        fbp: getFbp(),
+        fbc: getFbc(),
       };
       const payload = {
         event_name: eventName,

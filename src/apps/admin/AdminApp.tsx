@@ -1,6 +1,8 @@
 import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import PermissionGuard from "@/components/admin/PermissionGuard";
+import type { ModuleKey } from "@/hooks/usePermissions";
 
 const AdminLayout = lazy(() => import("@/components/admin/AdminLayout"));
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
@@ -19,7 +21,7 @@ const AdminOrderFulfillment = lazy(() => import("@/pages/admin/AdminOrderFulfill
 const AdminPaymentMethods = lazy(() => import("@/pages/admin/AdminPaymentMethods"));
 const AdminReviews = lazy(() => import("@/pages/admin/AdminReviews"));
 const AdminSiteSettings = lazy(() => import("@/pages/admin/AdminSiteSettings"));
-
+const AdminUserRoles = lazy(() => import("@/pages/admin/AdminUserRoles"));
 
 const MarketingLayout = lazy(() => import("@/pages/admin/marketing/MarketingLayout"));
 const MarketingOverview = lazy(() => import("@/pages/admin/marketing/MarketingOverview"));
@@ -33,29 +35,31 @@ const AdminLoadingFallback = () => (
   </div>
 );
 
+const G = (mod: ModuleKey, el: JSX.Element) => <PermissionGuard module={mod}>{el}</PermissionGuard>;
+
 const AdminApp = () => (
   <ProtectedRoute>
     <Suspense fallback={<AdminLoadingFallback />}>
       <Routes>
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
-          <Route path="products" element={<AdminProducts />} />
-          <Route path="reviews" element={<AdminReviews />} />
-          <Route path="colors" element={<AdminColors />} />
-          <Route path="sizes" element={<AdminSizes />} />
-          <Route path="size-guides" element={<AdminSizeGuides />} />
-          <Route path="categories" element={<AdminCategories />} />
-          <Route path="customers" element={<AdminCustomers />} />
-          <Route path="divisions" element={<AdminDivisions />} />
-          <Route path="thanas" element={<AdminThanas />} />
-          <Route path="customer-types" element={<AdminCustomerTypes />} />
-          <Route path="add-order" element={<AdminAddOrder />} />
-          <Route path="orders" element={<AdminOrders />} />
-          <Route path="order-fulfillment" element={<AdminOrderFulfillment />} />
-          <Route path="payment-methods" element={<AdminPaymentMethods />} />
-          
-          <Route path="site-settings" element={<AdminSiteSettings />} />
-          <Route path="marketing" element={<MarketingLayout />}>
+          <Route path="products" element={G("products", <AdminProducts />)} />
+          <Route path="reviews" element={G("reviews", <AdminReviews />)} />
+          <Route path="colors" element={G("colors", <AdminColors />)} />
+          <Route path="sizes" element={G("sizes", <AdminSizes />)} />
+          <Route path="size-guides" element={G("size-guides", <AdminSizeGuides />)} />
+          <Route path="categories" element={G("categories", <AdminCategories />)} />
+          <Route path="customers" element={G("customers", <AdminCustomers />)} />
+          <Route path="divisions" element={G("divisions", <AdminDivisions />)} />
+          <Route path="thanas" element={G("thanas", <AdminThanas />)} />
+          <Route path="customer-types" element={G("customer-types", <AdminCustomerTypes />)} />
+          <Route path="add-order" element={G("add-order", <AdminAddOrder />)} />
+          <Route path="orders" element={G("orders", <AdminOrders />)} />
+          <Route path="order-fulfillment" element={G("order-fulfillment", <AdminOrderFulfillment />)} />
+          <Route path="payment-methods" element={G("payment-methods", <AdminPaymentMethods />)} />
+          <Route path="site-settings" element={G("site-settings", <AdminSiteSettings />)} />
+          <Route path="user-roles" element={G("user-roles", <AdminUserRoles />)} />
+          <Route path="marketing" element={G("marketing", <MarketingLayout />)}>
             <Route index element={<MarketingOverview />} />
             <Route path="meta-pixel" element={<MetaPixelSettings />} />
             <Route path="meta-capi" element={<MetaCapiSettings />} />

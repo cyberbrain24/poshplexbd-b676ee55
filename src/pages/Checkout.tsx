@@ -18,7 +18,7 @@ import { getShippingForLocation, ShippingConfig, SHIPPING_OUTSIDE_DHAKA } from "
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/currency";
-import { trackInitiateCheckout, trackPurchase, setAdvancedMatchingUser } from "@/services/facebook-pixel.service";
+import { trackInitiateCheckout, trackPurchase, setAdvancedMatchingUser, forceInjectPixel } from "@/services/facebook-pixel.service";
 
 const DEFAULT_PASSWORD = "poshplex";
 

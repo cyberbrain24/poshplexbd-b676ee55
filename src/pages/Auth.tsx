@@ -39,16 +39,21 @@ const Auth = () => {
     e.preventDefault();
     setIsLoading(true);
 
+    // Sub-admin username support: if input has no "@", treat as username → shadow email
+    const loginEmail = email.includes("@")
+      ? email.trim()
+      : `${email.trim().toLowerCase()}@admin.local`;
+
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email,
+        email: loginEmail,
         password,
       });
       if (error) throw error;
       toast.success("Logged in successfully");
     } catch (error: any) {
       if (error.message === "Invalid login credentials") {
-        toast.error("Invalid email or password");
+        toast.error("Invalid email/username or password");
       } else {
         toast.error(error.message || "An error occurred");
       }
@@ -56,6 +61,7 @@ const Auth = () => {
       setIsLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-background flex flex-col">

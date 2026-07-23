@@ -265,7 +265,6 @@ const AdminAddOrder = () => {
       p_name: customer.name,
       p_phone: customer.phone,
       p_email: customer.email || null,
-      p_gender: customer.gender || "other",
       p_address: customer.address || null,
       p_division_id: customer.divisionId || null,
       p_thana_id: customer.thanaId || null,
@@ -274,25 +273,7 @@ const AdminAddOrder = () => {
       console.error(error);
       return null;
     }
-    const customerId = data as string;
-    // Persist gender + birthdate (RPC doesn't take birthdate)
-    if (customerId) {
-      try {
-        const birthdateStr = customer.birthdate
-          ? `${customer.birthdate.getFullYear()}-${String(customer.birthdate.getMonth() + 1).padStart(2, "0")}-${String(customer.birthdate.getDate()).padStart(2, "0")}`
-          : null;
-        await supabase
-          .from("customers")
-          .update({
-            gender: (customer.gender || "other") as any,
-            birthdate: birthdateStr,
-          } as any)
-          .eq("id", customerId);
-      } catch (e) {
-        console.warn("Failed to persist gender/birthdate", e);
-      }
-    }
-    return customerId;
+    return data as string;
   };
 
   const handlePlaceOrder = async () => {

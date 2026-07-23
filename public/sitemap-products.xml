@@ -361,12 +361,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://poshplexbd.com/product/blade-chain-fa8dfb1c</loc>
-    <lastmod>2026-06-02</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://poshplexbd.com/product/bood-rage-e3b9a38b</loc>
     <lastmod>2026-06-02</lastmod>
     <changefreq>weekly</changefreq>
@@ -403,12 +397,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://poshplexbd.com/product/cryptic-flare-7512d926</loc>
-    <lastmod>2026-06-02</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://poshplexbd.com/product/dead-crown-black-60c49f05</loc>
     <lastmod>2026-06-02</lastmod>
     <changefreq>weekly</changefreq>
@@ -416,6 +404,12 @@
   </url>
   <url>
     <loc>https://poshplexbd.com/product/thirst-dynasty-39a3c8a8</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://poshplexbd.com/product/cryptic-flare-7512d926</loc>
     <lastmod>2026-06-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

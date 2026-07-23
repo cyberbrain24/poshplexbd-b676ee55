@@ -116,9 +116,10 @@ export const useCreateProduct = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (p: ProductFormData) => {
+      const generatedSku = `SKU-${Math.random().toString(16).slice(2, 8).toUpperCase()}`;
       const { data, error } = await supabase.from("products").insert({
         name: p.name,
-        sku: p.sku || undefined,
+        sku: p.sku?.trim() || generatedSku,
         product_type: p.product_type,
         category_id: p.category_id || null,
         short_description: p.short_description || null,
@@ -149,7 +150,7 @@ export const useUpdateProduct = () => {
     mutationFn: async ({ id, data: p }: { id: string; data: Partial<ProductFormData> }) => {
       const { data, error } = await supabase.from("products").update({
         name: p.name,
-        sku: p.sku || undefined,
+        sku: p.sku?.trim() || undefined,
         product_type: p.product_type,
         category_id: p.category_id || null,
         short_description: p.short_description || null,

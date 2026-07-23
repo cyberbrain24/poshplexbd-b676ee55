@@ -203,7 +203,9 @@ export const useOptimizedCategoryProducts = (
             .from("categories")
             .select("id, is_active")
             .ilike("name", categorySlug.replace(/-/g, " "))
-            .single();
+            .is("parent_id", null)
+            .limit(1)
+            .maybeSingle();
           // If category is inactive, hide entirely
           if (categoryData && categoryData.is_active === false) {
             return { products: [], totalCount: 0, nextPage: pageParam + 1 };

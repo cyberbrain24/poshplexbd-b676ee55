@@ -226,6 +226,9 @@ export const useOptimizedCategoryProducts = (
             const subIds = subCats?.map((s) => s.id) || [];
             categoryIds = [categoryIdRef.current, ...subIds];
           }
+        } else {
+          // Unknown category slug — show nothing rather than leaking all products
+          return { products: [], totalCount: 0, nextPage: pageParam + 1 };
         }
       } else if (filters?.subcategoryIds && filters.subcategoryIds.length > 0) {
         categoryIds = filters.subcategoryIds;

@@ -49,8 +49,6 @@ const AdminAddOrder = () => {
     name: "",
     phone: "",
     email: "",
-    gender: "other",
-    birthdate: undefined as Date | undefined,
     address: "",
     divisionId: "",
     thanaId: "",

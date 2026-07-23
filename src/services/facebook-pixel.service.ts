@@ -51,6 +51,21 @@ try {
 // ─── Configuration ─────────────────────────────────────────────
 export const setPixelConfig = (config: PixelConfig) => {
   _config = config;
+  // Baseline: every visitor is Bangladesh — guarantees ~100% country coverage
+  // in Meta Events Manager even before login/checkout typing. Non-destructive
+  // merge so it never overwrites a more specific value already persisted.
+  if (!_userData || !_userData.country) {
+    setAdvancedMatchingUser({ country: 'bd' });
+  }
+  // Seed _fbp cookie ourselves so it exists on the very first event even
+  // though fbevents.js is lazy-loaded. Format matches Meta's SDK:
+  // fb.<subdomain_index>.<creation_time>.<random_10_digits>
+  try {
+    if (typeof document !== 'undefined' && !getCookie('_fbp')) {
+      const rand = Math.floor(1e9 + Math.random() * 9e9).toString();
+      setCookie('_fbp', `fb.1.${Date.now()}.${rand}`, 90);
+    }
+  } catch { /* noop */ }
 };
 
 export const getPixelConfig = () => _config;

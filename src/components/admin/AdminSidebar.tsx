@@ -25,7 +25,9 @@ interface NavItem {
   icon: LucideIcon;
   label: string;
   path: string;
+  module: ModuleKey;
 }
+
 
 const productManagementItems: NavItem[] = [
   { icon: Package, label: "Products", path: "/admin/products" },

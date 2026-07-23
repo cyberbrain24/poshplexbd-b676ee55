@@ -198,6 +198,18 @@ export const setupLazyLoading = () => {
   const timer = setTimeout(trigger, 3000);
 };
 
+/**
+ * Force the Pixel script to inject immediately (bypass lazy load).
+ * Call this on high-intent pages (Checkout) so that fbq is guaranteed
+ * to be initialized before Purchase fires — otherwise fast autofilled
+ * checkouts under 3s would lose the browser Pixel event and Meta ad
+ * attribution suffers.
+ */
+export const forceInjectPixel = () => {
+  injectScript();
+};
+
+
 // ─── Safe fbq Wrapper ──────────────────────────────────────────
 const safeFbq = (...args: any[]) => {
   try {
@@ -481,6 +493,94 @@ export const trackInitiateCheckout = (data: {
   });
 };
 
+// ─── Purchase Outbox (persistent retry) ────────────────────────
+// If the CAPI fetch is dropped (tab close, flaky mobile network, DNS blip),
+// the Purchase event is otherwise LOST forever. We persist every Purchase
+// payload to localStorage before firing, and flush the queue on next load.
+// Meta dedupes by event_id, so retrying the same order is safe.
+const OUTBOX_KEY = 'pp_purchase_outbox';
+
+interface OutboxEntry {
+  event_id: string;
+  clean: Record<string, any>;
+  user_data_snapshot: AdvancedMatchingUserData | null;
+  event_source_url?: string;
+  attempts: number;
+  first_at: number;
+}
+
+const readOutbox = (): OutboxEntry[] => {
+  try {
+    const raw = localStorage.getItem(OUTBOX_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+};
+
+const writeOutbox = (entries: OutboxEntry[]) => {
+  try {
+    if (entries.length === 0) localStorage.removeItem(OUTBOX_KEY);
+    else localStorage.setItem(OUTBOX_KEY, JSON.stringify(entries));
+  } catch { /* noop */ }
+};
+
+const sendPurchaseFromOutbox = async (entry: OutboxEntry): Promise<boolean> => {
+  try {
+    const userData = {
+      ...(entry.user_data_snapshot || {}),
+      fbp: getFbp(),
+      fbc: getFbc(),
+    };
+    const payload = {
+      event_name: 'Purchase',
+      event_id: entry.event_id,
+      event_source_url: entry.event_source_url,
+      user_data: userData,
+      custom_data: entry.clean,
+      action_source: 'website',
+    };
+    const url = `${(import.meta as any).env.VITE_SUPABASE_URL}/functions/v1/meta-capi`;
+    const anonKey = (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: anonKey,
+        Authorization: `Bearer ${anonKey}`,
+      },
+      body: JSON.stringify(payload),
+      keepalive: true,
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+};
+
+// Flush outbox on module import (guarantees retry on next visit).
+// Entries older than 24h or attempted >5 times are dropped to avoid noise.
+const flushOutbox = async () => {
+  const entries = readOutbox();
+  if (entries.length === 0) return;
+  const now = Date.now();
+  const keep: OutboxEntry[] = [];
+  for (const entry of entries) {
+    if (now - entry.first_at > 24 * 60 * 60 * 1000 || entry.attempts >= 5) continue;
+    entry.attempts += 1;
+    const ok = await sendPurchaseFromOutbox(entry);
+    if (!ok) keep.push(entry);
+  }
+  writeOutbox(keep);
+};
+
+if (typeof window !== 'undefined') {
+  // Defer to idle so we never compete with critical path
+  const ric = (window as any).requestIdleCallback as
+    | ((cb: () => void, opts?: { timeout: number }) => number)
+    | undefined;
+  if (ric) ric(() => { void flushOutbox(); }, { timeout: 5000 });
+  else setTimeout(() => { void flushOutbox(); }, 2000);
+}
+
 export const trackPurchase = (data: {
   contentIds: string[];
   value: number;
@@ -499,11 +599,35 @@ export const trackPurchase = (data: {
     order_id: data.orderId,
     content_type: 'product',
   });
+
+  // Persist to outbox BEFORE firing — guarantees delivery even if the tab
+  // closes or the network drops during the immediate fetch. Meta dedupes
+  // by event_id so a successful send + a later outbox retry is safe.
+  const entry: OutboxEntry = {
+    event_id: eventId,
+    clean,
+    user_data_snapshot: _userData ? { ..._userData } : null,
+    event_source_url: typeof window !== 'undefined' ? window.location.href : undefined,
+    attempts: 0,
+    first_at: Date.now(),
+  };
+  const existing = readOutbox().filter(e => e.event_id !== eventId);
+  writeOutbox([...existing, entry]);
+
   safeFbq('track', 'Purchase', clean, { eventID: eventId });
-  // Fire CAPI immediately with keepalive — Purchase is often followed by
-  // a navigation, and we can't afford to lose the highest-value event.
-  void sendCapi('Purchase', eventId, clean, { immediate: true });
+
+  // Fire CAPI immediately; on success, remove from outbox.
+  void (async () => {
+    entry.attempts += 1;
+    const ok = await sendPurchaseFromOutbox(entry);
+    if (ok) {
+      const remaining = readOutbox().filter(e => e.event_id !== eventId);
+      writeOutbox(remaining);
+    }
+  })();
 };
+
+
 
 
 export const trackSearch = (searchString: string) => {

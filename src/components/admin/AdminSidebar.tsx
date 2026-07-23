@@ -60,10 +60,10 @@ const customerManagementItems: NavItem[] = [
 ];
 
 const marketingItems: NavItem[] = [
-  { icon: LayoutGrid, label: "Overview", path: "/admin/marketing" },
-  { icon: Facebook, label: "Meta Pixel", path: "/admin/marketing/meta-pixel" },
-  { icon: Server, label: "Meta CAPI", path: "/admin/marketing/meta-capi" },
-  { icon: Truck, label: "Steadfast API", path: "/admin/marketing/steadfast" },
+  { icon: LayoutGrid, label: "Overview", path: "/admin/marketing", module: "marketing" },
+  { icon: Facebook, label: "Meta Pixel", path: "/admin/marketing/meta-pixel", module: "marketing" },
+  { icon: Server, label: "Meta CAPI", path: "/admin/marketing/meta-capi", module: "marketing" },
+  { icon: Truck, label: "Steadfast API", path: "/admin/marketing/steadfast", module: "marketing" },
 ];
 
 

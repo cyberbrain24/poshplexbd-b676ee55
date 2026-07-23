@@ -378,28 +378,6 @@ const AdminAddOrder = () => {
             <Label className="text-xs">Email</Label>
             <Input className="h-11" type="email" value={customer.email} onChange={(e) => setCustomer(c => ({ ...c, email: e.target.value }))} />
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label className="text-xs">Gender</Label>
-              <Select value={customer.gender} onValueChange={(v) => setCustomer(c => ({ ...c, gender: v }))}>
-                <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-xs">Date of Birth *</Label>
-              <BirthDatePicker
-                value={customer.birthdate}
-                onChange={(d) => setCustomer(c => ({ ...c, birthdate: d }))}
-                placeholder="Select"
-                className="h-11"
-              />
-            </div>
-          </div>
         </div>
 
         <div className="flex items-center gap-2 font-semibold pt-2 border-t"><MapPin className="h-4 w-4" /> Shipping Address</div>

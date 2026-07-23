@@ -24,6 +24,8 @@ export interface AdvancedMatchingUserData {
   fn?: string; // first name
   ln?: string; // last name
   ct?: string; // city
+  st?: string; // state / region
+  zp?: string; // postal code
   country?: string;
   external_id?: string;
 }
@@ -49,6 +51,21 @@ try {
 // ─── Configuration ─────────────────────────────────────────────
 export const setPixelConfig = (config: PixelConfig) => {
   _config = config;
+  // Baseline: every visitor is Bangladesh — guarantees ~100% country coverage
+  // in Meta Events Manager even before login/checkout typing. Non-destructive
+  // merge so it never overwrites a more specific value already persisted.
+  if (!_userData || !_userData.country) {
+    setAdvancedMatchingUser({ country: 'bd' });
+  }
+  // Seed _fbp cookie ourselves so it exists on the very first event even
+  // though fbevents.js is lazy-loaded. Format matches Meta's SDK:
+  // fb.<subdomain_index>.<creation_time>.<random_10_digits>
+  try {
+    if (typeof document !== 'undefined' && !getCookie('_fbp')) {
+      const rand = Math.floor(1e9 + Math.random() * 9e9).toString();
+      setCookie('_fbp', `fb.1.${Date.now()}.${rand}`, 90);
+    }
+  } catch { /* noop */ }
 };
 
 export const getPixelConfig = () => _config;
@@ -78,6 +95,8 @@ export const setAdvancedMatchingUser = (data: AdvancedMatchingUserData | null) =
     if (data.fn && String(data.fn).trim()) clean.fn = String(data.fn).trim();
     if (data.ln && String(data.ln).trim()) clean.ln = String(data.ln).trim();
     if (data.ct && String(data.ct).trim()) clean.ct = String(data.ct).trim();
+    if (data.st && String(data.st).trim()) clean.st = String(data.st).trim();
+    if (data.zp && String(data.zp).trim()) clean.zp = String(data.zp).trim();
     if (data.country && String(data.country).trim()) clean.country = String(data.country).trim();
     if (data.external_id) clean.external_id = String(data.external_id);
   }

@@ -30,11 +30,11 @@ interface NavItem {
 
 
 const productManagementItems: NavItem[] = [
-  { icon: Package, label: "Products", path: "/admin/products" },
-  { icon: Palette, label: "Colors", path: "/admin/colors" },
-  { icon: Ruler, label: "Sizes", path: "/admin/sizes" },
-  { icon: BookOpen, label: "Size Guides", path: "/admin/size-guides" },
-  { icon: FolderTree, label: "Categories", path: "/admin/categories" },
+  { icon: Package, label: "Products", path: "/admin/products", module: "products" },
+  { icon: Palette, label: "Colors", path: "/admin/colors", module: "colors" },
+  { icon: Ruler, label: "Sizes", path: "/admin/sizes", module: "sizes" },
+  { icon: BookOpen, label: "Size Guides", path: "/admin/size-guides", module: "size-guides" },
+  { icon: FolderTree, label: "Categories", path: "/admin/categories", module: "categories" },
   
 ];
 

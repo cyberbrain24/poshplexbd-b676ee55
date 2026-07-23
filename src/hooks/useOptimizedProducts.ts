@@ -166,111 +166,6 @@ function parsePriceRange(range: string): { min: number; max: number | null } {
   };
 }
 
-// Resolve a category slug to the set of product IDs it contains.
-// Cached separately so infinite-scroll pages don't re-run these lookups.
-const useCategoryProductIds = (
-  categorySlug: string | undefined,
-  filters?: ProductFilters,
-) => {
-  return useQuery({
-    queryKey: [
-      "category-resolve",
-      categorySlug,
-      filters?.subcategoryIds,
-      filters?.colorIds,
-      filters?.sizeIds,
-    ],
-    queryFn: async () => {
-      let categoryIds: string[] = [];
-      let parentCategoryId: string | null = null;
-
-      if (categorySlug && categorySlug !== "all") {
-        const { data: categoryData } = await supabase
-          .from("categories")
-          .select("id, is_active")
-          .ilike("name", categorySlug.replace(/-/g, " "))
-          .is("parent_id", null)
-          .limit(1)
-          .maybeSingle();
-
-        if (!categoryData || categoryData.is_active === false) {
-          return { productIds: [] as string[], parentCategoryId: null, empty: true };
-        }
-        parentCategoryId = categoryData.id;
-
-        if (filters?.subcategoryIds && filters.subcategoryIds.length > 0) {
-          categoryIds = filters.subcategoryIds;
-        } else {
-          const { data: subCats } = await supabase
-            .from("categories")
-            .select("id")
-            .eq("parent_id", parentCategoryId)
-            .eq("is_active", true);
-          categoryIds = [parentCategoryId, ...(subCats?.map((s) => s.id) || [])];
-        }
-      } else if (filters?.subcategoryIds && filters.subcategoryIds.length > 0) {
-        categoryIds = filters.subcategoryIds;
-      } else {
-        const { data: activeCats } = await supabase
-          .from("categories")
-          .select("id")
-          .eq("is_active", true);
-        categoryIds = (activeCats || []).map((c) => c.id);
-      }
-
-      // Junction + variant filters in parallel
-      const junctionPromise = categoryIds.length
-        ? supabase
-            .from("product_categories")
-            .select("product_id")
-            .in("category_id", categoryIds)
-        : Promise.resolve({ data: [] as { product_id: string }[] });
-
-      const needsVariantFilter =
-        (filters?.colorIds && filters.colorIds.length > 0) ||
-        (filters?.sizeIds && filters.sizeIds.length > 0);
-
-      let variantPromise:
-        | Promise<{ data: { product_id: string }[] | null }>
-        | null = null;
-      if (needsVariantFilter) {
-        let vq = supabase
-          .from("product_variants")
-          .select("product_id")
-          .eq("is_active", true);
-        if (filters?.colorIds?.length) vq = vq.in("color_id", filters.colorIds);
-        if (filters?.sizeIds?.length) vq = vq.in("size_id", filters.sizeIds);
-        variantPromise = vq as unknown as Promise<{
-          data: { product_id: string }[] | null;
-        }>;
-      }
-
-      const [junctionRes, variantRes] = await Promise.all([
-        junctionPromise,
-        variantPromise ?? Promise.resolve(null),
-      ]);
-
-      const catIds = new Set(
-        (junctionRes.data || []).map((r) => r.product_id),
-      );
-      let productIds = [...catIds];
-
-      if (variantRes) {
-        const vIds = new Set((variantRes.data || []).map((r) => r.product_id));
-        productIds = productIds.filter((id) => vIds.has(id));
-      }
-
-      return {
-        productIds,
-        parentCategoryId,
-        empty: productIds.length === 0,
-      };
-    },
-    staleTime: 1000 * 60 * 5,
-    gcTime: 1000 * 60 * 10,
-  });
-};
-
 // Optimized category products for storefront with "Load More" pattern
 export const useOptimizedCategoryProducts = (
   categorySlug?: string,
@@ -278,34 +173,104 @@ export const useOptimizedCategoryProducts = (
   filters?: ProductFilters
 ) => {
   const PAGE_SIZE = 12;
-
-  const {
-    data: resolved,
-    isLoading: isResolving,
-  } = useCategoryProductIds(categorySlug, filters);
-
-  const productIds = resolved?.productIds;
-  const isEmpty = resolved?.empty === true;
+  const categoryIdRef = useRef<string | null>(null);
+  // Reset category ref when slug changes
+  const prevSlug = useRef(categorySlug);
+  if (prevSlug.current !== categorySlug) {
+    categoryIdRef.current = null;
+    prevSlug.current = categorySlug;
+  }
 
   const {
     data,
-    isLoading: isLoadingPages,
+    isLoading,
     error,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery({
-    queryKey: [
-      "category-products-infinite",
-      categorySlug,
-      sortBy,
-      filters?.priceRange,
-      productIds,
-    ],
-    enabled: !!resolved && !isEmpty,
+    queryKey: ["category-products-infinite", categorySlug, sortBy, filters],
     queryFn: async ({ pageParam = 0 }) => {
       const offset = pageParam * PAGE_SIZE;
+      
+      // Determine which category IDs to filter by
+      let categoryIds: string[] = [];
 
+      if (categorySlug && categorySlug !== "all") {
+        // Look up the parent category
+        if (!categoryIdRef.current) {
+          const { data: categoryData } = await supabase
+            .from("categories")
+            .select("id, is_active")
+            .ilike("name", categorySlug.replace(/-/g, " "))
+            .single();
+          // If category is inactive, hide entirely
+          if (categoryData && categoryData.is_active === false) {
+            return { products: [], totalCount: 0, nextPage: pageParam + 1 };
+          }
+          categoryIdRef.current = categoryData?.id || null;
+        }
+
+        if (categoryIdRef.current) {
+          // If subcategory filters are active, use those; otherwise use parent + active subcategories
+          if (filters?.subcategoryIds && filters.subcategoryIds.length > 0) {
+            categoryIds = filters.subcategoryIds;
+          } else {
+            const { data: subCats } = await supabase
+              .from("categories")
+              .select("id")
+              .eq("parent_id", categoryIdRef.current)
+              .eq("is_active", true);
+            const subIds = subCats?.map((s) => s.id) || [];
+            categoryIds = [categoryIdRef.current, ...subIds];
+          }
+        }
+      } else if (filters?.subcategoryIds && filters.subcategoryIds.length > 0) {
+        categoryIds = filters.subcategoryIds;
+      } else {
+        // "All" listing — exclude products whose category is inactive
+        const { data: activeCats } = await supabase
+          .from("categories")
+          .select("id")
+          .eq("is_active", true);
+        categoryIds = (activeCats || []).map((c) => c.id);
+      }
+
+      // If color or size filters are active, we need to find matching product IDs via variants
+      let variantFilteredProductIds: string[] | null = null;
+
+      if (
+        (filters?.colorIds && filters.colorIds.length > 0) ||
+        (filters?.sizeIds && filters.sizeIds.length > 0)
+      ) {
+        let variantQuery = supabase
+          .from("product_variants")
+          .select("product_id")
+          .eq("is_active", true);
+
+        if (filters?.colorIds && filters.colorIds.length > 0) {
+          variantQuery = variantQuery.in("color_id", filters.colorIds);
+        }
+        if (filters?.sizeIds && filters.sizeIds.length > 0) {
+          variantQuery = variantQuery.in("size_id", filters.sizeIds);
+        }
+
+        const { data: variantData } = await variantQuery;
+        variantFilteredProductIds = [
+          ...new Set((variantData || []).map((v) => v.product_id)),
+        ];
+
+        // No matching products → return empty
+        if (variantFilteredProductIds.length === 0) {
+          return { products: [], totalCount: 0, nextPage: pageParam + 1 };
+        }
+      }
+
+      // Build the main query.
+      // Note: variants are intentionally NOT fetched here. The grid only
+      // displays the base price + main image, so loading every variant
+      // (joined to colors/sizes/materials) was wasteful and was a major
+      // contributor to slow category pages.
       let query = supabase
         .from("products")
         .select(`
@@ -323,11 +288,27 @@ export const useOptimizedCategoryProducts = (
         .select("id", { count: "exact", head: true })
         .eq("is_active", true);
 
-      if (productIds && productIds.length > 0) {
-        query = query.in("id", productIds);
-        countQuery = countQuery.in("id", productIds);
+      // Apply category filter via junction table (product_categories)
+      if (categoryIds.length > 0) {
+        const { data: pcData } = await supabase
+          .from("product_categories")
+          .select("product_id")
+          .in("category_id", categoryIds);
+        const catProductIds = [...new Set((pcData || []).map((r) => r.product_id))];
+        if (catProductIds.length === 0) {
+          return { products: [], totalCount: 0, nextPage: pageParam + 1 };
+        }
+        query = query.in("id", catProductIds);
+        countQuery = countQuery.in("id", catProductIds);
       }
 
+      // Apply variant-based product filter
+      if (variantFilteredProductIds) {
+        query = query.in("id", variantFilteredProductIds);
+        countQuery = countQuery.in("id", variantFilteredProductIds);
+      }
+
+      // Apply price range filter
       if (filters?.priceRange) {
         const { min, max } = parsePriceRange(filters.priceRange);
         query = query.gte("base_price", min);
@@ -338,6 +319,7 @@ export const useOptimizedCategoryProducts = (
         }
       }
 
+      // Apply sorting
       switch (sortBy) {
         case "price_asc":
           query = query.order("base_price", { ascending: true });
@@ -354,29 +336,21 @@ export const useOptimizedCategoryProducts = (
 
       query = query.range(offset, offset + PAGE_SIZE - 1);
 
-      // Only run count on the first page; reuse it for subsequent pages.
-      const [dataResult, countResult] = await Promise.all([
-        query,
-        pageParam === 0
-          ? countQuery
-          : Promise.resolve({ count: null as number | null }),
-      ]);
+      const [dataResult, countResult] = await Promise.all([query, countQuery]);
 
       if (dataResult.error) throw dataResult.error;
 
       return {
         products: dataResult.data as Product[],
-        totalCount: countResult.count ?? null,
+        totalCount: countResult.count || 0,
         nextPage: pageParam + 1,
       };
     },
     getNextPageParam: (lastPage, allPages) => {
-      const firstCount = allPages[0]?.totalCount ?? 0;
-      const totalLoaded = allPages.reduce(
-        (acc, page) => acc + page.products.length,
-        0,
-      );
-      if (totalLoaded < firstCount) return lastPage.nextPage;
+      const totalLoaded = allPages.reduce((acc, page) => acc + page.products.length, 0);
+      if (totalLoaded < lastPage.totalCount) {
+        return lastPage.nextPage;
+      }
       return undefined;
     },
     initialPageParam: 0,
@@ -384,14 +358,14 @@ export const useOptimizedCategoryProducts = (
     gcTime: 1000 * 60 * 5,
   });
 
-  const products = isEmpty ? [] : data?.pages.flatMap((p) => p.products) || [];
-  const totalCount = isEmpty ? 0 : data?.pages[0]?.totalCount || 0;
+  const products = data?.pages.flatMap(page => page.products) || [];
+  const totalCount = data?.pages[0]?.totalCount || 0;
 
   const loadMore = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) fetchNextPage();
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
-
-  const isLoading = isResolving || (!isEmpty && isLoadingPages);
 
   return {
     products,
@@ -401,7 +375,7 @@ export const useOptimizedCategoryProducts = (
     totalCount,
     hasMore: hasNextPage ?? false,
     loadMore,
-    parentCategoryId: resolved?.parentCategoryId ?? null,
+    parentCategoryId: categoryIdRef.current,
     pagination: {
       page: data?.pages.length || 1,
       pageSize: PAGE_SIZE,
@@ -416,7 +390,6 @@ export const useOptimizedCategoryProducts = (
     },
   };
 };
-
 
 // Product stats for dashboard
 export const useProductStats = () => {

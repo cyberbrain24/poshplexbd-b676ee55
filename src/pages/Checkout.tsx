@@ -98,6 +98,14 @@ const Checkout = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoadingCustomer, setIsLoadingCustomer] = useState(true);
 
+  // Force-inject Meta Pixel immediately on Checkout mount. Otherwise the
+  // lazy-loaded fbevents.js may not be ready when Purchase fires on fast
+  // autofilled checkouts (<3s), causing Meta ad attribution to miss the
+  // browser Pixel side and undercount ad-attributed purchases.
+  useEffect(() => {
+    forceInjectPixel();
+  }, []);
+
   // Auto-fill customer details if logged in
   useEffect(() => {
     const loadCustomerData = async () => {

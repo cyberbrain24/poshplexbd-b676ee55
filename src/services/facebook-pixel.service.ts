@@ -26,6 +26,7 @@ export interface AdvancedMatchingUserData {
   ct?: string; // city
   st?: string; // state / region
   zp?: string; // postal code
+  db?: string; // date of birth YYYYMMDD
   country?: string;
   external_id?: string;
 }
@@ -57,6 +58,19 @@ export const setPixelConfig = (config: PixelConfig) => {
   if (!_userData || !_userData.country) {
     setAdvancedMatchingUser({ country: 'bd' });
   }
+  // Mint a stable anonymous external_id per browser so EVERY event (including
+  // anonymous PageViews) carries an identifier — lifts Meta's "External ID"
+  // coverage from single digits to ~100%. Persisted for 2 years.
+  try {
+    if (typeof localStorage !== 'undefined' && (!_userData || !_userData.external_id)) {
+      let anon = localStorage.getItem('pp_anon_id');
+      if (!anon) {
+        anon = uuid();
+        localStorage.setItem('pp_anon_id', anon);
+      }
+      setAdvancedMatchingUser({ external_id: anon });
+    }
+  } catch { /* noop */ }
   // Seed _fbp cookie ourselves so it exists on the very first event even
   // though fbevents.js is lazy-loaded. Format matches Meta's SDK:
   // fb.<subdomain_index>.<creation_time>.<random_10_digits>
@@ -97,6 +111,7 @@ export const setAdvancedMatchingUser = (data: AdvancedMatchingUserData | null) =
     if (data.ct && String(data.ct).trim()) clean.ct = String(data.ct).trim();
     if (data.st && String(data.st).trim()) clean.st = String(data.st).trim();
     if (data.zp && String(data.zp).trim()) clean.zp = String(data.zp).trim();
+    if (data.db && String(data.db).trim()) clean.db = String(data.db).replace(/\D/g, '').slice(0, 8);
     if (data.country && String(data.country).trim()) clean.country = String(data.country).trim();
     if (data.external_id) clean.external_id = String(data.external_id);
   }

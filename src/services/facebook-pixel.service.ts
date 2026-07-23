@@ -111,6 +111,7 @@ export const setAdvancedMatchingUser = (data: AdvancedMatchingUserData | null) =
     if (data.ct && String(data.ct).trim()) clean.ct = String(data.ct).trim();
     if (data.st && String(data.st).trim()) clean.st = String(data.st).trim();
     if (data.zp && String(data.zp).trim()) clean.zp = String(data.zp).trim();
+    if (data.db && String(data.db).trim()) clean.db = String(data.db).replace(/\D/g, '').slice(0, 8);
     if (data.country && String(data.country).trim()) clean.country = String(data.country).trim();
     if (data.external_id) clean.external_id = String(data.external_id);
   }

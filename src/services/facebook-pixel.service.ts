@@ -198,6 +198,18 @@ export const setupLazyLoading = () => {
   const timer = setTimeout(trigger, 3000);
 };
 
+/**
+ * Force the Pixel script to inject immediately (bypass lazy load).
+ * Call this on high-intent pages (Checkout) so that fbq is guaranteed
+ * to be initialized before Purchase fires — otherwise fast autofilled
+ * checkouts under 3s would lose the browser Pixel event and Meta ad
+ * attribution suffers.
+ */
+export const forceInjectPixel = () => {
+  injectScript();
+};
+
+
 // ─── Safe fbq Wrapper ──────────────────────────────────────────
 const safeFbq = (...args: any[]) => {
   try {

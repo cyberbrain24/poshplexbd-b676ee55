@@ -212,15 +212,15 @@ const AdminSidebar = () => {
       
       <nav className="flex-1 p-3 md:p-4 space-y-0.5 overflow-y-auto">
         {renderNavLink("/admin", LayoutDashboard, "Business Intelligence")}
-        {renderCollapsible(Package, "Product Management", productManagementItems, openGroup === 'product', () => toggleGroup('product'), isProductMgmtActive)}
-        {renderCollapsible(ShoppingCart, "Order Management", orderItems, openGroup === 'orders', () => toggleGroup('orders'), isOrdersActive)}
-        {renderCollapsible(Plug, "Integration & Tracking", marketingItems, openGroup === 'marketing', () => toggleGroup('marketing'), isMarketingActive)}
-        
-        
-        {renderCollapsible(Users, "Customer Management", customerManagementItems, openGroup === 'customer', () => toggleGroup('customer'), isCustomerMgmtActive)}
+        {visibleProduct.length > 0 && renderCollapsible(Package, "Product Management", visibleProduct, openGroup === 'product', () => toggleGroup('product'), isProductMgmtActive)}
+        {visibleOrders.length > 0 && renderCollapsible(ShoppingCart, "Order Management", visibleOrders, openGroup === 'orders', () => toggleGroup('orders'), isOrdersActive)}
+        {visibleMarketing.length > 0 && renderCollapsible(Plug, "Integration & Tracking", visibleMarketing, openGroup === 'marketing', () => toggleGroup('marketing'), isMarketingActive)}
+        {visibleCustomer.length > 0 && renderCollapsible(Users, "Customer Management", visibleCustomer, openGroup === 'customer', () => toggleGroup('customer'), isCustomerMgmtActive)}
 
-        {renderNavLink("/admin/site-settings", Settings, "Site Settings")}
+        {canSiteSettings && renderNavLink("/admin/site-settings", Settings, "Site Settings")}
+        {perms.isSuperAdmin && renderNavLink("/admin/user-roles", ShieldCheck, "User Roles")}
       </nav>
+
 
       <div className="p-3 md:p-4 border-t border-border space-y-2">
         <button

@@ -16,6 +16,7 @@ interface UserData {
   ct?: string;       // city
   st?: string;       // state / region
   zp?: string;       // postal code
+  db?: string;       // date of birth YYYYMMDD
   country?: string;
   external_id?: string;
   client_ip_address?: string;

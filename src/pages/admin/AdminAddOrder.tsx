@@ -251,7 +251,7 @@ const AdminAddOrder = () => {
   const validate = () => {
     if (!customer.name.trim()) return toast.error("Customer name required"), false;
     if (!customer.phone.trim()) return toast.error("Customer phone required"), false;
-    if (!customer.birthdate) return toast.error("Date of birth required"), false;
+    
     if (!customer.address.trim()) return toast.error("Address required"), false;
     if (!customer.divisionId) return toast.error("Select district"), false;
     if (!customer.thanaId) return toast.error("Select thana"), false;

@@ -71,8 +71,17 @@ const AdminSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const perms = usePermissions();
   const [isResetting, setIsResetting] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const filterItems = (items: NavItem[]) => items.filter((i) => canAccess(perms, i.module));
+  const visibleProduct = filterItems(productManagementItems);
+  const visibleOrders = filterItems(orderItems);
+  const visibleCustomer = filterItems(customerManagementItems);
+  const visibleMarketing = filterItems(marketingItems);
+  const canSiteSettings = canAccess(perms, "site-settings");
+
 
   const lastNavTimeRef = useRef<number>(0);
   const isNavigatingRef = useRef(false);

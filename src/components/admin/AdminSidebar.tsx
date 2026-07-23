@@ -8,6 +8,7 @@ import {
   LucideIcon, RefreshCw, MessageSquare, Image, Tag, Settings, Send,
   Upload, Menu, X, Music, Megaphone, Facebook, Server, BarChart3, LayoutGrid,
   BarChart2, Mail, MessageCircle, Instagram, MessagesSquare, Truck, Plug, PackageCheck, PlusCircle,
+  ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -15,6 +16,8 @@ import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { prefetchAdminRoute } from "@/lib/adminRoutePrefetch";
+import { usePermissions, canAccess, ModuleKey } from "@/hooks/usePermissions";
+
 
 const NAV_DEBOUNCE_MS = 150;
 

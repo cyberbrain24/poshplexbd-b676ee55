@@ -197,8 +197,6 @@ const AdminAddOrder = () => {
           id: data.id,
           name: data.name || c.name,
           email: data.email || c.email,
-          gender: (data as any).gender || c.gender,
-          birthdate: (data as any).birthdate ? new Date((data as any).birthdate) : c.birthdate,
           address: data.address || c.address,
           divisionId: data.division_id || c.divisionId,
           thanaId: data.thana_id || c.thanaId,

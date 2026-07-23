@@ -806,7 +806,7 @@ const AdminOrders = () => {
                           variant="outline"
                           className={`text-[10px] px-1.5 py-0 ${isAdmin ? 'bg-foreground text-background border-foreground' : 'bg-transparent text-muted-foreground border-border'}`}
                         >
-                          {isAdmin ? 'Admin Order' : 'Web Order'}
+                          {isAdmin ? 'Manual Order' : 'Web Order'}
                         </Badge>
                       );
                     })()}

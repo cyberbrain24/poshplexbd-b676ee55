@@ -184,8 +184,12 @@ export const useCreateOrder = () => {
       // Prepare order data
       const orderPayload = {
         customer_id: checkoutData.customerId || null,
-        guest_email: checkoutData.guestEmail || null,
-        guest_phone: checkoutData.guestPhone || null,
+        // Always populate guest_* from shipping fields as a safety net.
+        // The orders INSERT RLS policy requires auth.uid() OR guest_email OR guest_phone.
+        // In-app browsers (Instagram/Facebook) often drop the auth session mid-checkout,
+        // so mirroring the shipping phone/email guarantees the policy passes.
+        guest_email: checkoutData.guestEmail || checkoutData.shippingEmail || null,
+        guest_phone: checkoutData.guestPhone || checkoutData.shippingPhone || null,
         order_status: 'pending',
         payment_status: paymentStatus,
         payment_method_id: checkoutData.paymentMethodId,

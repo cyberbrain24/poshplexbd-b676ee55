@@ -111,6 +111,46 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
   } | null>(null);
   const [showAddItemModal, setShowAddItemModal] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [addPaymentAmount, setAddPaymentAmount] = useState<string>("");
+
+  const addPaymentMutation = useMutation({
+    mutationFn: async (amount: number) => {
+      if (!order) throw new Error("Order not loaded");
+      if (!(amount > 0)) throw new Error("Amount must be greater than 0");
+      const currentPaid = Number((order as any).paid_amount ?? 0);
+      const total = Number(order.total_amount ?? 0);
+      const newPaid = Math.min(currentPaid + amount, total);
+      let newStatus: PaymentStatus = order.payment_status;
+      if (newPaid >= total) newStatus = "paid";
+      else if (newPaid > 0) newStatus = "partially_paid";
+      else newStatus = "unpaid";
+
+      const { error } = await supabase
+        .from("orders")
+        .update({
+          paid_amount: newPaid,
+          payment_status: newStatus,
+          ...(newStatus === "paid" && { payment_verified_at: new Date().toISOString() }),
+        })
+        .eq("id", order.id);
+      if (error) throw error;
+
+      await supabase.from("order_status_history").insert({
+        order_id: order.id,
+        status_type: "payment",
+        previous_status: order.payment_status,
+        new_status: newStatus,
+        notes: `Recorded payment of ${formatCurrency(amount)}`,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["order", orderId] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      setAddPaymentAmount("");
+      toast.success("Payment recorded");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
 
 

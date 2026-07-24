@@ -27,11 +27,32 @@
         }
         window.__ppPreload = {
           branding: get("site_branding?select=*"),
-          categories: get("categories?select=id,name,image_url,parent_id&order=name"),
+          // MUST match useCategories() shape/order so React Query consumes it
+          categories: get("categories?select=*&order=sort_order.asc"),
           settings: get("site_settings?select=id,typography,meta_pixel_id,meta_pixel_enabled,meta_test_mode,meta_advanced_matching,meta_ecommerce_events_enabled,meta_capi_enabled&limit=1"),
         };
+
+        // Hero LCP preload from last-known branding (localStorage) — fires before React mounts
+        try {
+          var raw = localStorage.getItem("pp_branding_v1");
+          if (raw) {
+            var parsed = JSON.parse(raw);
+            var b = parsed && parsed.data;
+            if (b) {
+              var isDesktop = window.matchMedia && window.matchMedia("(min-width: 768px)").matches;
+              var url = isDesktop ? (b.desktop_hero_url || b.mobile_hero_url) : (b.mobile_hero_url || b.desktop_hero_url);
+              if (url) {
+                var l = document.createElement("link");
+                l.rel = "preload"; l.as = "image"; l.href = url;
+                l.setAttribute("fetchpriority", "high");
+                document.head.appendChild(l);
+              }
+            }
+          }
+        } catch (e) { /* ignore */ }
       })();
     </script>
+
 
     <!-- Self-hosted Google Fonts (latin only) — desktop/tablet only, mobile uses system fonts -->
     <link rel="preload" href="/fonts/google/1Ptgg87LROyAm3Kz-C8.woff2" as="font" type="font/woff2" crossorigin media="(min-width: 768px)">

@@ -38,24 +38,10 @@ export function useStorefrontPrefetch() {
       gcTime: 1000 * 60 * 60,
     });
 
-    // Categories are used in nav, so still prefetch globally
-    queryClient.prefetchQuery({
-      queryKey: ["categories"],
-      queryFn: async () => {
-        const pre = (window as any).__ppPreload?.categories as Promise<any> | undefined;
-        if (pre) {
-          const arr = await pre;
-          if (arr) return arr;
-        }
-        const { data, error } = await supabase
-          .from("categories")
-          .select("id, name, image_url, parent_id")
-          .order("name");
-        if (error) throw error;
-        return data;
-      },
-      ...STOREFRONT_CACHE,
-    });
+    // Categories are hydrated directly by useCategories() from window.__ppPreload
+    // (see src/hooks/useMasterData.ts). Prefetching a different query shape here
+    // used to cause a duplicate `select=id,name,...` fetch — removed.
+
 
     // Payment methods & divisions moved to Checkout page only
   }, [queryClient]);

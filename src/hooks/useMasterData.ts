@@ -155,18 +155,46 @@ export const useDeleteSizeGuide = () => {
 };
 
 // Categories
+const CATEGORIES_CACHE_KEY = "pp_categories_v1";
+const CATEGORIES_CACHE_TTL = 60 * 60 * 1000; // 1h
+
+function readCategoriesCache(): Category[] | null {
+  try {
+    const raw = typeof window !== "undefined" ? localStorage.getItem(CATEGORIES_CACHE_KEY) : null;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed?.ts || Date.now() - parsed.ts > CATEGORIES_CACHE_TTL) return null;
+    return parsed.data as Category[];
+  } catch { return null; }
+}
+
+function writeCategoriesCache(data: Category[]) {
+  try { localStorage.setItem(CATEGORIES_CACHE_KEY, JSON.stringify({ ts: Date.now(), data })); } catch { /* noop */ }
+}
+
 export const useCategories = () => {
   return useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
+      // 1) Consume the early HTML preload if present — removes the JS→data waterfall
+      const pre = (typeof window !== "undefined" && (window as any).__ppPreload?.categories) as Promise<any> | undefined;
+      if (pre) {
+        const arr = await pre;
+        if (Array.isArray(arr)) { writeCategoriesCache(arr as Category[]); return arr as Category[]; }
+      }
       const { data, error } = await supabase.from("categories").select("*").order("sort_order");
       if (error) throw error;
+      writeCategoriesCache((data || []) as Category[]);
       return data as Category[];
     },
+    initialData: () => readCategoriesCache() ?? undefined,
     staleTime: MASTER_DATA_STALE_TIME,
     gcTime: MASTER_DATA_GC_TIME,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
+
 
 export const useCreateCategory = () => {
   const qc = useQueryClient();

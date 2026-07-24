@@ -1,65 +1,69 @@
-## User Roles & Permissions Module
 
-Add a new admin-only module where the super-admin creates sub-admin accounts with a **username + password** and controls which admin modules each sub-admin can see, via checkboxes. Super-admin (`poshplexbd@gmail.com`) always bypasses these checks.
+## Goal
 
-### 1. Database (single migration)
+Restore fast first-paint on mobile (BD 3G/4G) across all storefront pages, especially the homepage. No business-logic changes, only presentation / data-fetch / asset optimizations.
 
-- New table `public.admin_permissions`
-  - `user_id uuid` (FK → `auth.users`, unique)
-  - `username text unique not null`
-  - `modules text[] not null default '{}'` — list of allowed module keys
-  - `is_active boolean default true`
-  - timestamps
-- RLS: only admins (via existing `has_role`) can select/insert/update/delete.
-- Helper function `public.get_my_allowed_modules()` (SECURITY DEFINER) that returns:
-  - `NULL` if super-admin (bypass = full access)
-  - `modules` array otherwise
-- The super-admin email is resolved by checking `auth.users.email = 'poshplexbd@gmail.com'`.
+## What's actually slow (verified from code + live network trace)
 
-### 2. Auth strategy (username + password)
+1. **Preload cache is being bypassed.** `index.html` preloads:
+   - `categories?select=id,name,image_url,parent_id&order=name`
+   - `site_settings?select=id,typography,...&limit=1`
+   
+   But the app then re-requests:
+   - `categories?select=*&order=sort_order.asc` (seen in network log — different columns/order, so the preloaded promise is discarded)
+   - `site_settings` from multiple hooks with mismatched columns
+   
+   Result: the "early preload" trick isn't helping — the browser still waits for a second round-trip after the JS bundle boots.
 
-- Username maps to shadow email `"<username>@admin.local"` (mirrors existing phone-shadow pattern).
-- Creation happens through a new edge function `create-admin-user` (uses service role) that:
-  1. Verifies caller is admin.
-  2. Creates the auth user with the shadow email + password (auto-confirmed).
-  3. Inserts a row in `user_roles` with role `admin`.
-  4. Inserts a row in `admin_permissions` with the selected modules.
-- Login: existing `/auth` page already accepts email; we add a small "username" input that submits `<username>@admin.local` under the hood. No change for the primary admin.
-- Password reset / permission update / deactivate → same edge function with actions: `create | update_password | update_modules | deactivate`.
+2. **Hero image preload is late.** `HeroSection` injects `<link rel=preload>` via `react-helmet-async` only after React mounts AND `site_branding` query resolves. On 3G that's easily 1.5–2 s after HTML arrives, so LCP starts late.
 
-### 3. Module keys (checkbox list in the UI)
+3. **`site_branding` is not in the early preload script** — only `branding` key is used but never wired to the hero preload chain.
 
-Flat list covering every current admin route:
+4. **No repeat-visit cache.** React Query resets on every full reload; repeat visitors re-fetch branding / categories / settings even though nothing changed.
 
-```text
-dashboard, products, categories, colors, sizes, size-guides,
-orders, add-order, order-fulfillment, payment-methods,
-customers, customer-types, divisions, thanas,
-reviews, site-settings,
-marketing, marketing.meta-pixel, marketing.meta-capi, marketing.steadfast,
-user-roles
-```
+5. **Category thumbnails** are served at full webp size (no responsive `srcset`) — heavy on mobile.
 
-`user-roles` itself is only visible to super-admin (hard-coded).
+6. **Meta Pixel** currently force-injects on `/checkout` mount (correct), but on all other pages it still loads early via the tracker — verify it's `defer`/idle-loaded so it doesn't compete with LCP.
 
-### 4. Frontend
+## Fix plan (small, surgical)
 
-- New page `src/pages/admin/AdminUserRoles.tsx` — list sub-admins, "Add user" modal (username, password, checkbox grid of modules), edit, deactivate.
-- New hook `src/hooks/usePermissions.ts` — loads once on admin mount:
-  - Returns `{ isSuperAdmin, allowedModules: Set<string> | 'all' }`.
-  - Cached in React Query (staleTime 5min) → zero perf impact.
-- `AdminSidebar.tsx`: filter each nav item by `allowedModules.has(key) || allowedModules === 'all'`.
-- `AdminApp.tsx`: wrap routes with a lightweight `<PermissionGuard module="…">` that redirects to `/admin` (dashboard or first allowed module) if not permitted. Dashboard is always allowed.
-- Route added: `/admin/user-roles`.
+### 1. Make the early preload actually match the real queries
+- Update `index.html` preload script to fetch **the same shapes** the hooks request:
+  - `site_branding?select=*` (already listed; ensure key name matches)
+  - `categories?select=*&order=sort_order.asc` (match `useCategories`)
+  - `site_settings?select=*&limit=1` (broader, one row anyway)
+- Update `useSiteBranding`, `useCategories`, `useSiteSettings` to consume `window.__ppPreload.*` first (branding already does; extend the same pattern to the two others where missing).
 
-### 5. Performance safeguards
+### 2. Preload the hero image from HTML, not from React
+- In the same early script, after `branding` resolves, inject a `<link rel="preload" as="image" fetchpriority="high" href="...">` for the correct desktop/mobile hero URL based on `matchMedia("(min-width: 768px)")`.
+- Remove the Helmet-based preload in `HeroSection.tsx` (it fires too late).
 
-- Single query on admin mount, cached; no per-navigation network hit.
-- No storefront impact — all code lives under `src/apps/admin/` and lazy-loads with the existing admin bundle.
-- No new dependencies.
+### 3. Persist React Query cache across reloads
+- Add `@tanstack/query-sync-storage-persister` + `persistQueryClient` (localStorage, ~1 MB budget, 24 h max age) wired in `src/main.tsx`.
+- Whitelist only long-lived keys: `site-branding`, `categories`, `site-settings`, `featured-products`, `homepage-products`.
+- Repeat visits paint instantly from cache while a background revalidation runs.
 
-### 6. Out of scope (per your answers)
+### 4. Responsive category thumbnails
+- `CategorySection` and mega-menu already use uploaded webp originals. Add `sizes` + width-based `srcset` using the existing `imageThumbs.ts` variants (Small 300, Medium 600). Mobile downloads ~300 px assets instead of full-size.
 
-- No RLS enforcement per module on data tables (sidebar-visibility model only).
-- No email-based sub-admin login.
-- Sub-admins granted the `admin` role still have DB-level admin access; permissions are a UI/UX gate, not a security boundary. Noted so expectations are clear.
+### 5. Defer Meta Pixel on non-checkout pages
+- Audit `FacebookPixelTracker` to ensure the pixel `<script>` is injected via `requestIdleCallback` (or after `load`) on non-checkout routes, so it never competes with LCP. Keep the existing `forceInjectPixel` on `/checkout`.
+
+### 6. Cheap wins
+- Add `Cache-Control: public, max-age=300, stale-while-revalidate=86400` hint by moving these three read-only endpoints behind a lightweight edge function OR by relying on the persisted cache (step 3). Prefer step 3 — no new function.
+- Trim the Google Fonts CSS to only the weights actually rendered on mobile (currently 5 Poppins weights load on tablet+; desktop still fine).
+
+## Out of scope
+- No changes to checkout / order / auth / pixel event logic.
+- No layout / visual changes.
+- No admin bundle changes (already lazy-loaded).
+
+## Verification
+- Run Lighthouse mobile (Slow 4G / 4× CPU) on `/`, `/category/upper-wear`, `/product/*` before and after.
+- Target: LCP < 2.5 s on repeat visits, < 3.5 s on first visit; JS transferred < 250 KB on landing.
+- Confirm the "categories" and "site_settings" requests in the network waterfall drop from 2 to 1 (preload consumed) on first visit and to 0 on repeat visits.
+
+## Technical details
+- Files touched: `index.html`, `src/main.tsx`, `src/hooks/useSiteBranding.ts` (already partly done), `src/hooks/useCategories.ts`, `src/hooks/useSiteSettings.ts`, `src/components/home/HeroSection.tsx`, `src/components/home/CategorySection.tsx`, `src/components/tracking/FacebookPixelTracker.tsx`, `src/components/nav/MegaMenu*.tsx` (srcset only).
+- Packages added: `@tanstack/react-query-persist-client`, `@tanstack/query-sync-storage-persister`.
+- No DB migrations, no edge function changes, no env changes.

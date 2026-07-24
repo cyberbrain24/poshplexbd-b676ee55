@@ -14,6 +14,23 @@ export interface SiteBranding {
   updated_at: string;
 }
 
+const BRANDING_CACHE_KEY = "pp_branding_v1";
+const BRANDING_CACHE_TTL = 60 * 60 * 1000; // 1h
+
+function readBrandingCache(): SiteBranding | null {
+  try {
+    const raw = typeof window !== "undefined" ? localStorage.getItem(BRANDING_CACHE_KEY) : null;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed?.ts || Date.now() - parsed.ts > BRANDING_CACHE_TTL) return null;
+    return parsed.data as SiteBranding;
+  } catch { return null; }
+}
+
+function writeBrandingCache(data: SiteBranding) {
+  try { localStorage.setItem(BRANDING_CACHE_KEY, JSON.stringify({ ts: Date.now(), data })); } catch { /* noop */ }
+}
+
 export const useSiteBranding = () => {
   return useQuery({
     queryKey: ["site-branding"],
@@ -22,21 +39,25 @@ export const useSiteBranding = () => {
       if (pre) {
         const arr = await pre;
         const row = Array.isArray(arr) ? arr[0] : arr;
-        if (row) return row as SiteBranding;
+        if (row) { writeBrandingCache(row as SiteBranding); return row as SiteBranding; }
       }
       const { data, error } = await (supabase as any)
         .from("site_branding")
         .select("*")
         .single();
       if (error) throw error;
+      writeBrandingCache(data as SiteBranding);
       return data;
     },
+    initialData: () => readBrandingCache() ?? undefined,
     staleTime: 1000 * 60 * 10, // 10 min
     gcTime: 1000 * 60 * 60, // 1 h
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
+    refetchOnMount: false,
   });
 };
+
 
 export const useUpdateSiteBranding = () => {
   const queryClient = useQueryClient();

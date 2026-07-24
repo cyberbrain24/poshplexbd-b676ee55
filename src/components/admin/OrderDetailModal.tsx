@@ -469,6 +469,32 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
                   </span>
                 </div>
               </div>
+              {remainingBalance > 0 && (
+                <div className="flex gap-2 pt-2 border-t">
+                  <Input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    max={remainingBalance}
+                    placeholder={`Add payment (max ${formatCurrency(remainingBalance)})`}
+                    value={addPaymentAmount}
+                    onChange={(e) => setAddPaymentAmount(e.target.value)}
+                    className="h-9"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      const amt = Number(addPaymentAmount);
+                      if (!amt || amt <= 0) return toast.error("Enter a valid amount");
+                      if (amt > remainingBalance) return toast.error("Amount exceeds remaining balance");
+                      addPaymentMutation.mutate(amt);
+                    }}
+                    disabled={addPaymentMutation.isPending}
+                  >
+                    {addPaymentMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add"}
+                  </Button>
+                </div>
+              )}
             </div>
 
 

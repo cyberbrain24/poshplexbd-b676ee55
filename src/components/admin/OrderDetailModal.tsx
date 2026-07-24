@@ -111,6 +111,46 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
   } | null>(null);
   const [showAddItemModal, setShowAddItemModal] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [addPaymentAmount, setAddPaymentAmount] = useState<string>("");
+
+  const addPaymentMutation = useMutation({
+    mutationFn: async (amount: number) => {
+      if (!order) throw new Error("Order not loaded");
+      if (!(amount > 0)) throw new Error("Amount must be greater than 0");
+      const currentPaid = Number((order as any).paid_amount ?? 0);
+      const total = Number(order.total_amount ?? 0);
+      const newPaid = Math.min(currentPaid + amount, total);
+      let newStatus: PaymentStatus = order.payment_status;
+      if (newPaid >= total) newStatus = "paid";
+      else if (newPaid > 0) newStatus = "partially_paid";
+      else newStatus = "unpaid";
+
+      const { error } = await supabase
+        .from("orders")
+        .update({
+          paid_amount: newPaid,
+          payment_status: newStatus,
+          ...(newStatus === "paid" && { payment_verified_at: new Date().toISOString() }),
+        })
+        .eq("id", order.id);
+      if (error) throw error;
+
+      await supabase.from("order_status_history").insert({
+        order_id: order.id,
+        status_type: "payment",
+        previous_status: order.payment_status,
+        new_status: newStatus,
+        notes: `Recorded payment of ${formatCurrency(amount)}`,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["order", orderId] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      setAddPaymentAmount("");
+      toast.success("Payment recorded");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
 
 
@@ -429,6 +469,32 @@ const OrderDetailModal = ({ orderId, open, onClose }: OrderDetailModalProps) => 
                   </span>
                 </div>
               </div>
+              {remainingBalance > 0 && (
+                <div className="flex gap-2 pt-2 border-t">
+                  <Input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    max={remainingBalance}
+                    placeholder={`Add payment (max ${formatCurrency(remainingBalance)})`}
+                    value={addPaymentAmount}
+                    onChange={(e) => setAddPaymentAmount(e.target.value)}
+                    className="h-9"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      const amt = Number(addPaymentAmount);
+                      if (!amt || amt <= 0) return toast.error("Enter a valid amount");
+                      if (amt > remainingBalance) return toast.error("Amount exceeds remaining balance");
+                      addPaymentMutation.mutate(amt);
+                    }}
+                    disabled={addPaymentMutation.isPending}
+                  >
+                    {addPaymentMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add"}
+                  </Button>
+                </div>
+              )}
             </div>
 
 

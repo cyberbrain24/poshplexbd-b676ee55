@@ -80,6 +80,4 @@ Disallow: /*?per_page=
 Disallow: /*?per_row=
 Disallow: /*?shop_view=
 
-# Sitemap location
-Sitemap: https://poshplexbd.com/sitemap_index.xml
 

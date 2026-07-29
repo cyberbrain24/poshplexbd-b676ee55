@@ -7,7 +7,6 @@ import ProductInfo from "../components/product/ProductInfo";
 import ProductDescription from "../components/product/ProductDescription";
 import RelatedProducts from "../components/product/RelatedProducts";
 import { useProduct } from "@/hooks/useProducts";
-import { ProductSEO } from "@/components/seo";
 import { trackViewContent } from "@/services/facebook-pixel.service";
 
 
@@ -52,7 +51,6 @@ const ProductDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <ProductSEO product={product} />
       <PoshplexHeader />
       
       <main className="pt-1">

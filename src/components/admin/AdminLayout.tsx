@@ -7,7 +7,7 @@ import { AdminLoadingSpinner } from "./AdminLoadingState";
 import { useERPDataPrefetch } from "@/hooks/useERPPrefetch";
 import { adminRouteLoaders, prefetchAdminRoute } from "@/lib/adminRoutePrefetch";
 
-const ERP_ROUTES = ["/admin", "/admin/products", "/admin/orders", "/admin/inventory-in", "/admin/inventory-out", "/admin/customers"];
+const ERP_ROUTES = ["/admin", "/admin/products", "/admin/orders", "/admin/customers"];
 
 interface AdminLayoutProps {
   children?: ReactNode;

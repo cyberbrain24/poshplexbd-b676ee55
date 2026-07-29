@@ -1,30 +1,21 @@
-import SEO from "./SEO";
-import JsonLD from "./JsonLD";
-import {
-  SITE_CONFIG,
-  generateOrganizationSchema,
-  generateWebsiteSchema,
-} from "@/utils/seo-helpers";
+import { Helmet } from "react-helmet-async";
 
-/**
- * SEO component specifically for the homepage
- * Includes Organization and WebSite schemas for rich results
- */
-const HomeSEO = () => {
-  const organizationSchema = generateOrganizationSchema();
-  const websiteSchema = generateWebsiteSchema();
+const TITLE = "Poshplex — Be Posh With Poshplex";
+const DESCRIPTION =
+  "Shop Poshplex streetwear — curated tees, joggers and more, delivered across Bangladesh.";
+const URL = "https://poshplexbd.com/";
 
-  return (
-    <>
-      <SEO
-        title="Be Posh With Poshplex"
-        description="Discover Poshplex - Be Posh With Poshplex. Shop our curated streetwear collection designed for style-conscious individuals."
-        url="/"
-        type="website"
-      />
-      <JsonLD data={[organizationSchema, websiteSchema]} />
-    </>
-  );
-};
+const HomeSEO = () => (
+  <Helmet>
+    <title>{TITLE}</title>
+    <meta name="description" content={DESCRIPTION} />
+    <link rel="canonical" href={URL} />
+    <meta property="og:title" content={TITLE} />
+    <meta property="og:description" content={DESCRIPTION} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={URL} />
+    <meta name="twitter:card" content="summary_large_image" />
+  </Helmet>
+);
 
 export default HomeSEO;

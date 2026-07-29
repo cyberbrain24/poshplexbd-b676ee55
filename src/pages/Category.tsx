@@ -6,7 +6,6 @@ import CategoryHeader from "../components/category/CategoryHeader";
 import FilterSortBar, { type SortOption, type ProductFilters } from "../components/category/FilterSortBar";
 import ProductGrid from "../components/category/ProductGrid";
 import { useOptimizedCategoryProducts } from "@/hooks/useOptimizedProducts";
-import { CategorySEO } from "@/components/seo";
 
 
 const DEFAULT_FILTERS: ProductFilters = {
@@ -36,11 +35,6 @@ const Category = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <CategorySEO 
-        categoryName={displayName}
-        categorySlug={slug}
-        itemCount={totalCount}
-      />
       <PoshplexHeader />
       
       <main className="pt-6">

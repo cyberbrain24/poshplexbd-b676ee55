@@ -60,7 +60,7 @@ const ReviewImageUpload = ({ images, onChange, maxImages = 3 }: ReviewImageUploa
 
         const { error: uploadError } = await supabase.storage
           .from("review-images")
-          .upload(fileName, webpFile, { contentType: "image/webp" });
+          .upload(fileName, webpFile, { contentType: "image/webp", cacheControl: "31536000" });
 
         if (uploadError) {
           console.error("Upload error:", uploadError);

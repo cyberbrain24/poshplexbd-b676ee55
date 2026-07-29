@@ -96,7 +96,7 @@ export const useUploadBrandingAsset = () => {
       }
       const { error } = await supabase.storage
         .from("media")
-        .upload(finalPath, toUpload, { upsert: true, contentType: toUpload.type });
+        .upload(finalPath, toUpload, { upsert: true, contentType: toUpload.type, cacheControl: "31536000" });
       if (error) throw error;
       const { data: urlData } = supabase.storage
         .from("media")

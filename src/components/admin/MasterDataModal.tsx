@@ -249,7 +249,7 @@ const MasterDataModal = ({ isOpen, onClose, onSave, title, type, initialData }: 
 
             const { error: uploadError } = await supabase.storage
               .from('product-images')
-              .upload(fileName, webpFile, { contentType: webpFile.type });
+              .upload(fileName, webpFile, { contentType: webpFile.type, cacheControl: "31536000" });
 
             if (uploadError) throw uploadError;
 

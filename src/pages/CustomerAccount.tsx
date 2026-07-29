@@ -264,7 +264,7 @@ const CustomerAccount = () => {
       const filePath = `${user.id}/profile.webp`;
       const { error: uploadError } = await supabase.storage
         .from("profile-images")
-        .upload(filePath, compressed, { upsert: true, contentType: "image/webp" });
+        .upload(filePath, compressed, { upsert: true, contentType: "image/webp", cacheControl: "31536000" });
       if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage.from("profile-images").getPublicUrl(filePath);
       const publicUrl = urlData.publicUrl + "?t=" + Date.now();

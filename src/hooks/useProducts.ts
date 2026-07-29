@@ -359,7 +359,7 @@ export const uploadProductImage = async (file: File, productId: string): Promise
 
   const { error: uploadError } = await supabase.storage
     .from("product-images")
-    .upload(fileName, webpFile, { contentType: webpFile.type });
+    .upload(fileName, webpFile, { contentType: webpFile.type, cacheControl: "31536000" });
   if (uploadError) throw uploadError;
 
   const { data } = supabase.storage.from("product-images").getPublicUrl(fileName);
@@ -375,7 +375,7 @@ export const uploadProductImage = async (file: File, productId: string): Promise
       if (!f) return;
       const path = `${productId}/${folder}/${ts}-${width}.webp`;
       tasks.push(
-        supabase.storage.from("product-images").upload(path, f, { contentType: "image/webp" })
+        supabase.storage.from("product-images").upload(path, f, { contentType: "image/webp", cacheControl: "31536000" })
           .then(({ error }) => { if (!error) assign(supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl); })
       );
     };

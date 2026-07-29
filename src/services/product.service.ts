@@ -118,7 +118,7 @@ export async function uploadProductImage(file: File, productId: string): Promise
     const fileName = `${baseName}-${attempt}.${fileExt}`;
     const { error: uploadError } = await supabase.storage
       .from(STORAGE.PRODUCT_IMAGES_BUCKET)
-      .upload(fileName, webpFile, { contentType: webpFile.type, upsert: false });
+      .upload(fileName, webpFile, { contentType: webpFile.type, upsert: false, cacheControl: "31536000" });
     if (!uploadError) {
       const { data: urlData } = supabase.storage.from(STORAGE.PRODUCT_IMAGES_BUCKET).getPublicUrl(fileName);
       return urlData.publicUrl;

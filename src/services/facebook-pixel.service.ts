@@ -346,8 +346,11 @@ const sendCapi = (
   eventName: string,
   eventId: string,
   customData?: Record<string, unknown>,
-  opts?: { immediate?: boolean },
+  opts?: { immediate?: boolean; eventTime?: number },
 ) => {
+  // Capture the moment the event actually happened (not when it is uploaded)
+  // so Meta's "Data freshness" metric reflects reality.
+  const eventTime = opts?.eventTime ?? Math.floor(Date.now() / 1000);
   const run = async () => {
     try {
       const userData = {
@@ -358,6 +361,7 @@ const sendCapi = (
       const payload = {
         event_name: eventName,
         event_id: eventId,
+        event_time: eventTime,
         event_source_url: typeof window !== 'undefined' ? window.location.href : undefined,
         user_data: userData,
         custom_data: customData,
@@ -394,9 +398,11 @@ const sendCapi = (
   const ric = (window as any).requestIdleCallback as
     | ((cb: () => void, opts?: { timeout: number }) => number)
     | undefined;
-  if (ric) ric(run, { timeout: 3000 });
-  else setTimeout(run, 1500);
+  // Keep the upload delay short so "Data freshness" stays in the green band.
+  if (ric) ric(run, { timeout: 800 });
+  else setTimeout(run, 400);
 };
+
 
 
 /**
@@ -433,17 +439,19 @@ const dispatch = (eventName: string, params: Record<string, any>) => {
 
 let _firstPageView = true;
 export const trackPageView = () => {
-  // PageView is high-volume; skip CAPI mirror on the very first page load so
-  // the meta-capi edge function never competes with the homepage critical path.
-  // Subsequent SPA navigations still fire CAPI for full coverage.
   const eventId = uuid();
+  const eventTime = Math.floor(Date.now() / 1000);
   safeFbq('track', 'PageView', {}, { eventID: eventId });
   if (_firstPageView) {
     _firstPageView = false;
+    // Mirror the first PageView too (needed for CAPI event coverage), but push
+    // it well past the homepage critical path so LCP is unaffected.
+    setTimeout(() => sendCapi('PageView', eventId, undefined, { eventTime }), 2500);
     return;
   }
-  void sendCapi('PageView', eventId);
+  void sendCapi('PageView', eventId, undefined, { eventTime });
 };
+
 
 export const trackViewContent = (data: {
   contentName: string;

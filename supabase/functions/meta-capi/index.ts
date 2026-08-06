@@ -28,6 +28,7 @@ interface UserData {
 interface CapiEventPayload {
   event_name: string;
   event_id: string;
+  event_time?: number;
   event_source_url?: string;
   user_data?: UserData;
   custom_data?: Record<string, unknown>;
@@ -165,7 +166,15 @@ Deno.serve(async (req) => {
 
     const eventPayload: Record<string, unknown> = {
       event_name: body.event_name,
-      event_time: Math.floor(Date.now() / 1000),
+      event_time: (() => {
+        // Trust the client's occurrence timestamp when it is sane (within the
+        // last hour and not in the future) so Meta's "Data freshness" metric
+        // reflects when the action really happened.
+        const now = Math.floor(Date.now() / 1000);
+        const t = Number(body.event_time);
+        if (Number.isFinite(t) && t <= now + 60 && t >= now - 3600) return Math.min(Math.floor(t), now);
+        return now;
+      })(),
       event_id: body.event_id,
       action_source: body.action_source || 'website',
       event_source_url: body.event_source_url,

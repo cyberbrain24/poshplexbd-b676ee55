@@ -969,85 +969,6 @@ export type Database = {
           },
         ]
       }
-      return_requests: {
-        Row: {
-          admin_notes: string | null
-          created_at: string
-          customer_id: string | null
-          description: string | null
-          id: string
-          order_id: string
-          order_item_id: string
-          processed_at: string | null
-          processed_by: string | null
-          proof_images: Json | null
-          quantity: number
-          reason: string
-          restock_decision: string | null
-          restocked_at: string | null
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          admin_notes?: string | null
-          created_at?: string
-          customer_id?: string | null
-          description?: string | null
-          id?: string
-          order_id: string
-          order_item_id: string
-          processed_at?: string | null
-          processed_by?: string | null
-          proof_images?: Json | null
-          quantity?: number
-          reason: string
-          restock_decision?: string | null
-          restocked_at?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          admin_notes?: string | null
-          created_at?: string
-          customer_id?: string | null
-          description?: string | null
-          id?: string
-          order_id?: string
-          order_item_id?: string
-          processed_at?: string | null
-          processed_by?: string | null
-          proof_images?: Json | null
-          quantity?: number
-          reason?: string
-          restock_decision?: string | null
-          restocked_at?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "return_requests_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "return_requests_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "return_requests_order_item_id_fkey"
-            columns: ["order_item_id"]
-            isOneToOne: false
-            referencedRelation: "order_items"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       reviews: {
         Row: {
           content: string
@@ -1344,8 +1265,6 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
-      show_limit: { Args: never; Returns: number }
-      show_trgm: { Args: { "": string }; Returns: string[] }
       track_orders_lookup: {
         Args: { p_email?: string; p_order_number?: string; p_phone?: string }
         Returns: Json

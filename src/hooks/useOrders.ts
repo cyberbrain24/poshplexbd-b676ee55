@@ -480,12 +480,6 @@ export const useDeleteOrder = () => {
         .eq("order_id", orderId);
       if (historyError) throw historyError;
 
-      // 3. Delete return requests
-      const { error: returnsError } = await supabase
-        .from("return_requests")
-        .delete()
-        .eq("order_id", orderId);
-      if (returnsError) throw returnsError;
 
 
 

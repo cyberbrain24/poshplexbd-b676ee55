@@ -439,17 +439,19 @@ const dispatch = (eventName: string, params: Record<string, any>) => {
 
 let _firstPageView = true;
 export const trackPageView = () => {
-  // PageView is high-volume; skip CAPI mirror on the very first page load so
-  // the meta-capi edge function never competes with the homepage critical path.
-  // Subsequent SPA navigations still fire CAPI for full coverage.
   const eventId = uuid();
+  const eventTime = Math.floor(Date.now() / 1000);
   safeFbq('track', 'PageView', {}, { eventID: eventId });
   if (_firstPageView) {
     _firstPageView = false;
+    // Mirror the first PageView too (needed for CAPI event coverage), but push
+    // it well past the homepage critical path so LCP is unaffected.
+    setTimeout(() => sendCapi('PageView', eventId, undefined, { eventTime }), 2500);
     return;
   }
-  void sendCapi('PageView', eventId);
+  void sendCapi('PageView', eventId, undefined, { eventTime });
 };
+
 
 export const trackViewContent = (data: {
   contentName: string;

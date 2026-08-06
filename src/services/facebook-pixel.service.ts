@@ -346,8 +346,11 @@ const sendCapi = (
   eventName: string,
   eventId: string,
   customData?: Record<string, unknown>,
-  opts?: { immediate?: boolean },
+  opts?: { immediate?: boolean; eventTime?: number },
 ) => {
+  // Capture the moment the event actually happened (not when it is uploaded)
+  // so Meta's "Data freshness" metric reflects reality.
+  const eventTime = opts?.eventTime ?? Math.floor(Date.now() / 1000);
   const run = async () => {
     try {
       const userData = {
@@ -358,6 +361,7 @@ const sendCapi = (
       const payload = {
         event_name: eventName,
         event_id: eventId,
+        event_time: eventTime,
         event_source_url: typeof window !== 'undefined' ? window.location.href : undefined,
         user_data: userData,
         custom_data: customData,
@@ -394,9 +398,11 @@ const sendCapi = (
   const ric = (window as any).requestIdleCallback as
     | ((cb: () => void, opts?: { timeout: number }) => number)
     | undefined;
-  if (ric) ric(run, { timeout: 3000 });
-  else setTimeout(run, 1500);
+  // Keep the upload delay short so "Data freshness" stays in the green band.
+  if (ric) ric(run, { timeout: 800 });
+  else setTimeout(run, 400);
 };
+
 
 
 /**

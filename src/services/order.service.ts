@@ -287,7 +287,7 @@ export async function updateItemFulfillment(
 export async function deleteOrder(orderId: string): Promise<void> {
   // Delete in correct order due to foreign key constraints
   await supabase.from("order_status_history").delete().eq("order_id", orderId);
-  
+  await supabase.from("return_requests").delete().eq("order_id", orderId);
   
   await supabase.from("order_items").delete().eq("order_id", orderId);
 

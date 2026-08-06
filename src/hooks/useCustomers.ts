@@ -506,6 +506,8 @@ export const useDeleteCustomer = () => {
       await supabase.from("reviews").delete().eq("customer_id", id);
       // customer_risk_profiles
       await supabase.from("customer_risk_profiles").delete().eq("customer_id", id);
+      // return_requests
+      await supabase.from("return_requests").delete().eq("customer_id", id);
       // Unlink orders (set customer_id to null to preserve order history)
       await supabase.from("orders").update({ customer_id: null }).eq("customer_id", id);
       // customer_accounts (DB row)

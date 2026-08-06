@@ -1,2 +1,0 @@
-DROP TABLE IF EXISTS public.return_requests CASCADE;
-DROP EXTENSION IF EXISTS pg_trgm CASCADE;

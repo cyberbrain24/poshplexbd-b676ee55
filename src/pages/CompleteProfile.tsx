@@ -228,18 +228,6 @@ const CompleteProfile = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>Gender *</Label>
-              <Select value={form.gender} onValueChange={v => setForm(f => ({ ...f, gender: v }))}>
-                <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="address">Address *</Label>
               <Textarea id="address" rows={2} value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} required />
             </div>

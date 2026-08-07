@@ -182,21 +182,6 @@ export const RISK_LEVEL_COLORS: Record<RiskLevelType, string> = {
 };
 
 // ============================================================
-// GENDER OPTIONS
-// ============================================================
-export const GENDERS = {
-  MALE: 'male',
-  FEMALE: 'female',
-  OTHER: 'other',
-} as const;
-
-export const GENDER_OPTIONS = [
-  { value: 'male', label: 'Male' },
-  { value: 'female', label: 'Female' },
-  { value: 'other', label: 'Other' },
-] as const;
-
-// ============================================================
 // PAGINATION DEFAULTS
 // ============================================================
 export const PAGINATION = {

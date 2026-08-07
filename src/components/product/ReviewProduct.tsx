@@ -159,12 +159,14 @@ const ReviewProduct = ({ productId }: ReviewProductProps) => {
 
 
   const submitReview = async () => {
-    if (!customerId) {
+    const cid = await resolveCustomerId();
+    if (!cid) {
       toast.error("Please login to submit a review");
       return;
     }
 
     setIsSubmitting(true);
+
     
     try {
       if (existingReviewId) {

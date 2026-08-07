@@ -592,22 +592,6 @@ const Checkout = () => {
                         placeholder="your@email.com"
                       />
                     </div>
-                    <div>
-                      <Label className="text-xs font-light">Gender *</Label>
-                      <Select
-                        value={customerDetails.gender}
-                        onValueChange={(value) => handleCustomerChange("gender", value)}
-                      >
-                        <SelectTrigger className="mt-1 rounded-none h-9 text-sm">
-                          <SelectValue placeholder="Select gender" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="male">Male</SelectItem>
-                          <SelectItem value="female">Female</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
                   </div>
 
                   {/* Password Field with default value */}

@@ -277,6 +277,13 @@ const AdminProducts = () => {
         product={selectedProduct}
       />
 
+      <FeaturedProductsPanel
+        isOpen={isFeaturedPanelOpen}
+        onClose={() => setIsFeaturedPanelOpen(false)}
+      />
+
+
+
       <AlertDialog open={!!deleteProduct} onOpenChange={() => { setDeleteProduct(null); setDeleteBlocked(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>

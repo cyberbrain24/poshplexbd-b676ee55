@@ -902,6 +902,7 @@ export type Database = {
           base_price: number
           category_id: string | null
           created_at: string
+          featured_sort_order: number
           full_description: string | null
           id: string
           is_active: boolean
@@ -920,6 +921,7 @@ export type Database = {
           base_price?: number
           category_id?: string | null
           created_at?: string
+          featured_sort_order?: number
           full_description?: string | null
           id?: string
           is_active?: boolean
@@ -938,6 +940,7 @@ export type Database = {
           base_price?: number
           category_id?: string | null
           created_at?: string
+          featured_sort_order?: number
           full_description?: string | null
           id?: string
           is_active?: boolean

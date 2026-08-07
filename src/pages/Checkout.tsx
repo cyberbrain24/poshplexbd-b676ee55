@@ -37,7 +37,6 @@ const Checkout = () => {
     name: "",
     email: "",
     phone: "",
-    gender: "",
     address: "",
     divisionId: "",
     thanaId: "",
@@ -147,7 +146,6 @@ const Checkout = () => {
           name: customer.name || prev.name,
           email: customer.email || prev.email,
           phone: customer.phone || prev.phone,
-          gender: customer.gender || prev.gender,
           address: customer.address || prev.address,
           divisionId: customer.division_id || prev.divisionId,
           thanaId: customer.thana_id || prev.thanaId,
@@ -257,10 +255,6 @@ const Checkout = () => {
       toast.error("Please enter your address");
       return false;
     }
-    if (!customerDetails.gender) {
-      toast.error("Please select your gender");
-      return false;
-    }
     if (!customerDetails.divisionId) {
       toast.error("Please select your district");
       return false;
@@ -328,7 +322,6 @@ const Checkout = () => {
           p_name: customerDetails.name,
           p_phone: phone,
           p_email: customerDetails.email || null,
-          p_gender: customerDetails.gender || 'other',
           p_address: customerDetails.address || null,
           p_division_id: customerDetails.divisionId || null,
           p_thana_id: customerDetails.thanaId || null,

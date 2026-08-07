@@ -27,7 +27,7 @@ const resolveAuthDestination = async (user: any, fallback: string): Promise<stri
 
   const { data: customer } = await supabase
     .from("customers")
-    .select("name, phone, gender, address, division_id, thana_id")
+    .select("name, phone, address, division_id, thana_id")
     .eq("id", account.customer_id)
     .maybeSingle();
 
@@ -37,7 +37,6 @@ const resolveAuthDestination = async (user: any, fallback: string): Promise<stri
   const complete =
     !!customer.name?.trim() &&
     !!phoneOk &&
-    !!customer.gender && customer.gender !== "other" &&
     !!customer.address?.trim() &&
     !!customer.division_id &&
     !!customer.thana_id;
@@ -158,7 +157,6 @@ const CustomerAuth = () => {
                 name: name.trim(),
                 phone: phone || `user_${data.user.id.slice(0, 8)}`,
                 email: email ?? null,
-                gender: "other",
                 is_active: true,
               })
               .select("id")

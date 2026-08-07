@@ -26,6 +26,7 @@ import {
 
 const AdminProducts = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isFeaturedPanelOpen, setIsFeaturedPanelOpen] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
   const [deleteBlocked, setDeleteBlocked] = useState<{ count: number; refs: string[] } | null>(null);
@@ -36,6 +37,17 @@ const AdminProducts = () => {
   const { products, isLoading, totalCount, pagination } = useOptimizedProducts(searchQuery);
   const { data: selectedProduct } = useProduct(selectedProductId || undefined);
   const deleteProductMutation = useDeleteProduct();
+  const toggleFeatured = useToggleFeatured();
+
+  const handleToggleFeatured = async (product: Product) => {
+    try {
+      await toggleFeatured.mutateAsync({ id: product.id, value: !product.is_featured });
+      toast.success(product.is_featured ? "Removed from featured" : "Added to featured");
+    } catch {
+      toast.error("Failed to update featured status");
+    }
+  };
+
 
   const hasMore = pagination.page < pagination.totalPages;
 

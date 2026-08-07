@@ -119,6 +119,10 @@ const AdminProducts = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setIsFeaturedPanelOpen(true)} size="sm">
+            <ListOrdered className="h-4 w-4 mr-1.5" />
+            Featured Order
+          </Button>
           <Button variant="outline" onClick={handleExportCSV} size="sm">
             <Download className="h-4 w-4 mr-1.5" />
             Export CSV

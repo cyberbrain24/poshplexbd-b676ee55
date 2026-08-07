@@ -1223,6 +1223,7 @@ export type Database = {
         Args: { p_items: Json; p_order: Json }
         Returns: Json
       }
+      ensure_my_customer_id: { Args: never; Returns: string }
       find_customer_id_by_phone: { Args: { p_phone: string }; Returns: string }
       find_product_by_short_id: { Args: { short_id: string }; Returns: string }
       get_my_allowed_modules: { Args: never; Returns: string[] }

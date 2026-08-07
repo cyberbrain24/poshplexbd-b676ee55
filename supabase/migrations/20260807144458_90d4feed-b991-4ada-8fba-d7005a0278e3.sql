@@ -1,0 +1,1 @@
+DELETE FROM public.reviews WHERE content = 'Great quality, automated test review.';

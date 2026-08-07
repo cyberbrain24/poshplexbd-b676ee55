@@ -57,61 +57,106 @@ const ReviewProduct = ({ productId }: ReviewProductProps) => {
   }, [searchParams, setSearchParams]);
 
   // Check authentication and get customer_id
+  const loadExistingReview = async (cid: string) => {
+    const { data: existingReview } = await supabase
+      .from("reviews")
+      .select("*")
+      .eq("customer_id", cid)
+      .eq("product_id", productId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existingReview) {
+      setExistingReviewId(existingReview.id);
+      setRating(existingReview.rating);
+      setTitle(existingReview.title || "");
+      setReview(existingReview.content);
+      setImages(existingReview.images || []);
+    }
+  };
+
+  // Resolves (and if needed creates) the customer record linked to the signed-in user
+  const resolveCustomerId = async (): Promise<string | null> => {
+    if (customerId) return customerId;
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return null;
+
+    const { data: accountData } = await supabase
+      .from("customer_accounts")
+      .select("customer_id")
+      .eq("auth_user_id", session.user.id)
+      .maybeSingle();
+
+    let cid = accountData?.customer_id ?? null;
+
+    if (!cid) {
+      const { data: ensured, error } = await supabase.rpc("ensure_my_customer_id");
+      if (error) {
+        console.error("ensure_my_customer_id failed:", error);
+        return null;
+      }
+      cid = (ensured as string | null) ?? null;
+    }
+
+    if (cid) {
+      setCustomerId(cid);
+      await loadExistingReview(cid);
+    }
+    return cid;
+  };
+
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (session?.user) {
         setIsAuthenticated(true);
-        
-        // Get customer_id from customer_accounts
+
         const { data: accountData } = await supabase
           .from("customer_accounts")
           .select("customer_id")
           .eq("auth_user_id", session.user.id)
           .maybeSingle();
-        
+
         if (accountData?.customer_id) {
           setCustomerId(accountData.customer_id);
-          
-          // Check if user already has a review for this product
-          const { data: existingReview } = await supabase
-            .from("reviews")
-            .select("*")
-            .eq("customer_id", accountData.customer_id)
-            .eq("product_id", productId)
-            .maybeSingle();
-          
-          if (existingReview) {
-            setExistingReviewId(existingReview.id);
-            setRating(existingReview.rating);
-            setTitle(existingReview.title || "");
-            setReview(existingReview.content);
-            setImages(existingReview.images || []);
-          }
+          await loadExistingReview(accountData.customer_id);
         }
       } else {
         setIsAuthenticated(false);
       }
     };
-    
+
     checkAuth();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productId]);
 
-  const handleOpenChange = (open: boolean) => {
-    if (open && !isAuthenticated) {
+  const handleOpenChange = async (open: boolean) => {
+    if (!open) {
+      setIsOpen(false);
+      return;
+    }
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      setIsAuthenticated(false);
       toast.error("Please login to write a review");
       navigate("/login?redirect=" + encodeURIComponent(window.location.pathname));
       return;
     }
-    
-    if (open && !customerId) {
-      toast.error("Please complete your account setup to write reviews");
+    setIsAuthenticated(true);
+
+    const cid = await resolveCustomerId();
+    if (!cid) {
+      toast.error("Could not set up your profile for reviews. Please try again.");
       return;
     }
-    
-    setIsOpen(open);
+
+    setIsOpen(true);
   };
+
 
   const submitReview = async () => {
     if (!customerId) {

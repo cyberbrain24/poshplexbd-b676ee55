@@ -201,6 +201,16 @@ const AdminProducts = () => {
                   </TableCell>
                   <TableCell>{product.category?.name || "-"}</TableCell>
                   <TableCell>৳{product.base_price.toLocaleString()}</TableCell>
+                  <TableCell className="text-center">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      title={product.is_featured ? "Remove from featured" : "Add to featured"}
+                      onClick={() => handleToggleFeatured(product)}
+                    >
+                      <Star className={`h-4 w-4 ${product.is_featured ? "fill-foreground" : "text-muted-foreground"}`} />
+                    </Button>
+                  </TableCell>
                   <TableCell>
                     <Badge variant={product.is_active ? "default" : "outline"}>
                       {product.is_active ? "Active" : "Inactive"}

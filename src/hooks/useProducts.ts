@@ -389,3 +389,73 @@ export const uploadProductImage = async (file: File, productId: string): Promise
 
   return { url, thumb_url, medium_url, large_url };
 };
+
+// ---- Featured products management ----
+
+export const useFeaturedProductsAdmin = () => {
+  return useQuery({
+    queryKey: ["featured-products-admin"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select(`
+          id, name, sku, base_price, is_active, is_featured, featured_sort_order,
+          images:product_images(id, image_url, is_main, sort_order)
+        `)
+        .eq("is_featured", true)
+        .order("featured_sort_order", { ascending: true })
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as unknown as Product[];
+    },
+    staleTime: 1000 * 30,
+  });
+};
+
+const invalidateFeatured = (qc: ReturnType<typeof useQueryClient>) => {
+  qc.invalidateQueries({ queryKey: ["featured-products"] });
+  qc.invalidateQueries({ queryKey: ["featured-products-admin"] });
+  qc.invalidateQueries({ queryKey: ["products-optimized"] });
+  qc.invalidateQueries({ queryKey: ["products"] });
+};
+
+export const useToggleFeatured = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, value }: { id: string; value: boolean }) => {
+      let nextOrder = 0;
+      if (value) {
+        const { data: maxRow } = await supabase
+          .from("products")
+          .select("featured_sort_order")
+          .eq("is_featured", true)
+          .order("featured_sort_order", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        nextOrder = ((maxRow as any)?.featured_sort_order ?? 0) + 1;
+      }
+      const { error } = await supabase
+        .from("products")
+        .update({ is_featured: value, featured_sort_order: nextOrder })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => invalidateFeatured(qc),
+  });
+};
+
+export const useSaveFeaturedOrder = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (orderedIds: string[]) => {
+      for (let i = 0; i < orderedIds.length; i++) {
+        const { error } = await supabase
+          .from("products")
+          .update({ featured_sort_order: i + 1 })
+          .eq("id", orderedIds[i]);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => invalidateFeatured(qc),
+  });
+};

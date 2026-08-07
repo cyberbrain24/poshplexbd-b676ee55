@@ -184,7 +184,7 @@ const ReviewProduct = ({ productId }: ReviewProductProps) => {
       } else {
         // Create new review
         await createReview.mutateAsync({
-          customer_id: customerId,
+          customer_id: cid,
           product_id: productId,
           rating,
           title: title.trim() || undefined,

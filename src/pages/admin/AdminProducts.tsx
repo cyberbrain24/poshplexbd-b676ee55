@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Plus, Pencil, Trash2, Package, Loader2, AlertTriangle, ExternalLink, Download } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, Loader2, AlertTriangle, ExternalLink, Download, Star, ListOrdered } from "lucide-react";
 import ProductModal from "@/components/admin/ProductModal";
+import FeaturedProductsPanel from "@/components/admin/FeaturedProductsPanel";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { useDeleteProduct, useProduct } from "@/hooks/useProducts";
+import { useDeleteProduct, useProduct, useToggleFeatured } from "@/hooks/useProducts";
 import { useOptimizedProducts } from "@/hooks/useOptimizedProducts";
 import { Product } from "@/types/product";
 import { toast } from "sonner";

@@ -199,8 +199,20 @@ const CustomerAuth = () => {
           currency: "BDT",
         });
 
-        toast.success("Account created! You can now login.");
-        setIsLogin(true);
+        // Phone signups use a shadow email that can never receive a confirmation
+        // link, so sign the user straight in instead of asking them to confirm.
+        if (!data.session) {
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email: resolved.authEmail,
+            password,
+          });
+          if (signInError) {
+            toast.success("Account created! You can now login.");
+            setIsLogin(true);
+            return;
+          }
+        }
+        toast.success("Account created!");
       }
 
     } catch (error: any) {

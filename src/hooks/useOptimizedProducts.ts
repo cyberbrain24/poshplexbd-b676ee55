@@ -101,7 +101,7 @@ export const useOptimizedProducts = (
       if (dataResult.error) throw dataResult.error;
 
       return {
-        products: dataResult.data as Product[],
+        products: dataResult.data as unknown as Product[],
         totalCount: countResult.count || 0,
       };
     },

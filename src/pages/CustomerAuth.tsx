@@ -76,19 +76,6 @@ const CustomerAuth = () => {
     return () => subscription.unsubscribe();
   }, [navigate, redirectPath]);
 
-  const handleGoogleSignIn = async () => {
-    setIsLoading(true);
-    try {
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin + "/login",
-      });
-      if (result.error) throw result.error;
-      // If redirected:true, browser will navigate away; otherwise session is set and listener will redirect.
-    } catch (error: any) {
-      toast.error(error?.message || "Google sign-in failed");
-      setIsLoading(false);
-    }
-  };
 
   const phoneToEmail = (phone: string) => {
     const cleaned = phone.replace(/\D/g, "");

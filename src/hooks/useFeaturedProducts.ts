@@ -14,13 +14,15 @@ export const useFeaturedProducts = () => {
           base_price,
           is_active,
           is_featured,
+          featured_sort_order,
           category:categories(id, name, is_active),
           images:product_images(id, image_url, thumb_url, medium_url, large_url, is_main, sort_order)
         `)
         .eq("is_featured", true)
         .eq("is_active", true)
-        .order("updated_at", { ascending: false })
-        .limit(20);
+        .order("featured_sort_order", { ascending: true })
+        .order("created_at", { ascending: false })
+        .limit(30);
 
       if (error) throw error;
       // Hide products whose category is inactive

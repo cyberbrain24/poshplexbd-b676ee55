@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Plus, Pencil, Trash2, Package, Loader2, AlertTriangle, ExternalLink, Download } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, Loader2, AlertTriangle, ExternalLink, Download, Star, ListOrdered } from "lucide-react";
 import ProductModal from "@/components/admin/ProductModal";
+import FeaturedProductsPanel from "@/components/admin/FeaturedProductsPanel";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { useDeleteProduct, useProduct } from "@/hooks/useProducts";
+import { useDeleteProduct, useProduct, useToggleFeatured } from "@/hooks/useProducts";
 import { useOptimizedProducts } from "@/hooks/useOptimizedProducts";
 import { Product } from "@/types/product";
 import { toast } from "sonner";
@@ -25,6 +26,7 @@ import {
 
 const AdminProducts = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isFeaturedPanelOpen, setIsFeaturedPanelOpen] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
   const [deleteBlocked, setDeleteBlocked] = useState<{ count: number; refs: string[] } | null>(null);
@@ -35,6 +37,17 @@ const AdminProducts = () => {
   const { products, isLoading, totalCount, pagination } = useOptimizedProducts(searchQuery);
   const { data: selectedProduct } = useProduct(selectedProductId || undefined);
   const deleteProductMutation = useDeleteProduct();
+  const toggleFeatured = useToggleFeatured();
+
+  const handleToggleFeatured = async (product: Product) => {
+    try {
+      await toggleFeatured.mutateAsync({ id: product.id, value: !product.is_featured });
+      toast.success(product.is_featured ? "Removed from featured" : "Added to featured");
+    } catch {
+      toast.error("Failed to update featured status");
+    }
+  };
+
 
   const hasMore = pagination.page < pagination.totalPages;
 
@@ -106,6 +119,10 @@ const AdminProducts = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setIsFeaturedPanelOpen(true)} size="sm">
+            <ListOrdered className="h-4 w-4 mr-1.5" />
+            Featured Order
+          </Button>
           <Button variant="outline" onClick={handleExportCSV} size="sm">
             <Download className="h-4 w-4 mr-1.5" />
             Export CSV
@@ -137,7 +154,7 @@ const AdminProducts = () => {
               <TableHead>Type</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Price</TableHead>
-              
+              <TableHead className="w-20 text-center">Featured</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="w-24">Actions</TableHead>
             </TableRow>
@@ -145,14 +162,14 @@ const AdminProducts = () => {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8">
+                <TableCell colSpan={9} className="text-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
                   Loading products...
                 </TableCell>
               </TableRow>
             ) : products.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8">
+                <TableCell colSpan={9} className="text-center py-8">
                   <Package className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                   <p className="text-muted-foreground">
                     {searchQuery ? "No products match your search" : "No products found"}
@@ -184,6 +201,16 @@ const AdminProducts = () => {
                   </TableCell>
                   <TableCell>{product.category?.name || "-"}</TableCell>
                   <TableCell>৳{product.base_price.toLocaleString()}</TableCell>
+                  <TableCell className="text-center">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      title={product.is_featured ? "Remove from featured" : "Add to featured"}
+                      onClick={() => handleToggleFeatured(product)}
+                    >
+                      <Star className={`h-4 w-4 ${product.is_featured ? "fill-foreground" : "text-muted-foreground"}`} />
+                    </Button>
+                  </TableCell>
                   <TableCell>
                     <Badge variant={product.is_active ? "default" : "outline"}>
                       {product.is_active ? "Active" : "Inactive"}
@@ -249,6 +276,13 @@ const AdminProducts = () => {
         }}
         product={selectedProduct}
       />
+
+      <FeaturedProductsPanel
+        isOpen={isFeaturedPanelOpen}
+        onClose={() => setIsFeaturedPanelOpen(false)}
+      />
+
+
 
       <AlertDialog open={!!deleteProduct} onOpenChange={() => { setDeleteProduct(null); setDeleteBlocked(null); }}>
         <AlertDialogContent>

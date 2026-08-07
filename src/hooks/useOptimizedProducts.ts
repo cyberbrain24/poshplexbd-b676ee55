@@ -68,6 +68,7 @@ export const useOptimizedProducts = (
           base_price,
           is_active,
           is_featured,
+          featured_sort_order,
           created_at,
           category:categories(id, name),
           images:product_images(id, image_url, is_main, sort_order)
@@ -100,7 +101,7 @@ export const useOptimizedProducts = (
       if (dataResult.error) throw dataResult.error;
 
       return {
-        products: dataResult.data as Product[],
+        products: dataResult.data as unknown as Product[],
         totalCount: countResult.count || 0,
       };
     },

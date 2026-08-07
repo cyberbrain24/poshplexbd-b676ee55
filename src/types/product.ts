@@ -49,6 +49,7 @@ export interface Product {
   size_guide_id: string | null;
   is_active: boolean;
   is_featured: boolean;
+  featured_sort_order?: number;
   created_at: string;
   updated_at: string;
   category?: Category | null;

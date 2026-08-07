@@ -51,13 +51,11 @@ export interface Customer {
   division_id: string | null;
   thana_id: string | null;
   address: string | null;
-  gender: 'male' | 'female' | 'other';
   customer_type_id: string | null;
   notes: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  birthdate: string | null;
   profile_image_url: string | null;
   postal_code: string | null;
   public_profile_visible: boolean;
@@ -74,7 +72,6 @@ export interface Customer {
 
 export interface CustomerFilters {
   search?: string;
-  gender?: string;
   customer_type_id?: string;
   division_id?: string;
   thana_id?: string;
@@ -361,9 +358,6 @@ export const useCustomers = (filters?: CustomerFilters) => {
         .order("created_at", { ascending: false })
         .limit(1000);
 
-      if (filters?.gender) {
-        query = query.eq("gender", filters.gender);
-      }
       if (filters?.customer_type_id) {
         query = query.eq("customer_type_id", filters.customer_type_id);
       }

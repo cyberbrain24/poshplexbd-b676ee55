@@ -115,8 +115,6 @@ export const customerSchema = z.object({
   name: z.string().min(1, "Name is required").max(255),
   phone: phoneSchema,
   email: emailSchema.optional().nullable(),
-  gender: z.enum(["male", "female", "other"]),
-  birthdate: z.string().optional().nullable(),
   address: z.string().max(500).optional().nullable(),
   division_id: uuidSchema.optional().nullable(),
   thana_id: uuidSchema.optional().nullable(),

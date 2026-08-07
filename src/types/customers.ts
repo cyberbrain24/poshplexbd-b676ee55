@@ -48,11 +48,9 @@ export interface Customer {
   division_id: string | null;
   thana_id: string | null;
   address: string | null;
-  gender: 'male' | 'female' | 'other';
   customer_type_id: string | null;
   notes: string | null;
   is_active: boolean;
-  birthdate: string | null;
   created_at: string;
   updated_at: string;
   division?: Division;
@@ -65,7 +63,6 @@ export interface Customer {
 
 export interface CustomerFilters {
   search?: string;
-  gender?: string;
   customer_type_id?: string;
   division_id?: string;
   thana_id?: string;
@@ -77,8 +74,6 @@ export interface CustomerFormData {
   name: string;
   phone: string;
   email?: string | null;
-  gender: 'male' | 'female' | 'other';
-  birthdate?: string | null;
   address?: string | null;
   division_id?: string | null;
   thana_id?: string | null;

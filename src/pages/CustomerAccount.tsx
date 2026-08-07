@@ -11,7 +11,6 @@ import { User, Package, LogOut, Key, Eye, EyeOff, Crown, MessageSquare, Camera, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { BirthDatePicker } from "@/components/ui/birth-date-picker";
 import PoshplexHeader from "@/components/header/PoshplexHeader";
 import PoshplexFooter from "@/components/footer/PoshplexFooter";
 import MyReviews from "@/components/account/MyReviews";
@@ -28,8 +27,6 @@ interface CustomerAccountData {
     phone: string;
     email: string | null;
     address: string | null;
-    gender: string;
-    birthdate: string | null;
     profile_image_url: string | null;
     division_id: string | null;
     thana_id: string | null;
@@ -75,7 +72,7 @@ const CustomerAccount = () => {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [editForm, setEditForm] = useState({
     name: "", email: "", phone: "", address: "",
-    gender: "", division_id: "", thana_id: "", postal_code: "", birthdate: "",
+    division_id: "", thana_id: "", postal_code: "",
   });
   const [divisions, setDivisions] = useState<Division[]>([]);
   const [thanas, setThanas] = useState<Thana[]>([]);
@@ -130,7 +127,7 @@ const CustomerAccount = () => {
       if (data?.customer_id) {
         const { data: customerData } = await supabase
           .from("customers")
-          .select("name, phone, email, address, gender, birthdate, profile_image_url, division_id, thana_id, postal_code, customer_type_id, membership_assigned_at")
+          .select("name, phone, email, address, profile_image_url, division_id, thana_id, postal_code, customer_type_id, membership_assigned_at")
           .eq("id", data.customer_id)
           .maybeSingle();
 
@@ -173,11 +170,9 @@ const CustomerAccount = () => {
             email: customerData.email || "",
             phone: customerData.phone || data.phone || "",
             address: customerData.address || "",
-            gender: customerData.gender || "",
             division_id: customerData.division_id || "",
             thana_id: customerData.thana_id || "",
             postal_code: customerData.postal_code || "",
-            birthdate: customerData.birthdate || "",
           });
         }
 
@@ -311,7 +306,6 @@ const CustomerAccount = () => {
               name: editForm.name.trim(),
               phone: phone,
               email: editForm.email.trim() || null,
-              gender: (editForm.gender as 'male' | 'female' | 'other') || "other",
               is_active: true,
             })
             .select("id")
@@ -343,8 +337,6 @@ const CustomerAccount = () => {
           email: editForm.email.trim() || null,
           phone: editForm.phone.trim(),
           address: editForm.address.trim() || null,
-          gender: editForm.gender || "other",
-          birthdate: editForm.birthdate || null,
           division_id: editForm.division_id || null,
           thana_id: editForm.thana_id || null,
           postal_code: editForm.postal_code.trim() || null,
@@ -375,8 +367,6 @@ const CustomerAccount = () => {
         email: editForm.email.trim() || null,
         phone: editForm.phone.trim(),
         address: editForm.address.trim() || null,
-        gender: editForm.gender || "other",
-        birthdate: editForm.birthdate || null,
         division_id: editForm.division_id || null,
         thana_id: editForm.thana_id || null,
         postal_code: editForm.postal_code.trim() || null,
@@ -419,11 +409,9 @@ const CustomerAccount = () => {
       email: c?.email || accountData?.email || "",
       phone: c?.phone || accountData?.phone || "",
       address: c?.address || "",
-      gender: c?.gender || "other",
       division_id: divisionId,
       thana_id: c?.thana_id || "",
       postal_code: c?.postal_code || "",
-      birthdate: c?.birthdate || "",
     });
     // Pre-load thanas for existing division so the dropdown is populated immediately
     if (divisionId) {
@@ -515,25 +503,6 @@ const CustomerAccount = () => {
                       <Label className="text-sm">Email</Label>
                       <Input value={editForm.email} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} className="mt-1" placeholder="your@email.com" />
                     </div>
-                    <div>
-                      <Label className="text-sm">Gender</Label>
-                      <Select value={editForm.gender} onValueChange={v => setEditForm(f => ({ ...f, gender: v }))}>
-                        <SelectTrigger className="mt-1"><SelectValue placeholder="Select gender" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="male">Male</SelectItem>
-                          <SelectItem value="female">Female</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label className="text-sm">Date of Birth</Label>
-                      <BirthDatePicker
-                        value={editForm.birthdate ? new Date(editForm.birthdate) : undefined}
-                        onChange={(date) => setEditForm(f => ({ ...f, birthdate: date ? format(date, "yyyy-MM-dd") : "" }))}
-                        className="mt-1"
-                      />
-                    </div>
                   </div>
 
                   {/* Address Section */}
@@ -602,16 +571,6 @@ const CustomerAccount = () => {
                     <div>
                       <Label className="text-muted-foreground text-sm">Email</Label>
                       <p className="font-medium">{displayEmail}</p>
-                    </div>
-                    <div>
-                      <Label className="text-muted-foreground text-sm">Gender</Label>
-                      <p className="font-medium capitalize">{accountData?.customer?.gender || "Not Set"}</p>
-                    </div>
-                    <div>
-                      <Label className="text-muted-foreground text-sm">Date of Birth</Label>
-                      <p className="font-medium">
-                        {accountData?.customer?.birthdate ? format(new Date(accountData.customer.birthdate), "PPP") : "Not set"}
-                      </p>
                     </div>
                   </div>
 

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { BirthDatePicker } from "@/components/ui/birth-date-picker";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -53,11 +52,9 @@ const customerSchema = z.object({
   division_id: z.string().optional(),
   thana_id: z.string().optional(),
   address: z.string().optional(),
-  gender: z.enum(["male", "female", "other"], { required_error: "Gender is required" }),
   customer_type_id: z.string().optional(),
   notes: z.string().optional(),
   is_active: z.boolean(),
-  birthdate: z.date().optional(),
   public_profile_visible: z.boolean(),
 });
 
@@ -86,11 +83,9 @@ const CustomerModal = ({ open, onOpenChange, customer }: CustomerModalProps) => 
       division_id: "",
       thana_id: "",
       address: "",
-      gender: undefined,
       customer_type_id: "",
       notes: "",
       is_active: true,
-      birthdate: undefined,
       public_profile_visible: false,
     },
   });
@@ -104,11 +99,9 @@ const CustomerModal = ({ open, onOpenChange, customer }: CustomerModalProps) => 
         division_id: customer.division_id || "",
         thana_id: customer.thana_id || "",
         address: customer.address || "",
-        gender: customer.gender,
         customer_type_id: customer.customer_type_id || "",
         notes: customer.notes || "",
         is_active: customer.is_active,
-        birthdate: customer.birthdate ? new Date(customer.birthdate) : undefined,
         public_profile_visible: customer.public_profile_visible ?? false,
       });
       setSelectedDivisionId(customer.division_id || undefined);
@@ -120,12 +113,10 @@ const CustomerModal = ({ open, onOpenChange, customer }: CustomerModalProps) => 
         division_id: "",
         thana_id: "",
         address: "",
-        gender: undefined,
-        customer_type_id: "",
+          customer_type_id: "",
         notes: "",
         is_active: true,
-        birthdate: undefined,
-        public_profile_visible: false,
+          public_profile_visible: false,
       });
       setSelectedDivisionId(undefined);
     }
@@ -139,11 +130,9 @@ const CustomerModal = ({ open, onOpenChange, customer }: CustomerModalProps) => 
       division_id: (values.division_id && values.division_id !== "none") ? values.division_id : null,
       thana_id: (values.thana_id && values.thana_id !== "none") ? values.thana_id : null,
       address: values.address || null,
-      gender: values.gender as 'male' | 'female' | 'other',
       customer_type_id: (values.customer_type_id && values.customer_type_id !== "none") ? values.customer_type_id : null,
       notes: values.notes || null,
       is_active: values.is_active,
-      birthdate: values.birthdate ? format(values.birthdate, "yyyy-MM-dd") : null,
       // Auto-enable public visibility when a membership type is assigned
       public_profile_visible: ((values.customer_type_id && values.customer_type_id !== "none") ? true : false) || values.public_profile_visible,
     };
@@ -225,44 +214,9 @@ const CustomerModal = ({ open, onOpenChange, customer }: CustomerModalProps) => 
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="gender"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Gender *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select gender" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="male">Male</SelectItem>
-                          <SelectItem value="female">Female</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="birthdate"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Date of Birth</FormLabel>
-                      <FormControl>
-                        <BirthDatePicker value={field.value} onChange={field.onChange} className="pl-3" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
                 <FormField
                   control={form.control}
                   name="customer_type_id"

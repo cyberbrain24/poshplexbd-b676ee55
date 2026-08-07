@@ -251,12 +251,10 @@ export type Database = {
       customers: {
         Row: {
           address: string | null
-          birthdate: string | null
           created_at: string
           customer_type_id: string | null
           division_id: string | null
           email: string | null
-          gender: string
           id: string
           is_active: boolean
           membership_assigned_at: string | null
@@ -271,12 +269,10 @@ export type Database = {
         }
         Insert: {
           address?: string | null
-          birthdate?: string | null
           created_at?: string
           customer_type_id?: string | null
           division_id?: string | null
           email?: string | null
-          gender: string
           id?: string
           is_active?: boolean
           membership_assigned_at?: string | null
@@ -291,12 +287,10 @@ export type Database = {
         }
         Update: {
           address?: string | null
-          birthdate?: string | null
           created_at?: string
           customer_type_id?: string | null
           division_id?: string | null
           email?: string | null
-          gender?: string
           id?: string
           is_active?: boolean
           membership_assigned_at?: string | null
@@ -1277,7 +1271,6 @@ export type Database = {
           p_address?: string
           p_division_id?: string
           p_email?: string
-          p_gender?: string
           p_name: string
           p_phone: string
           p_thana_id?: string

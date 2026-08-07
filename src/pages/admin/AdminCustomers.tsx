@@ -121,11 +121,9 @@ const AdminCustomers = () => {
 
   // Calculate stats
   const stats = useMemo(() => {
-    if (!customers) return { total: 0, male: 0, female: 0 };
+    if (!customers) return { total: 0 };
     return {
       total: customers.length,
-      male: customers.filter(c => c.gender === "male").length,
-      female: customers.filter(c => c.gender === "female").length,
     };
   }, [customers]);
 
@@ -151,8 +149,6 @@ const AdminCustomers = () => {
                   { header: "Name", accessor: (c: Customer) => c.name },
                   { header: "Phone", accessor: (c: Customer) => c.phone },
                   { header: "Email", accessor: (c: Customer) => c.email || "" },
-                  { header: "Gender", accessor: (c: Customer) => c.gender },
-                  { header: "Birthdate", accessor: (c: Customer) => c.birthdate || "" },
                   { header: "Membership Type", accessor: (c: Customer) => c.customer_type?.name || "" },
                   { header: "District", accessor: (c: Customer) => c.division?.name || "" },
                   { header: "Thana", accessor: (c: Customer) => c.thana?.name || "" },
@@ -228,20 +224,6 @@ const AdminCustomers = () => {
             <div className="flex flex-wrap gap-4 items-center">
               <Filter className="h-4 w-4 text-muted-foreground" />
               
-              <Select
-                value={filters.gender || "all"}
-                onValueChange={(v) => setFilters(prev => ({ ...prev, gender: v === "all" ? undefined : v }))}
-              >
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Gender" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Genders</SelectItem>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
 
               <Select
                 value={filters.customer_type_id || "all"}
@@ -298,7 +280,6 @@ const AdminCustomers = () => {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Phone</TableHead>
-                  <TableHead>Gender</TableHead>
                   <TableHead>Division / Thana</TableHead>
                   <TableHead>Customer Type</TableHead>
                   <TableHead>Orders</TableHead>
@@ -325,14 +306,6 @@ const AdminCustomers = () => {
                       </div>
                     </TableCell>
                     <TableCell>{customer.phone}</TableCell>
-                    <TableCell>
-                      <Badge variant={
-                        customer.gender === "male" ? "default" :
-                        customer.gender === "female" ? "secondary" : "outline"
-                      }>
-                        {customer.gender.charAt(0).toUpperCase() + customer.gender.slice(1)}
-                      </Badge>
-                    </TableCell>
                     <TableCell>
                       {customer.division?.name || "-"}
                       {customer.thana && ` / ${customer.thana.name}`}

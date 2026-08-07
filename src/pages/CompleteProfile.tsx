@@ -25,7 +25,6 @@ const CompleteProfile = () => {
     name: "",
     phone: "",
     email: "",
-    gender: "",
     address: "",
     division_id: "",
     thana_id: "",
@@ -60,7 +59,7 @@ const CompleteProfile = () => {
       if (account?.customer_id) {
         const { data } = await supabase
           .from("customers")
-          .select("name, phone, email, gender, address, division_id, thana_id, postal_code")
+          .select("name, phone, email, address, division_id, thana_id, postal_code")
           .eq("id", account.customer_id)
           .maybeSingle();
         customer = data;
@@ -70,7 +69,6 @@ const CompleteProfile = () => {
         name: customer?.name && !customer.name.startsWith("Customer") ? customer.name : fullName,
         phone: customer?.phone && !customer.phone.startsWith("user_") ? customer.phone : "",
         email: customer?.email || email,
-        gender: customer?.gender && customer.gender !== "other" ? customer.gender : "",
         address: customer?.address || "",
         division_id: customer?.division_id || "",
         thana_id: customer?.thana_id || "",
@@ -103,7 +101,6 @@ const CompleteProfile = () => {
     // Validation
     if (!form.name.trim()) return toast.error("Please enter your full name");
     if (!isPhone(form.phone)) return toast.error("Enter a valid Bangladeshi phone number (e.g. 01XXXXXXXXX)");
-    if (!form.gender) return toast.error("Please select your gender");
     if (!form.address.trim()) return toast.error("Please enter your address");
     if (!form.division_id) return toast.error("Please select your district");
     if (!form.thana_id) return toast.error("Please select your thana");
@@ -134,7 +131,6 @@ const CompleteProfile = () => {
             name: form.name.trim(),
             phone: form.phone.trim(),
             email: form.email.trim() || null,
-            gender: form.gender,
             address: form.address.trim(),
             division_id: form.division_id,
             thana_id: form.thana_id,
@@ -150,7 +146,6 @@ const CompleteProfile = () => {
             name: form.name.trim(),
             phone: form.phone.trim(),
             email: form.email.trim() || null,
-            gender: form.gender,
             address: form.address.trim(),
             division_id: form.division_id,
             thana_id: form.thana_id,

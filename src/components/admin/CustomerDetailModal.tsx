@@ -44,9 +44,6 @@ const CustomerDetailModal = ({ open, onOpenChange, customer }: Props) => {
           <div className="flex-1">
             <div className="text-lg font-semibold">{customer.name}</div>
             <div className="flex flex-wrap gap-2 mt-1">
-              <Badge variant={customer.gender === "male" ? "default" : customer.gender === "female" ? "secondary" : "outline"}>
-                {customer.gender.charAt(0).toUpperCase() + customer.gender.slice(1)}
-              </Badge>
               {customer.customer_type?.name && <Badge variant="outline">{customer.customer_type.name}</Badge>}
               {customer.has_account && <Badge variant="default" className="bg-green-600">Has Account</Badge>}
               {!customer.is_active && <Badge variant="destructive">Inactive</Badge>}
@@ -81,7 +78,6 @@ const CustomerDetailModal = ({ open, onOpenChange, customer }: Props) => {
               )}
             </div>
           } />
-          <Row icon={Calendar} label="Birthdate" value={fmtDate(customer.birthdate)} />
           <Row icon={BadgeCheck} label="Member Since" value={fmtDate(customer.membership_assigned_at)} />
           <Row icon={User} label="Public Profile" value={customer.public_profile_visible ? "Visible" : "Hidden"} />
           <Row icon={Hash} label="Customer ID" value={<span className="font-mono text-xs">{customer.id}</span>} />

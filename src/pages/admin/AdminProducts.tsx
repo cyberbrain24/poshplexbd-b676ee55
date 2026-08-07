@@ -154,7 +154,7 @@ const AdminProducts = () => {
               <TableHead>Type</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Price</TableHead>
-              
+              <TableHead className="w-20 text-center">Featured</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="w-24">Actions</TableHead>
             </TableRow>

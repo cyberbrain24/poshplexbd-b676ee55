@@ -8,7 +8,9 @@ import { createHtmlPlugin } from "vite-plugin-html";
 // each chunk with a long immutable fingerprint.
 const manualChunks = (id: string) => {
   if (id.includes("node_modules")) {
-    if (id.includes("react-dom") || id.includes("react-router-dom") || id.includes("react/")) {
+    if (
+      /node_modules\/(react|react-dom|react-router|react-router-dom|react-is|scheduler|use-sync-external-store|@remix-run)\//.test(id)
+    ) {
       return "vendor-react";
     }
     if (id.includes("@tanstack/react-query")) {

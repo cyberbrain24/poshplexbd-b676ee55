@@ -228,7 +228,7 @@ const ProductImageGallery = ({ product, isLoading, selectedColorId, selectedVari
 
       {/* Image Zoom Modal */}
       <ImageZoom
-        images={productImages}
+        images={zoomImages}
         initialIndex={zoomInitialIndex}
         isOpen={isZoomOpen}
         onClose={() => setIsZoomOpen(false)}

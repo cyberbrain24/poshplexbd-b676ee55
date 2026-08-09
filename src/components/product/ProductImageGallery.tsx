@@ -180,9 +180,14 @@ const ProductImageGallery = ({ product, isLoading, selectedColorId, selectedVari
             onTouchEnd={handleTouchEnd}
           >
             <img
-              src={productImages[currentImageIndex]}
+              src={productImages[currentImageIndex].large || productImages[currentImageIndex].medium || productImages[currentImageIndex].url}
+              srcSet={[
+                productImages[currentImageIndex].medium ? `${productImages[currentImageIndex].medium} 300w` : null,
+                productImages[currentImageIndex].large ? `${productImages[currentImageIndex].large} 450w` : null,
+                productImages[currentImageIndex].url ? `${productImages[currentImageIndex].url} 1200w` : null,
+              ].filter(Boolean).join(", ") || undefined}
+              sizes="100vw"
               alt={`Product view ${currentImageIndex + 1}`}
-              sizes={PRESET_SIZES.detail.sizes}
               width={PRESET_SIZES.detail.widths.tablet}
               height={PRESET_SIZES.detail.widths.tablet}
               loading="eager"
@@ -190,6 +195,7 @@ const ProductImageGallery = ({ product, isLoading, selectedColorId, selectedVari
               {...{ fetchpriority: "high" }}
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 select-none"
             />
+
           </div>
           
           {/* Dots indicator */}

@@ -3,6 +3,8 @@ import ImageZoom from "./ImageZoom";
 import { Product } from "@/types/product";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PRESET_SIZES } from "@/components/ui/responsive-image";
+import { cdnImage } from "@/lib/imageUrl";
+
 
 interface ProductImageGalleryProps {
   product?: Product | null;
@@ -26,10 +28,11 @@ const ProductImageGallery = ({ product, isLoading, selectedColorId, selectedVari
     const sorted = [...product.images].sort((a, b) => a.sort_order - b.sort_order);
 
     const toEntry = (img: any) => ({
-      url: img.image_url,
-      medium: img.medium_url ?? null,
-      large: img.large_url ?? null,
+      url: cdnImage(img.image_url),
+      medium: cdnImage(img.medium_url ?? null),
+      large: cdnImage(img.large_url ?? null),
     });
+
 
     let baseImages: { url: string; medium: string | null; large: string | null }[];
     if (selectedColorId) {

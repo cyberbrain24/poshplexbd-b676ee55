@@ -7,9 +7,14 @@
 /fonts/*
   Cache-Control: public, max-age=31536000, immutable
 
+# Edge-proxied storage images: immutable, cached at the edge for 1 year
+/img/*
+  Cache-Control: public, max-age=31536000, immutable
+
 # Favicon
 /favicon.ico
   Cache-Control: public, max-age=86400
+
 
 # HTML entry / SPA shell: revalidate often so deploys propagate fast
 /*

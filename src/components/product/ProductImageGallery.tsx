@@ -46,10 +46,12 @@ const ProductImageGallery = ({ product, isLoading, selectedColorId, selectedVari
 
     // If variant has a specific image, prepend it (avoid duplicate)
     if (selectedVariantImageUrl) {
-      const match = baseImages.find(i => i.url === selectedVariantImageUrl);
-      const withoutDup = baseImages.filter(i => i.url !== selectedVariantImageUrl);
-      return [match || { url: selectedVariantImageUrl, medium: null, large: null }, ...withoutDup];
+      const variantUrl = cdnImage(selectedVariantImageUrl);
+      const match = baseImages.find(i => i.url === variantUrl);
+      const withoutDup = baseImages.filter(i => i.url !== variantUrl);
+      return [match || { url: variantUrl, medium: null, large: null }, ...withoutDup];
     }
+
 
     return baseImages;
   }, [product?.images, selectedColorId, selectedVariantImageUrl]);

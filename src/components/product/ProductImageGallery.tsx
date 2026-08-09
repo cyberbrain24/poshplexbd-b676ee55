@@ -135,9 +135,14 @@ const ProductImageGallery = ({ product, isLoading, selectedColorId, selectedVari
               onClick={() => handleImageClick(index)}
             >
               <img
-                src={image}
+                src={image.large || image.medium || image.url}
+                srcSet={[
+                  image.medium ? `${image.medium} 300w` : null,
+                  image.large ? `${image.large} 450w` : null,
+                  image.url ? `${image.url} 1200w` : null,
+                ].filter(Boolean).join(", ") || undefined}
+                sizes="(min-width: 1024px) 600px, 100vw"
                 alt={`Product view ${index + 1}`}
-                sizes={PRESET_SIZES.detail.sizes}
                 width={PRESET_SIZES.detail.widths.desktop}
                 height={PRESET_SIZES.detail.widths.desktop}
                 loading={index === 0 ? "eager" : "lazy"}
@@ -145,6 +150,7 @@ const ProductImageGallery = ({ product, isLoading, selectedColorId, selectedVari
                 {...{ fetchpriority: index === 0 ? "high" : "auto" }}
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
               />
+
             </div>
           ))}
           

@@ -1,0 +1,16 @@
+# Cloudflare Pages headers for POSHPLEX storefront
+# Static assets with hashed filenames: immutable, cached at the edge for 1 year
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Fonts
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Favicon
+/favicon.ico
+  Cache-Control: public, max-age=86400
+
+# HTML entry / SPA shell: revalidate often so deploys propagate fast
+/*
+  Cache-Control: public, max-age=0, must-revalidate

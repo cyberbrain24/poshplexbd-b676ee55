@@ -20,28 +20,39 @@ const ProductImageGallery = ({ product, isLoading, selectedColorId, selectedVari
 
   // Build image list: if variant has a specific image, show it first
   const productImages = useMemo(() => {
-    if (!product?.images || product.images.length === 0) return ['/placeholder.svg'];
-    
+    const placeholder = [{ url: '/placeholder.svg', medium: null as string | null, large: null as string | null }];
+    if (!product?.images || product.images.length === 0) return placeholder;
+
     const sorted = [...product.images].sort((a, b) => a.sort_order - b.sort_order);
-    
-    let baseImages: string[];
+
+    const toEntry = (img: any) => ({
+      url: img.image_url,
+      medium: img.medium_url ?? null,
+      large: img.large_url ?? null,
+    });
+
+    let baseImages: { url: string; medium: string | null; large: string | null }[];
     if (selectedColorId) {
       const filtered = sorted.filter(
         img => !img.color_id || img.color_id === selectedColorId
       );
-      baseImages = filtered.length > 0 ? filtered.map(img => img.image_url) : sorted.map(img => img.image_url);
+      baseImages = (filtered.length > 0 ? filtered : sorted).map(toEntry);
     } else {
-      baseImages = sorted.map(img => img.image_url);
+      baseImages = sorted.map(toEntry);
     }
-    
+
     // If variant has a specific image, prepend it (avoid duplicate)
     if (selectedVariantImageUrl) {
-      const withoutDup = baseImages.filter(url => url !== selectedVariantImageUrl);
-      return [selectedVariantImageUrl, ...withoutDup];
+      const match = baseImages.find(i => i.url === selectedVariantImageUrl);
+      const withoutDup = baseImages.filter(i => i.url !== selectedVariantImageUrl);
+      return [match || { url: selectedVariantImageUrl, medium: null, large: null }, ...withoutDup];
     }
-    
+
     return baseImages;
   }, [product?.images, selectedColorId, selectedVariantImageUrl]);
+
+  const zoomImages = useMemo(() => productImages.map(i => i.url), [productImages]);
+
 
   // Reset image index when color changes
   useEffect(() => {
@@ -124,9 +135,14 @@ const ProductImageGallery = ({ product, isLoading, selectedColorId, selectedVari
               onClick={() => handleImageClick(index)}
             >
               <img
-                src={image}
+                src={image.large || image.medium || image.url}
+                srcSet={[
+                  image.medium ? `${image.medium} 300w` : null,
+                  image.large ? `${image.large} 450w` : null,
+                  image.url ? `${image.url} 1200w` : null,
+                ].filter(Boolean).join(", ") || undefined}
+                sizes="(min-width: 1024px) 600px, 100vw"
                 alt={`Product view ${index + 1}`}
-                sizes={PRESET_SIZES.detail.sizes}
                 width={PRESET_SIZES.detail.widths.desktop}
                 height={PRESET_SIZES.detail.widths.desktop}
                 loading={index === 0 ? "eager" : "lazy"}
@@ -134,6 +150,7 @@ const ProductImageGallery = ({ product, isLoading, selectedColorId, selectedVari
                 {...{ fetchpriority: index === 0 ? "high" : "auto" }}
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
               />
+
             </div>
           ))}
           
@@ -163,9 +180,14 @@ const ProductImageGallery = ({ product, isLoading, selectedColorId, selectedVari
             onTouchEnd={handleTouchEnd}
           >
             <img
-              src={productImages[currentImageIndex]}
+              src={productImages[currentImageIndex].large || productImages[currentImageIndex].medium || productImages[currentImageIndex].url}
+              srcSet={[
+                productImages[currentImageIndex].medium ? `${productImages[currentImageIndex].medium} 300w` : null,
+                productImages[currentImageIndex].large ? `${productImages[currentImageIndex].large} 450w` : null,
+                productImages[currentImageIndex].url ? `${productImages[currentImageIndex].url} 1200w` : null,
+              ].filter(Boolean).join(", ") || undefined}
+              sizes="100vw"
               alt={`Product view ${currentImageIndex + 1}`}
-              sizes={PRESET_SIZES.detail.sizes}
               width={PRESET_SIZES.detail.widths.tablet}
               height={PRESET_SIZES.detail.widths.tablet}
               loading="eager"
@@ -173,6 +195,7 @@ const ProductImageGallery = ({ product, isLoading, selectedColorId, selectedVari
               {...{ fetchpriority: "high" }}
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 select-none"
             />
+
           </div>
           
           {/* Dots indicator */}
@@ -205,7 +228,7 @@ const ProductImageGallery = ({ product, isLoading, selectedColorId, selectedVari
 
       {/* Image Zoom Modal */}
       <ImageZoom
-        images={productImages}
+        images={zoomImages}
         initialIndex={zoomInitialIndex}
         isOpen={isZoomOpen}
         onClose={() => setIsZoomOpen(false)}

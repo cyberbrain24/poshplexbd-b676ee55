@@ -20,28 +20,39 @@ const ProductImageGallery = ({ product, isLoading, selectedColorId, selectedVari
 
   // Build image list: if variant has a specific image, show it first
   const productImages = useMemo(() => {
-    if (!product?.images || product.images.length === 0) return ['/placeholder.svg'];
-    
+    const placeholder = [{ url: '/placeholder.svg', medium: null as string | null, large: null as string | null }];
+    if (!product?.images || product.images.length === 0) return placeholder;
+
     const sorted = [...product.images].sort((a, b) => a.sort_order - b.sort_order);
-    
-    let baseImages: string[];
+
+    const toEntry = (img: any) => ({
+      url: img.image_url,
+      medium: img.medium_url ?? null,
+      large: img.large_url ?? null,
+    });
+
+    let baseImages: { url: string; medium: string | null; large: string | null }[];
     if (selectedColorId) {
       const filtered = sorted.filter(
         img => !img.color_id || img.color_id === selectedColorId
       );
-      baseImages = filtered.length > 0 ? filtered.map(img => img.image_url) : sorted.map(img => img.image_url);
+      baseImages = (filtered.length > 0 ? filtered : sorted).map(toEntry);
     } else {
-      baseImages = sorted.map(img => img.image_url);
+      baseImages = sorted.map(toEntry);
     }
-    
+
     // If variant has a specific image, prepend it (avoid duplicate)
     if (selectedVariantImageUrl) {
-      const withoutDup = baseImages.filter(url => url !== selectedVariantImageUrl);
-      return [selectedVariantImageUrl, ...withoutDup];
+      const match = baseImages.find(i => i.url === selectedVariantImageUrl);
+      const withoutDup = baseImages.filter(i => i.url !== selectedVariantImageUrl);
+      return [match || { url: selectedVariantImageUrl, medium: null, large: null }, ...withoutDup];
     }
-    
+
     return baseImages;
   }, [product?.images, selectedColorId, selectedVariantImageUrl]);
+
+  const zoomImages = useMemo(() => productImages.map(i => i.url), [productImages]);
+
 
   // Reset image index when color changes
   useEffect(() => {

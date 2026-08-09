@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, ImgHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
+import { cdnImage } from "@/lib/imageUrl";
+
 
 type ImagePreset = "grid" | "detail" | "zoom";
 
@@ -67,19 +69,20 @@ const ResponsiveImage = ({
 
   // Default src — best-fitting single image for the preset.
   const pickedSrc = (() => {
-    if (preset === "grid") return largeUrl || mediumUrl || src;
-    if (preset === "detail") return mediumUrl || src;
-    return src; // zoom — full resolution
+    if (preset === "grid") return cdnImage(largeUrl || mediumUrl || src);
+    if (preset === "detail") return cdnImage(mediumUrl || src);
+    return cdnImage(src); // zoom — full resolution
   })();
 
   // Build srcSet so the browser picks the closest variant for the device width.
   const srcSet = (() => {
     if (preset !== "grid") return undefined;
     const parts: string[] = [];
-    if (mediumUrl) parts.push(`${mediumUrl} 300w`);
-    if (largeUrl) parts.push(`${largeUrl} 450w`);
+    if (mediumUrl) parts.push(`${cdnImage(mediumUrl)} 300w`);
+    if (largeUrl) parts.push(`${cdnImage(largeUrl)} 450w`);
     return parts.length ? parts.join(", ") : undefined;
   })();
+
 
   // Reset state when src changes
   useEffect(() => {

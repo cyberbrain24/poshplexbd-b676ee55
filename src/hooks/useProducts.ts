@@ -395,7 +395,7 @@ export const uploadProductImage = async (file: File, productId: string): Promise
     const tasks: Promise<void>[] = [];
     const buildTask = (f: File | null, folder: string, width: number, assign: (u: string) => void) => {
       if (!f) return;
-      const path = `${productId}/${folder}/${ts}-${width}.webp`;
+      const path = `${productId}/${folder}/${fileName.split("/").pop()!.replace(/\.[^.]+$/, "")}-${width}.webp`;
       tasks.push(
         supabase.storage.from("product-images").upload(path, f, { contentType: "image/webp", cacheControl: "31536000" })
           .then(({ error }) => { if (!error) assign(supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl); })

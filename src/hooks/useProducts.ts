@@ -348,23 +348,45 @@ export const useDeleteProductVariant = () => {
   });
 };
 
+const slugifyName = (name: string) =>
+  name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "product";
+
 export const uploadProductImage = async (file: File, productId: string): Promise<{
   url: string; thumb_url: string | null; medium_url: string | null; large_url: string | null;
 }> => {
   const { toWebpUnder250 } = await import("@/lib/imageToWebp");
   const webpFile = await toWebpUnder250(file);
   const ts = Date.now();
-  const ext = webpFile.type === "image/webp" ? "webp" : (file.name.split(".").pop()?.toLowerCase() || "webp");
-  const fileName = `${productId}/${ts}.${ext}`;
 
-  const { error: uploadError } = await supabase.storage
+  // Name files after the product, numbered per image (product-name-1, -2, ...)
+  const { data: productRow } = await supabase.from("products").select("name").eq("id", productId).maybeSingle();
+  const slug = slugifyName((productRow as any)?.name || "product");
+  const { count } = await supabase
+    .from("product_images")
+    .select("id", { count: "exact", head: true })
+    .eq("product_id", productId);
+  const baseName = `${slug}-${(count || 0) + 1}`;
+
+  const ext = webpFile.type === "image/webp" ? "webp" : (file.name.split(".").pop()?.toLowerCase() || "webp");
+  let fileName = `${productId}/${baseName}.${ext}`;
+
+  let { error: uploadError } = await supabase.storage
     .from("product-images")
     .upload(fileName, webpFile, { contentType: webpFile.type, cacheControl: "31536000" });
+  if (uploadError) {
+    // Name already taken (parallel upload) — fall back to a unique variant
+    fileName = `${productId}/${baseName}-${ts}.${ext}`;
+    const retry = await supabase.storage
+      .from("product-images")
+      .upload(fileName, webpFile, { contentType: webpFile.type, cacheControl: "31536000" });
+    uploadError = retry.error;
+  }
   if (uploadError) throw uploadError;
 
   const { data } = supabase.storage.from("product-images").getPublicUrl(fileName);
   const url = data.publicUrl;
   file = webpFile;
+
 
   let thumb_url: string | null = null, medium_url: string | null = null, large_url: string | null = null;
   try {
@@ -373,7 +395,7 @@ export const uploadProductImage = async (file: File, productId: string): Promise
     const tasks: Promise<void>[] = [];
     const buildTask = (f: File | null, folder: string, width: number, assign: (u: string) => void) => {
       if (!f) return;
-      const path = `${productId}/${folder}/${ts}-${width}.webp`;
+      const path = `${productId}/${folder}/${fileName.split("/").pop()!.replace(/\.[^.]+$/, "")}-${width}.webp`;
       tasks.push(
         supabase.storage.from("product-images").upload(path, f, { contentType: "image/webp", cacheControl: "31536000" })
           .then(({ error }) => { if (!error) assign(supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl); })

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Pencil, Trash2, Package, Loader2, AlertTriangle, ExternalLink, Download, Star, ListOrdered } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, Loader2, AlertTriangle, ExternalLink, Download, Star, ListOrdered, FileSignature } from "lucide-react";
 import ProductModal from "@/components/admin/ProductModal";
 import FeaturedProductsPanel from "@/components/admin/FeaturedProductsPanel";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,23 @@ const AdminProducts = () => {
   const [deleteBlocked, setDeleteBlocked] = useState<{ count: number; refs: string[] } | null>(null);
   const [checkingDelete, setCheckingDelete] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [renaming, setRenaming] = useState(false);
+
+  const handleRenameImages = async () => {
+    setRenaming(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("rename-product-images", { body: {} });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const d = data as any;
+      toast.success(`Renamed ${d.filesMoved} image files across ${d.rowsUpdated} images`);
+      if (d.errorCount) toast.error(`${d.errorCount} files failed to rename`);
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to rename image files");
+    } finally {
+      setRenaming(false);
+    }
+  };
 
   // Use optimized server-side pagination and search
   const { products, isLoading, totalCount, pagination } = useOptimizedProducts(searchQuery);
@@ -123,10 +140,15 @@ const AdminProducts = () => {
             <ListOrdered className="h-4 w-4 mr-1.5" />
             Featured Order
           </Button>
+          <Button variant="outline" onClick={handleRenameImages} size="sm" disabled={renaming}>
+            {renaming ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <FileSignature className="h-4 w-4 mr-1.5" />}
+            Rename Image Files
+          </Button>
           <Button variant="outline" onClick={handleExportCSV} size="sm">
             <Download className="h-4 w-4 mr-1.5" />
             Export CSV
           </Button>
+
           <Button onClick={openCreateModal} size="sm" className="self-start sm:self-auto">
             <Plus className="h-4 w-4 mr-1.5" />
             Add Product
